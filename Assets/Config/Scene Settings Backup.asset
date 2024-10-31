@@ -118,7 +118,9 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   pulseScaleDamper: 0.3
+  mergeSizeScalerDamper: 0
   maxDistanceBetweenHands: 20
+  baseZDepth: 16
   defaultUnscaledSize: 2.5
   bodyScale: 10
   maxDistanceFromCamera: 34

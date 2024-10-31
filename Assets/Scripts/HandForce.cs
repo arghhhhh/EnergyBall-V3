@@ -93,12 +93,12 @@ public class HandForce
         if (player.pushParticles)
         {
             forceVector *= controller.so.handPushScaler;
-            player.sphere.drag = 0;
+            player.sphere.linearDamping = 0;
         }
         else
         {
             // need to make sure drag never goes below min drag. Might as well clamp both sides
-            player.sphere.drag = Utils.RemapClamped(
+            player.sphere.linearDamping = Utils.RemapClamped(
                 distance,
                 controller.so.maxDistanceBetweenHands,
                 0,

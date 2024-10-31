@@ -228,7 +228,7 @@ public class PlayerScaler
                 ? bodyAlignment
                 : oppoHandAlignment;
 
-        // the total scale amount from the three factors
+        // the total scale amount from the four factors
         float scaleAmt =
             displacementScaler
             * distanceDamper

@@ -12,6 +12,7 @@ namespace MarchingCubes
 
     public class MetaballsVisualizer : MonoBehaviour
     {
+        SceneController controller = null;
         #region Editable attributes
 
         [SerializeField] Vector3Int _dimensions = new Vector3Int(64, 32, 64);
@@ -25,9 +26,9 @@ namespace MarchingCubes
             new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
             new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
             new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
+            // new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
+            // new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
+            // new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
         };
 
         public List<int> activeMetaballIndices = new List<int>();
@@ -49,6 +50,7 @@ namespace MarchingCubes
         ComputeBuffer _positionsBuffer;
         ComputeBuffer _radiiBuffer;
         MeshBuilder _builder;
+        public Mesh mesh;
 
         #endregion
 
@@ -58,6 +60,8 @@ namespace MarchingCubes
         {
             InitializeMetaballBuffers();
             _builder = new MeshBuilder(_dimensions, _triangleBudget, _builderCompute);
+            controller = GetComponent<SceneController>();
+            mesh = new Mesh { name = "Metaballs" };
         }
 
         void OnDestroy()
@@ -79,6 +83,7 @@ namespace MarchingCubes
 
             // Isosurface reconstruction
             _builder.BuildIsosurface(_voxelBuffer, _targetValue, _gridScale);
+
             GetComponent<MeshFilter>().sharedMesh = _builder.Mesh;
         }
 
@@ -158,6 +163,7 @@ namespace MarchingCubes
 
         public void SetMetaballPosition(int index, Vector3 position)
         {
+            position.z -= controller.so.baseZDepth;
             metaballs[index].Position = position;
         }
 

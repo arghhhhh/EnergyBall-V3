@@ -118,11 +118,13 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   pulseScaleDamper: 0.3
+  mergeSizeScalerDamper: 0.15
   maxDistanceBetweenHands: 20
+  baseZDepth: 16
   defaultUnscaledSize: 2.5
   bodyScale: 10
   maxDistanceFromCamera: 34
   particleInitializationDelay: 1.75
   showAttractionRadius: 0
   showSphereMeshOnHandCollision: 0
-  dummyOnlyMode: 0
+  dummyOnlyMode: 1

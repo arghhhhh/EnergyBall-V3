@@ -48,7 +48,10 @@ public class GravityForce
                         );
                     }
 
-                    ManageOrbitalBodies(playerAConstructor, playerBConstructor, distance);
+                    if (controller.so.mergeSizeScalerDamper > 0)
+                    {
+                        ManageOrbitalBodies(playerAConstructor, playerBConstructor, distance);
+                    }
                 }
             }
         }
@@ -67,7 +70,7 @@ public class GravityForce
         float forceMagnitude = controller.so.g * unscaledForceMagnitude;
 
         // Check whether objects are moving towards each other
-        Vector3 relativeVelocity = player.sphere.velocity - attractor.sphere.velocity;
+        Vector3 relativeVelocity = player.sphere.linearVelocity - attractor.sphere.linearVelocity;
         float relativeDot = Vector3.Dot(direction, relativeVelocity);
 
         isMovingTowards = relativeDot > 0;
@@ -97,7 +100,7 @@ public class GravityForce
             Vector3 stopForce =
                 -1f
                 * player.sphere.mass
-                * ((player.sphere.velocity - player.prevVelocity) / Time.fixedDeltaTime);
+                * ((player.sphere.linearVelocity - player.prevVelocity) / Time.fixedDeltaTime);
             player.sphere.AddForce(stopForce);
         }
     }

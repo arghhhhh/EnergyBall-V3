@@ -11,15 +11,8 @@ public class MeshesToSDF : MonoBehaviour
 {
     SceneController controller = null;
 
-    private class MeshData
-    {
-        public Mesh mesh;
-        public Matrix4x4 matrix;
-    }
-
     MeshToSDFBaker sdfBaker;
     Mesh mesh;
-    readonly Dictionary<ulong, MeshData> meshesData = new();
 
     [Header("Box")]
     public bool setBoxBoundsAutomatically = false;
@@ -65,12 +58,11 @@ public class MeshesToSDF : MonoBehaviour
     void Start()
     {
         controller = SceneController.Instance;
-        mesh = GetComponent<MeshFilter>().sharedMesh;
     }
 
     void Update()
     {
-        if (controller.Players.Count > 0)
+        if (controller.Players.Count > 0 && mesh != null)
         {
             if (sdfBaker == null)
             {
@@ -106,7 +98,7 @@ public class MeshesToSDF : MonoBehaviour
 
             sdfBaker.BakeSDF();
 
-            VisualEffect[] playerVfx = FindObjectsOfType<VisualEffect>();
+            VisualEffect[] playerVfx = FindObjectsByType<VisualEffect>(FindObjectsSortMode.None);
 
             foreach (VisualEffect vfx in playerVfx)
             {
@@ -115,32 +107,9 @@ public class MeshesToSDF : MonoBehaviour
                 vfx.SetVector3(sdfPositionProperty, CenterWS);
             }
         }
-    }
-
-    public void AddToMeshes(PlayerConstructor player)
-    {
-        Mesh playerMesh = player.sphere.GetComponent<MeshFilter>().sharedMesh;
-        MeshRenderer meshRenderer = player.sphere.GetComponent<MeshRenderer>();
-        MeshData meshData = new() { mesh = playerMesh, matrix = meshRenderer.localToWorldMatrix };
-        meshesData[player.userId] = meshData;
-
-        // Debug.Log("Mesh added to meshes");
-    }
-
-    public void RemoveMeshFromMeshes(PlayerConstructor player)
-    {
-        meshesData.Remove(player.userId);
-    }
-
-    public void UpdateMeshTransform(PlayerConstructor player)
-    {
-        if (meshesData.ContainsKey(player.userId))
-        {
-            meshesData[player.userId].mesh = player.sphere.GetComponent<MeshFilter>().sharedMesh;
-            meshesData[player.userId].matrix = player
-                .sphere.GetComponent<MeshRenderer>()
-                .localToWorldMatrix;
-        }
+        // else {
+            mesh = GetComponent<MeshFilter>().sharedMesh;
+        // }
     }
 
     private void OnDestroy()

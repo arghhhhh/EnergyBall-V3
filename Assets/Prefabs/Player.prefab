@@ -51,6 +51,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   userId: 0
+  metaballIndex: 0
   sphere: {fileID: 2065861416161694164}
   radiusSprite: {fileID: 5937149087864770592}
   vfxGraph: {fileID: 0}
@@ -60,7 +61,8 @@ MonoBehaviour:
   initializeClip: {fileID: 7400000, guid: 6e299d76a9013c247b6f27bffc918b8e, type: 2}
   openClip: {fileID: 7400000, guid: 46ccfe4747f43ec4997d07d0f0f1bc10, type: 2}
   closedClip: {fileID: 7400000, guid: 16dd6ead141d3ab48a3619ea8875b6e1, type: 2}
-  initializationStarted: 0
+  turnOnParticles: 0
+  beginInitialization: 0
   initialized: 0
   attractionRadius: 1
   attractionRadiusScaler: 1
@@ -100,14 +102,12 @@ MonoBehaviour:
   ThumbRight: {fileID: 8008513267936498888}
   leftHandState: 0
   rightHandState: 0
-  leftHandStatePrev: 0
-  rightHandStatePrev: 0
   midpoint: {x: 0, y: 0, z: 0}
   skeletonColor: {r: 0, g: 0, b: 0, a: 0}
   isDummy: 0
 --- !u!95 &5462086846411246455
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -121,6 +121,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -184,6 +185,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
@@ -270,6 +274,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
@@ -392,6 +399,9 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
@@ -612,7 +622,7 @@ VisualEffect:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7601524376494758670}
   m_Enabled: 1
-  m_Asset: {fileID: 8926484042661614526, guid: 9c950b3a9d4e1c14d8b3e2b0a8f1187d, type: 3}
+  m_Asset: {fileID: 8926484042661614526, guid: c63e704686c72d74bbfd4419bae40552, type: 3}
   m_InitialEventName: OnPlay
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
@@ -854,6 +864,9 @@ VFXRenderer:
   m_ReflectionProbeUsage: 0
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_StaticBatchInfo:
@@ -906,6 +919,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07c3070554d0a8944a95ff8f018c2c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Space: 0
   m_Property:
     m_Name: leftHandPosition
   Target: {fileID: 4047828432384637621}
@@ -921,6 +935,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07c3070554d0a8944a95ff8f018c2c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Space: 0
   m_Property:
     m_Name: rightHandPosition
   Target: {fileID: 7357197439812592060}
@@ -936,6 +951,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fdfea1f838247c40921a07afedde962, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Space: 0
   m_Property:
     m_Name: bodyTransform
   Target: {fileID: 1366983329138525572}
@@ -997,6 +1013,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:

@@ -16,9 +16,9 @@ public class SceneController : MonoBehaviour
     GravityForce gravityForceController;
     HandForce handForceController;
     PlayerScaler playerScaleController;
-    MetaballsVisualizer metaballsVisualizer;
+    MetaballsVisualizer metaballsVisualizer = null;
     MeshesToSDF meshesToSDF = null;
-    BodySourceManager bodySourceManager;
+    BodySourceManager bodySourceManager = null;
     Body[] bodyData;
     List<ulong> trackedIds = new();
     List<ulong> knownIds = new();
@@ -123,9 +123,10 @@ public class SceneController : MonoBehaviour
         gravityForceController = new();
         handForceController = new();
         playerScaleController = new();
-        metaballsVisualizer = new();
+        metaballsVisualizer = GetComponent<MetaballsVisualizer>();
         bodySourceManager = GetComponent<BodySourceManager>();
         meshesToSDF = GetComponent<MeshesToSDF>();
+        transform.position = new Vector3(transform.position.x, transform.position.y, so.baseZDepth);
 
         // set main camera far clipping plane to so.maxDistanceFromCamera
         // Camera.main.farClipPlane = so.maxDistanceFromCamera + transform.position.z;
@@ -148,8 +149,6 @@ public class SceneController : MonoBehaviour
             {
                 ChoosePlayerColor(dummy);
             }
-
-            meshesToSDF.AddToMeshes(dummy);
 
             dummies[dummy.userId] = dummy.gameObject;
             players[dummy.userId] = dummy.gameObject;
@@ -239,13 +238,14 @@ public class SceneController : MonoBehaviour
 
         if (playerConstructor.beginInitialization)
         {
+            metaballsVisualizer.SetMetaballPosition(playerConstructor.metaballIndex, playerConstructor.sphere.transform.position);
+            metaballsVisualizer.SetMetaballRadius(playerConstructor.metaballIndex, playerConstructor.sphere.transform.localScale.x/2f);
             playerConstructor.SetAttractionRadius(so.attractionRadiusMultiplier);
             playerConstructor.SetMass();
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);
             playerScaleController.ScaleSetup(playerConstructor);
-            meshesToSDF.UpdateMeshTransform(playerConstructor);
         }
 
         // wait until player's hands first open to initialize particles

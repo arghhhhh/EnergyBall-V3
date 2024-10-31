@@ -306,29 +306,36 @@ public class PlayerConstructor : MonoBehaviour
 
     public void SetScale()
     {
-        Vector3 sizeScaler = Vector3.zero;
+        if (controller.so.mergeSizeScalerDamper != 0){
+            Vector3 sizeScaler = Vector3.zero;
 
-        foreach (KeyValuePair<PlayerConstructor, float> orbitalBody in orbitalBodies)
-        {
-            // float startScaleDistance = Utils.GetVector3Avg(unscaledSize+orbitalBody.Key.unscaledSize) / 2f;
-            float startScaleDistance =
-                Utils.GetVector3Avg(
-                    unscaledSize
-                        + intrinsicPulseSize
-                        + orbitalBody.Key.unscaledSize
-                        + orbitalBody.Key.intrinsicPulseSize
-                ) / 2f;
-            float t = Mathf.InverseLerp(startScaleDistance, 0f, orbitalBody.Value);
-            sizeScaler += (orbitalBody.Key.unscaledSize + orbitalBody.Key.intrinsicPulseSize) * t;
+            foreach (KeyValuePair<PlayerConstructor, float> orbitalBody in orbitalBodies)
+            {
+                // float startScaleDistance = Utils.GetVector3Avg(unscaledSize+orbitalBody.Key.unscaledSize) / 2f;
+                float startScaleDistance =
+                    Utils.GetVector3Avg(
+                        unscaledSize
+                            + intrinsicPulseSize
+                            + orbitalBody.Key.unscaledSize
+                            + orbitalBody.Key.intrinsicPulseSize
+                    ) / 2f;
+                float t = Mathf.InverseLerp(startScaleDistance, 0f, orbitalBody.Value);
+                sizeScaler += (orbitalBody.Key.unscaledSize + orbitalBody.Key.intrinsicPulseSize) * t;
+            }
+
+            sizeScaler *= controller.so.mergeSizeScalerDamper;
+            sphere.transform.localScale = unscaledSize + intrinsicPulseSize + sizeScaler;
+
+            // we only get the unscaled size when there are no orbiting bodies
+            if (orbitalBodies.Count == 0)
+            {
+                // remove pulseSize when calculating true unscaledSize
+                unscaledSize = sphere.transform.localScale - intrinsicPulseSize;
+            }
         }
-
-        sphere.transform.localScale = unscaledSize + intrinsicPulseSize + sizeScaler;
-
-        // we only get the unscaled size when there are no orbiting bodies
-        if (orbitalBodies.Count == 0)
+        else
         {
-            // remove pulseSize when calculating true unscaledSize
-            unscaledSize = sphere.transform.localScale - intrinsicPulseSize;
+            sphere.transform.localScale = unscaledSize + intrinsicPulseSize;
         }
     }
 
