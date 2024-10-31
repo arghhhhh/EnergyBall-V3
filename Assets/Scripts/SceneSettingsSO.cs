@@ -88,7 +88,13 @@ public class SceneSettingsSO : ScriptableObject
     public float pulseScaleDamper;
 
     [BoxGroup("Miscellaneous")]
+    [Tooltip("A damper for the scaling that occurs when multiple bodies merge together.")]
+    public float mergeSizeScalerDamper;
+
+    [BoxGroup("Miscellaneous")]
     public float maxDistanceBetweenHands;
+    [BoxGroup("Miscellaneous")]
+    public float baseZDepth;
 
     [BoxGroup("Miscellaneous")]
     public float defaultUnscaledSize;
