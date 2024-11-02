@@ -16,8 +16,7 @@ public class SceneController : MonoBehaviour
     GravityForce gravityForceController;
     HandForce handForceController;
     PlayerScaler playerScaleController;
-    MetaballsVisualizer metaballsVisualizer = null;
-    MeshesToSDF meshesToSDF = null;
+    MetaballsToSDF metaballsToSDF = null;
     BodySourceManager bodySourceManager = null;
     Body[] bodyData;
     List<ulong> trackedIds = new();
@@ -109,7 +108,12 @@ public class SceneController : MonoBehaviour
 
     private void Awake()
     {
-        Cursor.visible = false;
+        // only if not in unity editor
+
+        if (!Application.isEditor)
+        {
+            Cursor.visible = false;
+        }
 
         if (Instance != null && Instance != this)
         {
@@ -123,9 +127,8 @@ public class SceneController : MonoBehaviour
         gravityForceController = new();
         handForceController = new();
         playerScaleController = new();
-        metaballsVisualizer = GetComponent<MetaballsVisualizer>();
+        metaballsToSDF = GetComponent<MetaballsToSDF>();
         bodySourceManager = GetComponent<BodySourceManager>();
-        meshesToSDF = GetComponent<MeshesToSDF>();
         transform.position = new Vector3(transform.position.x, transform.position.y, so.baseZDepth);
 
         // set main camera far clipping plane to so.maxDistanceFromCamera
@@ -139,7 +142,7 @@ public class SceneController : MonoBehaviour
             ulong userId = (ulong)Random.Range(90, 100); // generate random userId between 90 and 99
             dummy.name = $"Player {userId}";
             dummy.userId = userId;
-            metaballsVisualizer.AssignMetaballIndex(dummy);
+            metaballsToSDF.AssignMetaballIndex(dummy);
             dummy.unscaledSize = new Vector3(
                 so.defaultUnscaledSize,
                 so.defaultUnscaledSize,
@@ -165,7 +168,7 @@ public class SceneController : MonoBehaviour
         {
             newPlayer.name = $"Player {userId}";
             playerConstructor.userId = userId;
-            metaballsVisualizer.AssignMetaballIndex(playerConstructor);
+            metaballsToSDF.AssignMetaballIndex(playerConstructor);
             if (customColors)
             {
                 ChoosePlayerColor(playerConstructor);
@@ -184,7 +187,7 @@ public class SceneController : MonoBehaviour
             {
                 dummies.Remove(userId);
             }
-            metaballsVisualizer.RemoveMetaballIndex(playerConstructor.metaballIndex);
+            metaballsToSDF.RemoveMetaballIndex(playerConstructor.metaballIndex);
             Destroy(players[userId]);
             players.Remove(userId);
         }
@@ -219,17 +222,12 @@ public class SceneController : MonoBehaviour
 
     private static Color ColorSkeleton(TrackingState state)
     {
-        switch (state)
+        return state switch
         {
-            case TrackingState.Tracked:
-                return Color.white;
-
-            case TrackingState.Inferred:
-                return Color.grey;
-
-            default:
-                return Color.black;
-        }
+            TrackingState.Tracked => Color.white,
+            TrackingState.Inferred => Color.grey,
+            _ => Color.black,
+        };
     }
 
     void UpdateOtherPlayerData(GameObject player)
@@ -238,8 +236,8 @@ public class SceneController : MonoBehaviour
 
         if (playerConstructor.beginInitialization)
         {
-            metaballsVisualizer.SetMetaballPosition(playerConstructor.metaballIndex, playerConstructor.sphere.transform.position);
-            metaballsVisualizer.SetMetaballRadius(playerConstructor.metaballIndex, playerConstructor.sphere.transform.localScale.x/2f);
+            metaballsToSDF.SetMetaballPosition(playerConstructor.metaballIndex, playerConstructor.sphere.transform.position);
+            metaballsToSDF.SetMetaballRadius(playerConstructor.metaballIndex, playerConstructor.sphere.transform.localScale.x/2f);
             playerConstructor.SetAttractionRadius(so.attractionRadiusMultiplier);
             playerConstructor.SetMass();
             playerConstructor.SetPulseSize();

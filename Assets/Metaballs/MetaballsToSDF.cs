@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.VFX;
+using UnityEngine.VFX.SDF;
+using UnityEngine.VFX.Utility;
 
 namespace MarchingCubes
 {
@@ -10,7 +13,7 @@ namespace MarchingCubes
         public float Radius;
     }
 
-    public class MetaballsVisualizer : MonoBehaviour
+    public class MetaballsToSDF : MonoBehaviour
     {
         SceneController controller = null;
         #region Editable attributes
@@ -50,8 +53,24 @@ namespace MarchingCubes
         ComputeBuffer _positionsBuffer;
         ComputeBuffer _radiiBuffer;
         MeshBuilder _builder;
-        public Mesh mesh;
 
+        #endregion
+
+        #region SDF baking / VFX graph implementation
+        // [SerializeField]
+        // private VisualEffect vfxGraph = null;
+        [SerializeField]
+        private ExposedProperty sdfTextureProperty = "sdfTexture";
+
+        [SerializeField]
+        private ExposedProperty sdfPositionProperty = "sdfPosition";
+
+        [SerializeField]
+        private ExposedProperty sdfScaleProperty = "sdfScale";
+        MeshToSDFBaker sdfBaker;
+        Vector3 center = Vector3.zero;
+        Vector3 CenterWS => transform.TransformPoint(center); // center in world space
+        Vector3 sizeBox;
         #endregion
 
         #region MonoBehaviour implementation
@@ -61,7 +80,12 @@ namespace MarchingCubes
             InitializeMetaballBuffers();
             _builder = new MeshBuilder(_dimensions, _triangleBudget, _builderCompute);
             controller = GetComponent<SceneController>();
-            mesh = new Mesh { name = "Metaballs" };
+            // vfxGraph = GetComponent<VisualEffect>();
+            sizeBox = new Vector3(
+                _dimensions.x * _gridScale,
+                _dimensions.y * _gridScale,
+                _dimensions.z * _gridScale
+            );
         }
 
         void OnDestroy()
@@ -83,8 +107,48 @@ namespace MarchingCubes
 
             // Isosurface reconstruction
             _builder.BuildIsosurface(_voxelBuffer, _targetValue, _gridScale);
-
             GetComponent<MeshFilter>().sharedMesh = _builder.Mesh;
+
+            if (sdfBaker == null)
+            {
+                sdfBaker = new MeshToSDFBaker(
+                    sizeBox,
+                    transform.position,
+                    128,
+                    _builder.Mesh,
+                    1,
+                    0.5f,
+                    0f
+                );
+            }
+            else
+            {
+                sdfBaker.Reinit(
+                    sizeBox,
+                    transform.position,
+                    128,
+                    _builder.Mesh,
+                    1,
+                    0.5f,
+                    0f
+                );
+            }
+
+            sdfBaker.BakeSDF();
+
+            // vfxGraph.SetTexture(sdfTextureProperty, sdfBaker.SdfTexture);
+            // vfxGraph.SetVector3(sdfScaleProperty, sizeBox);
+            // vfxGraph.SetVector3(sdfPositionProperty, CenterWS);
+
+            // Update VFX graph properties
+            VisualEffect[] playerVfx = FindObjectsByType<VisualEffect>(FindObjectsSortMode.None);
+
+            foreach (VisualEffect vfx in playerVfx)
+            {
+                vfx.SetTexture("sdfTexture", sdfBaker.SdfTexture);
+                vfx.SetVector3(sdfScaleProperty, sizeBox);
+                vfx.SetVector3(sdfPositionProperty, CenterWS);
+            }
         }
 
         #endregion
@@ -127,6 +191,8 @@ namespace MarchingCubes
             _voxelBuffer.Dispose();
             _positionsBuffer.Dispose();
             _radiiBuffer.Dispose();
+            sdfBaker?.Dispose();
+            sdfBaker = null;
         }
 
         #endregion
