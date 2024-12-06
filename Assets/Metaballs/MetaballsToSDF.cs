@@ -24,15 +24,7 @@ namespace MarchingCubes
         [SerializeField] float _targetValue = 0.26f;
 
         [Header("Metaballs")]
-        public List<Metaball> metaballs = new List<Metaball>()
-        {
-            new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            // new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            // new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-            // new Metaball { Position = new Vector3(100f, 0f, 0f), Radius = 0f },
-        };
+        [SerializeField] List<Metaball> metaballs = new List<Metaball>();
 
         public List<int> activeMetaballIndices = new List<int>();
 
@@ -57,20 +49,12 @@ namespace MarchingCubes
         #endregion
 
         #region SDF baking / VFX graph implementation
-        // [SerializeField]
-        // private VisualEffect vfxGraph = null;
-        [SerializeField]
-        private ExposedProperty sdfTextureProperty = "sdfTexture";
-
-        [SerializeField]
-        private ExposedProperty sdfPositionProperty = "sdfPosition";
-
-        [SerializeField]
-        private ExposedProperty sdfScaleProperty = "sdfScale";
+        [SerializeField] List<VisualEffect> _vfx = new();
         MeshToSDFBaker sdfBaker;
         Vector3 center = Vector3.zero;
         Vector3 CenterWS => transform.TransformPoint(center); // center in world space
         Vector3 sizeBox;
+        public int resolution = 64;
         #endregion
 
         #region MonoBehaviour implementation
@@ -80,7 +64,6 @@ namespace MarchingCubes
             InitializeMetaballBuffers();
             _builder = new MeshBuilder(_dimensions, _triangleBudget, _builderCompute);
             controller = GetComponent<SceneController>();
-            // vfxGraph = GetComponent<VisualEffect>();
             sizeBox = new Vector3(
                 _dimensions.x * _gridScale,
                 _dimensions.y * _gridScale,
@@ -113,8 +96,8 @@ namespace MarchingCubes
             {
                 sdfBaker = new MeshToSDFBaker(
                     sizeBox,
-                    transform.position,
-                    128,
+                    CenterWS,
+                    resolution,
                     _builder.Mesh,
                     1,
                     0.5f,
@@ -125,8 +108,8 @@ namespace MarchingCubes
             {
                 sdfBaker.Reinit(
                     sizeBox,
-                    transform.position,
-                    128,
+                    CenterWS,
+                    resolution,
                     _builder.Mesh,
                     1,
                     0.5f,
@@ -136,18 +119,19 @@ namespace MarchingCubes
 
             sdfBaker.BakeSDF();
 
-            // vfxGraph.SetTexture(sdfTextureProperty, sdfBaker.SdfTexture);
-            // vfxGraph.SetVector3(sdfScaleProperty, sizeBox);
-            // vfxGraph.SetVector3(sdfPositionProperty, CenterWS);
-
-            // Update VFX graph properties
-            VisualEffect[] playerVfx = FindObjectsByType<VisualEffect>(FindObjectsSortMode.None);
-
-            foreach (VisualEffect vfx in playerVfx)
+            foreach (var playerPair in controller.Players)
             {
-                vfx.SetTexture("sdfTexture", sdfBaker.SdfTexture);
-                vfx.SetVector3(sdfScaleProperty, sizeBox);
-                vfx.SetVector3(sdfPositionProperty, CenterWS);
+                var player = playerPair.Value;
+                VisualEffect _vfx = player.GetComponent<PlayerConstructor>().vfxGraph;
+                if (_vfx != null)
+                {
+                    _vfx.SetTexture("SDF Texture", sdfBaker.SdfTexture);
+                    _vfx.SetVector3("Mesh Scale", sizeBox);
+                    for (int i = 0; i < metaballs.Count; i++)
+                    {
+                        _vfx.SetVector4($"Metaball {i}", new Vector4(metaballs[i].Position.x, metaballs[i].Position.y, metaballs[i].Position.z, metaballs[i].Radius/2f));
+                    }
+                }
             }
         }
 

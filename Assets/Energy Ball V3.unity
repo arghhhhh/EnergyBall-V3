@@ -1652,12 +1652,8 @@ MonoBehaviour:
   activeMetaballIndices: 
   _volumeCompute: {fileID: 7200000, guid: 03edc4ed12cb87d489b67fc0356e33e8, type: 3}
   _builderCompute: {fileID: 7200000, guid: 9f19ed91e8aa34430ac0ea80fb20eead, type: 3}
-  sdfTextureProperty:
-    m_Name: sdfTexture
-  sdfPositionProperty:
-    m_Name: sdfPosition
-  sdfScaleProperty:
-    m_Name: sdfScale
+  _vfx: []
+  resolution: 64
 --- !u!73398921 &1790478708
 VFXRenderer:
   serializedVersion: 1
