@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.VFX;
 using UnityEngine.VFX.SDF;
-using UnityEngine.VFX.Utility;
 
 namespace MarchingCubes
 {
@@ -49,7 +48,6 @@ namespace MarchingCubes
         #endregion
 
         #region SDF baking / VFX graph implementation
-        [SerializeField] List<VisualEffect> _vfx = new();
         MeshToSDFBaker sdfBaker;
         Vector3 center = Vector3.zero;
         Vector3 CenterWS => transform.TransformPoint(center); // center in world space
@@ -125,8 +123,8 @@ namespace MarchingCubes
                 VisualEffect _vfx = player.GetComponent<PlayerConstructor>().vfxGraph;
                 if (_vfx != null)
                 {
-                    _vfx.SetTexture("SDF Texture", sdfBaker.SdfTexture);
-                    _vfx.SetVector3("Mesh Scale", sizeBox);
+                    _vfx.SetTexture("sdfTexture", sdfBaker.SdfTexture);
+                    _vfx.SetVector3("sdfScale", sizeBox);
                     for (int i = 0; i < metaballs.Count; i++)
                     {
                         _vfx.SetVector4($"Metaball {i}", new Vector4(metaballs[i].Position.x, metaballs[i].Position.y, metaballs[i].Position.z, metaballs[i].Radius/2f));

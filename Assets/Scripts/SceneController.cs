@@ -63,7 +63,6 @@ public class SceneController : MonoBehaviour
             // { JointType.Neck, JointType.Head },
         };
 
-    public Material SkeletonMaterial;
     public bool drawSkeleton;
     public bool customColors;
     private int lastColorIndex;
