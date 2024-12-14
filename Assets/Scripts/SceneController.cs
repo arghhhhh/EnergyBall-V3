@@ -1,11 +1,11 @@
 using System.Collections.Generic;
+using MarchingCubes;
 using NaughtyAttributes;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Windows.Kinect;
 using Joint = Windows.Kinect.Joint;
-using MarchingCubes;
 
 public class SceneController : MonoBehaviour
 {
@@ -128,7 +128,7 @@ public class SceneController : MonoBehaviour
         playerScaleController = new();
         metaballsToSDF = GetComponent<MetaballsToSDF>();
         bodySourceManager = GetComponent<BodySourceManager>();
-        transform.position = new Vector3(transform.position.x, transform.position.y, so.baseZDepth);
+        // transform.position = new Vector3(transform.position.x, transform.position.y, so.baseZDepth);
 
         // set main camera far clipping plane to so.maxDistanceFromCamera
         // Camera.main.farClipPlane = so.maxDistanceFromCamera + transform.position.z;
@@ -139,6 +139,10 @@ public class SceneController : MonoBehaviour
         if (dummy)
         {
             ulong userId = (ulong)Random.Range(90, 100); // generate random userId between 90 and 99
+            while (dummies.ContainsKey(userId))
+            {
+                userId = (ulong)Random.Range(90, 100);
+            }
             dummy.name = $"Player {userId}";
             dummy.userId = userId;
             metaballsToSDF.AssignMetaballIndex(dummy);
@@ -235,8 +239,14 @@ public class SceneController : MonoBehaviour
 
         if (playerConstructor.beginInitialization)
         {
-            metaballsToSDF.SetMetaballPosition(playerConstructor.metaballIndex, playerConstructor.sphere.transform.position);
-            metaballsToSDF.SetMetaballRadius(playerConstructor.metaballIndex, playerConstructor.sphere.transform.localScale.x/2f);
+            metaballsToSDF.SetMetaballPosition(
+                playerConstructor.metaballIndex,
+                playerConstructor.sphere.transform.position
+            );
+            metaballsToSDF.SetMetaballRadius(
+                playerConstructor.metaballIndex,
+                playerConstructor.sphere.transform.localScale.x / 2f
+            );
             playerConstructor.SetAttractionRadius(so.attractionRadiusMultiplier);
             playerConstructor.SetMass();
             playerConstructor.SetPulseSize();

@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.VFX;
 using UnityEngine.VFX.SDF;
 
@@ -15,15 +15,23 @@ namespace MarchingCubes
     public class MetaballsToSDF : MonoBehaviour
     {
         SceneController controller = null;
+
         #region Editable attributes
 
-        [SerializeField] Vector3Int _dimensions = new Vector3Int(64, 32, 64);
-        [SerializeField] float _gridScale = 4.0f / 64;
-        [SerializeField] int _triangleBudget = 65536;
-        [SerializeField] float _targetValue = 0.26f;
+        [SerializeField]
+        Vector3Int _dimensions = new Vector3Int(64, 32, 64);
 
-        [Header("Metaballs")]
-        [SerializeField] List<Metaball> metaballs = new List<Metaball>();
+        [SerializeField]
+        float _gridScale = 4.0f / 64;
+
+        [SerializeField]
+        int _triangleBudget = 65536;
+
+        [SerializeField]
+        float _targetValue = 0.26f;
+
+        [SerializeField]
+        List<Metaball> metaballs = new List<Metaball>();
 
         public List<int> activeMetaballIndices = new List<int>();
 
@@ -31,8 +39,11 @@ namespace MarchingCubes
 
         #region Project asset references
 
-        [SerializeField, HideInInspector] ComputeShader _volumeCompute = null;
-        [SerializeField, HideInInspector] ComputeShader _builderCompute = null;
+        [SerializeField, HideInInspector]
+        ComputeShader _volumeCompute = null;
+
+        [SerializeField, HideInInspector]
+        ComputeShader _builderCompute = null;
 
         #endregion
 
@@ -104,15 +115,7 @@ namespace MarchingCubes
             }
             else
             {
-                sdfBaker.Reinit(
-                    sizeBox,
-                    CenterWS,
-                    resolution,
-                    _builder.Mesh,
-                    1,
-                    0.5f,
-                    0f
-                );
+                sdfBaker.Reinit(sizeBox, CenterWS, resolution, _builder.Mesh, 1, 0.5f, 0f);
             }
 
             sdfBaker.BakeSDF();
@@ -125,10 +128,7 @@ namespace MarchingCubes
                 {
                     _vfx.SetTexture("sdfTexture", sdfBaker.SdfTexture);
                     _vfx.SetVector3("sdfScale", sizeBox);
-                    for (int i = 0; i < metaballs.Count; i++)
-                    {
-                        _vfx.SetVector4($"Metaball {i}", new Vector4(metaballs[i].Position.x, metaballs[i].Position.y, metaballs[i].Position.z, metaballs[i].Radius/2f));
-                    }
+                    _vfx.SetFloat("Z Depth", controller.so.baseZDepth);
                 }
             }
         }

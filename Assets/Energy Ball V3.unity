@@ -271,7 +271,7 @@ PrefabInstance:
     - target: {fileID: 673367081158314858, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1366983329138525572, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -281,7 +281,7 @@ PrefabInstance:
     - target: {fileID: 1366983329138525572, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.83
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1366983329138525572, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -301,7 +301,7 @@ PrefabInstance:
     - target: {fileID: 1407451970992287791, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: positionOffset.y
-      value: 4.83
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1407451970992287791, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -331,7 +331,7 @@ PrefabInstance:
     - target: {fileID: 4047828432384637621, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.83
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4047828432384637621, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -391,7 +391,7 @@ PrefabInstance:
     - target: {fileID: 5342639240705382191, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7357197439812592060, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -401,7 +401,7 @@ PrefabInstance:
     - target: {fileID: 7357197439812592060, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.83
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7357197439812592060, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -437,7 +437,7 @@ PrefabInstance:
     - target: {fileID: 7576868914380008739, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[0].m_Value.y
-      value: 4.83
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7576868914380008739, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -452,7 +452,7 @@ PrefabInstance:
     - target: {fileID: 7576868914380008739, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[1].m_Value.y
-      value: 4.83
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7576868914380008739, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -467,7 +467,7 @@ PrefabInstance:
     - target: {fileID: 7576868914380008739, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[11].m_Value.y
-      value: 4.83
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7576868914380008739, guid: e71ea6789754b4947a5970d015559b01,
         type: 3}
@@ -626,7 +626,7 @@ Transform:
   m_GameObject: {fileID: 118562677}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.5, z: -16}
+  m_LocalPosition: {x: 0, y: 1.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -655,7 +655,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -1123,6 +1123,55 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e71ea6789754b4947a5970d015559b01, type: 3}
+--- !u!1 &1361264291
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1361264293}
+  - component: {fileID: 1361264292}
+  m_Layer: 0
+  m_Name: Global Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1361264292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1361264291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: 0957bfb28dba8da42b84d1b73a2e1a7c, type: 2}
+--- !u!4 &1361264293
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1361264291}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.612004, y: 0.30231526, z: 7.2912765}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!850595691 &1752547826
 LightingSettings:
   m_ObjectHideFlags: 0
@@ -1245,7 +1294,7 @@ MonoBehaviour:
     type: 3}
   debugText: {fileID: 21438989}
   drawSkeleton: 1
-  customColors: 0
+  customColors: 1
   colors:
   - {r: 1, g: 0, b: 1, a: 1}
   - {r: 0, g: 1, b: 1, a: 1}
@@ -1465,7 +1514,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1790478698}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc670390c0680f540b39feb5ade8d02a, type: 3}
   m_Name: 
@@ -1660,3 +1709,4 @@ SceneRoots:
   - {fileID: 1841746526}
   - {fileID: 1129458570}
   - {fileID: 39263638}
+  - {fileID: 1361264293}

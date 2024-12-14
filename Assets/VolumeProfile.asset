@@ -452,7 +452,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
-  m_Name: DefaultVolumeProfile
+  m_Name: VolumeProfile
   m_EditorClassIdentifier: 
   components:
   - {fileID: 8895395900418761470}
@@ -529,7 +529,7 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 0.5
 --- !u!114 &3335870981424769243
 MonoBehaviour:
   m_ObjectHideFlags: 3
