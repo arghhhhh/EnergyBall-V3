@@ -79,3 +79,8 @@ crashlytics-build.properties
 *.dll
 *.onnx
 *.bin
+
+# Ignore all .meta files for dll, onnx and bin files
+*.dll.meta
+*.onnx.meta
+*.bin.meta
