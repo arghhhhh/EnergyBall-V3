@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e52c7efe6e0364a44affeffb479f1f5b, type: 3}
-  m_Name: Scene Settings
+  m_Name: Dummy Scene Settings
   m_EditorClassIdentifier: 
   g: 12
   maxTowardsForce: 10
@@ -127,4 +127,4 @@ MonoBehaviour:
   particleInitializationDelay: 1.75
   showAttractionRadius: 0
   showSphereMeshOnHandCollision: 0
-  dummyOnlyMode: 0
+  dummyOnlyMode: 1

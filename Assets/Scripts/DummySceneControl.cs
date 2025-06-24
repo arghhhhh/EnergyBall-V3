@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.VFX;
 
 public class DummySceneControl : MonoBehaviour
 {
@@ -22,22 +23,22 @@ public class DummySceneControl : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (Input.GetKey(bothOpen))
+        if (Input.GetKeyDown(bothOpen))
         {
             player.leftHandState = Windows.Kinect.HandState.Open;
             player.rightHandState = Windows.Kinect.HandState.Open;
         }
-        if (Input.GetKey(bothClosed))
+        if (Input.GetKeyDown(bothClosed))
         {
             player.leftHandState = Windows.Kinect.HandState.Closed;
             player.rightHandState = Windows.Kinect.HandState.Closed;
         }
-        if (Input.GetKey(leftOpen))
+        if (Input.GetKeyDown(leftOpen))
         {
             player.leftHandState = Windows.Kinect.HandState.Open;
             player.rightHandState = Windows.Kinect.HandState.Closed;
         }
-        if (Input.GetKey(rightOpen))
+        if (Input.GetKeyDown(rightOpen))
         {
             player.leftHandState = Windows.Kinect.HandState.Closed;
             player.rightHandState = Windows.Kinect.HandState.Open;

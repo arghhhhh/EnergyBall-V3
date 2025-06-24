@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4762448448966346401}
   - component: {fileID: 3466596790586548081}
   - component: {fileID: 5462086846411246455}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -69,12 +69,18 @@ MonoBehaviour:
   unscaledSize: {x: 0, y: 0, z: 0}
   intrinsicPulseSize: {x: 0, y: 0, z: 0}
   pulseSizeFromMotion: {x: 0, y: 0, z: 0}
-  leftHandPrevPosition: {x: 0, y: 0, z: 0}
-  rightHandPrevPosition: {x: 0, y: 0, z: 0}
   prevVelocity: {x: 0, y: 0, z: 0}
   prevAcceleration: 0
+  leftHandPrevPosition: {x: 0, y: 0, z: 0}
   leftHandCollider: {fileID: 7388892966836175071}
+  leftHandState: 0
+  leftHandStatePrev: 0
+  leftHandVfx: {fileID: 1668275789557089919}
+  rightHandPrevPosition: {x: 0, y: 0, z: 0}
   rightHandCollider: {fileID: 7171678604282643082}
+  rightHandState: 0
+  rightHandStatePrev: 0
+  rightHandVfx: {fileID: 5747487426580385323}
   SpineBase: {fileID: 5989189560902028993}
   SpineMid: {fileID: 1233171391602813728}
   Neck: {fileID: 7748983954631014889}
@@ -100,8 +106,6 @@ MonoBehaviour:
   ThumbLeft: {fileID: 2564629390902825297}
   HandtipRight: {fileID: 720910200353784104}
   ThumbRight: {fileID: 8008513267936498888}
-  leftHandState: 0
-  rightHandState: 0
   midpoint: {x: 0, y: 0, z: 0}
   skeletonColor: {r: 0, g: 0, b: 0, a: 0}
   isDummy: 0
@@ -138,7 +142,7 @@ GameObject:
   - component: {fileID: 4170500800392765607}
   - component: {fileID: 6748663027775349388}
   - component: {fileID: 5735316013453589004}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RightHandSphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -226,7 +230,7 @@ GameObject:
   - component: {fileID: 1951104871445058440}
   - component: {fileID: 2065861416161694164}
   - component: {fileID: 4587363174421695214}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Sphere
   m_TagString: Combine
   m_Icon: {fileID: 0}
@@ -360,7 +364,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4351431752049030368}
   - component: {fileID: 5937149087864770592}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: circle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -437,6 +441,120 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &4613548176460710596
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1290583649866511456}
+  - component: {fileID: 1668275789557089919}
+  - component: {fileID: 452850928458085976}
+  m_Layer: 6
+  m_Name: LeftHandEffects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1290583649866511456
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4613548176460710596}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 4047828432384637621}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!2083052967 &1668275789557089919
+VisualEffect:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4613548176460710596}
+  m_Enabled: 1
+  m_Asset: {fileID: 8926484042661614526, guid: cc70c8f66d9a97c419c655f897e3ae50, type: 3}
+  m_InitialEventName: OnPlay
+  m_InitialEventNameOverriden: 0
+  m_StartSeed: 0
+  m_ResetSeedOnPlay: 1
+  m_AllowInstancing: 1
+  m_ResourceVersion: 1
+  m_PropertySheet:
+    m_Float:
+      m_Array: []
+    m_Vector2f:
+      m_Array: []
+    m_Vector3f:
+      m_Array: []
+    m_Vector4f:
+      m_Array: []
+    m_Uint:
+      m_Array: []
+    m_Int:
+      m_Array: []
+    m_Matrix4x4f:
+      m_Array: []
+    m_AnimationCurve:
+      m_Array: []
+    m_Gradient:
+      m_Array: []
+    m_NamedObject:
+      m_Array: []
+    m_Bool:
+      m_Array: []
+--- !u!73398921 &452850928458085976
+VFXRenderer:
+  serializedVersion: 1
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4613548176460710596}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
 --- !u!1 &5204602285217463476
 GameObject:
   m_ObjectHideFlags: 0
@@ -447,7 +565,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7171678604282643082}
   - component: {fileID: 5122420521903734884}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: RightHandCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -500,7 +618,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1800985382805782818}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Radius
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -523,6 +641,120 @@ Transform:
   - {fileID: 4351431752049030368}
   m_Father: {fileID: 1366983329138525572}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7220812059639149468
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9198287445734184972}
+  - component: {fileID: 5747487426580385323}
+  - component: {fileID: 2646649160124550720}
+  m_Layer: 6
+  m_Name: RightHandEffects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9198287445734184972
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7220812059639149468}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 7357197439812592060}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!2083052967 &5747487426580385323
+VisualEffect:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7220812059639149468}
+  m_Enabled: 1
+  m_Asset: {fileID: 8926484042661614526, guid: cc70c8f66d9a97c419c655f897e3ae50, type: 3}
+  m_InitialEventName: OnPlay
+  m_InitialEventNameOverriden: 0
+  m_StartSeed: 0
+  m_ResetSeedOnPlay: 1
+  m_AllowInstancing: 1
+  m_ResourceVersion: 1
+  m_PropertySheet:
+    m_Float:
+      m_Array: []
+    m_Vector2f:
+      m_Array: []
+    m_Vector3f:
+      m_Array: []
+    m_Vector4f:
+      m_Array: []
+    m_Uint:
+      m_Array: []
+    m_Int:
+      m_Array: []
+    m_Matrix4x4f:
+      m_Array: []
+    m_AnimationCurve:
+      m_Array: []
+    m_Gradient:
+      m_Array: []
+    m_NamedObject:
+      m_Array: []
+    m_Bool:
+      m_Array: []
+--- !u!73398921 &2646649160124550720
+VFXRenderer:
+  serializedVersion: 1
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7220812059639149468}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
 --- !u!1 &7502514556143089575
 GameObject:
   m_ObjectHideFlags: 0
@@ -533,7 +765,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7388892966836175071}
   - component: {fileID: 9089175748893851525}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: LeftHandCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -592,7 +824,7 @@ GameObject:
   - component: {fileID: 3970835543681475520}
   - component: {fileID: 239060936706650125}
   - component: {fileID: 5220754404345039778}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: VFX
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -966,7 +1198,7 @@ GameObject:
   - component: {fileID: 7077947458540496556}
   - component: {fileID: 6076290566577623983}
   - component: {fileID: 4133711512791384266}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: LeftHandSphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1050,7 +1282,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7683385716064429726}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1108,6 +1340,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: HandtipRight
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -1218,6 +1454,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FootRight
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -1326,6 +1566,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: AnkleLeft
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -1436,6 +1680,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: WristRight
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -1544,6 +1792,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: ShoulderLeft
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -1654,6 +1906,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SpineMid
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -1762,6 +2018,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: ThumbLeft
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -1872,6 +2132,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SpineShoulder
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -1980,6 +2244,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: Head
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -2090,6 +2358,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ElbowRight
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -2199,6 +2471,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HandLeft
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -2281,7 +2557,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1290583649866511456}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
 --- !u!4 &4047828432384637621 stripped
@@ -2307,6 +2587,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: HipRight
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -2417,6 +2701,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: KneeLeft
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -2525,6 +2813,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: WristLeft
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -2635,6 +2927,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HipLeft
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -2743,6 +3039,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: HandTipLeft
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -2853,6 +3153,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ShoulderRight
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -2961,6 +3265,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: SpineBase
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -3071,6 +3379,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FootLeft
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -3180,6 +3492,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: HandRight
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -3262,7 +3578,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9198287445734184972}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
 --- !u!4 &7357197439812592060 stripped
@@ -3288,6 +3608,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: Neck
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -3398,6 +3722,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ThumbRight
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -3506,6 +3834,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: KneeRight
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
@@ -3616,6 +3948,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ElbowLeft
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.1
@@ -3724,6 +4060,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_Name
       value: AnkleRight
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 903131bb90c74e643aa3d5d442bf892f, type: 3}
       propertyPath: m_LocalScale.x

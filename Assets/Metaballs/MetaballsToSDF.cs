@@ -78,6 +78,14 @@ namespace MarchingCubes
                 _dimensions.y * _gridScale,
                 _dimensions.z * _gridScale
             );
+
+            // Make sure the inactive metaballs are out of the way
+            foreach (var metaball in metaballs)
+            {
+                metaball.Position.x = -100f;
+                metaball.Position.y = -100f;
+                metaball.Position.z = -100f;
+            }
         }
 
         void OnDestroy()
@@ -197,16 +205,8 @@ namespace MarchingCubes
         public void RemoveMetaballIndex(int index)
         {
             activeMetaballIndices.Remove(index);
-        }
-
-        public void AddMetaball(Vector3 position, float radius)
-        {
-            metaballs.Add(new Metaball { Position = position, Radius = radius });
-        }
-
-        public void RemoveMetaball(int index)
-        {
-            metaballs.RemoveAt(index);
+            metaballs[index].Position = new Vector3(-100f, -100f, -100f);
+            metaballs[index].Radius = 0f;
         }
 
         public void SetMetaballPosition(int index, Vector3 position)

@@ -1,69 +1,185 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 using Windows.Kinect;
 
 public class BodySourceManager : MonoBehaviour
 {
-    private KinectSensor _Sensor;
-    private BodyFrameReader _Reader;
-    private Body[] _Data = null;
+    [Tooltip("Enable verbose logging to the console.")]
+    public bool EnableVerboseLogging = true;
+
+    [Header("Rendering Targets")]
+    // The final RenderTexture that will hold the flipped image. Assign this in the Inspector.
+    public RenderTexture ColorTexture;
+
+    // The material on your quad. It should use the ColorTexture. Assign this in the Inspector.
+    public Material ColorMaterial;
+
+    private KinectSensor _sensor;
+    private ColorFrameReader _colorReader;
+    private BodyFrameReader _bodyReader;
+
+    // This Texture2D will serve as our intermediate buffer for the raw Kinect data.
+    private Texture2D _colorTexture2D;
+    private byte[] _colorData;
+    private Body[] _bodyData = null;
+
+    private int _colorFrameCount = 0;
+    private int _bodyFrameCount = 0;
 
     public Body[] GetData()
     {
-        return _Data;
+        return _bodyData;
     }
 
     void Start()
     {
-        _Sensor = KinectSensor.GetDefault();
+        if (EnableVerboseLogging)
+            Debug.Log("BodySourceManager: Starting up...");
 
-        if (_Sensor != null)
+        _sensor = KinectSensor.GetDefault();
+
+        if (_sensor != null)
         {
-            _Reader = _Sensor.BodyFrameSource.OpenReader();
+            if (EnableVerboseLogging)
+                Debug.Log("BodySourceManager: Sensor found.");
 
-            if (!_Sensor.IsOpen)
+            // --- Initialize Color Stream ---
+            _colorReader = _sensor.ColorFrameSource.OpenReader();
+            if (_colorReader != null)
             {
-                _Sensor.Open();
+                var frameDesc = _sensor.ColorFrameSource.CreateFrameDescription(
+                    ColorImageFormat.Bgra
+                );
+
+                // Initialize our intermediate Texture2D and data buffer
+                _colorTexture2D = new Texture2D(
+                    frameDesc.Width,
+                    frameDesc.Height,
+                    TextureFormat.BGRA32,
+                    false
+                );
+                _colorData = new byte[frameDesc.BytesPerPixel * frameDesc.LengthInPixels];
+
+                _colorReader.FrameArrived += Reader_ColorFrameArrived;
+
+                if (EnableVerboseLogging)
+                    Debug.Log("BodySourceManager: ColorFrameReader initialized and subscribed.");
+
+                if (ColorMaterial != null && ColorTexture != null)
+                {
+                    ColorMaterial.mainTexture = ColorTexture;
+                }
+            }
+            else
+            {
+                Debug.LogError("BodySourceManager: Failed to open ColorFrameReader.");
+            }
+
+            // --- Initialize Body Stream ---
+            _bodyReader = _sensor.BodyFrameSource.OpenReader();
+            if (_bodyReader != null)
+            {
+                if (_bodyData == null)
+                {
+                    _bodyData = new Body[_sensor.BodyFrameSource.BodyCount];
+                }
+
+                if (EnableVerboseLogging)
+                    Debug.Log("BodySourceManager: BodyFrameReader initialized.");
+            }
+            else
+            {
+                Debug.LogError("BodySourceManager: Failed to open BodyFrameReader.");
+            }
+
+            // --- Open Sensor ---
+            if (!_sensor.IsOpen)
+            {
+                _sensor.Open();
+                if (EnableVerboseLogging)
+                    Debug.Log("BodySourceManager: Sensor opened.");
+            }
+        }
+        else
+        {
+            Debug.LogError("BodySourceManager: No Kinect Sensor found!");
+        }
+    }
+
+    void Update()
+    {
+        if (_bodyReader != null)
+        {
+            using (var frame = _bodyReader.AcquireLatestFrame())
+            {
+                if (frame != null)
+                {
+                    _bodyFrameCount++;
+                    if (EnableVerboseLogging && _bodyFrameCount % 100 == 0)
+                    {
+                        Debug.Log($"BodySourceManager: Acquired body frame #{_bodyFrameCount}");
+                    }
+                    frame.GetAndRefreshBodyData(_bodyData);
+                }
             }
         }
     }
 
-    void FixedUpdate()
+    private void Reader_ColorFrameArrived(object sender, ColorFrameArrivedEventArgs e)
     {
-        if (_Reader != null)
+        using (var frame = e.FrameReference.AcquireFrame())
         {
-            var frame = _Reader.AcquireLatestFrame();
             if (frame != null)
             {
-                if (_Data == null)
+                _colorFrameCount++;
+                if (EnableVerboseLogging && _colorFrameCount % 100 == 0)
                 {
-                    _Data = new Body[_Sensor.BodyFrameSource.BodyCount];
+                    Debug.Log($"BodySourceManager: Acquired color frame #{_colorFrameCount}");
                 }
 
-                frame.GetAndRefreshBodyData(_Data);
+                frame.CopyConvertedFrameDataToArray(_colorData, ColorImageFormat.Bgra);
+                _colorTexture2D.LoadRawTextureData(_colorData);
+                _colorTexture2D.Apply();
 
-                frame.Dispose();
-                frame = null;
+                if (ColorTexture != null)
+                {
+                    Graphics.Blit(
+                        _colorTexture2D,
+                        ColorTexture,
+                        new Vector2(1, -1),
+                        new Vector2(0, 0)
+                    );
+                }
             }
         }
     }
 
     void OnApplicationQuit()
     {
-        if (_Reader != null)
+        if (EnableVerboseLogging)
+            Debug.Log("BodySourceManager: Shutting down...");
+
+        if (_colorReader != null)
         {
-            _Reader.Dispose();
-            _Reader = null;
+            _colorReader.Dispose();
+            _colorReader = null;
         }
 
-        if (_Sensor != null)
+        if (_bodyReader != null)
         {
-            if (_Sensor.IsOpen)
+            _bodyReader.Dispose();
+            _bodyReader = null;
+        }
+
+        if (_sensor != null)
+        {
+            if (_sensor.IsOpen)
             {
-                _Sensor.Close();
+                _sensor.Close();
             }
-
-            _Sensor = null;
+            _sensor = null;
         }
+
+        if (EnableVerboseLogging)
+            Debug.Log("BodySourceManager: Sensor and Readers disposed.");
     }
 }

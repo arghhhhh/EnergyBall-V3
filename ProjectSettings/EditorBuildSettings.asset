@@ -6,6 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Energy Ball V3.unity
+    path: Assets/Dummy Scene.unity
     guid: 3b0a08656c43af14989dae2add13dcf4
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

@@ -66,19 +66,32 @@ public class PlayerConstructor : MonoBehaviour
     public Vector3 pulseSizeFromMotion = Vector3.zero;
 
     [HideInInspector]
-    public Vector3 leftHandPrevPosition = Vector3.zero;
-
-    [HideInInspector]
-    public Vector3 rightHandPrevPosition = Vector3.zero;
-
-    [HideInInspector]
     public Vector3 prevVelocity = Vector3.zero;
 
     [HideInInspector]
     public float prevAcceleration = 0f;
+
+    #region hands
+    [HideInInspector]
+    public Vector3 leftHandPrevPosition = Vector3.zero;
     public Transform leftHandCollider;
+
+    [HideInInspector]
+    public HandState leftHandState;
+    public HandState leftHandStatePrev;
+
+    public VisualEffect leftHandVfx;
+
+    [HideInInspector]
+    public Vector3 rightHandPrevPosition = Vector3.zero;
     public Transform rightHandCollider;
 
+    [HideInInspector]
+    public HandState rightHandState;
+    public HandState rightHandStatePrev;
+
+    public VisualEffect rightHandVfx;
+    #endregion
     #region joints
     [Foldout("Joints")]
     public GameObject SpineBase;
@@ -156,12 +169,6 @@ public class PlayerConstructor : MonoBehaviour
     public GameObject ThumbRight;
     #endregion
     public Dictionary<JointType, GameObject> jointMap;
-
-    [HideInInspector]
-    public HandState leftHandState;
-
-    [HideInInspector]
-    public HandState rightHandState;
 
     [HideInInspector]
     public Vector3 midpoint;
@@ -306,7 +313,8 @@ public class PlayerConstructor : MonoBehaviour
 
     public void SetScale()
     {
-        if (controller.so.mergeSizeScalerDamper != 0){
+        if (controller.so.mergeSizeScalerDamper != 0)
+        {
             Vector3 sizeScaler = Vector3.zero;
 
             foreach (KeyValuePair<PlayerConstructor, float> orbitalBody in orbitalBodies)
@@ -320,7 +328,8 @@ public class PlayerConstructor : MonoBehaviour
                             + orbitalBody.Key.intrinsicPulseSize
                     ) / 2f;
                 float t = Mathf.InverseLerp(startScaleDistance, 0f, orbitalBody.Value);
-                sizeScaler += (orbitalBody.Key.unscaledSize + orbitalBody.Key.intrinsicPulseSize) * t;
+                sizeScaler +=
+                    (orbitalBody.Key.unscaledSize + orbitalBody.Key.intrinsicPulseSize) * t;
             }
 
             sizeScaler *= controller.so.mergeSizeScalerDamper;

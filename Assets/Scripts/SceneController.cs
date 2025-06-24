@@ -15,6 +15,7 @@ public class SceneController : MonoBehaviour
     public SceneSettingsSO so;
     GravityForce gravityForceController;
     HandForce handForceController;
+    HandEffects handEffectsController;
     PlayerScaler playerScaleController;
     MetaballsToSDF metaballsToSDF = null;
     BodySourceManager bodySourceManager = null;
@@ -125,6 +126,7 @@ public class SceneController : MonoBehaviour
 
         gravityForceController = new();
         handForceController = new();
+        handEffectsController = new();
         playerScaleController = new();
         metaballsToSDF = GetComponent<MetaballsToSDF>();
         bodySourceManager = GetComponent<BodySourceManager>();
@@ -205,7 +207,7 @@ public class SceneController : MonoBehaviour
         }
         lastColorIndex = colorIndex;
         player.skeletonColor = colors[colorIndex];
-        player.vfxGraph.SetGradient("playerAuraColor", gradients[colorIndex]);
+        player.vfxGraph.SetGradient("playerAuraBase", gradients[colorIndex]);
     }
 
     void SetPlayerHandStates(Body body, PlayerConstructor player)
@@ -252,6 +254,7 @@ public class SceneController : MonoBehaviour
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);
+            handEffectsController.ManageHandEffects(playerConstructor);
             playerScaleController.ScaleSetup(playerConstructor);
         }
 
