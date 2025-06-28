@@ -768,10 +768,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   so: {fileID: 11400000, guid: dcfdb6edafd8f54479792ffc07055d1d, type: 2}
-  playerPrefab: {fileID: 673367081158314858, guid: 335b5d013337a014a915508e7db74f87,
+  playerPrefab: {fileID: 673367081158314858, guid: 0fc75339efa2573449288aa1d5103dca,
     type: 3}
   debugText: {fileID: 21438989}
-  drawSkeleton: 1
+  drawSkeleton: 0
   customColors: 0
   colors:
   - {r: 1, g: 0, b: 1, a: 1}
