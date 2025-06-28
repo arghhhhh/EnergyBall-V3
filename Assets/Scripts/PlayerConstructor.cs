@@ -37,6 +37,12 @@ public class PlayerConstructor : MonoBehaviour
     [Foldout("Animations")]
     public AnimationClip closedClip;
 
+    [Foldout("Animations")]
+    public AnimationClip openClipRight;
+
+    [Foldout("Animations")]
+    public AnimationClip closedClipRight;
+
     [HideInInspector]
     public bool turnOnParticles = false;
 

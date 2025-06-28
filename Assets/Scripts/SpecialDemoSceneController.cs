@@ -7,9 +7,9 @@ using UnityEngine.SceneManagement;
 using Windows.Kinect;
 using Joint = Windows.Kinect.Joint;
 
-public class SceneController : MonoBehaviour
+public class SpecialDemoSceneController : MonoBehaviour
 {
-    public static SceneController Instance { get; private set; } // singleton pattern
+    public static SpecialDemoSceneController Instance { get; private set; } // singleton pattern
 
     [Label("Settings Config")]
     public SceneSettingsSO so;
@@ -243,7 +243,7 @@ public class SceneController : MonoBehaviour
         {
             metaballsToSDF.SetMetaballPosition(
                 playerConstructor.metaballIndex,
-                playerConstructor.HandLeft.transform.position
+                playerConstructor.leftHandCollider.transform.position
             );
             metaballsToSDF.SetMetaballRadius(
                 playerConstructor.metaballIndex,
@@ -251,7 +251,7 @@ public class SceneController : MonoBehaviour
             );
             metaballsToSDF.SetMetaballPosition(
                 playerConstructor.metaballIndex + 1,
-                playerConstructor.HandRight.transform.position
+                playerConstructor.rightHandCollider.transform.position
             );
             metaballsToSDF.SetMetaballRadius(
                 playerConstructor.metaballIndex + 1,

@@ -21,17 +21,12 @@ public class HandForce
             player.pushParticles = true;
             if (player.initialized && player.turnOnParticles)
             {
-                player.vfxAnimator.CrossFade(player.closedClip.name, 1f);
                 AlignAndCalculateVectors(player);
             }
             player.turnOnParticles = false;
         }
         else
         {
-            if (player.initialized && !player.turnOnParticles)
-            {
-                player.vfxAnimator.CrossFade(player.openClip.name, 1f);
-            }
             player.pushParticles = false;
             player.turnOnParticles = true;
             AlignAndCalculateVectors(player);
