@@ -17,9 +17,6 @@ public class PlayerConstructor : MonoBehaviour
     public SpriteRenderer radiusSprite;
 
     [HideInInspector]
-    public VisualEffect vfxGraph;
-
-    [HideInInspector]
     public Animator vfxAnimator;
 
     [HideInInspector]
@@ -36,12 +33,6 @@ public class PlayerConstructor : MonoBehaviour
 
     [Foldout("Animations")]
     public AnimationClip closedClip;
-
-    [Foldout("Animations")]
-    public AnimationClip openClipRight;
-
-    [Foldout("Animations")]
-    public AnimationClip closedClipRight;
 
     [HideInInspector]
     public bool turnOnParticles = false;
@@ -214,7 +205,6 @@ public class PlayerConstructor : MonoBehaviour
             { JointType.ThumbRight, ThumbRight }
         };
 
-        vfxGraph = GetComponentInChildren<VisualEffect>();
         vfxAnimator = GetComponent<Animator>();
     }
 

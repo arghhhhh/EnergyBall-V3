@@ -131,12 +131,19 @@ namespace MarchingCubes
             foreach (var playerPair in controller.Players)
             {
                 var player = playerPair.Value;
-                VisualEffect _vfx = player.GetComponent<PlayerConstructor>().vfxGraph;
-                if (_vfx != null)
+                VisualEffect _vfxLeft = player.GetComponent<PlayerConstructor>().leftHandVfx;
+                VisualEffect _vfxRight = player.GetComponent<PlayerConstructor>().rightHandVfx;
+                if (_vfxLeft != null)
                 {
-                    _vfx.SetTexture("sdfTexture", sdfBaker.SdfTexture);
-                    _vfx.SetVector3("sdfScale", sizeBox);
-                    _vfx.SetFloat("Z Depth", controller.so.baseZDepth);
+                    _vfxLeft.SetTexture("sdfTexture", sdfBaker.SdfTexture);
+                    _vfxLeft.SetVector3("sdfScale", sizeBox);
+                    _vfxLeft.SetFloat("Z Depth", controller.so.baseZDepth);
+                }
+                if (_vfxRight != null)
+                {
+                    _vfxRight.SetTexture("sdfTexture", sdfBaker.SdfTexture);
+                    _vfxRight.SetVector3("sdfScale", sizeBox);
+                    _vfxRight.SetFloat("Z Depth", controller.so.baseZDepth);
                 }
             }
         }

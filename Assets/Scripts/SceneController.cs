@@ -207,7 +207,8 @@ public class SceneController : MonoBehaviour
         }
         lastColorIndex = colorIndex;
         player.skeletonColor = colors[colorIndex];
-        player.vfxGraph.SetGradient("playerAuraBase", gradients[colorIndex]);
+        player.leftHandVfx.SetGradient("playerAuraBase", gradients[colorIndex]);
+        player.rightHandVfx.SetGradient("playerAuraBase", gradients[colorIndex]);
     }
 
     void SetPlayerHandStates(Body body, PlayerConstructor player)
