@@ -8,6 +8,11 @@
         },
         {
             "name": "Attach to Unity",
+            "type": "node",
+            "request": "attach"
+        },
+        {
+            "name": "Attach to Unity",
             "type": "vstuc",
             "request": "attach"
         }
