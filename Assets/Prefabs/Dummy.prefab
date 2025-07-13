@@ -240,7 +240,7 @@ PrefabInstance:
     - target: {fileID: 4613548176460710596, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_Name
-      value: VFX_R
+      value: VFX
       objectReference: {fileID: 0}
     - target: {fileID: 4762448448966346401, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
@@ -335,7 +335,7 @@ PrefabInstance:
     - target: {fileID: 8045977362264920212, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_Name
-      value: VFX_L
+      value: VFX
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -86,6 +86,8 @@ public class PlayerConstructor : MonoBehaviour
     public VisualEffect leftHandVfx;
     [Foldout("Left Hand")]
     public Animator leftHandAnimator;
+    [Foldout("Left Hand")]
+    public VFXAnimationBlender leftHandVfxAnimationBlender;
     [Foldout("Right Hand")]
     [HideInInspector]
     public Vector3 rightHandPrevPosition = Vector3.zero;
@@ -105,6 +107,8 @@ public class PlayerConstructor : MonoBehaviour
     public VisualEffect rightHandVfx;
     [Foldout("Right Hand")]
     public Animator rightHandAnimator;
+    [Foldout("Right Hand")]
+    public VFXAnimationBlender rightHandVfxAnimationBlender;
     #endregion
 
     #region joints

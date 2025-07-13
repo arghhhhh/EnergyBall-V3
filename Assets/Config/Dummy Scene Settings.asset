@@ -138,4 +138,5 @@ MonoBehaviour:
   dummyOnlyMode: 1
   showSphereMeshOnHandCollision: 0
   _showAttractionRadius: 0
-  _showHandTrailDistorters: 0
+  _showHandTrailDistorters: 1
+  _showSecondaryAttractor: 0

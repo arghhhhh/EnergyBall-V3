@@ -7,9 +7,9 @@ public class HandEffects
     {
         if (player.leftHandState == HandState.Open && player.leftHandStatePrev != HandState.Open)
         {
-            // player.leftHandAnimator.CrossFade(player.openClip.name, 1f);
-            Actions.OnHandOpen?.Invoke(player, true); // true = left hand
-            player.leftHandVfx.SendEvent("handOpen");
+            player.leftHandAnimator.CrossFade(player.openClip.name, 1f);
+            // player.leftHandVfx.SendEvent("handOpen");
+            // player.leftHandVfxAnimationBlender.TriggerHandOpen();
             player.leftHandStatePrev = HandState.Open;
         }
         else if (
@@ -17,16 +17,16 @@ public class HandEffects
             && player.leftHandStatePrev != HandState.Closed
         )
         {
-            // player.leftHandAnimator.CrossFade(player.closedClip.name, 1f);
-            Actions.OnHandClose?.Invoke(player, true); // true = left hand
-            player.leftHandVfx.SendEvent("handClose");
+            player.leftHandAnimator.CrossFade(player.closedClip.name, 1f);
+            // player.leftHandVfx.SendEvent("handClose");
+            // player.leftHandVfxAnimationBlender.TriggerHandClose();
             player.leftHandStatePrev = HandState.Closed;
         }
         if (player.rightHandState == HandState.Open && player.rightHandStatePrev != HandState.Open)
         {
-            // player.rightHandAnimator.CrossFade(player.openClip.name, 1f);
-            Actions.OnHandOpen?.Invoke(player, false); // false = right hand
-            player.rightHandVfx.SendEvent("handOpen");
+            player.rightHandAnimator.CrossFade(player.openClip.name, 1f);
+            // player.rightHandVfx.SendEvent("handOpen");
+            // player.rightHandVfxAnimationBlender.TriggerHandOpen();
             player.rightHandStatePrev = HandState.Open;
         }
         else if (
@@ -34,9 +34,9 @@ public class HandEffects
             && player.rightHandStatePrev != HandState.Closed
         )
         {
-            // player.rightHandAnimator.CrossFade(player.closedClip.name, 1f);
-            Actions.OnHandClose?.Invoke(player, false); // false = right hand
-            player.rightHandVfx.SendEvent("handClose");
+            player.rightHandAnimator.CrossFade(player.closedClip.name, 1f);
+            // player.rightHandVfx.SendEvent("handClose");
+            // player.rightHandVfxAnimationBlender.TriggerHandClose();
             player.rightHandStatePrev = HandState.Closed;
         }
     }
