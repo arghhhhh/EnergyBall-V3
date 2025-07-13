@@ -74,21 +74,23 @@ public class SceneController : MonoBehaviour
         Color.green,
         Color.magenta,
         Color.red,
-        new Color(1, 0.5f, 0),
+        new (1, 0.5f, 0),
         Color.yellow
     };
 
     [GradientUsage(true)]
     public Gradient[] gradients = new Gradient[]
     {
-        new Gradient(),
-        new Gradient(),
-        new Gradient(),
-        new Gradient(),
-        new Gradient(),
-        new Gradient(),
-        new Gradient()
+        new(),
+        new(),
+        new(),
+        new(),
+        new(),
+        new(),
+        new()
     };
+
+
 
     private void OnEnable()
     {
@@ -96,6 +98,12 @@ public class SceneController : MonoBehaviour
         // Actions.OnPlayerRemoved += RemovePlayer;
         Actions.OnDummyAdded += InitializeNewDummy;
         Actions.OnDummyRemoved += RemovePlayer;
+
+        // Subscribe to debugging setting changes
+        if (so != null)
+        {
+            so.OnAnyDebuggingSettingChanged += OnAnyDebuggingSettingChanged;
+        }
     }
 
     private void OnDisable()
@@ -104,6 +112,12 @@ public class SceneController : MonoBehaviour
         // Actions.OnPlayerRemoved -= RemovePlayer;
         Actions.OnDummyAdded -= InitializeNewDummy;
         Actions.OnDummyRemoved -= RemovePlayer;
+
+        // Unsubscribe from debugging setting changes
+        if (so != null)
+        {
+            so.OnAnyDebuggingSettingChanged -= OnAnyDebuggingSettingChanged;
+        }
     }
 
     private void Awake()
@@ -161,6 +175,8 @@ public class SceneController : MonoBehaviour
             dummies[dummy.userId] = dummy.gameObject;
             players[dummy.userId] = dummy.gameObject;
 
+            UpdatePlayerDebuggingVisuals(dummy);
+
             // debugText.text = $"userId: {userId}\nunscaledSize: {dummy.unscaledSize.x}\nplayer: {players[userId].name}";
         }
     }
@@ -178,6 +194,8 @@ public class SceneController : MonoBehaviour
             {
                 ChoosePlayerColor(playerConstructor);
             }
+
+            UpdatePlayerDebuggingVisuals(playerConstructor);
         }
 
         return newPlayer;
@@ -244,26 +262,29 @@ public class SceneController : MonoBehaviour
         {
             metaballsToSDF.SetMetaballPosition(
                 playerConstructor.metaballIndex,
-                playerConstructor.HandLeft.transform.position
+                playerConstructor.sphere.transform.position
             );
             metaballsToSDF.SetMetaballRadius(
                 playerConstructor.metaballIndex,
                 playerConstructor.sphere.transform.localScale.x / 2f
             );
-            metaballsToSDF.SetMetaballPosition(
-                playerConstructor.metaballIndex + 1,
-                playerConstructor.HandRight.transform.position
-            );
-            metaballsToSDF.SetMetaballRadius(
-                playerConstructor.metaballIndex + 1,
-                playerConstructor.sphere.transform.localScale.x / 2f
-            );
-            playerConstructor.SetAttractionRadius(so.attractionRadiusMultiplier);
+            // TEMPLATE: Add metaballs for each hand 
+            //
+            // metaballsToSDF.SetMetaballPosition(
+            //     playerConstructor.metaballIndex + 1,
+            //     playerConstructor.HandRight.transform.position
+            // );
+            // metaballsToSDF.SetMetaballRadius(
+            //     playerConstructor.metaballIndex + 1,
+            //     playerConstructor.sphere.transform.localScale.x / 2f
+            // );
+            playerConstructor.SetAttractionRadius();
             playerConstructor.SetMass();
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);
             handEffectsController.ManageHandEffects(playerConstructor);
+            handEffectsController.ManageHandTrailDistorters(playerConstructor);
             playerScaleController.ScaleSetup(playerConstructor);
         }
 
@@ -275,7 +296,7 @@ public class SceneController : MonoBehaviour
         )
         {
             playerConstructor.beginInitialization = true;
-            playerConstructor.InitializeParticles();
+            // playerConstructor.InitializeParticles();
         }
     }
 
@@ -432,4 +453,88 @@ public class SceneController : MonoBehaviour
 
         gravityForceController.ManageGravity();
     }
+
+    #region Debugging
+    private void OnAnyDebuggingSettingChanged()
+    {
+        UpdateAllPlayersDebuggingVisuals();
+    }
+
+    private void UpdatePlayerHandTrailDistorters(PlayerConstructor player)
+    {
+        if (so.showHandTrailDistorters)
+        {
+            foreach (GameObject distorter in player.leftHandTrailDistorters)
+            {
+                distorter.GetComponent<MeshRenderer>().enabled = true;
+            }
+            foreach (GameObject distorter in player.rightHandTrailDistorters)
+            {
+                distorter.GetComponent<MeshRenderer>().enabled = true;
+            }
+        }
+        else
+        {
+            foreach (GameObject distorter in player.leftHandTrailDistorters)
+            {
+                distorter.GetComponent<MeshRenderer>().enabled = false;
+            }
+            foreach (GameObject distorter in player.rightHandTrailDistorters)
+            {
+                distorter.GetComponent<MeshRenderer>().enabled = false;
+            }
+        }
+    }
+
+    private void UpdatePlayerAttractionRadius(PlayerConstructor player)
+    {
+        if (so.showAttractionRadius)
+        {
+            player.radiusSprite.enabled = true;
+            // set size of radius sprite
+            player.radiusSprite.transform.localScale = new Vector3(
+                so.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
+                so.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
+                so.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler
+            );
+        }
+        else
+        {
+            player.radiusSprite.enabled = false;
+        }
+    }
+
+    private void UpdatePlayerSecondaryAttractor(PlayerConstructor player)
+    {
+        if (so.showSecondaryAttractor)
+        {
+            player.leftHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = true;
+            player.rightHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = true;
+        }
+        else
+        {
+            player.leftHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = false;
+            player.rightHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = false;
+        }
+    }
+
+    private void UpdatePlayerDebuggingVisuals(PlayerConstructor player)
+    {
+        UpdatePlayerHandTrailDistorters(player);
+        UpdatePlayerAttractionRadius(player);
+        UpdatePlayerSecondaryAttractor(player);
+    }
+
+    private void UpdateAllPlayersDebuggingVisuals()
+    {
+        foreach (var player in players.Values)
+        {
+            if (player != null)
+            {
+                UpdatePlayerDebuggingVisuals(player.GetComponent<PlayerConstructor>());
+            }
+        }
+    }
+    #endregion
 }
+

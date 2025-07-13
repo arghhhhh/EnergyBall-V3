@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts;
+using Klak.Motion;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.VFX;
@@ -15,9 +16,6 @@ public class PlayerConstructor : MonoBehaviour
     private SceneController controller = null;
     public Rigidbody sphere;
     public SpriteRenderer radiusSprite;
-
-    [HideInInspector]
-    public Animator vfxAnimator;
 
     [HideInInspector]
     public bool pushParticles = false;
@@ -69,26 +67,46 @@ public class PlayerConstructor : MonoBehaviour
     public float prevAcceleration = 0f;
 
     #region hands
+    [Foldout("Left Hand")]
     [HideInInspector]
     public Vector3 leftHandPrevPosition = Vector3.zero;
+    [Foldout("Left Hand")]
     public Transform leftHandCollider;
-
+    [Foldout("Left Hand")]
+    public GameObject[] leftHandTrailDistorters = new GameObject[2];
+    [Foldout("Left Hand")]
     [HideInInspector]
     public HandState leftHandState;
-    public HandState leftHandStatePrev;
-
+    [Foldout("Left Hand")]
+    [HideInInspector]
+    public HandState leftHandStatePrev = HandState.NotTracked;
+    [Foldout("Left Hand")]
+    public Transform leftHandSecondaryAttractor;
+    [Foldout("Left Hand")]
     public VisualEffect leftHandVfx;
-
+    [Foldout("Left Hand")]
+    public Animator leftHandAnimator;
+    [Foldout("Right Hand")]
     [HideInInspector]
     public Vector3 rightHandPrevPosition = Vector3.zero;
+    [Foldout("Right Hand")]
     public Transform rightHandCollider;
-
+    [Foldout("Right Hand")]
+    public GameObject[] rightHandTrailDistorters = new GameObject[2];
+    [Foldout("Right Hand")]
+    public Transform rightHandSecondaryAttractor;
+    [Foldout("Right Hand")]
     [HideInInspector]
     public HandState rightHandState;
-    public HandState rightHandStatePrev;
-
+    [Foldout("Right Hand")]
+    [HideInInspector]
+    public HandState rightHandStatePrev = HandState.NotTracked;
+    [Foldout("Right Hand")]
     public VisualEffect rightHandVfx;
+    [Foldout("Right Hand")]
+    public Animator rightHandAnimator;
     #endregion
+
     #region joints
     [Foldout("Joints")]
     public GameObject SpineBase;
@@ -204,8 +222,6 @@ public class PlayerConstructor : MonoBehaviour
             { JointType.HandTipRight, HandtipRight },
             { JointType.ThumbRight, ThumbRight }
         };
-
-        vfxAnimator = GetComponent<Animator>();
     }
 
     private void Start()
@@ -228,40 +244,39 @@ public class PlayerConstructor : MonoBehaviour
         // }
     }
 
-    public void InitializeParticles()
-    {
-        StartCoroutine(DelayInitialization(controller.so.particleInitializationDelay));
-    }
+    // public void InitializeParticles()
+    // {
+    //     StartCoroutine(DelayInitialization(controller.so.particleInitializationDelay));
+    // }
 
-    private IEnumerator DelayInitialization(float delay)
-    {
-        yield return new WaitForSeconds(delay);
+    // private IEnumerator DelayInitialization(float delay)
+    // {
+    //     yield return new WaitForSeconds(delay);
 
-        vfxAnimator.Play(initializeClip.name, -1, 0f);
+    //     vfxAnimator.Play(initializeClip.name, -1, 0f);
 
-        yield return new WaitForSeconds(initializeClip.length);
+    //     yield return new WaitForSeconds(initializeClip.length);
 
-        initialized = true;
-        turnOnParticles = true;
-    }
+    //     initialized = true;
+    //     turnOnParticles = true;
+    // }
 
-    public void SetAttractionRadius(float radiusMultiplier)
+    public void SetAttractionRadius()
     {
         attractionRadius =
             Utils.GetVector3Avg(sphere.transform.localScale)
-            * radiusMultiplier
+            * controller.so.attractionRadiusMultiplier
             * attractionRadiusScaler
             / 2f; // divide by two since it's the radius
 
         if (controller.so.showAttractionRadius)
         {
-            radiusSprite.enabled = true;
             // set size of radius sprite
             radiusSprite.transform.localScale = new Vector3(
-                radiusMultiplier * 0.4f * attractionRadiusScaler,
-                radiusMultiplier * 0.4f * attractionRadiusScaler,
-                radiusMultiplier * 0.4f * attractionRadiusScaler
-            );
+                controller.so.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
+                    controller.so.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
+                    controller.so.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler
+                );
         }
     }
 

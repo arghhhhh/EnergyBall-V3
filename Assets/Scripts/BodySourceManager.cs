@@ -3,6 +3,8 @@ using Windows.Kinect;
 
 public class BodySourceManager : MonoBehaviour
 {
+    SceneController controller;
+
     [Tooltip("Enable verbose logging to the console.")]
     public bool EnableVerboseLogging = true;
 
@@ -30,8 +32,18 @@ public class BodySourceManager : MonoBehaviour
         return _bodyData;
     }
 
+    void Awake()
+    {
+        controller = GetComponent<SceneController>();
+    }
+
     void Start()
     {
+        if (controller.so.dummyOnlyMode)
+        {
+            return;
+        }
+
         if (EnableVerboseLogging)
             Debug.Log("BodySourceManager: Starting up...");
 
@@ -107,6 +119,11 @@ public class BodySourceManager : MonoBehaviour
 
     void Update()
     {
+        if (controller.so.dummyOnlyMode)
+        {
+            return;
+        }
+
         if (_bodyReader != null)
         {
             using (var frame = _bodyReader.AcquireLatestFrame())

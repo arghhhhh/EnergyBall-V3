@@ -19,34 +19,44 @@ MonoBehaviour:
   stopGravityDistance: 0.12
   stopMovingDistance: 0.05
   stopVelocity: 0.5
-  attractionRadiusMultiplier: 3.5
+  attractionRadiusMultiplier: 1.2
   forceToMiddle:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 136
+      inSlope: -0.0068028485
+      outSlope: -0.0068028485
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0.33333334
-      outWeight: 0.33333334
+      outWeight: 0.23333333
+    - serializedVersion: 3
+      time: 0.78283566
+      value: 0.86222345
+      inSlope: -0.61384463
+      outSlope: -0.61384463
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.18742698
+      outWeight: 0.69301283
     - serializedVersion: 3
       time: 1
       value: 0
-      inSlope: -2.8823533
-      outSlope: -2.8823533
+      inSlope: -7.4285784
+      outSlope: -7.4285784
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.10624999
+      inWeight: 0.07674672
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  singleHandOpenForceDamper: 0
   pushForce: 70
   minDrag: 0.25
-  maxDrag: 1.25
+  maxDrag: 0.75
   alignmentVectorStrength:
     serializedVersion: 2
     m_Curve:
@@ -119,12 +129,13 @@ MonoBehaviour:
     m_RotationOrder: 4
   pulseScaleDamper: 0.3
   mergeSizeScalerDamper: 0.15
-  maxDistanceBetweenHands: 20
+  maxDistanceBetweenHands: 5
   baseZDepth: 5
   defaultUnscaledSize: 2.5
   bodyScale: 5
   maxDistanceFromCamera: 60
   particleInitializationDelay: 1.75
-  showAttractionRadius: 0
-  showSphereMeshOnHandCollision: 0
   dummyOnlyMode: 1
+  showSphereMeshOnHandCollision: 0
+  _showAttractionRadius: 0
+  _showHandTrailDistorters: 0

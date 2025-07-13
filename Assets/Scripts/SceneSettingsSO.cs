@@ -1,9 +1,13 @@
 using NaughtyAttributes;
 using UnityEngine;
+using System;
 
 [CreateAssetMenu]
 public class SceneSettingsSO : ScriptableObject
 {
+    // Single event for when any debugging setting changes
+    public event Action OnAnyDebuggingSettingChanged;
+
     [BoxGroup("Gravity Attraction")]
     public float g;
 
@@ -30,6 +34,9 @@ public class SceneSettingsSO : ScriptableObject
 
     [BoxGroup("Hands Attraction")]
     public AnimationCurve forceToMiddle;
+
+    [BoxGroup("Hands Attraction")]
+    public float singleHandOpenForceDamper;
 
     [BoxGroup("Hands Attraction")]
     public float pushForce;
@@ -112,11 +119,71 @@ public class SceneSettingsSO : ScriptableObject
     public float particleInitializationDelay;
 
     [BoxGroup("Debugging")]
-    public bool showAttractionRadius;
+    public bool dummyOnlyMode;
 
     [BoxGroup("Debugging")]
     public bool showSphereMeshOnHandCollision;
 
     [BoxGroup("Debugging")]
-    public bool dummyOnlyMode;
+    [SerializeField]
+    private bool _showAttractionRadius;
+    public bool showAttractionRadius
+    {
+        get => _showAttractionRadius;
+        set
+        {
+            if (_showAttractionRadius != value)
+            {
+                _showAttractionRadius = value;
+                OnAnyDebuggingSettingChanged?.Invoke();
+            }
+        }
+    }
+
+    [BoxGroup("Debugging")]
+    [SerializeField]
+    private bool _showHandTrailDistorters;
+    public bool showHandTrailDistorters
+    {
+        get => _showHandTrailDistorters;
+        set
+        {
+            if (_showHandTrailDistorters != value)
+            {
+                _showHandTrailDistorters = value;
+                OnAnyDebuggingSettingChanged?.Invoke();
+            }
+        }
+    }
+
+    [BoxGroup("Debugging")]
+    [SerializeField]
+    private bool _showSecondaryAttractor;
+    public bool showSecondaryAttractor
+    {
+        get => _showSecondaryAttractor;
+        set
+        {
+            if (_showSecondaryAttractor != value)
+            {
+                _showSecondaryAttractor = value;
+                OnAnyDebuggingSettingChanged?.Invoke();
+            }
+        }
+    }
+
+    public void TriggerDebugSettingsUpdate()
+    {
+        OnAnyDebuggingSettingChanged?.Invoke();
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (Application.isPlaying)
+        {
+            OnAnyDebuggingSettingChanged?.Invoke();
+        }
+    }
+#endif
 }

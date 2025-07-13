@@ -1,0 +1,57 @@
+# Unity generated files
+Library/
+Temp/
+Logs/
+MemoryCaptures/
+UserSettings/
+
+# Unity project files
+*.meta
+*.asset
+*.prefab
+*.unity
+*.controller
+*.anim
+*.mat
+*.compute
+*.cginc
+*.hlsl
+*.shader
+*.shadergraph
+*.vfx
+*.vfxoperator
+
+# Build directories
+build/
+Build/
+Builds/
+
+# Visual Studio / JetBrains
+.vs/
+.idea/
+*.sln
+*.csproj
+*.userprefs
+*.suo
+*.user
+*.tmp
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Package Manager
+node_modules/
+*.tgz
+*.tar.gz 

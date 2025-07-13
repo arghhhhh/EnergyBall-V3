@@ -1,6 +1,8 @@
 {
     "recommendations": [
         "nromanov.dotrush",
-        "visualstudiotoolsforunity.vstuc"
+        "visualstudiotoolsforunity.vstuc",
+        "esbenp.prettier-vscode",
+        "ms-dotnettools.csharp"
     ]
 }

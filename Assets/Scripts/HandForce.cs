@@ -33,11 +33,32 @@ public class HandForce
         }
     }
 
+    bool isSingleHandOpen(PlayerConstructor player)
+    {
+        return (player.leftHandState == HandState.Open && player.rightHandState == HandState.Closed)
+            || (player.leftHandState == HandState.Closed && player.rightHandState == HandState.Open);
+    }
+
+    Vector3 CalculateMidpoint(PlayerConstructor player)
+    {
+        // Giving myself an extra frame of leeway in case hand tracking returns unknown
+        if (player.leftHandState == HandState.Open && player.rightHandState != HandState.Open && player.rightHandStatePrev != HandState.Open)
+        {
+            return player.HandLeft.transform.position;
+        }
+        else if (player.leftHandState != HandState.Open && player.rightHandState == HandState.Open && player.leftHandStatePrev != HandState.Open)
+        {
+            return player.HandRight.transform.position;
+        }
+        else
+        {
+            return (player.HandLeft.transform.position + player.HandRight.transform.position) * 0.5f;
+        }
+    }
+
+    // See dev log [2024-08-03] for visuals on what this does
     void AlignAndCalculateVectors(PlayerConstructor player)
     {
-        Vector3 handMidpoint =
-            (player.HandLeft.transform.position + player.HandRight.transform.position) * 0.5f;
-
         // get vector from leftWrist to leftHandTip and normalize it
         Vector3 leftHandVector = (
             player.HandtipLeft.transform.position - player.WristLeft.transform.position
@@ -55,7 +76,7 @@ public class HandForce
             player.HandRight.transform.position,
             player.HandLeft.transform.position
         );
-        // controller.debugText.text = "User " + player.userId + " Hand Distance: " + handDistance;
+        // controller.debugText.text = "Hand Distance: " + Mathf.Round(handDistance * 100) / 100;
 
         float remappedHandDistance = Mathf.InverseLerp(
             0,
@@ -65,6 +86,8 @@ public class HandForce
         float alignmentVectorScaler =
             controller.so.alignmentVectorStrength.Evaluate(remappedHandDistance)
             * controller.so.alignmentVectorStrengthScaler;
+
+        Vector3 handMidpoint = CalculateMidpoint(player);
 
         player.midpoint = handMidpoint + alignmentVector * alignmentVectorScaler;
         float distance = Vector3.Distance(player.midpoint, player.sphere.transform.position);
@@ -80,7 +103,7 @@ public class HandForce
             0,
             distance
         );
-        float forceDamper = controller.so.forceToMiddle.Evaluate(relativeDistance);
+        float forceDamper = controller.so.forceToMiddle.Evaluate(relativeDistance) * (isSingleHandOpen(player) ? controller.so.singleHandOpenForceDamper : 1f);
 
         Vector3 forceDirection = direction.normalized;
         Vector3 forceVector = controller.so.pushForce * forceDamper * forceDirection;

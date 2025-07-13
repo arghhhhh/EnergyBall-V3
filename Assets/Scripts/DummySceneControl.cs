@@ -21,17 +21,19 @@ public class DummySceneControl : MonoBehaviour
         SetKeys();
     }
 
-    void FixedUpdate()
+    void Update()
     {
         if (Input.GetKeyDown(bothOpen))
         {
             player.leftHandState = Windows.Kinect.HandState.Open;
             player.rightHandState = Windows.Kinect.HandState.Open;
+            Debug.Log("Both open");
         }
         if (Input.GetKeyDown(bothClosed))
         {
             player.leftHandState = Windows.Kinect.HandState.Closed;
             player.rightHandState = Windows.Kinect.HandState.Closed;
+            Debug.Log("Both closed");
         }
         if (Input.GetKeyDown(leftOpen))
         {
