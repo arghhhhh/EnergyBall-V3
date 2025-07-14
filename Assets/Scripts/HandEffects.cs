@@ -7,37 +7,67 @@ public class HandEffects
     {
         if (player.leftHandState == HandState.Open && player.leftHandStatePrev != HandState.Open)
         {
-            player.leftHandAnimator.CrossFade(player.openClip.name, 1f);
-            // player.leftHandVfx.SendEvent("handOpen");
-            // player.leftHandVfxAnimationBlender.TriggerHandOpen();
+            float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
+            if (timeSinceStateChange > 2.0f)
+            {
+                if (player.leftHandOpenCoroutine != null)
+                {
+                    player.StopCoroutine(player.leftHandOpenCoroutine);
+                }
+                player.leftHandOpenCoroutine = player.StartCoroutine(player.PlayLeftHandOpenAnimationDelayed());
+            } else {
+                player.leftHandAnimator.CrossFade(player.openClip.name, 1f);
+            }
+            player.leftHandVfx.SendEvent("handOpen");
             player.leftHandStatePrev = HandState.Open;
+            player.leftHandStateChangeTime = Time.time;
         }
         else if (
             player.leftHandState == HandState.Closed
             && player.leftHandStatePrev != HandState.Closed
         )
         {
+            if (player.leftHandOpenCoroutine != null)
+            {
+                player.StopCoroutine(player.leftHandOpenCoroutine);
+                player.leftHandOpenCoroutine = null;
+            }
             player.leftHandAnimator.CrossFade(player.closedClip.name, 1f);
-            // player.leftHandVfx.SendEvent("handClose");
-            // player.leftHandVfxAnimationBlender.TriggerHandClose();
+            player.leftHandVfx.SendEvent("handClose");
             player.leftHandStatePrev = HandState.Closed;
+            player.leftHandStateChangeTime = Time.time;
         }
         if (player.rightHandState == HandState.Open && player.rightHandStatePrev != HandState.Open)
         {
-            player.rightHandAnimator.CrossFade(player.openClip.name, 1f);
-            // player.rightHandVfx.SendEvent("handOpen");
-            // player.rightHandVfxAnimationBlender.TriggerHandOpen();
+            float timeSinceStateChange = Time.time - player.rightHandStateChangeTime;
+            if (timeSinceStateChange > 2.0f)
+            {
+                if (player.rightHandOpenCoroutine != null)
+                {
+                    player.StopCoroutine(player.rightHandOpenCoroutine);
+                }
+                player.rightHandOpenCoroutine = player.StartCoroutine(player.PlayRightHandOpenAnimationDelayed());
+            } else {
+                player.rightHandAnimator.CrossFade(player.openClip.name, 1f);
+            }
+            player.rightHandVfx.SendEvent("handOpen");
             player.rightHandStatePrev = HandState.Open;
+            player.rightHandStateChangeTime = Time.time;
         }
         else if (
             player.rightHandState == HandState.Closed
             && player.rightHandStatePrev != HandState.Closed
         )
         {
+            if (player.rightHandOpenCoroutine != null)
+            {
+                player.StopCoroutine(player.rightHandOpenCoroutine);
+                player.rightHandOpenCoroutine = null;
+            }
             player.rightHandAnimator.CrossFade(player.closedClip.name, 1f);
-            // player.rightHandVfx.SendEvent("handClose");
-            // player.rightHandVfxAnimationBlender.TriggerHandClose();
+            player.rightHandVfx.SendEvent("handClose");
             player.rightHandStatePrev = HandState.Closed;
+            player.rightHandStateChangeTime = Time.time;
         }
     }
 

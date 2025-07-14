@@ -87,7 +87,10 @@ public class PlayerConstructor : MonoBehaviour
     [Foldout("Left Hand")]
     public Animator leftHandAnimator;
     [Foldout("Left Hand")]
-    public VFXAnimationBlender leftHandVfxAnimationBlender;
+    public float leftHandStateChangeTime = 0f;
+    [Foldout("Left Hand")]
+    [HideInInspector]
+    public Coroutine leftHandOpenCoroutine = null;
     [Foldout("Right Hand")]
     [HideInInspector]
     public Vector3 rightHandPrevPosition = Vector3.zero;
@@ -104,11 +107,14 @@ public class PlayerConstructor : MonoBehaviour
     [HideInInspector]
     public HandState rightHandStatePrev = HandState.NotTracked;
     [Foldout("Right Hand")]
+    public float rightHandStateChangeTime = 0f;
+    [Foldout("Right Hand")]
+    [HideInInspector]
+    public Coroutine rightHandOpenCoroutine = null;
+    [Foldout("Right Hand")]
     public VisualEffect rightHandVfx;
     [Foldout("Right Hand")]
     public Animator rightHandAnimator;
-    [Foldout("Right Hand")]
-    public VFXAnimationBlender rightHandVfxAnimationBlender;
     #endregion
 
     #region joints
@@ -243,9 +249,32 @@ public class PlayerConstructor : MonoBehaviour
         {
             Actions.OnDummyAdded?.Invoke(this);
         }
-        // else {
-        //     Actions.OnPlayerAdded?.Invoke(this);
-        // }
+    }
+
+    public IEnumerator PlayLeftHandOpenAnimationDelayed()
+    {
+        leftHandAnimator.CrossFade(initializeClip.name, 1f);
+        yield return new WaitForSeconds(1.0f);
+
+        if (leftHandState == HandState.Open)
+        {
+            leftHandAnimator.CrossFade(openClip.name, 1f);
+        }
+
+        leftHandOpenCoroutine = null;
+    }
+
+    public IEnumerator PlayRightHandOpenAnimationDelayed()
+    {
+        rightHandAnimator.CrossFade(initializeClip.name, 1f);
+        yield return new WaitForSeconds(1.0f);
+
+        if (rightHandState == HandState.Open)
+        {
+            rightHandAnimator.CrossFade(openClip.name, 1f);
+        }
+
+        rightHandOpenCoroutine = null;
     }
 
     // public void InitializeParticles()

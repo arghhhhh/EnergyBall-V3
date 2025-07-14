@@ -586,9 +586,9 @@ MonoBehaviour:
   uiBounds:
     serializedVersion: 2
     x: 1520
-    y: 311
-    width: 5714
-    height: 4194
+    y: 200
+    width: 5650
+    height: 4285
 --- !u!114 &114350483966674978
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -620,8 +620,6 @@ MonoBehaviour:
     - context: {fileID: 114350483966675177}
       slotIndex: 0
     - context: {fileID: 114350483966675209}
-      slotIndex: 0
-    - context: {fileID: 114350483966675447}
       slotIndex: 0
   eventName: handOpen
 --- !u!114 &114350483966674979
@@ -10824,12 +10822,8 @@ MonoBehaviour:
   m_Label: Spawn system
   m_Data: {fileID: 114350483966675448}
   m_InputFlowSlot:
-  - link:
-    - context: {fileID: 114350483966674978}
-      slotIndex: 0
-  - link:
-    - context: {fileID: 114350483966675606}
-      slotIndex: 0
+  - link: []
+  - link: []
   m_OutputFlowSlot:
   - link:
     - context: {fileID: 114350483966675452}
@@ -15709,7 +15703,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 6810, y: 334}
+  m_UIPosition: {x: 4844, y: 200}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots: []
@@ -15719,9 +15713,7 @@ MonoBehaviour:
   m_InputFlowSlot:
   - link: []
   m_OutputFlowSlot:
-  - link:
-    - context: {fileID: 114350483966675447}
-      slotIndex: 1
+  - link: []
   eventName: handClose
 --- !u!114 &114350483966675607
 MonoBehaviour:

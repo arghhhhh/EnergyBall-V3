@@ -696,7 +696,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1218137234878091871}
   - component: {fileID: 2329737165215984701}
-  - component: {fileID: 481161154903255939}
   m_Layer: 0
   m_Name: Hand_L
   m_TagString: Untagged
@@ -745,71 +744,3 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &481161154903255939
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3461654842823518575}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 516deb553198e014c85171b1b1ec9af1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  emptyClip: {fileID: 7400000, guid: 2676cf065d20b174f8a86cb934852372, type: 2}
-  initClip: {fileID: 7400000, guid: 6e299d76a9013c247b6f27bffc918b8e, type: 2}
-  openClip: {fileID: 7400000, guid: 46ccfe4747f43ec4997d07d0f0f1bc10, type: 2}
-  closeClip: {fileID: 7400000, guid: 16dd6ead141d3ab48a3619ea8875b6e1, type: 2}
-  closeToOpenBlendCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  openToCloseBlendCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  closeToOpenDelay: 0
-  openToCloseDelay: 0
-  blendDuration: 0.5
-  initToOpenTransitionPoint: 0.8
