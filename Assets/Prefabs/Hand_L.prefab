@@ -72,6 +72,15 @@ VisualEffect:
       - m_Value: 0
         m_Name: vffIntensity
         m_Overridden: 1
+      - m_Value: 1
+        m_Name: secondaryAttractorLerp
+        m_Overridden: 1
+      - m_Value: 5
+        m_Name: secondaryAttractorSdfAttractionForce
+        m_Overridden: 1
+      - m_Value: 5
+        m_Name: secondaryAttractorRadiusDivider
+        m_Overridden: 1
     m_Vector2f:
       m_Array: []
     m_Vector3f:
