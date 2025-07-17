@@ -377,7 +377,7 @@ Transform:
   m_GameObject: {fileID: 487746904}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.46, z: -0}
+  m_LocalPosition: {x: 2.01, y: -1.46, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -1427,6 +1427,7 @@ GameObject:
   - component: {fileID: 1654180880}
   - component: {fileID: 1654180879}
   - component: {fileID: 1654180878}
+  - component: {fileID: 1654180884}
   m_Layer: 0
   m_Name: VFX
   m_TagString: Untagged
@@ -1448,7 +1449,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Space: 0
   m_Property:
-    m_Name: T2
+    m_Name: End
   Target: {fileID: 1327450312}
 --- !u!114 &1654180879
 MonoBehaviour:
@@ -1464,7 +1465,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Space: 0
   m_Property:
-    m_Name: T1
+    m_Name: Start
   Target: {fileID: 487746907}
 --- !u!114 &1654180880
 MonoBehaviour:
@@ -1547,6 +1548,9 @@ VisualEffect:
       - m_Value: -10
         m_Name: SpawnAnimStartTime
         m_Overridden: 1
+      - m_Value: 0
+        m_Name: Progress
+        m_Overridden: 1
     m_Vector2f:
       m_Array: []
     m_Vector3f:
@@ -1560,7 +1564,7 @@ VisualEffect:
       - m_Value: {x: -0, y: 0, z: 0}
         m_Name: T1_angles
         m_Overridden: 1
-      - m_Value: {x: 0, y: -1.46, z: 0}
+      - m_Value: {x: 2.01, y: -1.46, z: 0}
         m_Name: T1_position
         m_Overridden: 1
       - m_Value: {x: 1, y: 1, z: 1}
@@ -1592,6 +1596,24 @@ VisualEffect:
         m_Overridden: 1
       - m_Value: {x: 1, y: 1, z: 1}
         m_Name: Tf_scale
+        m_Overridden: 1
+      - m_Value: {x: -0, y: 0, z: 0}
+        m_Name: Start_angles
+        m_Overridden: 1
+      - m_Value: {x: 2.01, y: -1.46, z: 0}
+        m_Name: Start_position
+        m_Overridden: 1
+      - m_Value: {x: 1, y: 1, z: 1}
+        m_Name: Start_scale
+        m_Overridden: 1
+      - m_Value: {x: -0, y: 0, z: 0}
+        m_Name: End_angles
+        m_Overridden: 1
+      - m_Value: {x: 0, y: 4.59, z: 0}
+        m_Name: End_position
+        m_Overridden: 1
+      - m_Value: {x: 1, y: 1, z: 1}
+        m_Name: End_scale
         m_Overridden: 1
     m_Vector4f:
       m_Array: []
@@ -1630,6 +1652,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &1654180884
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1654180875}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 491ab2f244b9c874bb91436ccfa08ff0, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -35,18 +35,18 @@ public class HandForce
 
     bool isSingleHandOpen(PlayerConstructor player)
     {
-        return (player.leftHandState == HandState.Open && player.rightHandState == HandState.Closed)
-            || (player.leftHandState == HandState.Closed && player.rightHandState == HandState.Open);
+        return (player.leftHandStateClamped == HandState.Open && player.rightHandStateClamped == HandState.Closed)
+            || (player.leftHandStateClamped == HandState.Closed && player.rightHandStateClamped == HandState.Open);
     }
 
     Vector3 CalculateMidpoint(PlayerConstructor player)
     {
         // Giving myself an extra frame of leeway in case hand tracking returns unknown
-        if (player.leftHandState == HandState.Open && player.rightHandState != HandState.Open && player.rightHandStatePrev != HandState.Open)
+        if (player.leftHandState == HandState.Open && player.rightHandState != HandState.Open && player.rightHandStateClamped != HandState.Open)
         {
             return player.HandLeft.transform.position;
         }
-        else if (player.leftHandState != HandState.Open && player.rightHandState == HandState.Open && player.leftHandStatePrev != HandState.Open)
+        else if (player.leftHandState != HandState.Open && player.rightHandState == HandState.Open && player.leftHandStateClamped != HandState.Open)
         {
             return player.HandRight.transform.position;
         }

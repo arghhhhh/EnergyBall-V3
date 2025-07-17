@@ -16,7 +16,8 @@ GameObject:
   - component: {fileID: 5050846453671554061}
   - component: {fileID: 2215811464188349097}
   - component: {fileID: 1720999914784518205}
-  - component: {fileID: 6959817418123056066}
+  - component: {fileID: 663540744140739573}
+  - component: {fileID: 3239130280684535752}
   m_Layer: 6
   m_Name: VFX
   m_TagString: Untagged
@@ -81,8 +82,32 @@ VisualEffect:
       - m_Value: 5
         m_Name: secondaryAttractorRadiusDivider
         m_Overridden: 1
+      - m_Value: 10
+        m_Name: tdAttractionForce
+        m_Overridden: 1
+      - m_Value: 0.1
+        m_Name: drawBackVelo
+        m_Overridden: 1
+      - m_Value: 1
+        m_Name: saPosAnim
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: saRadiusAnim
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: saSdfAnim
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: drawBackVeloAnim
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: Close Progress
+        m_Overridden: 1
     m_Vector2f:
-      m_Array: []
+      m_Array:
+      - m_Value: {x: 0.5, y: 0.5}
+        m_Name: initialVeloSpread
+        m_Overridden: 1
     m_Vector3f:
       m_Array:
       - m_Value: {x: 0, y: 0, z: 0}
@@ -221,7 +246,8 @@ MonoBehaviour:
   - {fileID: 5050846453671554061}
   - {fileID: 2215811464188349097}
   - {fileID: 1720999914784518205}
-  - {fileID: 6959817418123056066}
+  - {fileID: 663540744140739573}
+  - {fileID: 3239130280684535752}
   m_VisualEffect: {fileID: 6753740848934620219}
 --- !u!114 &755687336963848815
 MonoBehaviour:
@@ -287,7 +313,7 @@ MonoBehaviour:
   m_Property:
     m_Name: TD2
   Target: {fileID: 7445762037446178430}
---- !u!114 &6959817418123056066
+--- !u!114 &663540744140739573
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -301,8 +327,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Space: 0
   m_Property:
-    m_Name: secondaryAttractorPos
-  Target: {fileID: 7482462701238569153}
+    m_Name: bodyPos
+  Target: {fileID: 0}
+--- !u!114 &3239130280684535752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764030728440891520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07c3070554d0a8944a95ff8f018c2c9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Space: 0
+  m_Property:
+    m_Name: saPos
+  Target: {fileID: 0}
 --- !u!1 &766351667082727254
 GameObject:
   m_ObjectHideFlags: 0
@@ -413,7 +455,7 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1809891698304926349
+--- !u!1 &2321459732369977784
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -421,46 +463,47 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7482462701238569153}
-  - component: {fileID: 953854758699145154}
-  - component: {fileID: 5992372756981436768}
+  - component: {fileID: 8302148172569742979}
+  - component: {fileID: 2439710091199555092}
+  - component: {fileID: 1630764143817457304}
+  - component: {fileID: 4409922664561963768}
   m_Layer: 0
-  m_Name: SecondAttractor
+  m_Name: SA
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7482462701238569153
+--- !u!4 &8302148172569742979
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1809891698304926349}
+  m_GameObject: {fileID: 2321459732369977784}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 1218137234878091871}
+  m_Father: {fileID: 5284280322123679586}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &953854758699145154
+--- !u!33 &2439710091199555092
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1809891698304926349}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &5992372756981436768
+  m_GameObject: {fileID: 2321459732369977784}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &1630764143817457304
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1809891698304926349}
+  m_GameObject: {fileID: 2321459732369977784}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -499,6 +542,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &4409922664561963768
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321459732369977784}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2486749248247266787
 GameObject:
   m_ObjectHideFlags: 0
@@ -583,6 +647,7 @@ Transform:
   m_Children:
   - {fileID: 6658030362988920851}
   - {fileID: 7445762037446178430}
+  - {fileID: 8302148172569742979}
   m_Father: {fileID: 1218137234878091871}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3164230980536768027
@@ -728,7 +793,6 @@ Transform:
   - {fileID: 6590435883937971748}
   - {fileID: 3176835955973900955}
   - {fileID: 5284280322123679586}
-  - {fileID: 7482462701238569153}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &2329737165215984701

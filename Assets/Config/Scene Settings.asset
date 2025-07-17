@@ -130,3 +130,4 @@ MonoBehaviour:
   showSphereMeshOnHandCollision: 0
   _showAttractionRadius: 0
   _showHandTrailDistorters: 0
+  _showSecondaryAttractor: 0

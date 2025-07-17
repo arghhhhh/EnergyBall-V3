@@ -5,7 +5,7 @@ public class HandEffects
 {
     public void ManageHandEffects(PlayerConstructor player)
     {
-        if (player.leftHandState == HandState.Open && player.leftHandStatePrev != HandState.Open)
+        if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open)
         {
             float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
             if (timeSinceStateChange > 2.0f)
@@ -19,12 +19,12 @@ public class HandEffects
                 player.leftHandAnimator.CrossFade(player.openClip.name, 1f);
             }
             player.leftHandVfx.SendEvent("handOpen");
-            player.leftHandStatePrev = HandState.Open;
+            player.leftHandStateClamped = HandState.Open;
             player.leftHandStateChangeTime = Time.time;
         }
         else if (
             player.leftHandState == HandState.Closed
-            && player.leftHandStatePrev != HandState.Closed
+            && player.leftHandStateClamped != HandState.Closed
         )
         {
             if (player.leftHandOpenCoroutine != null)
@@ -34,10 +34,10 @@ public class HandEffects
             }
             player.leftHandAnimator.CrossFade(player.closedClip.name, 1f);
             player.leftHandVfx.SendEvent("handClose");
-            player.leftHandStatePrev = HandState.Closed;
+            player.leftHandStateClamped = HandState.Closed;
             player.leftHandStateChangeTime = Time.time;
         }
-        if (player.rightHandState == HandState.Open && player.rightHandStatePrev != HandState.Open)
+        if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open)
         {
             float timeSinceStateChange = Time.time - player.rightHandStateChangeTime;
             if (timeSinceStateChange > 2.0f)
@@ -51,12 +51,12 @@ public class HandEffects
                 player.rightHandAnimator.CrossFade(player.openClip.name, 1f);
             }
             player.rightHandVfx.SendEvent("handOpen");
-            player.rightHandStatePrev = HandState.Open;
+            player.rightHandStateClamped = HandState.Open;
             player.rightHandStateChangeTime = Time.time;
         }
         else if (
             player.rightHandState == HandState.Closed
-            && player.rightHandStatePrev != HandState.Closed
+            && player.rightHandStateClamped != HandState.Closed
         )
         {
             if (player.rightHandOpenCoroutine != null)
@@ -66,8 +66,22 @@ public class HandEffects
             }
             player.rightHandAnimator.CrossFade(player.closedClip.name, 1f);
             player.rightHandVfx.SendEvent("handClose");
-            player.rightHandStatePrev = HandState.Closed;
+            player.rightHandStateClamped = HandState.Closed;
             player.rightHandStateChangeTime = Time.time;
+        }
+
+        if (player.leftHandStateClamped == HandState.Closed)
+        {
+            player.leftHandSecondaryAttractor.position = player.HandLeft.transform.position;
+        } else {
+            player.leftHandSecondaryAttractor.position = player.sphere.position;
+        }
+
+        if (player.rightHandStateClamped == HandState.Closed)
+        {
+            player.rightHandSecondaryAttractor.position = player.HandRight.transform.position;
+        } else {
+            player.rightHandSecondaryAttractor.position = player.sphere.position;
         }
     }
 

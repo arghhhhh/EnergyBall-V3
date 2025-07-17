@@ -79,7 +79,7 @@ public class PlayerConstructor : MonoBehaviour
     public HandState leftHandState;
     [Foldout("Left Hand")]
     [HideInInspector]
-    public HandState leftHandStatePrev = HandState.NotTracked;
+    public HandState leftHandStateClamped = HandState.NotTracked;
     [Foldout("Left Hand")]
     public Transform leftHandSecondaryAttractor;
     [Foldout("Left Hand")]
@@ -105,7 +105,7 @@ public class PlayerConstructor : MonoBehaviour
     public HandState rightHandState;
     [Foldout("Right Hand")]
     [HideInInspector]
-    public HandState rightHandStatePrev = HandState.NotTracked;
+    public HandState rightHandStateClamped = HandState.NotTracked;
     [Foldout("Right Hand")]
     public float rightHandStateChangeTime = 0f;
     [Foldout("Right Hand")]
