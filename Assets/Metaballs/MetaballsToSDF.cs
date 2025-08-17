@@ -137,13 +137,13 @@ namespace MarchingCubes
                 {
                     _vfxLeft.SetTexture("sdfTexture", sdfBaker.SdfTexture);
                     _vfxLeft.SetVector3("sdfScale", sizeBox);
-                    _vfxLeft.SetFloat("Z Depth", controller.so.baseZDepth);
+                    _vfxLeft.SetFloat("zDepth", controller.so.baseZDepth);
                 }
                 if (_vfxRight != null)
                 {
                     _vfxRight.SetTexture("sdfTexture", sdfBaker.SdfTexture);
                     _vfxRight.SetVector3("sdfScale", sizeBox);
-                    _vfxRight.SetFloat("Z Depth", controller.so.baseZDepth);
+                    _vfxRight.SetFloat("zDepth", controller.so.baseZDepth);
                 }
             }
         }

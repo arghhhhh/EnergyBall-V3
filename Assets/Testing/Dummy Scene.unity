@@ -317,7 +317,7 @@ Camera:
   far clip plane: 1000
   field of view: 60.000004
   orthographic: 1
-  orthographic size: 5.29
+  orthographic size: 3.76
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -384,7 +384,6 @@ MonoBehaviour:
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
-  m_Version: 2
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -392,6 +391,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &326409335
 GameObject:
   m_ObjectHideFlags: 0
@@ -928,6 +928,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
@@ -949,6 +951,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -1569,6 +1572,16 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_MotionVectors
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5922806509526188756, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_LocalPosition.y
@@ -1604,6 +1617,31 @@ PrefabInstance:
       propertyPath: m_Name
       value: Marker
       objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.y
+      value: -3.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.y
+      value: -3.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_MotionVectors
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7470055217885604769, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Name
@@ -1613,6 +1651,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.y
+      value: -3.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
+      value: -2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.y
+      value: -3.51
       objectReference: {fileID: 0}
     - target: {fileID: 8364963012721092218, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2024,10 +2077,40 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dummy
       objectReference: {fileID: 0}
+    - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_MotionVectors
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5922806509526188756, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_MotionVectors
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
+      value: -2.5
       objectReference: {fileID: 0}
     - target: {fileID: 8520687989672682953, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}

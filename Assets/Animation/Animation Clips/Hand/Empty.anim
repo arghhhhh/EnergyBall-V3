@@ -33,7 +33,7 @@ AnimationClip:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    attribute: float.Close Progress
+    attribute: float.closeProgress
     path: VFX
     classID: 2083052967
     script: {fileID: 0}
@@ -48,7 +48,7 @@ AnimationClip:
     genericBindings:
     - serializedVersion: 2
       path: 1424210517
-      attribute: 1313213741
+      attribute: 3890611820
       script: {fileID: 0}
       typeID: 2083052967
       customType: 38
@@ -93,7 +93,7 @@ AnimationClip:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    attribute: float.Close Progress
+    attribute: float.closeProgress
     path: VFX
     classID: 2083052967
     script: {fileID: 0}

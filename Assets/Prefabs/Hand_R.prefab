@@ -58,6 +58,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2333748608341226706, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Bool.m_Array.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2333748608341226706, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Bool.m_Array.Array.data[0].m_Name
+      value: flipVelo
+      objectReference: {fileID: 0}
+    - target: {fileID: 2333748608341226706, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Bool.m_Array.Array.data[0].m_Value
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2333748608341226706, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Bool.m_Array.Array.data[0].m_Overridden
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3461654842823518575, guid: f497d5d0d40136d46b5b968a0cd1cb19,
         type: 3}
       propertyPath: m_Name
