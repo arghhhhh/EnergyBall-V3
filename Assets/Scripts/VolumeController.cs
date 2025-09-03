@@ -91,7 +91,7 @@ public class VolumeController : MonoBehaviour
     private void CaptureOriginalProfileValues()
     {
         // Find the InGameSettingsMenu to get the current active profile settings at startup
-        InGameSettingsMenu settingsMenu = FindObjectOfType<InGameSettingsMenu>();
+        InGameSettingsMenu settingsMenu = FindFirstObjectByType<InGameSettingsMenu>();
         if (settingsMenu == null)
         {
             // Retry after another delay if the settings menu isn't ready yet

@@ -470,6 +470,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1361264293}
   - component: {fileID: 1361264292}
+  - component: {fileID: 1361264294}
   m_Layer: 0
   m_Name: Global Volume
   m_TagString: Untagged
@@ -509,6 +510,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1361264294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1361264291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68bdb7ea8bd8f1247b717399059c5379, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VolumeController
 --- !u!1 &1605418791
 GameObject:
   m_ObjectHideFlags: 0
@@ -522,7 +535,7 @@ GameObject:
   - component: {fileID: 1605418794}
   - component: {fileID: 1605418793}
   m_Layer: 5
-  m_Name: UIDocument
+  m_Name: Menu Overlay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -763,6 +776,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   so: {fileID: 11400000, guid: 5ae1b369bd11e6241a7a24f5be13cc4a, type: 2}
   settingsMenu: {fileID: 1605418794}
+  volumeController: {fileID: 1361264294}
   playerPrefab: {fileID: 673367081158314858, guid: 0fc75339efa2573449288aa1d5103dca,
     type: 3}
   debugText: {fileID: 21438989}
@@ -1657,12 +1671,12 @@ PrefabInstance:
     - target: {fileID: 4427120889900656642, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -1727,7 +1741,7 @@ PrefabInstance:
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -1887,7 +1901,7 @@ PrefabInstance:
     - target: {fileID: 8991758020013612787, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8991758020013612787, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2178,12 +2192,12 @@ PrefabInstance:
     - target: {fileID: 4427120889900656642, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2208,7 +2222,7 @@ PrefabInstance:
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2283,7 +2297,7 @@ PrefabInstance:
     - target: {fileID: 8991758020013612787, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

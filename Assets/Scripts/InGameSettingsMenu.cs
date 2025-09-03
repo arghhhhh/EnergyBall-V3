@@ -7,8 +7,8 @@ using UnityEngine.UIElements;
 
 public class InGameSettingsMenu : MonoBehaviour
 {
-    [SerializeField] private UIDocument uiDocument;
-    [SerializeField] private SceneController sceneController;
+    private UIDocument uiDocument;
+    readonly SceneController controller = SceneController.Instance;
     
     private VisualElement settingsPanel;
     private ScrollView sceneSettingsPanel;
@@ -59,10 +59,10 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void InitializeRuntimeSettings()
     {
-        if (sceneController?.so != null)
+        if (controller?.so != null)
         {
             runtimeSettings = new RuntimeSceneSettings();
-            runtimeSettings.CopyFromScriptableObject(sceneController.so);
+            runtimeSettings.CopyFromScriptableObject(controller.so);
             originalSettings = runtimeSettings.DeepCopy();
             
             // Subscribe to runtime settings changes
@@ -673,6 +673,12 @@ public class InGameSettingsMenu : MonoBehaviour
             
             RefreshUI();
             OnSettingsChanged?.Invoke(runtimeSettings);
+            
+            // Update Volume Profile with loaded settings (during play mode)
+            if (Application.isPlaying)
+            {
+                VolumeController.OnProfileSaved(runtimeSettings);
+            }
         }
         catch (Exception e)
         {
