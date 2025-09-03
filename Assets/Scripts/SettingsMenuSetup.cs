@@ -8,6 +8,7 @@ public class SettingsMenuSetup : MonoBehaviour
     {
         var sceneController = FindFirstObjectByType<SceneController>();
         var settingsMenu = GetComponent<InGameSettingsMenu>();
+        var volumeController = FindFirstObjectByType<VolumeController>();
         
         if (settingsMenu != null && sceneController != null)
         {
@@ -17,8 +18,12 @@ public class SettingsMenuSetup : MonoBehaviour
                 // Settings menu will initialize from the ScriptableObject in its Start method
             }
             
-            // Connect the scene controller to the settings menu
+            // Connect the scene controller to the settings menu and volume controller
             sceneController.settingsMenu = settingsMenu;
+            if (volumeController != null)
+            {
+                sceneController.volumeController = volumeController;
+            }
         }
     }
 }

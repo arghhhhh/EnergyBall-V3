@@ -106,6 +106,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateMovementPulsationGroup();
         CreateMiscellaneousGroup();
         CreateAnimationGroup();
+        CreatePostProcessingGroup();
         CreateDebuggingGroup();
     }
 
@@ -177,6 +178,35 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(group, "Particle Initialization Delay", () => runtimeSettings.particleInitializationDelay, v => runtimeSettings.particleInitializationDelay = v);
     }
 
+    private void CreatePostProcessingGroup()
+    {
+        var bloomGroup = CreateGroup("Post Processing - Bloom");
+        
+        CreateFloatField(bloomGroup, "Bloom Threshold", () => runtimeSettings.bloomThreshold, v => runtimeSettings.bloomThreshold = v);
+        CreateSliderField(bloomGroup, "Bloom Intensity", () => runtimeSettings.bloomIntensity, v => runtimeSettings.bloomIntensity = v, 0f, 3f);
+        CreateSliderField(bloomGroup, "Bloom Scatter", () => runtimeSettings.bloomScatter, v => runtimeSettings.bloomScatter = v, 0f, 1f);
+        
+        var lensFlareGroup = CreateGroup("Post Processing - Screen Space Lens Flare");
+        
+        CreateSliderField(lensFlareGroup, "Intensity", () => runtimeSettings.lensFlareIntensity, v => runtimeSettings.lensFlareIntensity = v, 0f, 3f);
+        CreateSliderField(lensFlareGroup, "Regular Multiplier (Flares)", () => runtimeSettings.lensFlareRegularMultiplier, v => runtimeSettings.lensFlareRegularMultiplier = v, 0f, 3f);
+        CreateSliderField(lensFlareGroup, "Reversed Multiplier (Flares)", () => runtimeSettings.lensFlareReversedMultiplier, v => runtimeSettings.lensFlareReversedMultiplier = v, 0f, 3f);
+        CreateSliderField(lensFlareGroup, "Multiplier (Streaks)", () => runtimeSettings.lensFlareStreaksMultiplier, v => runtimeSettings.lensFlareStreaksMultiplier = v, 0f, 3f);
+        CreateSliderField(lensFlareGroup, "Length (Streaks)", () => runtimeSettings.lensFlareStreaksLength, v => runtimeSettings.lensFlareStreaksLength = v, 0f, 1f);
+        CreateSliderField(lensFlareGroup, "Orientation (Streaks)", () => runtimeSettings.lensFlareStreaksOrientation, v => runtimeSettings.lensFlareStreaksOrientation = v, -180f, 180f);
+        CreateSliderField(lensFlareGroup, "Threshold (Streaks)", () => runtimeSettings.lensFlareStreaksThreshold, v => runtimeSettings.lensFlareStreaksThreshold = v, 0f, 1f);
+        CreateSliderField(lensFlareGroup, "Chromatic Aberration Intensity", () => runtimeSettings.lensFlareChromaticIntensity, v => runtimeSettings.lensFlareChromaticIntensity = v, 0f, 1f);
+        
+        var lensDistortionGroup = CreateGroup("Post Processing - Lens Distortion");
+        
+        CreateSliderField(lensDistortionGroup, "Intensity", () => runtimeSettings.lensDistortionIntensity, v => runtimeSettings.lensDistortionIntensity = v, -1f, 1f);
+        CreateSliderField(lensDistortionGroup, "X Multiplier", () => runtimeSettings.lensDistortionXMultiplier, v => runtimeSettings.lensDistortionXMultiplier = v, 0f, 2f);
+        CreateSliderField(lensDistortionGroup, "Y Multiplier", () => runtimeSettings.lensDistortionYMultiplier, v => runtimeSettings.lensDistortionYMultiplier = v, 0f, 2f);
+        CreateSliderField(lensDistortionGroup, "Scale", () => runtimeSettings.lensDistortionScale, v => runtimeSettings.lensDistortionScale = v, 0.01f, 3f);
+        CreateSliderField(lensDistortionGroup, "Center X", () => runtimeSettings.lensDistortionCenterX, v => runtimeSettings.lensDistortionCenterX = v, 0f, 1f);
+        CreateSliderField(lensDistortionGroup, "Center Y", () => runtimeSettings.lensDistortionCenterY, v => runtimeSettings.lensDistortionCenterY = v, 0f, 1f);
+    }
+
     private void CreateDebuggingGroup()
     {
         var group = CreateGroup("Debugging");
@@ -234,19 +264,36 @@ public class InGameSettingsMenu : MonoBehaviour
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
         
+        var inputContainer = new VisualElement();
+        inputContainer.style.flexDirection = FlexDirection.Row;
+        inputContainer.style.alignItems = Align.Center;
+        inputContainer.AddToClassList("setting-input");
+        
         var slider = new Slider(min, max);
-        slider.AddToClassList("setting-input");
+        slider.style.flexGrow = 1;
         slider.value = getter();
+        
+        var valueLabel = new Label($"{getter():F2}");
+        valueLabel.style.minWidth = 50;
+        valueLabel.style.unityTextAlign = TextAnchor.MiddleRight;
+        valueLabel.style.color = Color.gray;
+        valueLabel.style.marginLeft = 5;
+        
         slider.RegisterValueChangedCallback(evt => {
             setter(evt.newValue);
+            valueLabel.text = $"{evt.newValue:F2}";
             OnSettingsChanged?.Invoke(runtimeSettings);
         });
         
+        inputContainer.Add(slider);
+        inputContainer.Add(valueLabel);
+        
         row.Add(labelElement);
-        row.Add(slider);
+        row.Add(inputContainer);
         parent.Add(row);
         
         settingElements[label] = slider;
+        settingElements[label + "_ValueLabel"] = valueLabel;
     }
 
     private void CreateToggleField(VisualElement parent, string label, Func<bool> getter, Action<bool> setter)

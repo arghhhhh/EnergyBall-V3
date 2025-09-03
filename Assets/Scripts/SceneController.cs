@@ -16,6 +16,7 @@ public class SceneController : MonoBehaviour
     
     [Header("Runtime Settings")]
     public InGameSettingsMenu settingsMenu;
+    public VolumeController volumeController;
     private RuntimeSceneSettings runtimeSettings;
     GravityForce gravityForceController;
     HandForce handForceController;
@@ -504,6 +505,12 @@ public class SceneController : MonoBehaviour
         
         // Update any cached references or trigger updates as needed
         UpdateAllPlayersDebuggingVisuals();
+        
+        // Update volume profile settings
+        if (volumeController != null)
+        {
+            volumeController.ApplyCurrentSettings(newSettings);
+        }
     }
 
     public RuntimeSceneSettings GetRuntimeSettings()
