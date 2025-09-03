@@ -39,7 +39,8 @@ public class BodySourceManager : MonoBehaviour
 
     void Start()
     {
-        if (controller.so.dummyOnlyMode)
+        var runtimeSettings = controller.GetRuntimeSettings();
+        if (runtimeSettings.dummyOnlyMode)
         {
             return;
         }
@@ -119,7 +120,8 @@ public class BodySourceManager : MonoBehaviour
 
     void Update()
     {
-        if (controller.so.dummyOnlyMode)
+        var runtimeSettings = controller.GetRuntimeSettings();
+        if (runtimeSettings.dummyOnlyMode)
         {
             return;
         }

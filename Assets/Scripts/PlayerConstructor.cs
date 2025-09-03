@@ -237,10 +237,11 @@ public class PlayerConstructor : MonoBehaviour
     private void Start()
     {
         controller = SceneController.Instance;
+        var runtimeSettings = controller.GetRuntimeSettings();
         unscaledSize = new Vector3(
-            controller.so.defaultUnscaledSize,
-            controller.so.defaultUnscaledSize,
-            controller.so.defaultUnscaledSize
+            runtimeSettings.defaultUnscaledSize,
+            runtimeSettings.defaultUnscaledSize,
+            runtimeSettings.defaultUnscaledSize
         );
         pulseOffset = Random.Range(0, 10) / 10f + Random.Range(0, 10);
         radiusSprite.enabled = false;
@@ -296,19 +297,20 @@ public class PlayerConstructor : MonoBehaviour
 
     public void SetAttractionRadius()
     {
+        var runtimeSettings = controller.GetRuntimeSettings();
         attractionRadius =
             Utils.GetVector3Avg(sphere.transform.localScale)
-            * controller.so.attractionRadiusMultiplier
+            * runtimeSettings.attractionRadiusMultiplier
             * attractionRadiusScaler
             / 2f; // divide by two since it's the radius
 
-        if (controller.so.showAttractionRadius)
+        if (runtimeSettings.showAttractionRadius)
         {
             // set size of radius sprite
             radiusSprite.transform.localScale = new Vector3(
-                controller.so.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
-                    controller.so.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
-                    controller.so.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler
+                runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
+                    runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
+                    runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler
                 );
         }
     }
@@ -320,24 +322,25 @@ public class PlayerConstructor : MonoBehaviour
 
     public void SetPulseSize()
     {
-        if (controller.so.pulseAmount == 0)
+        var runtimeSettings = controller.GetRuntimeSettings();
+        if (runtimeSettings.pulseAmount == 0)
         {
             intrinsicPulseSize = Vector3.zero;
         }
         else
         {
             float playerPulseAmt =
-                Utils.GetVector3Avg(unscaledSize) * controller.so.pulseAmount / 10f;
+                Utils.GetVector3Avg(unscaledSize) * runtimeSettings.pulseAmount / 10f;
             // float playerPulseSpeed = acceleration * pulseSpeed / 100f;
             float pulseFunc = 0f;
             // use desmos graphing calculator to find graph bounds
-            float playerLimit = controller.so.graphLimit * playerPulseAmt;
-            for (int i = 0; i < controller.so.pulseFreqs.Length; i++)
+            float playerLimit = runtimeSettings.graphLimit * playerPulseAmt;
+            for (int i = 0; i < runtimeSettings.pulseFreqs.Length; i++)
             {
                 // y=sin(2x)+sin(0.8x)+sin(0.3x)...
                 pulseFunc += Mathf.Sin(
-                    controller.so.pulseFreqs[i]
-                        * controller.so.pulseSpeed
+                    runtimeSettings.pulseFreqs[i]
+                        * runtimeSettings.pulseSpeed
                         * (Time.fixedTime + pulseOffset)
                 );
             }
@@ -357,7 +360,8 @@ public class PlayerConstructor : MonoBehaviour
 
     public void SetScale()
     {
-        if (controller.so.mergeSizeScalerDamper != 0)
+        var runtimeSettings = controller.GetRuntimeSettings();
+        if (runtimeSettings.mergeSizeScalerDamper != 0)
         {
             Vector3 sizeScaler = Vector3.zero;
 
@@ -376,7 +380,7 @@ public class PlayerConstructor : MonoBehaviour
                     (orbitalBody.Key.unscaledSize + orbitalBody.Key.intrinsicPulseSize) * t;
             }
 
-            sizeScaler *= controller.so.mergeSizeScalerDamper;
+            sizeScaler *= runtimeSettings.mergeSizeScalerDamper;
             sphere.transform.localScale = unscaledSize + intrinsicPulseSize + sizeScaler;
 
             // we only get the unscaled size when there are no orbiting bodies

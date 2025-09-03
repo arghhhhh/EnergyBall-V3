@@ -78,14 +78,15 @@ public class HandForce
         );
         // controller.debugText.text = "Hand Distance: " + Mathf.Round(handDistance * 100) / 100;
 
+        var runtimeSettings = controller.GetRuntimeSettings();
         float remappedHandDistance = Mathf.InverseLerp(
             0,
-            controller.so.maxDistanceBetweenHands,
-            Mathf.Clamp(handDistance, 0, controller.so.maxDistanceBetweenHands)
+            runtimeSettings.maxDistanceBetweenHands,
+            Mathf.Clamp(handDistance, 0, runtimeSettings.maxDistanceBetweenHands)
         );
         float alignmentVectorScaler =
-            controller.so.alignmentVectorStrength.Evaluate(remappedHandDistance)
-            * controller.so.alignmentVectorStrengthScaler;
+            runtimeSettings.alignmentVectorStrength.Evaluate(remappedHandDistance)
+            * runtimeSettings.alignmentVectorStrengthScaler;
 
         Vector3 handMidpoint = CalculateMidpoint(player);
 
@@ -98,19 +99,21 @@ public class HandForce
 
     void PushToTarget(PlayerConstructor player, float distance, Vector3 direction)
     {
+        var runtimeSettings = controller.GetRuntimeSettings();
+        
         float relativeDistance = Mathf.InverseLerp(
-            controller.so.maxDistanceBetweenHands,
+            runtimeSettings.maxDistanceBetweenHands,
             0,
             distance
         );
-        float forceDamper = controller.so.forceToMiddle.Evaluate(relativeDistance) * (isSingleHandOpen(player) ? controller.so.singleHandOpenForceDamper : 1f);
+        float forceDamper = runtimeSettings.forceToMiddle.Evaluate(relativeDistance) * (isSingleHandOpen(player) ? runtimeSettings.singleHandOpenForceDamper : 1f);
 
         Vector3 forceDirection = direction.normalized;
-        Vector3 forceVector = controller.so.pushForce * forceDamper * forceDirection;
+        Vector3 forceVector = runtimeSettings.pushForce * forceDamper * forceDirection;
 
         if (player.pushParticles)
         {
-            forceVector *= controller.so.handPushScaler;
+            forceVector *= runtimeSettings.handPushScaler;
             player.sphere.linearDamping = 0;
         }
         else
@@ -118,10 +121,10 @@ public class HandForce
             // need to make sure drag never goes below min drag. Might as well clamp both sides
             player.sphere.linearDamping = Utils.RemapClamped(
                 distance,
-                controller.so.maxDistanceBetweenHands,
+                runtimeSettings.maxDistanceBetweenHands,
                 0,
-                controller.so.minDrag,
-                controller.so.maxDrag
+                runtimeSettings.minDrag,
+                runtimeSettings.maxDrag
             );
         }
 

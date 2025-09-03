@@ -13,6 +13,10 @@ public class SceneController : MonoBehaviour
 
     [Label("Settings Config")]
     public SceneSettingsSO so;
+    
+    [Header("Runtime Settings")]
+    public InGameSettingsMenu settingsMenu;
+    private RuntimeSceneSettings runtimeSettings;
     GravityForce gravityForceController;
     HandForce handForceController;
     HandEffects handEffectsController;
@@ -104,6 +108,12 @@ public class SceneController : MonoBehaviour
         {
             so.OnAnyDebuggingSettingChanged += OnAnyDebuggingSettingChanged;
         }
+        
+        // Subscribe to runtime settings changes
+        if (settingsMenu != null)
+        {
+            settingsMenu.OnSettingsChanged += OnRuntimeSettingsChanged;
+        }
     }
 
     private void OnDisable()
@@ -117,6 +127,12 @@ public class SceneController : MonoBehaviour
         if (so != null)
         {
             so.OnAnyDebuggingSettingChanged -= OnAnyDebuggingSettingChanged;
+        }
+        
+        // Unsubscribe from runtime settings changes
+        if (settingsMenu != null)
+        {
+            settingsMenu.OnSettingsChanged -= OnRuntimeSettingsChanged;
         }
     }
 
@@ -144,10 +160,19 @@ public class SceneController : MonoBehaviour
         playerScaleController = new();
         metaballsToSDF = GetComponent<MetaballsToSDF>();
         bodySourceManager = GetComponent<BodySourceManager>();
-        // transform.position = new Vector3(transform.position.x, transform.position.y, so.baseZDepth);
+        
+        // Initialize runtime settings from ScriptableObject
+        if (settingsMenu != null)
+        {
+            runtimeSettings = settingsMenu.GetCurrentSettings();
+        }
+        
+        // Use runtime settings or fallback to SO
+        var currentSettings = GetCurrentSettings();
+        // transform.position = new Vector3(transform.position.x, transform.position.y, currentSettings.baseZDepth);
 
-        // set main camera far clipping plane to so.maxDistanceFromCamera
-        // Camera.main.farClipPlane = so.maxDistanceFromCamera + transform.position.z;
+        // set main camera far clipping plane to currentSettings.maxDistanceFromCamera
+        // Camera.main.farClipPlane = currentSettings.maxDistanceFromCamera + transform.position.z;
     }
 
     void InitializeNewDummy(PlayerConstructor dummy)
@@ -162,10 +187,11 @@ public class SceneController : MonoBehaviour
             dummy.name = $"Player {userId}";
             dummy.userId = userId;
             metaballsToSDF.AssignMetaballIndex(dummy);
+            var currentSettings = GetCurrentSettings();
             dummy.unscaledSize = new Vector3(
-                so.defaultUnscaledSize,
-                so.defaultUnscaledSize,
-                so.defaultUnscaledSize
+                currentSettings.defaultUnscaledSize,
+                currentSettings.defaultUnscaledSize,
+                currentSettings.defaultUnscaledSize
             );
             if (customColors)
             {
@@ -237,10 +263,11 @@ public class SceneController : MonoBehaviour
 
     private Vector3 GetVector3FromJoint(Joint joint)
     {
+        var currentSettings = GetCurrentSettings();
         return new Vector3(
-            joint.Position.X * so.bodyScale,
-            joint.Position.Y * so.bodyScale,
-            joint.Position.Z * so.bodyScale
+            joint.Position.X * currentSettings.bodyScale,
+            joint.Position.Y * currentSettings.bodyScale,
+            joint.Position.Z * currentSettings.bodyScale
         );
     }
 
@@ -319,9 +346,10 @@ public class SceneController : MonoBehaviour
                 Transform jointObject = playerConstructor.jointMap[joint].transform;
                 jointObject.position = targetPosition;
 
+                var currentSettings = GetCurrentSettings();
                 if (
                     (joint == JointType.ShoulderLeft || joint == JointType.ShoulderRight)
-                    && targetPosition.z > so.maxDistanceFromCamera
+                    && targetPosition.z > currentSettings.maxDistanceFromCamera
                 )
                 {
                     playerConstructor.leftHandState = HandState.Closed;
@@ -389,7 +417,8 @@ public class SceneController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (!so.dummyOnlyMode)
+        var currentSettings = GetCurrentSettings();
+        if (!currentSettings.dummyOnlyMode)
         {
             bodyData = bodySourceManager.GetData();
             if (bodyData == null)
@@ -454,6 +483,35 @@ public class SceneController : MonoBehaviour
         gravityForceController.ManageGravity();
     }
 
+    #region Settings Management
+    private RuntimeSceneSettings GetCurrentSettings()
+    {
+        return runtimeSettings ?? (settingsMenu?.GetCurrentSettings()) ?? CreateFallbackSettings();
+    }
+
+    private RuntimeSceneSettings CreateFallbackSettings()
+    {
+        if (so == null) return new RuntimeSceneSettings();
+        
+        var fallback = new RuntimeSceneSettings();
+        fallback.CopyFromScriptableObject(so);
+        return fallback;
+    }
+
+    private void OnRuntimeSettingsChanged(RuntimeSceneSettings newSettings)
+    {
+        runtimeSettings = newSettings;
+        
+        // Update any cached references or trigger updates as needed
+        UpdateAllPlayersDebuggingVisuals();
+    }
+
+    public RuntimeSceneSettings GetRuntimeSettings()
+    {
+        return GetCurrentSettings();
+    }
+    #endregion
+
     #region Debugging
     private void OnAnyDebuggingSettingChanged()
     {
@@ -462,7 +520,8 @@ public class SceneController : MonoBehaviour
 
     private void UpdatePlayerHandTrailDistorters(PlayerConstructor player)
     {
-        if (so.showHandTrailDistorters)
+        var currentSettings = GetCurrentSettings();
+        if (currentSettings.showHandTrailDistorters)
         {
             foreach (GameObject distorter in player.leftHandTrailDistorters)
             {
@@ -488,14 +547,15 @@ public class SceneController : MonoBehaviour
 
     private void UpdatePlayerAttractionRadius(PlayerConstructor player)
     {
-        if (so.showAttractionRadius)
+        var currentSettings = GetCurrentSettings();
+        if (currentSettings.showAttractionRadius)
         {
             player.radiusSprite.enabled = true;
             // set size of radius sprite
             player.radiusSprite.transform.localScale = new Vector3(
-                so.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
-                so.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
-                so.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler
+                currentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
+                currentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
+                currentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler
             );
         }
         else
@@ -506,7 +566,8 @@ public class SceneController : MonoBehaviour
 
     private void UpdatePlayerSecondaryAttractor(PlayerConstructor player)
     {
-        if (so.showSecondaryAttractor)
+        var currentSettings = GetCurrentSettings();
+        if (currentSettings.showSecondaryAttractor)
         {
             player.leftHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = true;
             player.rightHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = true;

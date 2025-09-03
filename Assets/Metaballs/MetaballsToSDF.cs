@@ -135,15 +135,17 @@ namespace MarchingCubes
                 VisualEffect _vfxRight = player.GetComponent<PlayerConstructor>().rightHandVfx;
                 if (_vfxLeft != null)
                 {
+                    var runtimeSettings = controller.GetRuntimeSettings();
                     _vfxLeft.SetTexture("sdfTexture", sdfBaker.SdfTexture);
                     _vfxLeft.SetVector3("sdfScale", sizeBox);
-                    _vfxLeft.SetFloat("zDepth", controller.so.baseZDepth);
+                    _vfxLeft.SetFloat("zDepth", runtimeSettings.baseZDepth);
                 }
                 if (_vfxRight != null)
                 {
+                    var runtimeSettings = controller.GetRuntimeSettings();
                     _vfxRight.SetTexture("sdfTexture", sdfBaker.SdfTexture);
                     _vfxRight.SetVector3("sdfScale", sizeBox);
-                    _vfxRight.SetFloat("zDepth", controller.so.baseZDepth);
+                    _vfxRight.SetFloat("zDepth", runtimeSettings.baseZDepth);
                 }
             }
         }
@@ -218,7 +220,8 @@ namespace MarchingCubes
 
         public void SetMetaballPosition(int index, Vector3 position)
         {
-            position.z -= controller.so.baseZDepth;
+            var runtimeSettings = controller.GetRuntimeSettings();
+            position.z -= runtimeSettings.baseZDepth;
             metaballs[index].Position = position;
         }
 

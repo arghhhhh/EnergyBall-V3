@@ -28,28 +28,29 @@ public class DummyTransformer : MonoBehaviour
         controller = GetComponent<SceneController>();
         if (leftHand != null && rightHand != null && controller != null)
         {
+            var runtimeSettings = controller.GetRuntimeSettings();
             if (selectedAxis == Axis.X)
             {
                 leftHand.localPosition = new Vector3(
                     leftHand.localPosition.x,
                     leftHand.localPosition.y,
-                    controller.so.baseZDepth
+                    runtimeSettings.baseZDepth
                 );
                 rightHand.localPosition = new Vector3(
                     rightHand.localPosition.x,
                     rightHand.localPosition.y,
-                    controller.so.baseZDepth
+                    runtimeSettings.baseZDepth
                 );
             }
             else
             {
                 leftHand.localPosition = new Vector3(
-                    controller.so.baseZDepth,
+                    runtimeSettings.baseZDepth,
                     leftHand.localPosition.y,
                     leftHand.localPosition.z
                 );
                 rightHand.localPosition = new Vector3(
-                    controller.so.baseZDepth,
+                    runtimeSettings.baseZDepth,
                     rightHand.localPosition.y,
                     rightHand.localPosition.z
                 );

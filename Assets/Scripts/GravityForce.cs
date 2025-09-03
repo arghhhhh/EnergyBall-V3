@@ -48,7 +48,8 @@ public class GravityForce
                         );
                     }
 
-                    if (controller.so.mergeSizeScalerDamper > 0)
+                    var runtimeSettings = controller.GetRuntimeSettings();
+                    if (runtimeSettings.mergeSizeScalerDamper > 0)
                     {
                         ManageOrbitalBodies(playerAConstructor, playerBConstructor, distance);
                     }
@@ -64,10 +65,12 @@ public class GravityForce
         float distance
     )
     {
+        var runtimeSettings = controller.GetRuntimeSettings();
+        
         // F = G * ((m1*m2)/r^2)
         float massProduct = attractor.sphere.mass * player.sphere.mass;
         float unscaledForceMagnitude = massProduct / (distance * distance);
-        float forceMagnitude = controller.so.g * unscaledForceMagnitude;
+        float forceMagnitude = runtimeSettings.g * unscaledForceMagnitude;
 
         // Check whether objects are moving towards each other
         Vector3 relativeVelocity = player.sphere.linearVelocity - attractor.sphere.linearVelocity;
@@ -75,17 +78,17 @@ public class GravityForce
 
         isMovingTowards = relativeDot > 0;
 
-        if (isMovingTowards && forceMagnitude >= controller.so.maxTowardsForce)
+        if (isMovingTowards && forceMagnitude >= runtimeSettings.maxTowardsForce)
         {
-            forceMagnitude = controller.so.maxTowardsForce * controller.so.gravityForceDamper;
+            forceMagnitude = runtimeSettings.maxTowardsForce * runtimeSettings.gravityForceDamper;
         }
-        else if (!isMovingTowards && forceMagnitude >= controller.so.maxAwayFromForce)
+        else if (!isMovingTowards && forceMagnitude >= runtimeSettings.maxAwayFromForce)
         {
-            forceMagnitude = controller.so.maxAwayFromForce;
+            forceMagnitude = runtimeSettings.maxAwayFromForce;
         }
 
         // Only add gravity until a certain distance
-        if (distance > controller.so.stopGravityDistance)
+        if (distance > runtimeSettings.stopGravityDistance)
         {
             Vector3 forceDirection = direction.normalized;
             Vector3 forceVector = forceDirection * forceMagnitude;
@@ -93,8 +96,8 @@ public class GravityForce
         }
         // Stop object at a certain distance and speed
         else if (
-            distance < controller.so.stopMovingDistance
-            && relativeVelocity.magnitude < controller.so.stopVelocity
+            distance < runtimeSettings.stopMovingDistance
+            && relativeVelocity.magnitude < runtimeSettings.stopVelocity
         )
         {
             Vector3 stopForce =

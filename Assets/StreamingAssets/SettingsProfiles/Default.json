@@ -1,0 +1,150 @@
+{
+    "g": 12.0,
+    "maxTowardsForce": 10.0,
+    "maxAwayFromForce": 25.0,
+    "gravityForceDamper": 0.949999988079071,
+    "stopGravityDistance": 0.11999999731779099,
+    "stopMovingDistance": 0.05000000074505806,
+    "stopVelocity": 0.5,
+    "attractionRadiusMultiplier": 1.2000000476837159,
+    "forceToMiddle": {
+        "serializedVersion": "2",
+        "m_Curve": [
+            {
+                "serializedVersion": "3",
+                "time": 0.0,
+                "value": 1.0,
+                "inSlope": -0.006802848540246487,
+                "outSlope": -0.006802848540246487,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.3333333432674408,
+                "outWeight": 0.23333333432674409
+            },
+            {
+                "serializedVersion": "3",
+                "time": 0.7828356623649597,
+                "value": 0.8622234463691711,
+                "inSlope": -0.613844633102417,
+                "outSlope": -0.613844633102417,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.18742698431015016,
+                "outWeight": 0.6930128335952759
+            },
+            {
+                "serializedVersion": "3",
+                "time": 1.0,
+                "value": 0.0,
+                "inSlope": -7.4285783767700199,
+                "outSlope": -7.4285783767700199,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.07674671709537506,
+                "outWeight": 0.0
+            }
+        ],
+        "m_PreInfinity": 2,
+        "m_PostInfinity": 2,
+        "m_RotationOrder": 4
+    },
+    "singleHandOpenForceDamper": 0.0,
+    "pushForce": 70.0,
+    "minDrag": 0.25,
+    "maxDrag": 0.75,
+    "alignmentVectorStrength": {
+        "serializedVersion": "2",
+        "m_Curve": [
+            {
+                "serializedVersion": "3",
+                "time": 0.0,
+                "value": 0.20000000298023225,
+                "inSlope": 0.0,
+                "outSlope": 0.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            },
+            {
+                "serializedVersion": "3",
+                "time": 1.0,
+                "value": 1.0,
+                "inSlope": 2.0,
+                "outSlope": 2.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            }
+        ],
+        "m_PreInfinity": 2,
+        "m_PostInfinity": 2,
+        "m_RotationOrder": 4
+    },
+    "alignmentVectorStrengthScaler": 0.3499999940395355,
+    "handPushScaler": 10.0,
+    "pulseAmount": 2.0,
+    "pulseSpeed": 3.0,
+    "graphLimit": 3.882999897003174,
+    "pulseFreqs": [
+        0.30000001192092898,
+        0.800000011920929,
+        2.0,
+        3.0
+    ],
+    "singleHandScaling": true,
+    "minimumUnscaledSize": 1.5,
+    "minHandDisplacementPerFrame": 0.05000000074505806,
+    "distanceDamper": {
+        "serializedVersion": "2",
+        "m_Curve": [
+            {
+                "serializedVersion": "3",
+                "time": 0.0,
+                "value": 0.75,
+                "inSlope": 0.0,
+                "outSlope": 0.4999999701976776,
+                "tangentMode": 69,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            },
+            {
+                "serializedVersion": "3",
+                "time": 0.4000000059604645,
+                "value": 0.949999988079071,
+                "inSlope": 0.4999999701976776,
+                "outSlope": 0.08333335071802139,
+                "tangentMode": 69,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            },
+            {
+                "serializedVersion": "3",
+                "time": 1.0,
+                "value": 1.0,
+                "inSlope": 0.08333335071802139,
+                "outSlope": 0.0,
+                "tangentMode": 69,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            }
+        ],
+        "m_PreInfinity": 2,
+        "m_PostInfinity": 2,
+        "m_RotationOrder": 4
+    },
+    "pulseScaleDamper": 0.30000001192092898,
+    "mergeSizeScalerDamper": 0.15000000596046449,
+    "maxDistanceBetweenHands": 5.0,
+    "baseZDepth": 5.0,
+    "defaultUnscaledSize": 2.5,
+    "bodyScale": 5.0,
+    "maxDistanceFromCamera": 60.0,
+    "particleInitializationDelay": 1.75,
+    "dummyOnlyMode": true,
+    "showSphereMeshOnHandCollision": false
+}

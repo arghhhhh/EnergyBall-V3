@@ -1,0 +1,161 @@
+.settings-panel {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    max-width: 600px;
+    height: 90%;
+    max-height: 800px;
+    background-color: rgba(0, 0, 0, 0.9);
+    border-width: 2px;
+    border-color: rgb(100, 100, 100);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(60, 60, 60);
+}
+
+.settings-title {
+    font-size: 24px;
+    color: white;
+    font-style: bold;
+}
+
+.profile-controls {
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.profile-button {
+    padding: 5px 10px;
+    background-color: rgb(50, 50, 50);
+    border-width: 1px;
+    border-color: rgb(80, 80, 80);
+    border-radius: 5px;
+    color: white;
+}
+
+.profile-button:hover {
+    background-color: rgb(70, 70, 70);
+}
+
+.profile-button:active {
+    background-color: rgb(30, 30, 30);
+}
+
+.settings-scroll {
+    flex-grow: 1;
+}
+
+.settings-group {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: rgba(40, 40, 40, 0.5);
+    border-radius: 5px;
+}
+
+.group-header {
+    font-size: 18px;
+    font-style: bold;
+    color: rgb(200, 200, 200);
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(100, 100, 100);
+}
+
+.setting-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+    min-height: 25px;
+}
+
+.setting-label {
+    flex-grow: 1;
+    color: white;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+.setting-input {
+    min-width: 100px;
+    max-width: 150px;
+}
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background-color: rgb(200, 50, 50);
+    border-width: 0;
+    border-radius: 15px;
+    font-size: 16px;
+    color: white;
+}
+
+.close-button:hover {
+    background-color: rgb(220, 70, 70);
+}
+
+.curve-editor {
+    height: 100px;
+    border-width: 1px;
+    border-color: rgb(100, 100, 100);
+    border-radius: 3px;
+    background-color: rgb(20, 20, 20);
+    margin-top: 5px;
+}
+
+.array-container {
+    flex-direction: column;
+    margin-top: 5px;
+    padding: 5px;
+    border-width: 1px;
+    border-color: rgb(80, 80, 80);
+    border-radius: 3px;
+    background-color: rgba(20, 20, 20, 0.5);
+}
+
+.array-element {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.array-element-input {
+    flex-grow: 1;
+    margin-right: 5px;
+}
+
+.array-button {
+    width: 25px;
+    height: 25px;
+    background-color: rgb(80, 80, 80);
+    border-width: 1px;
+    border-color: rgb(100, 100, 100);
+    border-radius: 3px;
+    color: white;
+    font-size: 12px;
+}
+
+.array-button:hover {
+    background-color: rgb(100, 100, 100);
+}
+
+.hidden {
+    display: none;
+}

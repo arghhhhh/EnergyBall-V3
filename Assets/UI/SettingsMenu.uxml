@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/SettingsMenu.uss" />
+    <ui:VisualElement name="SettingsPanel" class="settings-panel hidden">
+        <ui:VisualElement name="Header" class="settings-header">
+            <ui:Label text="Scene Settings" class="settings-title" />
+            <ui:Button text="×" name="CloseButton" class="close-button" />
+        </ui:VisualElement>
+        
+        <ui:VisualElement name="ProfileControls" class="profile-controls">
+            <ui:DropdownField name="ProfileDropdown" style="flex-grow: 1;" />
+            <ui:Button text="Load" name="LoadButton" class="profile-button" />
+            <ui:Button text="Save" name="SaveButton" class="profile-button" />
+            <ui:Button text="Save As..." name="SaveAsButton" class="profile-button" />
+        </ui:VisualElement>
+        
+        <ui:ScrollView name="SettingsScroll" class="settings-scroll">
+            <!-- Settings groups will be populated dynamically -->
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

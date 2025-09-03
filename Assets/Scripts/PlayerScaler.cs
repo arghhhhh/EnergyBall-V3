@@ -38,14 +38,16 @@ public class PlayerScaler
         // don't do any scaling in the first frame of the game
         )
         {
+            var runtimeSettings = controller.GetRuntimeSettings();
+            
             // we may want to scale player by each hand independently
             // for example, if left hand is stationary and right hand moves toward left
             // we want to negatively scale the sphere based on the movement of the right hand
-            if (controller.so.singleHandScaling)
+            if (runtimeSettings.singleHandScaling)
             {
                 if (
                     leftHandVelocity.magnitude < 15f
-                    && leftHandDisplacement.magnitude > controller.so.minHandDisplacementPerFrame
+                    && leftHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
                 )
                 {
                     CreateRays(
@@ -58,7 +60,7 @@ public class PlayerScaler
                 }
                 if (
                     rightHandVelocity.magnitude < 15f
-                    && rightHandDisplacement.magnitude > controller.so.minHandDisplacementPerFrame
+                    && rightHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
                 )
                 {
                     CreateRays(
@@ -72,9 +74,9 @@ public class PlayerScaler
             }
             else if (
                 leftHandVelocity.magnitude < 15f
-                && leftHandDisplacement.magnitude > controller.so.minHandDisplacementPerFrame
+                && leftHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
                 && rightHandVelocity.magnitude < 15f
-                && rightHandDisplacement.magnitude > controller.so.minHandDisplacementPerFrame
+                && rightHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
             )
             {
                 CreateRays(
@@ -145,7 +147,8 @@ public class PlayerScaler
         bool bodyHit = sphere.Raycast(ray, out RaycastHit bodyRH, Mathf.Infinity);
         bool oppoHandHit = oppoHand.Raycast(ray, out RaycastHit handRH, Mathf.Infinity);
 
-        if (controller.so.showSphereMeshOnHandCollision && bodyHit)
+        var runtimeSettings = controller.GetRuntimeSettings();
+        if (runtimeSettings.showSphereMeshOnHandCollision && bodyHit)
         {
             sphere.gameObject.GetComponent<MeshRenderer>().enabled = true;
         }
@@ -194,13 +197,15 @@ public class PlayerScaler
         float sizeDistanceRatio = Mathf.Clamp01(
             Utils.GetVector3Avg(player.unscaledSize) / normal.magnitude
         );
+        var runtimeSettings = controller.GetRuntimeSettings();
+        
         // larger distance between hands means less scaling
         float relativeHandDistance = Mathf.InverseLerp(
-            controller.so.maxDistanceBetweenHands,
+            runtimeSettings.maxDistanceBetweenHands,
             0f,
             normal.magnitude
         );
-        float scaleCurveT = controller.so.distanceDamper.Evaluate(relativeHandDistance);
+        float scaleCurveT = runtimeSettings.distanceDamper.Evaluate(relativeHandDistance);
         float distanceDamper = sizeDistanceRatio * scaleCurveT;
 
         // 3.
@@ -233,7 +238,7 @@ public class PlayerScaler
             displacementScaler
             * distanceDamper
             * hitAccuracyDamper
-            * controller.so.pulseScaleDamper;
+            * runtimeSettings.pulseScaleDamper;
         if (sign)
         {
             scaleAmt = -scaleAmt;
@@ -241,9 +246,9 @@ public class PlayerScaler
         Vector3 scaleAmtVector = Utils.FloatToVector3(scaleAmt);
 
         player.unscaledSize += scaleAmtVector;
-        if (Utils.GetVector3Avg(player.unscaledSize) < controller.so.minimumUnscaledSize)
+        if (Utils.GetVector3Avg(player.unscaledSize) < runtimeSettings.minimumUnscaledSize)
         {
-            player.unscaledSize = Utils.FloatToVector3(controller.so.minimumUnscaledSize);
+            player.unscaledSize = Utils.FloatToVector3(runtimeSettings.minimumUnscaledSize);
         }
 
         // Debug.Log(hand.gameObject.name + ", distance: " + normal.magnitude + ", projected velo:" + projVelocity.magnitude + ", disp: " + projVelocity.magnitude*Time.deltaTime);
