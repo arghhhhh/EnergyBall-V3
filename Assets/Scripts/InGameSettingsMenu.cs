@@ -824,6 +824,9 @@ public class InGameSettingsMenu : MonoBehaviour
             File.WriteAllText(path, json);
             currentProfilePath = path;
             
+            // Notify VolumeController that a profile was saved
+            VolumeController.OnProfileSaved(runtimeSettings);
+            
             Debug.Log($"Profile saved: {Path.GetFileName(path)}");
         }
         catch (Exception e)
