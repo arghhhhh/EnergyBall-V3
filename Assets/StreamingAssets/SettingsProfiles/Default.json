@@ -156,6 +156,18 @@
     "lensFlareStreaksOrientation": 0.0,
     "lensFlareStreaksThreshold": 0.05000000074505806,
     "lensFlareChromaticIntensity": 1.0,
+    "lensDistortionIntensity": 0.0,
+    "lensDistortionXMultiplier": 1.0,
+    "lensDistortionYMultiplier": 1.0,
+    "lensDistortionScale": 1.0,
+    "lensDistortionCenterX": 0.5,
+    "lensDistortionCenterY": 0.5,
+    "colorAdjustmentsPostExposure": 0.0,
+    "colorAdjustmentsContrast": 0.0,
+    "colorAdjustmentsHueShift": 0.0,
+    "colorAdjustmentsSaturation": 0.0,
+    "whiteBalanceTemperature": 0.0,
+    "whiteBalanceTint": 0.0,
     "dummyOnlyMode": true,
     "showSphereMeshOnHandCollision": false
 }

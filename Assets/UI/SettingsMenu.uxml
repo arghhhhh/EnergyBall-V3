@@ -13,8 +13,19 @@
             <ui:Button text="Save As..." name="SaveAsButton" class="profile-button" />
         </ui:VisualElement>
         
-        <ui:ScrollView name="SettingsScroll" class="settings-scroll">
-            <!-- Settings groups will be populated dynamically -->
-        </ui:ScrollView>
+        <ui:VisualElement name="TabContainer" class="tab-container">
+            <ui:Button text="Scene Settings" name="SceneTab" class="tab-button active" />
+            <ui:Button text="Post Processing" name="PostProcessingTab" class="tab-button" />
+        </ui:VisualElement>
+        
+        <ui:VisualElement name="TabContent" class="tab-content">
+            <ui:ScrollView name="SceneSettingsPanel" class="tab-panel active">
+                <!-- Scene settings will be populated dynamically -->
+            </ui:ScrollView>
+            
+            <ui:ScrollView name="PostProcessingPanel" class="tab-panel">
+                <!-- Post processing settings will be populated dynamically -->
+            </ui:ScrollView>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

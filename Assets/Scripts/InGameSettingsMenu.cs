@@ -11,9 +11,11 @@ public class InGameSettingsMenu : MonoBehaviour
     [SerializeField] private SceneController sceneController;
     
     private VisualElement settingsPanel;
-    private ScrollView settingsScroll;
+    private ScrollView sceneSettingsPanel;
+    private ScrollView postProcessingPanel;
     private DropdownField profileDropdown;
     private Button loadButton, saveButton, saveAsButton, closeButton;
+    private Button sceneTab, postProcessingTab;
     
     private RuntimeSceneSettings runtimeSettings;
     private RuntimeSceneSettings originalSettings; // Backup for canceling changes
@@ -73,18 +75,23 @@ public class InGameSettingsMenu : MonoBehaviour
         var root = uiDocument.rootVisualElement;
         
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
-        settingsScroll = root.Q<ScrollView>("SettingsScroll");
+        sceneSettingsPanel = root.Q<ScrollView>("SceneSettingsPanel");
+        postProcessingPanel = root.Q<ScrollView>("PostProcessingPanel");
         profileDropdown = root.Q<DropdownField>("ProfileDropdown");
         loadButton = root.Q<Button>("LoadButton");
         saveButton = root.Q<Button>("SaveButton");
         saveAsButton = root.Q<Button>("SaveAsButton");
         closeButton = root.Q<Button>("CloseButton");
+        sceneTab = root.Q<Button>("SceneTab");
+        postProcessingTab = root.Q<Button>("PostProcessingTab");
         
         // Setup button callbacks
         closeButton.clicked += CloseMenu;
         loadButton.clicked += LoadSelectedProfile;
         saveButton.clicked += SaveCurrentProfile;
         saveAsButton.clicked += ShowSaveAsDialog;
+        sceneTab.clicked += () => SwitchTab("scene");
+        postProcessingTab.clicked += () => SwitchTab("postprocessing");
         
         // Auto-load when dropdown selection changes
         profileDropdown.RegisterValueChangedCallback(evt => {
@@ -97,22 +104,54 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void CreateSettingsUI()
     {
-        settingsScroll.Clear();
+        sceneSettingsPanel.Clear();
+        postProcessingPanel.Clear();
         settingElements.Clear();
         
-        CreateGravityAttractionGroup();
-        CreateHandsAttractionGroup();
-        CreateIntrinsicPulsationGroup();
-        CreateMovementPulsationGroup();
-        CreateMiscellaneousGroup();
-        CreateAnimationGroup();
-        CreatePostProcessingGroup();
-        CreateDebuggingGroup();
+        // Scene Settings Tab
+        CreateSceneSettingsContent();
+        
+        // Post Processing Tab
+        CreatePostProcessingContent();
     }
 
-    private void CreateGravityAttractionGroup()
+    private void CreateSceneSettingsContent()
     {
-        var group = CreateGroup("Gravity Attraction");
+        CreateGravityAttractionGroup(sceneSettingsPanel);
+        CreateHandsAttractionGroup(sceneSettingsPanel);
+        CreateIntrinsicPulsationGroup(sceneSettingsPanel);
+        CreateMovementPulsationGroup(sceneSettingsPanel);
+        CreateMiscellaneousGroup(sceneSettingsPanel);
+        CreateAnimationGroup(sceneSettingsPanel);
+        CreateDebuggingGroup(sceneSettingsPanel);
+    }
+
+    private void CreatePostProcessingContent()
+    {
+        CreatePostProcessingGroup(postProcessingPanel);
+    }
+
+    private void SwitchTab(string tabName)
+    {
+        if (tabName == "scene")
+        {
+            sceneTab.AddToClassList("active");
+            postProcessingTab.RemoveFromClassList("active");
+            sceneSettingsPanel.AddToClassList("active");
+            postProcessingPanel.RemoveFromClassList("active");
+        }
+        else if (tabName == "postprocessing")
+        {
+            sceneTab.RemoveFromClassList("active");
+            postProcessingTab.AddToClassList("active");
+            sceneSettingsPanel.RemoveFromClassList("active");
+            postProcessingPanel.AddToClassList("active");
+        }
+    }
+
+    private void CreateGravityAttractionGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Gravity Attraction", parentContainer);
         
         CreateFloatField(group, "G", () => runtimeSettings.g, v => runtimeSettings.g = v);
         CreateFloatField(group, "Max Towards Force", () => runtimeSettings.maxTowardsForce, v => runtimeSettings.maxTowardsForce = v);
@@ -124,9 +163,9 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(group, "Attraction Radius Multiplier", () => runtimeSettings.attractionRadiusMultiplier, v => runtimeSettings.attractionRadiusMultiplier = v);
     }
 
-    private void CreateHandsAttractionGroup()
+    private void CreateHandsAttractionGroup(ScrollView parentContainer)
     {
-        var group = CreateGroup("Hands Attraction");
+        var group = CreateGroup("Hands Attraction", parentContainer);
         
         CreateCurveField(group, "Force To Middle", () => runtimeSettings.forceToMiddle, v => runtimeSettings.forceToMiddle = v);
         CreateFloatField(group, "Single Hand Open Force Damper", () => runtimeSettings.singleHandOpenForceDamper, v => runtimeSettings.singleHandOpenForceDamper = v);
@@ -138,9 +177,9 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(group, "Hand Push Scaler", () => runtimeSettings.handPushScaler, v => runtimeSettings.handPushScaler = v);
     }
 
-    private void CreateIntrinsicPulsationGroup()
+    private void CreateIntrinsicPulsationGroup(ScrollView parentContainer)
     {
-        var group = CreateGroup("Intrinsic Pulsation");
+        var group = CreateGroup("Intrinsic Pulsation", parentContainer);
         
         CreateSliderField(group, "Pulse Amount", () => runtimeSettings.pulseAmount, v => runtimeSettings.pulseAmount = v, 0f, 10f);
         CreateFloatField(group, "Pulse Speed", () => runtimeSettings.pulseSpeed, v => runtimeSettings.pulseSpeed = v);
@@ -148,9 +187,9 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatArrayField(group, "Pulse Frequencies", () => runtimeSettings.pulseFreqs, v => runtimeSettings.pulseFreqs = v);
     }
 
-    private void CreateMovementPulsationGroup()
+    private void CreateMovementPulsationGroup(ScrollView parentContainer)
     {
-        var group = CreateGroup("Movement-Based Pulsation");
+        var group = CreateGroup("Movement-Based Pulsation", parentContainer);
         
         CreateToggleField(group, "Single Hand Scaling", () => runtimeSettings.singleHandScaling, v => runtimeSettings.singleHandScaling = v);
         CreateFloatField(group, "Minimum Unscaled Size", () => runtimeSettings.minimumUnscaledSize, v => runtimeSettings.minimumUnscaledSize = v);
@@ -159,9 +198,9 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(group, "Pulse Scale Damper", () => runtimeSettings.pulseScaleDamper, v => runtimeSettings.pulseScaleDamper = v);
     }
 
-    private void CreateMiscellaneousGroup()
+    private void CreateMiscellaneousGroup(ScrollView parentContainer)
     {
-        var group = CreateGroup("Miscellaneous");
+        var group = CreateGroup("Miscellaneous", parentContainer);
         
         CreateFloatField(group, "Merge Size Scaler Damper", () => runtimeSettings.mergeSizeScalerDamper, v => runtimeSettings.mergeSizeScalerDamper = v);
         CreateFloatField(group, "Max Distance Between Hands", () => runtimeSettings.maxDistanceBetweenHands, v => runtimeSettings.maxDistanceBetweenHands = v);
@@ -171,22 +210,22 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(group, "Max Distance From Camera", () => runtimeSettings.maxDistanceFromCamera, v => runtimeSettings.maxDistanceFromCamera = v);
     }
 
-    private void CreateAnimationGroup()
+    private void CreateAnimationGroup(ScrollView parentContainer)
     {
-        var group = CreateGroup("Animation");
+        var group = CreateGroup("Animation", parentContainer);
         
         CreateFloatField(group, "Particle Initialization Delay", () => runtimeSettings.particleInitializationDelay, v => runtimeSettings.particleInitializationDelay = v);
     }
 
-    private void CreatePostProcessingGroup()
+    private void CreatePostProcessingGroup(ScrollView parentContainer)
     {
-        var bloomGroup = CreateGroup("Post Processing - Bloom");
+        var bloomGroup = CreateGroup("Bloom", parentContainer);
         
         CreateFloatField(bloomGroup, "Bloom Threshold", () => runtimeSettings.bloomThreshold, v => runtimeSettings.bloomThreshold = v);
         CreateSliderField(bloomGroup, "Bloom Intensity", () => runtimeSettings.bloomIntensity, v => runtimeSettings.bloomIntensity = v, 0f, 3f);
         CreateSliderField(bloomGroup, "Bloom Scatter", () => runtimeSettings.bloomScatter, v => runtimeSettings.bloomScatter = v, 0f, 1f);
         
-        var lensFlareGroup = CreateGroup("Post Processing - Screen Space Lens Flare");
+        var lensFlareGroup = CreateGroup("Screen Space Lens Flare", parentContainer);
         
         CreateSliderField(lensFlareGroup, "Intensity", () => runtimeSettings.lensFlareIntensity, v => runtimeSettings.lensFlareIntensity = v, 0f, 3f);
         CreateSliderField(lensFlareGroup, "Regular Multiplier (Flares)", () => runtimeSettings.lensFlareRegularMultiplier, v => runtimeSettings.lensFlareRegularMultiplier = v, 0f, 3f);
@@ -197,7 +236,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(lensFlareGroup, "Threshold (Streaks)", () => runtimeSettings.lensFlareStreaksThreshold, v => runtimeSettings.lensFlareStreaksThreshold = v, 0f, 1f);
         CreateSliderField(lensFlareGroup, "Chromatic Aberration Intensity", () => runtimeSettings.lensFlareChromaticIntensity, v => runtimeSettings.lensFlareChromaticIntensity = v, 0f, 1f);
         
-        var lensDistortionGroup = CreateGroup("Post Processing - Lens Distortion");
+        var lensDistortionGroup = CreateGroup("Lens Distortion", parentContainer);
         
         CreateSliderField(lensDistortionGroup, "Intensity", () => runtimeSettings.lensDistortionIntensity, v => runtimeSettings.lensDistortionIntensity = v, -1f, 1f);
         CreateSliderField(lensDistortionGroup, "X Multiplier", () => runtimeSettings.lensDistortionXMultiplier, v => runtimeSettings.lensDistortionXMultiplier = v, 0f, 2f);
@@ -205,11 +244,23 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(lensDistortionGroup, "Scale", () => runtimeSettings.lensDistortionScale, v => runtimeSettings.lensDistortionScale = v, 0.01f, 3f);
         CreateSliderField(lensDistortionGroup, "Center X", () => runtimeSettings.lensDistortionCenterX, v => runtimeSettings.lensDistortionCenterX = v, 0f, 1f);
         CreateSliderField(lensDistortionGroup, "Center Y", () => runtimeSettings.lensDistortionCenterY, v => runtimeSettings.lensDistortionCenterY = v, 0f, 1f);
+        
+        var colorAdjustmentsGroup = CreateGroup("Color Adjustments", parentContainer);
+        
+        CreateFloatField(colorAdjustmentsGroup, "Post Exposure", () => runtimeSettings.colorAdjustmentsPostExposure, v => runtimeSettings.colorAdjustmentsPostExposure = v);
+        CreateSliderField(colorAdjustmentsGroup, "Contrast", () => runtimeSettings.colorAdjustmentsContrast, v => runtimeSettings.colorAdjustmentsContrast = v, -100f, 100f);
+        CreateSliderField(colorAdjustmentsGroup, "Hue Shift", () => runtimeSettings.colorAdjustmentsHueShift, v => runtimeSettings.colorAdjustmentsHueShift = v, -180f, 180f);
+        CreateSliderField(colorAdjustmentsGroup, "Saturation", () => runtimeSettings.colorAdjustmentsSaturation, v => runtimeSettings.colorAdjustmentsSaturation = v, -100f, 100f);
+        
+        var whiteBalanceGroup = CreateGroup("White Balance", parentContainer);
+        
+        CreateSliderField(whiteBalanceGroup, "Temperature", () => runtimeSettings.whiteBalanceTemperature, v => runtimeSettings.whiteBalanceTemperature = v, -100f, 100f);
+        CreateSliderField(whiteBalanceGroup, "Tint", () => runtimeSettings.whiteBalanceTint, v => runtimeSettings.whiteBalanceTint = v, -100f, 100f);
     }
 
-    private void CreateDebuggingGroup()
+    private void CreateDebuggingGroup(ScrollView parentContainer)
     {
-        var group = CreateGroup("Debugging");
+        var group = CreateGroup("Debugging", parentContainer);
         
         CreateToggleField(group, "Dummy Only Mode", () => runtimeSettings.dummyOnlyMode, v => runtimeSettings.dummyOnlyMode = v);
         CreateToggleField(group, "Show Sphere Mesh On Hand Collision", () => runtimeSettings.showSphereMeshOnHandCollision, v => runtimeSettings.showSphereMeshOnHandCollision = v);
@@ -218,7 +269,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateToggleField(group, "Show Secondary Attractor", () => runtimeSettings.showSecondaryAttractor, v => runtimeSettings.showSecondaryAttractor = v);
     }
 
-    private VisualElement CreateGroup(string title)
+    private VisualElement CreateGroup(string title, ScrollView parentContainer)
     {
         var group = new VisualElement();
         group.AddToClassList("settings-group");
@@ -227,7 +278,7 @@ public class InGameSettingsMenu : MonoBehaviour
         header.AddToClassList("group-header");
         group.Add(header);
         
-        settingsScroll.Add(group);
+        parentContainer.Add(group);
         settingGroups.Add(group);
         
         return group;

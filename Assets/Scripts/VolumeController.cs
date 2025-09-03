@@ -10,6 +10,8 @@ public class VolumeController : MonoBehaviour
     private ScreenSpaceLensFlare screenSpaceLensFlare;
     private ChromaticAberration chromaticAberration;
     private LensDistortion lensDistortion;
+    private ColorAdjustments colorAdjustments;
+    private WhiteBalance whiteBalance;
 
     private void Start()
     {
@@ -21,6 +23,8 @@ public class VolumeController : MonoBehaviour
             volume.profile.TryGet(out screenSpaceLensFlare);
             volume.profile.TryGet(out chromaticAberration);
             volume.profile.TryGet(out lensDistortion);
+            volume.profile.TryGet(out colorAdjustments);
+            volume.profile.TryGet(out whiteBalance);
         }
         else
         {
@@ -69,11 +73,32 @@ public class VolumeController : MonoBehaviour
         }
     }
 
+    public void UpdateColorAdjustmentsSettings(RuntimeSceneSettings settings)
+    {
+        if (colorAdjustments != null)
+        {
+            colorAdjustments.postExposure.value = settings.colorAdjustmentsPostExposure;
+            colorAdjustments.contrast.value = settings.colorAdjustmentsContrast;
+            colorAdjustments.hueShift.value = settings.colorAdjustmentsHueShift;
+            colorAdjustments.saturation.value = settings.colorAdjustmentsSaturation;
+        }
+    }
+
+    public void UpdateWhiteBalanceSettings(RuntimeSceneSettings settings)
+    {
+        if (whiteBalance != null)
+        {
+            whiteBalance.temperature.value = settings.whiteBalanceTemperature;
+            whiteBalance.tint.value = settings.whiteBalanceTint;
+        }
+    }
+
     public void ApplyCurrentSettings(RuntimeSceneSettings settings)
     {
         UpdateBloomSettings(settings);
         UpdateLensFlareSettings(settings);
         UpdateLensDistortionSettings(settings);
-        // Add other post-processing effects here as needed
+        UpdateColorAdjustmentsSettings(settings);
+        UpdateWhiteBalanceSettings(settings);
     }
 }

@@ -52,12 +52,12 @@ public class RuntimeSceneSettings
     [Header("Animation")]
     public float particleInitializationDelay = 1f;
 
-    [Header("Post Processing - Bloom")]
+    [Header("Bloom")]
     public float bloomThreshold = 1.0f;
     public float bloomIntensity = 0.5f;
     public float bloomScatter = 0.7f;
 
-    [Header("Post Processing - Screen Space Lens Flare")]
+    [Header("Screen Space Lens Flare")]
     public float lensFlareIntensity = 1.0f;
     public float lensFlareRegularMultiplier = 1.0f;
     public float lensFlareReversedMultiplier = 1.0f;
@@ -67,13 +67,23 @@ public class RuntimeSceneSettings
     public float lensFlareStreaksThreshold = 0.05f;
     public float lensFlareChromaticIntensity = 1.0f;
 
-    [Header("Post Processing - Lens Distortion")]
+    [Header("Lens Distortion")]
     public float lensDistortionIntensity = 0.0f;
     public float lensDistortionXMultiplier = 1.0f;
     public float lensDistortionYMultiplier = 1.0f;
     public float lensDistortionScale = 1.0f;
     public float lensDistortionCenterX = 0.5f;
     public float lensDistortionCenterY = 0.5f;
+
+    [Header("Color Adjustments")]
+    public float colorAdjustmentsPostExposure = 0.0f;
+    public float colorAdjustmentsContrast = 0.0f;
+    public float colorAdjustmentsHueShift = 0.0f;
+    public float colorAdjustmentsSaturation = 0.0f;
+
+    [Header("White Balance")]
+    public float whiteBalanceTemperature = 0.0f;
+    public float whiteBalanceTint = 0.0f;
 
     [Header("Debugging")]
     public bool dummyOnlyMode = false;
@@ -180,6 +190,14 @@ public class RuntimeSceneSettings
         lensDistortionScale = 1.0f;
         lensDistortionCenterX = 0.5f;
         lensDistortionCenterY = 0.5f;
+        // Color Adjustments defaults
+        colorAdjustmentsPostExposure = 0.0f;
+        colorAdjustmentsContrast = 0.0f;
+        colorAdjustmentsHueShift = 0.0f;
+        colorAdjustmentsSaturation = 0.0f;
+        // White Balance defaults
+        whiteBalanceTemperature = 0.0f;
+        whiteBalanceTint = 0.0f;
         dummyOnlyMode = so.dummyOnlyMode;
         showSphereMeshOnHandCollision = so.showSphereMeshOnHandCollision;
         _showAttractionRadius = so.showAttractionRadius;
@@ -239,6 +257,12 @@ public class RuntimeSceneSettings
         copy.lensDistortionScale = lensDistortionScale;
         copy.lensDistortionCenterX = lensDistortionCenterX;
         copy.lensDistortionCenterY = lensDistortionCenterY;
+        copy.colorAdjustmentsPostExposure = colorAdjustmentsPostExposure;
+        copy.colorAdjustmentsContrast = colorAdjustmentsContrast;
+        copy.colorAdjustmentsHueShift = colorAdjustmentsHueShift;
+        copy.colorAdjustmentsSaturation = colorAdjustmentsSaturation;
+        copy.whiteBalanceTemperature = whiteBalanceTemperature;
+        copy.whiteBalanceTint = whiteBalanceTint;
         copy.dummyOnlyMode = dummyOnlyMode;
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         copy._showAttractionRadius = _showAttractionRadius;
