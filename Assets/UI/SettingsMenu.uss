@@ -28,12 +28,11 @@
 .settings-title {
     font-size: 24px;
     color: white;
-    font-style: bold;
+    -unity-font-style: bold;
 }
 
 .profile-controls {
     flex-direction: row;
-    gap: 10px;
     margin-bottom: 15px;
 }
 
@@ -67,7 +66,7 @@
 
 .group-header {
     font-size: 18px;
-    font-style: bold;
+    -unity-font-style: bold;
     color: rgb(200, 200, 200);
     margin-bottom: 10px;
     padding-bottom: 5px;
@@ -176,7 +175,6 @@
     border-radius: 5px 5px 0 0;
     color: rgb(180, 180, 180);
     margin-right: 5px;
-    cursor: pointer;
 }
 
 .tab-button:hover {
