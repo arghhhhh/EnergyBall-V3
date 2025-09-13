@@ -356,7 +356,7 @@ public class InGameSettingsMenu : MonoBehaviour
         labelElement.AddToClassList("setting-label");
         
         var toggle = new Toggle();
-        toggle.AddToClassList("setting-input");
+        toggle.AddToClassList("toggle");
         toggle.value = getter();
         toggle.RegisterValueChangedCallback(evt => {
             setter(evt.newValue);
@@ -378,142 +378,16 @@ public class InGameSettingsMenu : MonoBehaviour
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
         
-        // Create a button that will show curve info and allow basic editing
-        var curveButton = new Button();
-        curveButton.AddToClassList("setting-input");
-        curveButton.text = $"Curve ({getter().keys.Length} keys)";
+        // Create text label with note that curve editing is coming soon
+        var curveNote = new TextElement();
+        curveNote.text = "Curve editing coming soon...";
+        curveNote.AddToClassList("curve-note");
         
-        // For now, create a simple popup with curve presets
-        curveButton.clicked += () => ShowCurveEditor(label, getter(), setter);
-        
-        var container = new VisualElement();
-        container.Add(labelElement);
-        container.Add(curveButton);
-        row.Add(container);
+        row.Add(labelElement);
+        row.Add(curveNote);
         parent.Add(row);
         
-        settingElements[label] = curveButton;
-    }
-    
-    private void ShowCurveEditor(string curveName, AnimationCurve currentCurve, Action<AnimationCurve> setter)
-    {
-        isModalOpen = true;
-        
-        // Create a simple modal with curve presets and basic editing
-        var modal = new VisualElement();
-        modal.style.position = Position.Absolute;
-        modal.style.left = 0;
-        modal.style.top = 0;
-        modal.style.right = 0;
-        modal.style.bottom = 0;
-        modal.style.backgroundColor = new Color(0, 0, 0, 0.8f);
-        modal.style.alignItems = Align.Center;
-        modal.style.justifyContent = Justify.Center;
-        
-        var panel = new VisualElement();
-        panel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
-        panel.style.borderTopWidth = 2;
-        panel.style.borderBottomWidth = 2;
-        panel.style.borderLeftWidth = 2;
-        panel.style.borderRightWidth = 2;
-        panel.style.borderTopColor = Color.gray;
-        panel.style.borderBottomColor = Color.gray;
-        panel.style.borderLeftColor = Color.gray;
-        panel.style.borderRightColor = Color.gray;
-        panel.style.paddingTop = 20;
-        panel.style.paddingBottom = 20;
-        panel.style.paddingLeft = 20;
-        panel.style.paddingRight = 20;
-        panel.style.width = 400;
-        
-        var title = new Label($"Edit {curveName}");
-        title.style.fontSize = 18;
-        title.style.color = Color.white;
-        title.style.marginBottom = 15;
-        panel.Add(title);
-        
-        // Add preset buttons
-        var presetsLabel = new Label("Presets:");
-        presetsLabel.style.color = Color.white;
-        presetsLabel.style.marginBottom = 10;
-        panel.Add(presetsLabel);
-        
-        var presetContainer = new VisualElement();
-        presetContainer.style.flexDirection = FlexDirection.Row;
-        presetContainer.style.marginBottom = 15;
-        
-        var linearButton = new Button(() => {
-            setter(AnimationCurve.Linear(0, 0, 1, 1));
-            OnSettingsChanged?.Invoke(runtimeSettings);
-            UpdateCurveButton(curveName);
-            settingsPanel.Remove(modal);
-            isModalOpen = false;
-        });
-        linearButton.text = "Linear";
-        presetContainer.Add(linearButton);
-        
-        var easeInButton = new Button(() => {
-            setter(AnimationCurve.EaseInOut(0, 0, 1, 1));
-            OnSettingsChanged?.Invoke(runtimeSettings);
-            UpdateCurveButton(curveName);
-            settingsPanel.Remove(modal);
-            isModalOpen = false;
-        });
-        easeInButton.text = "Ease In/Out";
-        presetContainer.Add(easeInButton);
-        
-        var constantButton = new Button(() => {
-            setter(new AnimationCurve(new Keyframe(0, 1), new Keyframe(1, 1)));
-            OnSettingsChanged?.Invoke(runtimeSettings);
-            UpdateCurveButton(curveName);
-            settingsPanel.Remove(modal);
-            isModalOpen = false;
-        });
-        constantButton.text = "Constant";
-        presetContainer.Add(constantButton);
-        
-        panel.Add(presetContainer);
-        
-        // Add current curve info
-        var infoLabel = new Label($"Current: {currentCurve.keys.Length} keyframes");
-        infoLabel.style.color = Color.gray;
-        infoLabel.style.marginBottom = 15;
-        panel.Add(infoLabel);
-        
-        // Close button
-        var closeButton = new Button(() => {
-            settingsPanel.Remove(modal);
-            isModalOpen = false;
-        });
-        closeButton.text = "Close";
-        closeButton.style.alignSelf = Align.Center;
-        panel.Add(closeButton);
-        
-        modal.Add(panel);
-        settingsPanel.Add(modal);
-    }
-    
-    private void UpdateCurveButton(string curveName)
-    {
-        if (settingElements.TryGetValue(curveName, out var element) && element is Button button)
-        {
-            var curve = GetCurveByName(curveName);
-            if (curve != null)
-            {
-                button.text = $"Curve ({curve.keys.Length} keys)";
-            }
-        }
-    }
-    
-    private AnimationCurve GetCurveByName(string name)
-    {
-        return name switch
-        {
-            "Force To Middle" => runtimeSettings.forceToMiddle,
-            "Alignment Vector Strength" => runtimeSettings.alignmentVectorStrength,
-            "Distance Damper" => runtimeSettings.distanceDamper,
-            _ => null
-        };
+        settingElements[label] = curveNote;
     }
 
     private void CreateFloatArrayField(VisualElement parent, string label, Func<float[]> getter, Action<float[]> setter)
@@ -527,14 +401,56 @@ public class InGameSettingsMenu : MonoBehaviour
         var arrayContainer = new VisualElement();
         arrayContainer.AddToClassList("array-container");
         
-        var addButton = new Button(() => AddArrayElement(arrayContainer, getter, setter));
+        // Create header container for collapse button and controls
+        var headerContainer = new VisualElement();
+        headerContainer.AddToClassList("array-header");
+        
+        var collapseButton = new Button();
+        collapseButton.text = "⇓"; // Right arrow for collapsed state
+        collapseButton.AddToClassList("array-collapse-button");
+        
+        var countLabel = new Label();
+        countLabel.AddToClassList("array-count-label");
+        
+        var addButton = new Button(() => AddArrayElement(arrayContainer, getter, setter, collapseButton, countLabel));
         addButton.text = "Add Element";
         addButton.AddToClassList("array-button");
+        addButton.AddToClassList("hidden"); // Start hidden since we start collapsed
         
-        arrayContainer.Add(addButton);
-        RefreshFloatArray(arrayContainer, getter(), setter);
+        // Create content container that will be hidden/shown
+        var contentContainer = new VisualElement();
+        contentContainer.AddToClassList("array-content");
+        contentContainer.AddToClassList("collapsed"); // Start collapsed
+        
+        headerContainer.Add(collapseButton);
+        headerContainer.Add(countLabel);
+        headerContainer.Add(addButton);
+        
+        arrayContainer.Add(headerContainer);
+        arrayContainer.Add(contentContainer);
+        
+        // Setup collapse/expand functionality
+        bool isCollapsed = true;
+        collapseButton.clicked += () => {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed)
+            {
+                collapseButton.text = "⇓";
+                contentContainer.AddToClassList("collapsed");
+                addButton.AddToClassList("hidden");
+            }
+            else
+            {
+                collapseButton.text = "⇑";
+                contentContainer.RemoveFromClassList("collapsed");
+                addButton.RemoveFromClassList("hidden");
+            }
+        };
+        
+        RefreshFloatArray(arrayContainer, getter(), setter, collapseButton, countLabel);
         
         var container = new VisualElement();
+        container.AddToClassList("array-row-subcontainer");
         container.Add(labelElement);
         container.Add(arrayContainer);
         row.Add(container);
@@ -543,23 +459,25 @@ public class InGameSettingsMenu : MonoBehaviour
         settingElements[label] = arrayContainer;
     }
 
-    private void AddArrayElement(VisualElement container, Func<float[]> getter, Action<float[]> setter)
+    private void AddArrayElement(VisualElement container, Func<float[]> getter, Action<float[]> setter, Button collapseButton, Label countLabel)
     {
         var currentArray = getter();
         var newArray = new float[currentArray.Length + 1];
         Array.Copy(currentArray, newArray, currentArray.Length);
         newArray[newArray.Length - 1] = 1f;
         setter(newArray);
-        RefreshFloatArray(container, newArray, setter);
+        RefreshFloatArray(container, newArray, setter, collapseButton, countLabel);
         OnSettingsChanged?.Invoke(runtimeSettings);
     }
 
-    private void RefreshFloatArray(VisualElement container, float[] array, Action<float[]> setter)
+    private void RefreshFloatArray(VisualElement container, float[] array, Action<float[]> setter, Button collapseButton, Label countLabel)
     {
-        // Clear existing elements except the add button
-        var addButton = container.Children().First();
-        container.Clear();
-        container.Add(addButton);
+        // Update count label
+        countLabel.text = $"({array.Length} items)";
+        
+        // Find the content container (second child after header)
+        var contentContainer = container.Children().ElementAt(1);
+        contentContainer.Clear();
         
         for (int i = 0; i < array.Length; i++)
         {
@@ -581,7 +499,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 Array.Copy(array, 0, newArray, 0, index);
                 Array.Copy(array, index + 1, newArray, index, array.Length - index - 1);
                 setter(newArray);
-                RefreshFloatArray(container, newArray, setter);
+                RefreshFloatArray(container, newArray, setter, collapseButton, countLabel);
                 OnSettingsChanged?.Invoke(runtimeSettings);
             });
             removeButton.text = "-";
@@ -589,7 +507,7 @@ public class InGameSettingsMenu : MonoBehaviour
             
             elementRow.Add(field);
             elementRow.Add(removeButton);
-            container.Add(elementRow);
+            contentContainer.Add(elementRow);
         }
     }
 
