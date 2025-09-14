@@ -16,7 +16,11 @@ public class InGameSettingsMenu : MonoBehaviour
     private bool isRefreshingSuppressed = false;
     
     private UIDocument uiDocument;
-    readonly SceneController controller = SceneController.Instance;
+
+    /// <summary>
+    /// Get the SceneController instance dynamically
+    /// </summary>
+    private SceneController Controller => SceneController.Instance;
     
     private VisualElement settingsPanel;
     private ScrollView sceneSettingsPanel;
@@ -52,12 +56,12 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         sceneProfilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles", "Scene");
         postProcessingProfilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles", "PostProcessing");
-        
+
         if (!Directory.Exists(sceneProfilesDirectory))
         {
             Directory.CreateDirectory(sceneProfilesDirectory);
         }
-        
+
         if (!Directory.Exists(postProcessingProfilesDirectory))
         {
             Directory.CreateDirectory(postProcessingProfilesDirectory);
@@ -65,15 +69,43 @@ public class InGameSettingsMenu : MonoBehaviour
 
         if (uiDocument == null)
             uiDocument = GetComponent<UIDocument>();
+
+        // Initialize scene-specific keys early
+        InitializeSceneSpecificKeysFromController();
     }
 
     private void Start()
     {
         InitializeRuntimeSettings();
         SetupUI();
+
         RefreshSceneProfiles();
         RefreshPostProcessingProfiles();
         CreateSettingsUI();
+    }
+
+    /// <summary>
+    /// Initialize scene-specific keys directly from controller if available
+    /// </summary>
+    private void InitializeSceneSpecificKeysFromController()
+    {
+        if (Controller != null)
+        {
+            lastUsedSceneProfileKey = Controller.GetSceneSpecificSceneProfileKey();
+            lastUsedPostProcessingProfileKey = Controller.GetSceneSpecificPostProcessingProfileKey();
+        }
+    }
+
+    /// <summary>
+    /// Ensure scene-specific keys are updated before using them
+    /// </summary>
+    private void EnsureSceneSpecificKeys()
+    {
+        if (Controller != null && (lastUsedSceneProfileKey == "LastUsedSceneProfile" || lastUsedPostProcessingProfileKey == "LastUsedPostProcessingProfile"))
+        {
+            lastUsedSceneProfileKey = Controller.GetSceneSpecificSceneProfileKey();
+            lastUsedPostProcessingProfileKey = Controller.GetSceneSpecificPostProcessingProfileKey();
+        }
     }
 
     private void Update()
@@ -86,11 +118,11 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void InitializeRuntimeSettings()
     {
-        if (controller != null)
+        if (Controller != null)
         {
             // Get settings from SceneController inspector values
             runtimeSettings = new RuntimeSceneSettings();
-            controller.CopyInspectorToRuntime(runtimeSettings);
+            Controller.CopyInspectorToRuntime(runtimeSettings);
             originalSettings = runtimeSettings.DeepCopy();
 
             // Subscribe to runtime settings changes
@@ -628,11 +660,23 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         settingsPanel.RemoveFromClassList("hidden");
         RefreshUI();
+
+        // Show cursor when menu is open (only outside Unity editor)
+        if (!Application.isEditor)
+        {
+            UnityEngine.Cursor.visible = true;
+        }
     }
 
     private void CloseMenu()
     {
         settingsPanel.AddToClassList("hidden");
+
+        // Hide cursor when menu is closed (only outside Unity editor)
+        if (!Application.isEditor)
+        {
+            UnityEngine.Cursor.visible = false;
+        }
     }
 
     private void RefreshUI()
@@ -646,18 +690,22 @@ public class InGameSettingsMenu : MonoBehaviour
     private void RefreshSceneProfiles()
     {
         if (sceneProfileDropdown == null) return;
-        
+
+        // Ensure we're using scene-specific keys
+        EnsureSceneSpecificKeys();
+
         var profileFiles = Directory.GetFiles(sceneProfilesDirectory, "*.json")
             .Select(Path.GetFileNameWithoutExtension)
             .ToList();
-        
+
         sceneProfileDropdown.choices = profileFiles;
-        
+
         // Skip loading profile if refresh is suppressed (during save operations)
         if (isRefreshingSuppressed) return;
-        
-        // Try to restore last used scene profile
+
+        // Try to restore last used scene profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedSceneProfileKey, "");
+
         if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
         {
             sceneProfileDropdown.SetValueWithoutNotify(lastUsedProfile);
@@ -665,6 +713,7 @@ public class InGameSettingsMenu : MonoBehaviour
         }
         else if (profileFiles.Count > 0)
         {
+            // If no scene-specific profile exists, use the first available but don't save it as preference yet
             sceneProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
             LoadProfile(Path.Combine(sceneProfilesDirectory, profileFiles[0] + ".json"), ProfileType.Scene);
         }
@@ -673,14 +722,17 @@ public class InGameSettingsMenu : MonoBehaviour
     private void RefreshPostProcessingProfiles()
     {
         if (postProcessingProfileDropdown == null) return;
-        
+
+        // Ensure we're using scene-specific keys
+        EnsureSceneSpecificKeys();
+
         var profileFiles = Directory.GetFiles(postProcessingProfilesDirectory, "*.json")
             .Select(Path.GetFileNameWithoutExtension)
             .ToList();
-        
+
         postProcessingProfileDropdown.choices = profileFiles;
         
-        // Try to restore last used post-processing profile
+        // Try to restore last used post-processing profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedPostProcessingProfileKey, "");
         if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
         {
@@ -689,6 +741,7 @@ public class InGameSettingsMenu : MonoBehaviour
         }
         else if (profileFiles.Count > 0)
         {
+            // If no scene-specific profile exists, use the first available but don't save it as preference yet
             postProcessingProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
             LoadProfile(Path.Combine(postProcessingProfilesDirectory, profileFiles[0] + ".json"), ProfileType.PostProcessing);
         }
@@ -749,10 +802,15 @@ public class InGameSettingsMenu : MonoBehaviour
                 PlayerPrefs.Save();
                 
                 // Update Volume Profile with post-processing settings (during play mode)
-                if (Application.isPlaying)
+                if (Application.isPlaying && Controller?.volumeController != null)
                 {
-                    VolumeController.OnProfileSaved(runtimeSettings);
+                    Controller.volumeController.ApplyCurrentSettings(runtimeSettings);
                 }
+
+#if UNITY_EDITOR
+                // Save post-processing settings to persist to edit mode after play mode stops
+                VolumeController.OnProfileSaved(runtimeSettings);
+#endif
             }
             
             RefreshUI();
@@ -1212,8 +1270,16 @@ public class InGameSettingsMenu : MonoBehaviour
                 CopyPostProcessingSettings(runtimeSettings, settingsToSave);
                 currentPostProcessingProfilePath = path;
                 
-                // Only notify VolumeController for post-processing saves
+                // Update volume controller with post-processing settings
+                if (Controller?.volumeController != null)
+                {
+                    Controller.volumeController.ApplyCurrentSettings(runtimeSettings);
+                }
+
+#if UNITY_EDITOR
+                // Save post-processing settings to persist to edit mode after play mode stops
                 VolumeController.OnProfileSaved(runtimeSettings);
+#endif
             }
             
             var json = JsonUtility.ToJson(settingsToSave, true);
@@ -1247,4 +1313,5 @@ public class InGameSettingsMenu : MonoBehaviour
             }
         }
     }
+
 }

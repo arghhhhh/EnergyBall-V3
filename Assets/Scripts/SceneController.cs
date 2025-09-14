@@ -113,7 +113,7 @@ public class SceneController : MonoBehaviour
     public bool showHandTrailDistorters = false;
     [BoxGroup("Debugging")]
     public bool showSecondaryAttractor = false;
-    
+
     [Header("Runtime Settings")]
     public InGameSettingsMenu settingsMenu;
     public VolumeController volumeController;
@@ -281,6 +281,25 @@ public class SceneController : MonoBehaviour
     {
         // Perform full sync after all components are initialized
         SyncInspectorToRuntime();
+
+    }
+
+    /// <summary>
+    /// Get the PlayerPrefs key for this scene's last used scene profile
+    /// </summary>
+    public string GetSceneSpecificSceneProfileKey()
+    {
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        return $"LastUsedSceneProfile_{sceneName}";
+    }
+
+    /// <summary>
+    /// Get the PlayerPrefs key for this scene's last used post-processing profile
+    /// </summary>
+    public string GetSceneSpecificPostProcessingProfileKey()
+    {
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        return $"LastUsedPostProcessingProfile_{sceneName}";
     }
 
     void InitializeNewDummy(PlayerConstructor dummy)
@@ -774,7 +793,6 @@ public class SceneController : MonoBehaviour
         {
             // Sync inspector changes to runtime settings
             SyncInspectorToRuntime();
-            Debug.Log("Inspector values synced to runtime settings");
         }
     }
 #endif

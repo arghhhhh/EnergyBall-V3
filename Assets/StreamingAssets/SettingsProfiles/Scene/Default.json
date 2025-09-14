@@ -7,7 +7,7 @@
     "stopMovingDistance": 0.05000000074505806,
     "stopVelocity": 0.5,
     "attractionRadiusMultiplier": 3.5,
-    "singleHandOpenForceDamper": 0.5,
+    "singleHandOpenForceDamper": 0.75,
     "pushForce": 70.0,
     "minDrag": 0.25,
     "maxDrag": 1.0,

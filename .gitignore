@@ -87,3 +87,4 @@ crashlytics-build.properties
 *.bin.meta
 
 Prompt.txt
+unity_console_logs.txt
