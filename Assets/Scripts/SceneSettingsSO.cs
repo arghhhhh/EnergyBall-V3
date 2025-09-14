@@ -112,6 +112,12 @@ public class SceneSettingsSO : ScriptableObject
     public bool dummyOnlyMode;
 
     [BoxGroup("Debugging")]
+    public bool drawSkeleton;
+
+    [BoxGroup("Debugging")]
+    public bool customColors;
+
+    [BoxGroup("Debugging")]
     public bool showSphereMeshOnHandCollision;
 
     [BoxGroup("Debugging")]

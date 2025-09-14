@@ -361,6 +361,8 @@ public class InGameSettingsMenu : MonoBehaviour
         var group = CreateGroup("Debugging", parentContainer);
         
         CreateToggleField(group, "Dummy Only Mode", () => runtimeSettings.dummyOnlyMode, v => runtimeSettings.dummyOnlyMode = v);
+        CreateToggleField(group, "Draw Skeleton", () => runtimeSettings.drawSkeleton, v => runtimeSettings.drawSkeleton = v);
+        CreateToggleField(group, "Custom Colors", () => runtimeSettings.customColors, v => runtimeSettings.customColors = v);
         CreateToggleField(group, "Show Sphere Mesh On Hand Collision", () => runtimeSettings.showSphereMeshOnHandCollision, v => runtimeSettings.showSphereMeshOnHandCollision = v);
         CreateToggleField(group, "Show Attraction Radius", () => runtimeSettings.showAttractionRadius, v => runtimeSettings.showAttractionRadius = v);
         CreateToggleField(group, "Show Hand Trail Distorters", () => runtimeSettings.showHandTrailDistorters, v => runtimeSettings.showHandTrailDistorters = v);
@@ -808,6 +810,8 @@ public class InGameSettingsMenu : MonoBehaviour
         
         // Debug/visibility settings
         runtimeSettings.dummyOnlyMode = loadedSettings.dummyOnlyMode;
+        runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
+        runtimeSettings.customColors = loadedSettings.customColors;
         runtimeSettings.showSphereMeshOnHandCollision = loadedSettings.showSphereMeshOnHandCollision;
         runtimeSettings.showAttractionRadius = loadedSettings.showAttractionRadius;
         runtimeSettings.showHandTrailDistorters = loadedSettings.showHandTrailDistorters;
@@ -899,6 +903,8 @@ public class InGameSettingsMenu : MonoBehaviour
         
         // Debug/visibility settings
         destination.dummyOnlyMode = source.dummyOnlyMode;
+        destination.drawSkeleton = source.drawSkeleton;
+        destination.customColors = source.customColors;
         destination.showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         destination.showAttractionRadius = source.showAttractionRadius;
         destination.showHandTrailDistorters = source.showHandTrailDistorters;
@@ -1004,6 +1010,8 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.maxDistanceFromCamera = 0.0f;
         destination.particleInitializationDelay = 0.0f;
         destination.dummyOnlyMode = false;
+        destination.drawSkeleton = false;
+        destination.customColors = false;
         destination.showSphereMeshOnHandCollision = false;
         destination.showAttractionRadius = false;
         destination.showHandTrailDistorters = false;

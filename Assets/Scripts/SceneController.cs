@@ -22,6 +22,7 @@ public class SceneController : MonoBehaviour
     public InGameSettingsMenu settingsMenu;
     public VolumeController volumeController;
     private RuntimeSceneSettings runtimeSettings;
+    private RuntimeSceneSettings cachedCurrentSettings; // Cache for current settings
     GravityForce gravityForceController;
     HandForce handForceController;
     HandEffects handEffectsController;
@@ -73,8 +74,6 @@ public class SceneController : MonoBehaviour
             // { JointType.Neck, JointType.Head },
         };
 
-    public bool drawSkeleton;
-    public bool customColors;
     private int lastColorIndex;
     public Color[] colors = new Color[]
     {
@@ -185,11 +184,11 @@ public class SceneController : MonoBehaviour
         }
 
         // Use runtime settings or fallback to SO
-        var currentSettings = GetCurrentSettings();
-        // transform.position = new Vector3(transform.position.x, transform.position.y, currentSettings.baseZDepth);
+        cachedCurrentSettings = GetCurrentSettings();
+        // transform.position = new Vector3(transform.position.x, transform.position.y, cachedCurrentSettings.baseZDepth);
 
-        // set main camera far clipping plane to currentSettings.maxDistanceFromCamera
-        // Camera.main.farClipPlane = currentSettings.maxDistanceFromCamera + transform.position.z;
+        // set main camera far clipping plane to cachedCurrentSettings.maxDistanceFromCamera
+        // Camera.main.farClipPlane = cachedCurrentSettings.maxDistanceFromCamera + transform.position.z;
     }
 
     void InitializeNewDummy(PlayerConstructor dummy)
@@ -204,13 +203,12 @@ public class SceneController : MonoBehaviour
             dummy.name = $"Player {userId}";
             dummy.userId = userId;
             metaballsToSDF.AssignMetaballIndex(dummy);
-            var currentSettings = GetCurrentSettings();
             dummy.unscaledSize = new Vector3(
-                currentSettings.defaultUnscaledSize,
-                currentSettings.defaultUnscaledSize,
-                currentSettings.defaultUnscaledSize
+                CurrentSettings.defaultUnscaledSize,
+                CurrentSettings.defaultUnscaledSize,
+                CurrentSettings.defaultUnscaledSize
             );
-            if (customColors)
+            if (CurrentSettings.customColors)
             {
                 ChoosePlayerColor(dummy);
             }
@@ -233,7 +231,7 @@ public class SceneController : MonoBehaviour
             newPlayer.name = $"Player {userId}";
             playerConstructor.userId = userId;
             metaballsToSDF.AssignMetaballIndex(playerConstructor);
-            if (customColors)
+            if (CurrentSettings.customColors)
             {
                 ChoosePlayerColor(playerConstructor);
             }
@@ -280,11 +278,10 @@ public class SceneController : MonoBehaviour
 
     private Vector3 GetVector3FromJoint(Joint joint)
     {
-        var currentSettings = GetCurrentSettings();
         return new Vector3(
-            joint.Position.X * currentSettings.bodyScale,
-            joint.Position.Y * currentSettings.bodyScale,
-            joint.Position.Z * currentSettings.bodyScale
+            joint.Position.X * CurrentSettings.bodyScale,
+            joint.Position.Y * CurrentSettings.bodyScale,
+            joint.Position.Z * CurrentSettings.bodyScale
         );
     }
 
@@ -363,10 +360,9 @@ public class SceneController : MonoBehaviour
                 Transform jointObject = playerConstructor.jointMap[joint].transform;
                 jointObject.position = targetPosition;
 
-                var currentSettings = GetCurrentSettings();
                 if (
                     (joint == JointType.ShoulderLeft || joint == JointType.ShoulderRight)
-                    && targetPosition.z > currentSettings.maxDistanceFromCamera
+                    && targetPosition.z > CurrentSettings.maxDistanceFromCamera
                 )
                 {
                     playerConstructor.leftHandState = HandState.Closed;
@@ -381,7 +377,7 @@ public class SceneController : MonoBehaviour
                     return;
                 }
 
-                if (drawSkeleton)
+                if (CurrentSettings.drawSkeleton)
                 {
                     playerConstructor.leftHandCollider.gameObject.SetActive(true);
                     playerConstructor.rightHandCollider.gameObject.SetActive(true);
@@ -396,7 +392,7 @@ public class SceneController : MonoBehaviour
                             lr.enabled = true;
                             lr.SetPosition(0, jointObject.localPosition);
                             lr.SetPosition(1, GetVector3FromJoint(targetJoint.Value));
-                            if (customColors)
+                            if (CurrentSettings.customColors)
                             {
                                 lr.startColor = playerConstructor.skeletonColor;
                                 lr.endColor = playerConstructor.skeletonColor;
@@ -434,8 +430,7 @@ public class SceneController : MonoBehaviour
 
     void FixedUpdate()
     {
-        var currentSettings = GetCurrentSettings();
-        if (!currentSettings.dummyOnlyMode)
+        if (!CurrentSettings.dummyOnlyMode)
         {
             bodyData = bodySourceManager.GetData();
             if (bodyData == null)
@@ -506,6 +501,11 @@ public class SceneController : MonoBehaviour
         return runtimeSettings ?? (settingsMenu?.GetCurrentSettings()) ?? CreateFallbackSettings();
     }
 
+    /// <summary>
+    /// Gets the current cached settings. Use this instead of GetCurrentSettings() for performance.
+    /// </summary>
+    public RuntimeSceneSettings CurrentSettings => cachedCurrentSettings ?? (cachedCurrentSettings = GetCurrentSettings());
+
     private RuntimeSceneSettings CreateFallbackSettings()
     {
         if (so == null) return new RuntimeSceneSettings();
@@ -525,6 +525,9 @@ public class SceneController : MonoBehaviour
             runtimeSettings.ApplyCurveSettings(curveSettings);
         }
 
+        // Update cached settings
+        cachedCurrentSettings = GetCurrentSettings();
+
         // Update any cached references or trigger updates as needed
         UpdateAllPlayersDebuggingVisuals();
 
@@ -537,7 +540,7 @@ public class SceneController : MonoBehaviour
 
     public RuntimeSceneSettings GetRuntimeSettings()
     {
-        return GetCurrentSettings();
+        return CurrentSettings;
     }
     #endregion
 
@@ -549,8 +552,7 @@ public class SceneController : MonoBehaviour
 
     private void UpdatePlayerHandTrailDistorters(PlayerConstructor player)
     {
-        var currentSettings = GetCurrentSettings();
-        if (currentSettings.showHandTrailDistorters)
+        if (CurrentSettings.showHandTrailDistorters)
         {
             foreach (GameObject distorter in player.leftHandTrailDistorters)
             {
@@ -576,15 +578,14 @@ public class SceneController : MonoBehaviour
 
     private void UpdatePlayerAttractionRadius(PlayerConstructor player)
     {
-        var currentSettings = GetCurrentSettings();
-        if (currentSettings.showAttractionRadius)
+        if (CurrentSettings.showAttractionRadius)
         {
             player.radiusSprite.enabled = true;
             // set size of radius sprite
             player.radiusSprite.transform.localScale = new Vector3(
-                currentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
-                currentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
-                currentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler
+                CurrentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
+                CurrentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler,
+                CurrentSettings.attractionRadiusMultiplier * 0.4f * player.attractionRadiusScaler
             );
         }
         else
@@ -595,8 +596,7 @@ public class SceneController : MonoBehaviour
 
     private void UpdatePlayerSecondaryAttractor(PlayerConstructor player)
     {
-        var currentSettings = GetCurrentSettings();
-        if (currentSettings.showSecondaryAttractor)
+        if (CurrentSettings.showSecondaryAttractor)
         {
             player.leftHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = true;
             player.rightHandSecondaryAttractor.GetComponent<MeshRenderer>().enabled = true;

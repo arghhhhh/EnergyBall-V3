@@ -90,6 +90,8 @@ public class RuntimeSceneSettings
 
     [Header("Debugging")]
     public bool dummyOnlyMode = false;
+    public bool drawSkeleton = false;
+    public bool customColors = false;
     public bool showSphereMeshOnHandCollision = false;
     
     [SerializeField] private bool _showAttractionRadius = false;
@@ -203,6 +205,8 @@ public class RuntimeSceneSettings
         whiteBalanceTemperature = 0.0f;
         whiteBalanceTint = 0.0f;
         dummyOnlyMode = so.dummyOnlyMode;
+        drawSkeleton = so.drawSkeleton;
+        customColors = so.customColors;
         showSphereMeshOnHandCollision = so.showSphereMeshOnHandCollision;
         _showAttractionRadius = so.showAttractionRadius;
         _showHandTrailDistorters = so.showHandTrailDistorters;
@@ -268,6 +272,8 @@ public class RuntimeSceneSettings
         copy.whiteBalanceTemperature = whiteBalanceTemperature;
         copy.whiteBalanceTint = whiteBalanceTint;
         copy.dummyOnlyMode = dummyOnlyMode;
+        copy.drawSkeleton = drawSkeleton;
+        copy.customColors = customColors;
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         copy._showAttractionRadius = _showAttractionRadius;
         copy._showHandTrailDistorters = _showHandTrailDistorters;
