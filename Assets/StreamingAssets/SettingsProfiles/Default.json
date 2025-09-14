@@ -168,6 +168,6 @@
     "colorAdjustmentsSaturation": 0.0,
     "whiteBalanceTemperature": 0.0,
     "whiteBalanceTint": 0.0,
-    "dummyOnlyMode": true,
+    "dummyOnlyMode": false,
     "showSphereMeshOnHandCollision": false
 }
