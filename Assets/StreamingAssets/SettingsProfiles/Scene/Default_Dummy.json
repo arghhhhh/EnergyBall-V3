@@ -87,12 +87,7 @@
     "pulseAmount": 2.0,
     "pulseSpeed": 3.0,
     "graphLimit": 3.882999897003174,
-    "pulseFreqs": [
-        0.30000001192092898,
-        0.800000011920929,
-        2.0,
-        3.0
-    ],
+    "pulseFreqs": [0.30000001192092898, 0.800000011920929, 2.0, 3.0],
     "singleHandScaling": true,
     "minimumUnscaledSize": 1.5,
     "minHandDisplacementPerFrame": 0.05000000074505806,
@@ -168,14 +163,9 @@
     "colorAdjustmentsSaturation": 0.0,
     "whiteBalanceTemperature": 0.0,
     "whiteBalanceTint": 0.0,
-<<<<<<< HEAD:Assets/StreamingAssets/SettingsProfiles/Scene/Default_Dummy.json
     "dummyOnlyMode": true,
     "showSphereMeshOnHandCollision": false,
     "_showAttractionRadius": true,
     "_showHandTrailDistorters": false,
     "_showSecondaryAttractor": false
-=======
-    "dummyOnlyMode": false,
-    "showSphereMeshOnHandCollision": false
->>>>>>> master:Assets/StreamingAssets/SettingsProfiles/Default.json
 }
