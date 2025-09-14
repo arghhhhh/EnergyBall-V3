@@ -85,3 +85,5 @@ crashlytics-build.properties
 *.dll.meta
 *.onnx.meta
 *.bin.meta
+
+Prompt.txt

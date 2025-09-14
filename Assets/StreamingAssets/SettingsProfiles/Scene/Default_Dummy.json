@@ -168,9 +168,14 @@
     "colorAdjustmentsSaturation": 0.0,
     "whiteBalanceTemperature": 0.0,
     "whiteBalanceTint": 0.0,
+<<<<<<< HEAD:Assets/StreamingAssets/SettingsProfiles/Scene/Default_Dummy.json
     "dummyOnlyMode": true,
     "showSphereMeshOnHandCollision": false,
     "_showAttractionRadius": true,
     "_showHandTrailDistorters": false,
     "_showSecondaryAttractor": false
+=======
+    "dummyOnlyMode": false,
+    "showSphereMeshOnHandCollision": false
+>>>>>>> master:Assets/StreamingAssets/SettingsProfiles/Default.json
 }

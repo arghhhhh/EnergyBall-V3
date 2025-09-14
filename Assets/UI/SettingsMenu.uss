@@ -28,12 +28,11 @@
 .settings-title {
     font-size: 24px;
     color: white;
-    font-style: bold;
+    -unity-font-style: bold;
 }
 
 .profile-controls {
     flex-direction: row;
-    gap: 10px;
     margin-bottom: 15px;
 }
 
@@ -67,7 +66,7 @@
 
 .group-header {
     font-size: 18px;
-    font-style: bold;
+    -unity-font-style: bold;
     color: rgb(200, 200, 200);
     margin-bottom: 10px;
     padding-bottom: 5px;
@@ -78,6 +77,7 @@
 .setting-row {
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 8px;
     min-height: 25px;
 }
@@ -92,6 +92,17 @@
 .setting-input {
     min-width: 200px;
     max-width: 300px;
+}
+
+.toggle {
+    min-width: 20px;
+}
+
+.curve-note {
+    color: grey;
+    font-size: 14px;
+    -unity-text-align: middle-right;
+    margin-right: 5px;
 }
 
 .close-button {
@@ -111,23 +122,24 @@
     background-color: rgb(220, 70, 70);
 }
 
-.curve-editor {
-    height: 100px;
-    border-width: 1px;
-    border-color: rgb(100, 100, 100);
-    border-radius: 3px;
-    background-color: rgb(20, 20, 20);
-    margin-top: 5px;
+.array-row-subcontainer {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .array-container {
     flex-direction: column;
     margin-top: 5px;
+    margin-right: 5px;
     padding: 5px;
     border-width: 1px;
     border-color: rgb(80, 80, 80);
     border-radius: 3px;
     background-color: rgba(20, 20, 20, 0.5);
+    min-width: 210px;
+    max-width: 300px;
 }
 
 .array-element {
@@ -142,7 +154,7 @@
 }
 
 .array-button {
-    width: 25px;
+    width: auto;
     height: 25px;
     background-color: rgb(80, 80, 80);
     border-width: 1px;
@@ -150,10 +162,50 @@
     border-radius: 3px;
     color: white;
     font-size: 12px;
+    padding: 2px 8px;
 }
 
 .array-button:hover {
     background-color: rgb(100, 100, 100);
+}
+
+.array-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.array-collapse-button {
+    width: 20px;
+    height: 20px;
+    background-color: rgb(60, 60, 60);
+    border-width: 1px;
+    border-color: rgb(100, 100, 100);
+    border-radius: 3px;
+    color: white;
+    font-size: 12px;
+    margin-right: 8px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.array-collapse-button:hover {
+    background-color: rgb(80, 80, 80);
+}
+
+.array-count-label {
+    color: rgb(180, 180, 180);
+    font-size: 12px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.array-content {
+    flex-direction: column;
+}
+
+.array-content.collapsed {
+    display: none;
 }
 
 .hidden {
@@ -176,7 +228,6 @@
     border-radius: 5px 5px 0 0;
     color: rgb(180, 180, 180);
     margin-right: 5px;
-    cursor: pointer;
 }
 
 .tab-button:hover {

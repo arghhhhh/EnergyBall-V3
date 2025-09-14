@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/SettingsMenu.uss" />
-    <ui:VisualElement name="SettingsPanel" class="settings-panel hidden">
+    <Style src="project://database/Assets/UI/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=41a899a2ddc30fc4f8fcf27b8ccae449&amp;type=3#SettingsMenu" />
+    <ui:VisualElement name="SettingsPanel" class="settings-panel hidden" style="max-height: none;">
         <ui:VisualElement name="Header" class="settings-header">
             <ui:Label text="Settings" class="settings-title" />
             <ui:Button text="×" name="CloseButton" class="close-button" />
