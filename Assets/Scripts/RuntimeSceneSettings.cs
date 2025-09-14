@@ -141,76 +141,12 @@ public class RuntimeSceneSettings
         OnAnyDebuggingSettingChanged?.Invoke();
     }
 
+    [System.Obsolete("CopyFromScriptableObject is deprecated. Use SceneController.CopyInspectorToRuntime instead.")]
     public void CopyFromScriptableObject(SceneSettingsSO so)
     {
-        g = so.g;
-        maxTowardsForce = so.maxTowardsForce;
-        maxAwayFromForce = so.maxAwayFromForce;
-        gravityForceDamper = so.gravityForceDamper;
-        stopGravityDistance = so.stopGravityDistance;
-        stopMovingDistance = so.stopMovingDistance;
-        stopVelocity = so.stopVelocity;
-        attractionRadiusMultiplier = so.attractionRadiusMultiplier;
-        // Note: forceToMiddle and alignmentVectorStrength are now managed by CurveSettingsSO
-        // and should not be copied from the main SceneSettingsSO
-        singleHandOpenForceDamper = so.singleHandOpenForceDamper;
-        pushForce = so.pushForce;
-        minDrag = so.minDrag;
-        maxDrag = so.maxDrag;
-        alignmentVectorStrengthScaler = so.alignmentVectorStrengthScaler;
-        handPushScaler = so.handPushScaler;
-        pulseAmount = so.pulseAmount;
-        pulseSpeed = so.pulseSpeed;
-        graphLimit = so.graphLimit;
-        pulseFreqs = (float[])so.pulseFreqs.Clone();
-        singleHandScaling = so.singleHandScaling;
-        minimumUnscaledSize = so.minimumUnscaledSize;
-        minHandDisplacementPerFrame = so.minHandDisplacementPerFrame;
-        // Note: distanceDamper is now managed by CurveSettingsSO
-        // and should not be copied from the main SceneSettingsSO
-        pulseScaleDamper = so.pulseScaleDamper;
-        mergeSizeScalerDamper = so.mergeSizeScalerDamper;
-        maxDistanceBetweenHands = so.maxDistanceBetweenHands;
-        baseZDepth = so.baseZDepth;
-        defaultUnscaledSize = so.defaultUnscaledSize;
-        bodyScale = so.bodyScale;
-        maxDistanceFromCamera = so.maxDistanceFromCamera;
-        particleInitializationDelay = so.particleInitializationDelay;
-        // Post-processing defaults (since SO doesn't have these)
-        bloomThreshold = 1.0f;
-        bloomIntensity = 0.5f;
-        bloomScatter = 0.7f;
-        // Lens Flare defaults
-        lensFlareIntensity = 1.0f;
-        lensFlareRegularMultiplier = 1.0f;
-        lensFlareReversedMultiplier = 1.0f;
-        lensFlareStreaksMultiplier = 1.0f;
-        lensFlareStreaksLength = 0.5f;
-        lensFlareStreaksOrientation = 0.0f;
-        lensFlareStreaksThreshold = 0.3f;
-        lensFlareChromaticIntensity = 1.0f;
-        // Lens Distortion defaults
-        lensDistortionIntensity = 0.0f;
-        lensDistortionXMultiplier = 1.0f;
-        lensDistortionYMultiplier = 1.0f;
-        lensDistortionScale = 1.0f;
-        lensDistortionCenterX = 0.5f;
-        lensDistortionCenterY = 0.5f;
-        // Color Adjustments defaults
-        colorAdjustmentsPostExposure = 0.0f;
-        colorAdjustmentsContrast = 0.0f;
-        colorAdjustmentsHueShift = 0.0f;
-        colorAdjustmentsSaturation = 0.0f;
-        // White Balance defaults
-        whiteBalanceTemperature = 0.0f;
-        whiteBalanceTint = 0.0f;
-        dummyOnlyMode = so.dummyOnlyMode;
-        drawSkeleton = so.drawSkeleton;
-        customColors = so.customColors;
-        showSphereMeshOnHandCollision = so.showSphereMeshOnHandCollision;
-        _showAttractionRadius = so.showAttractionRadius;
-        _showHandTrailDistorters = so.showHandTrailDistorters;
-        _showSecondaryAttractor = so.showSecondaryAttractor;
+        // This method is kept for backward compatibility but should not be used
+        // Settings are now managed directly in SceneController inspector
+        Debug.LogWarning("CopyFromScriptableObject is deprecated. Settings are now managed in SceneController inspector.");
     }
 
     public RuntimeSceneSettings DeepCopy()
@@ -281,17 +217,11 @@ public class RuntimeSceneSettings
         return copy;
     }
 
-    /// <summary>
-    /// Apply curve settings from a CurveSettingsSO to this runtime settings instance.
-    /// This allows curves to be controlled separately from profile data.
-    /// </summary>
+    [System.Obsolete("ApplyCurveSettings is deprecated. Curves are now managed directly in SceneController inspector.")]
     public void ApplyCurveSettings(CurveSettingsSO curveSettings)
     {
-        if (curveSettings != null)
-        {
-            forceToMiddle = new AnimationCurve(curveSettings.forceToMiddle.keys);
-            alignmentVectorStrength = new AnimationCurve(curveSettings.alignmentVectorStrength.keys);
-            distanceDamper = new AnimationCurve(curveSettings.distanceDamper.keys);
-        }
+        // This method is kept for backward compatibility but should not be used
+        // Curves are now managed directly in SceneController inspector
+        Debug.LogWarning("ApplyCurveSettings is deprecated. Curves are now managed in SceneController inspector.");
     }
 }

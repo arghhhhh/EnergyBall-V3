@@ -11,12 +11,108 @@ public class SceneController : MonoBehaviour
 {
     public static SceneController Instance { get; private set; } // singleton pattern
 
-    [Label("Settings Config")]
-    public SceneSettingsSO so;
+    // Inspector-editable settings (moved from ScriptableObjects)
+    [Header("Scene Settings")]
+    [BoxGroup("Gravity Attraction")]
+    public float g = 9.81f;
+    [BoxGroup("Gravity Attraction")]
+    public float maxTowardsForce = 10f;
+    [BoxGroup("Gravity Attraction")]
+    public float maxAwayFromForce = 10f;
+    [BoxGroup("Gravity Attraction")]
+    public float gravityForceDamper = 1f;
+    [BoxGroup("Gravity Attraction")]
+    public float stopGravityDistance = 0.1f;
+    [BoxGroup("Gravity Attraction")]
+    public float stopMovingDistance = 0.05f;
+    [BoxGroup("Gravity Attraction")]
+    public float stopVelocity = 0.1f;
+    [BoxGroup("Gravity Attraction")]
+    public float attractionRadiusMultiplier = 1f;
 
-    [Label("Curve Settings Config")]
-    [Tooltip("ScriptableObject containing curve settings (forceToMiddle, alignmentVectorStrength, distanceDamper) that are controlled independently from profiles")]
-    public CurveSettingsSO curveSettings;
+    [BoxGroup("Hands Attraction")]
+    [InfoBox("Curve settings (forceToMiddle, alignmentVectorStrength) are managed separately below", EInfoBoxType.Normal)]
+    public float singleHandOpenForceDamper = 1f;
+    [BoxGroup("Hands Attraction")]
+    public float pushForce = 5f;
+    [BoxGroup("Hands Attraction")]
+    public float minDrag = 0.1f;
+    [BoxGroup("Hands Attraction")]
+    public float maxDrag = 5f;
+    [BoxGroup("Hands Attraction")]
+    public float alignmentVectorStrengthScaler = 1f;
+    [BoxGroup("Hands Attraction")]
+    public float handPushScaler = 1f;
+
+    [BoxGroup("Intrinsic Pulsation")]
+    [Range(0, 10f)]
+    public float pulseAmount = 1f;
+    [BoxGroup("Intrinsic Pulsation")]
+    public float pulseSpeed = 1f;
+    [BoxGroup("Intrinsic Pulsation")]
+    public float graphLimit = 10f;
+    [BoxGroup("Intrinsic Pulsation")]
+    public float[] pulseFreqs = new float[] { 1f, 2f, 3f };
+
+    [BoxGroup("Movement-Based Pulsation")]
+    [Tooltip("Allow scaling to occur with only one hand's velocity.")]
+    public bool singleHandScaling = true;
+    [BoxGroup("Movement-Based Pulsation")]
+    [Tooltip("The minimum size that the body can scale down to.")]
+    public float minimumUnscaledSize = 0.5f;
+    [BoxGroup("Movement-Based Pulsation")]
+    [Range(0.0001f, 5f)]
+    [Tooltip("Used to mask false velocity readings due to position jitter from inaccurate sensor readings.")]
+    public float minHandDisplacementPerFrame = 0.01f;
+    [BoxGroup("Movement-Based Pulsation")]
+    [InfoBox("distanceDamper curve is managed separately below", EInfoBoxType.Normal)]
+    [Tooltip("An overall damper for the movement-based pulsation scaling.")]
+    public float pulseScaleDamper = 1f;
+
+    [BoxGroup("Miscellaneous")]
+    [Tooltip("A damper for the scaling that occurs when multiple bodies merge together.")]
+    public float mergeSizeScalerDamper = 1f;
+    [BoxGroup("Miscellaneous")]
+    public float maxDistanceBetweenHands = 2f;
+    [BoxGroup("Miscellaneous")]
+    public float baseZDepth = 5f;
+    [BoxGroup("Miscellaneous")]
+    public float defaultUnscaledSize = 1f;
+    [BoxGroup("Miscellaneous")]
+    public float bodyScale = 1f;
+    [BoxGroup("Miscellaneous")]
+    public float maxDistanceFromCamera = 10f;
+
+    [BoxGroup("Animation")]
+    [Tooltip("The amount of time it takes for the particle initialization animation to play once a new player is added to the scene.")]
+    public float particleInitializationDelay = 1f;
+
+    [Header("Curve Settings")]
+    [BoxGroup("Hands Attraction Curves")]
+    [Tooltip("Force curve that controls attraction to the middle point between hands")]
+    public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
+    [BoxGroup("Hands Attraction Curves")]
+    [Tooltip("Alignment vector strength curve based on hand distance")]
+    public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
+    [BoxGroup("Movement-Based Pulsation Curves")]
+    [Tooltip("Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands")]
+    public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
+
+    [Header("Debugging")]
+    [BoxGroup("Debugging")]
+    public bool dummyOnlyMode = false;
+    [BoxGroup("Debugging")]
+    public bool drawSkeleton = false;
+    [BoxGroup("Debugging")]
+    public bool customColors = false;
+    [BoxGroup("Debugging")]
+    public bool showSphereMeshOnHandCollision = false;
+    [BoxGroup("Debugging")]
+    public bool showAttractionRadius = false;
+    [BoxGroup("Debugging")]
+    public bool showHandTrailDistorters = false;
+    [BoxGroup("Debugging")]
+    public bool showSecondaryAttractor = false;
     
     [Header("Runtime Settings")]
     public InGameSettingsMenu settingsMenu;
@@ -107,11 +203,7 @@ public class SceneController : MonoBehaviour
         Actions.OnDummyAdded += InitializeNewDummy;
         Actions.OnDummyRemoved += RemovePlayer;
 
-        // Subscribe to debugging setting changes
-        if (so != null)
-        {
-            so.OnAnyDebuggingSettingChanged += OnAnyDebuggingSettingChanged;
-        }
+        // Debugging setting changes are now handled via OnValidate() when inspector values change
         
         // Subscribe to runtime settings changes
         if (settingsMenu != null)
@@ -127,11 +219,7 @@ public class SceneController : MonoBehaviour
         Actions.OnDummyAdded -= InitializeNewDummy;
         Actions.OnDummyRemoved -= RemovePlayer;
 
-        // Unsubscribe from debugging setting changes
-        if (so != null)
-        {
-            so.OnAnyDebuggingSettingChanged -= OnAnyDebuggingSettingChanged;
-        }
+        // Debugging setting changes are now handled via OnValidate() when inspector values change
         
         // Unsubscribe from runtime settings changes
         if (settingsMenu != null)
@@ -165,7 +253,7 @@ public class SceneController : MonoBehaviour
         metaballsToSDF = GetComponent<MetaballsToSDF>();
         bodySourceManager = GetComponent<BodySourceManager>();
         
-        // Initialize runtime settings from ScriptableObject
+        // Initialize runtime settings from inspector values
         if (settingsMenu != null)
         {
             runtimeSettings = settingsMenu.GetCurrentSettings();
@@ -177,18 +265,22 @@ public class SceneController : MonoBehaviour
             runtimeSettings = CreateFallbackSettings();
         }
 
-        // Apply curve settings from ScriptableObject (independent of profiles)
-        if (curveSettings != null && runtimeSettings != null)
+        // Apply settings from inspector to runtime settings (without UI sync during initialization)
+        if (runtimeSettings != null)
         {
-            runtimeSettings.ApplyCurveSettings(curveSettings);
+            CopyInspectorToRuntime(runtimeSettings);
+            cachedCurrentSettings = GetCurrentSettings();
         }
-
-        // Use runtime settings or fallback to SO
-        cachedCurrentSettings = GetCurrentSettings();
         // transform.position = new Vector3(transform.position.x, transform.position.y, cachedCurrentSettings.baseZDepth);
 
         // set main camera far clipping plane to cachedCurrentSettings.maxDistanceFromCamera
         // Camera.main.farClipPlane = cachedCurrentSettings.maxDistanceFromCamera + transform.position.z;
+    }
+
+    void Start()
+    {
+        // Perform full sync after all components are initialized
+        SyncInspectorToRuntime();
     }
 
     void InitializeNewDummy(PlayerConstructor dummy)
@@ -508,25 +600,159 @@ public class SceneController : MonoBehaviour
 
     private RuntimeSceneSettings CreateFallbackSettings()
     {
-        if (so == null) return new RuntimeSceneSettings();
-        
         var fallback = new RuntimeSceneSettings();
-        fallback.CopyFromScriptableObject(so);
+        CopyInspectorToRuntime(fallback);
         return fallback;
+    }
+
+    /// <summary>
+    /// Copy inspector values to runtime settings
+    /// </summary>
+    public void CopyInspectorToRuntime(RuntimeSceneSettings target)
+    {
+        // Gravity Attraction
+        target.g = g;
+        target.maxTowardsForce = maxTowardsForce;
+        target.maxAwayFromForce = maxAwayFromForce;
+        target.gravityForceDamper = gravityForceDamper;
+        target.stopGravityDistance = stopGravityDistance;
+        target.stopMovingDistance = stopMovingDistance;
+        target.stopVelocity = stopVelocity;
+        target.attractionRadiusMultiplier = attractionRadiusMultiplier;
+
+        // Hands Attraction (curves and other settings)
+        target.forceToMiddle = new AnimationCurve(forceToMiddle.keys);
+        target.singleHandOpenForceDamper = singleHandOpenForceDamper;
+        target.pushForce = pushForce;
+        target.minDrag = minDrag;
+        target.maxDrag = maxDrag;
+        target.alignmentVectorStrength = new AnimationCurve(alignmentVectorStrength.keys);
+        target.alignmentVectorStrengthScaler = alignmentVectorStrengthScaler;
+        target.handPushScaler = handPushScaler;
+
+        // Intrinsic Pulsation
+        target.pulseAmount = pulseAmount;
+        target.pulseSpeed = pulseSpeed;
+        target.graphLimit = graphLimit;
+        target.pulseFreqs = (float[])pulseFreqs.Clone();
+
+        // Movement-Based Pulsation
+        target.singleHandScaling = singleHandScaling;
+        target.minimumUnscaledSize = minimumUnscaledSize;
+        target.minHandDisplacementPerFrame = minHandDisplacementPerFrame;
+        target.distanceDamper = new AnimationCurve(distanceDamper.keys);
+        target.pulseScaleDamper = pulseScaleDamper;
+
+        // Miscellaneous
+        target.mergeSizeScalerDamper = mergeSizeScalerDamper;
+        target.maxDistanceBetweenHands = maxDistanceBetweenHands;
+        target.baseZDepth = baseZDepth;
+        target.defaultUnscaledSize = defaultUnscaledSize;
+        target.bodyScale = bodyScale;
+        target.maxDistanceFromCamera = maxDistanceFromCamera;
+        target.particleInitializationDelay = particleInitializationDelay;
+
+        // Debugging
+        target.dummyOnlyMode = dummyOnlyMode;
+        target.drawSkeleton = drawSkeleton;
+        target.customColors = customColors;
+        target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
+        target.showAttractionRadius = showAttractionRadius;
+        target.showHandTrailDistorters = showHandTrailDistorters;
+        target.showSecondaryAttractor = showSecondaryAttractor;
+    }
+
+    /// <summary>
+    /// Copy runtime settings back to inspector values
+    /// </summary>
+    private void CopyRuntimeToInspector(RuntimeSceneSettings source)
+    {
+        // Gravity Attraction
+        g = source.g;
+        maxTowardsForce = source.maxTowardsForce;
+        maxAwayFromForce = source.maxAwayFromForce;
+        gravityForceDamper = source.gravityForceDamper;
+        stopGravityDistance = source.stopGravityDistance;
+        stopMovingDistance = source.stopMovingDistance;
+        stopVelocity = source.stopVelocity;
+        attractionRadiusMultiplier = source.attractionRadiusMultiplier;
+
+        // Hands Attraction
+        forceToMiddle = new AnimationCurve(source.forceToMiddle.keys);
+        singleHandOpenForceDamper = source.singleHandOpenForceDamper;
+        pushForce = source.pushForce;
+        minDrag = source.minDrag;
+        maxDrag = source.maxDrag;
+        alignmentVectorStrength = new AnimationCurve(source.alignmentVectorStrength.keys);
+        alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
+        handPushScaler = source.handPushScaler;
+
+        // Intrinsic Pulsation
+        pulseAmount = source.pulseAmount;
+        pulseSpeed = source.pulseSpeed;
+        graphLimit = source.graphLimit;
+        pulseFreqs = (float[])source.pulseFreqs.Clone();
+
+        // Movement-Based Pulsation
+        singleHandScaling = source.singleHandScaling;
+        minimumUnscaledSize = source.minimumUnscaledSize;
+        minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
+        distanceDamper = new AnimationCurve(source.distanceDamper.keys);
+        pulseScaleDamper = source.pulseScaleDamper;
+
+        // Miscellaneous
+        mergeSizeScalerDamper = source.mergeSizeScalerDamper;
+        maxDistanceBetweenHands = source.maxDistanceBetweenHands;
+        baseZDepth = source.baseZDepth;
+        defaultUnscaledSize = source.defaultUnscaledSize;
+        bodyScale = source.bodyScale;
+        maxDistanceFromCamera = source.maxDistanceFromCamera;
+        particleInitializationDelay = source.particleInitializationDelay;
+
+        // Debugging
+        dummyOnlyMode = source.dummyOnlyMode;
+        drawSkeleton = source.drawSkeleton;
+        customColors = source.customColors;
+        showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
+        showAttractionRadius = source.showAttractionRadius;
+        showHandTrailDistorters = source.showHandTrailDistorters;
+        showSecondaryAttractor = source.showSecondaryAttractor;
+    }
+
+    /// <summary>
+    /// Sync inspector values to runtime settings
+    /// </summary>
+    private void SyncInspectorToRuntime()
+    {
+        if (runtimeSettings != null)
+        {
+            CopyInspectorToRuntime(runtimeSettings);
+            cachedCurrentSettings = GetCurrentSettings();
+            UpdateAllPlayersDebuggingVisuals();
+
+            // Update the settings menu UI to reflect inspector changes
+            if (settingsMenu != null)
+            {
+                settingsMenu.UpdateSettingsFromInspector(runtimeSettings);
+            }
+
+            // Update volume profile settings
+            if (volumeController != null)
+            {
+                volumeController.ApplyCurrentSettings(runtimeSettings);
+            }
+        }
     }
 
     private void OnRuntimeSettingsChanged(RuntimeSceneSettings newSettings)
     {
         runtimeSettings = newSettings;
 
-        // Apply curve settings from ScriptableObject (independent of profiles)
-        if (curveSettings != null)
-        {
-            runtimeSettings.ApplyCurveSettings(curveSettings);
-        }
-
         // Update cached settings
         cachedCurrentSettings = GetCurrentSettings();
+
+        // Copy runtime settings back to inspector for synchronization
+        CopyRuntimeToInspector(newSettings);
 
         // Update any cached references or trigger updates as needed
         UpdateAllPlayersDebuggingVisuals();
@@ -537,6 +763,21 @@ public class SceneController : MonoBehaviour
             volumeController.ApplyCurrentSettings(newSettings);
         }
     }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Called when inspector values change
+    /// </summary>
+    private void OnValidate()
+    {
+        if (Application.isPlaying && runtimeSettings != null)
+        {
+            // Sync inspector changes to runtime settings
+            SyncInspectorToRuntime();
+            Debug.Log("Inspector values synced to runtime settings");
+        }
+    }
+#endif
 
     public RuntimeSceneSettings GetRuntimeSettings()
     {

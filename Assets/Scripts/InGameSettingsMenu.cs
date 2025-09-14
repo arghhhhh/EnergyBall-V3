@@ -86,12 +86,13 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void InitializeRuntimeSettings()
     {
-        if (controller?.so != null)
+        if (controller != null)
         {
+            // Get settings from SceneController inspector values
             runtimeSettings = new RuntimeSceneSettings();
-            runtimeSettings.CopyFromScriptableObject(controller.so);
+            controller.CopyInspectorToRuntime(runtimeSettings);
             originalSettings = runtimeSettings.DeepCopy();
-            
+
             // Subscribe to runtime settings changes
             runtimeSettings.OnAnyDebuggingSettingChanged += () => OnSettingsChanged?.Invoke(runtimeSettings);
         }
@@ -1227,5 +1228,23 @@ public class InGameSettingsMenu : MonoBehaviour
     public RuntimeSceneSettings GetCurrentSettings()
     {
         return runtimeSettings;
+    }
+
+    /// <summary>
+    /// Update the menu's runtime settings and refresh the UI
+    /// Called when inspector values change in SceneController
+    /// </summary>
+    public void UpdateSettingsFromInspector(RuntimeSceneSettings newSettings)
+    {
+        if (newSettings != null)
+        {
+            runtimeSettings = newSettings.DeepCopy();
+
+            // Only refresh UI if the panels are initialized (Start() has been called)
+            if (sceneSettingsPanel != null && postProcessingPanel != null)
+            {
+                RefreshUI();
+            }
+        }
     }
 }
