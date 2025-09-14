@@ -33,9 +33,7 @@ public class SceneSettingsSO : ScriptableObject
     public float attractionRadiusMultiplier;
 
     [BoxGroup("Hands Attraction")]
-    public AnimationCurve forceToMiddle;
-
-    [BoxGroup("Hands Attraction")]
+    [InfoBox("Curve settings (forceToMiddle, alignmentVectorStrength) are now managed by CurveSettingsSO", EInfoBoxType.Normal)]
     public float singleHandOpenForceDamper;
 
     [BoxGroup("Hands Attraction")]
@@ -46,9 +44,6 @@ public class SceneSettingsSO : ScriptableObject
 
     [BoxGroup("Hands Attraction")]
     public float maxDrag;
-
-    [BoxGroup("Hands Attraction")]
-    public AnimationCurve alignmentVectorStrength;
 
     [BoxGroup("Hands Attraction")]
     public float alignmentVectorStrengthScaler;
@@ -85,12 +80,7 @@ public class SceneSettingsSO : ScriptableObject
     public float minHandDisplacementPerFrame;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip(
-        "Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands."
-    )]
-    public AnimationCurve distanceDamper;
-
-    [BoxGroup("Movement-Based Pulsation")]
+    [InfoBox("distanceDamper curve is now managed by CurveSettingsSO", EInfoBoxType.Normal)]
     [Tooltip("An overall damper for the movement-based pulsation scaling.")]
     public float pulseScaleDamper;
 

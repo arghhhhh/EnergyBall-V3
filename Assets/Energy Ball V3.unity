@@ -877,6 +877,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   so: {fileID: 11400000, guid: dcfdb6edafd8f54479792ffc07055d1d, type: 2}
+  curveSettings: {fileID: 11400000, guid: 1b870c8a67470a0419a9e5ce584b3b84, type: 2}
   settingsMenu: {fileID: 125572181}
   volumeController: {fileID: 1361264294}
   playerPrefab: {fileID: 673367081158314858, guid: 0fc75339efa2573449288aa1d5103dca,

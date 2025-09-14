@@ -259,13 +259,16 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateHandsAttractionGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Hands Attraction", parentContainer);
-        
-        CreateCurveField(group, "Force To Middle", () => runtimeSettings.forceToMiddle, v => runtimeSettings.forceToMiddle = v);
+
+        // Note: forceToMiddle and alignmentVectorStrength curves are now controlled by CurveSettingsSO
+        // and are not included in profiles or the settings UI
+        // CreateCurveField(group, "Force To Middle", () => runtimeSettings.forceToMiddle, v => runtimeSettings.forceToMiddle = v);
         CreateFloatField(group, "Single Hand Open Force Damper", () => runtimeSettings.singleHandOpenForceDamper, v => runtimeSettings.singleHandOpenForceDamper = v);
         CreateFloatField(group, "Push Force", () => runtimeSettings.pushForce, v => runtimeSettings.pushForce = v);
         CreateFloatField(group, "Min Drag", () => runtimeSettings.minDrag, v => runtimeSettings.minDrag = v);
         CreateFloatField(group, "Max Drag", () => runtimeSettings.maxDrag, v => runtimeSettings.maxDrag = v);
-        CreateCurveField(group, "Alignment Vector Strength", () => runtimeSettings.alignmentVectorStrength, v => runtimeSettings.alignmentVectorStrength = v);
+        
+        // CreateCurveField(group, "Alignment Vector Strength", () => runtimeSettings.alignmentVectorStrength, v => runtimeSettings.alignmentVectorStrength = v);
         CreateFloatField(group, "Alignment Vector Strength Scaler", () => runtimeSettings.alignmentVectorStrengthScaler, v => runtimeSettings.alignmentVectorStrengthScaler = v);
         CreateFloatField(group, "Hand Push Scaler", () => runtimeSettings.handPushScaler, v => runtimeSettings.handPushScaler = v);
     }
@@ -283,11 +286,13 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateMovementPulsationGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Movement-Based Pulsation", parentContainer);
-        
+
         CreateToggleField(group, "Single Hand Scaling", () => runtimeSettings.singleHandScaling, v => runtimeSettings.singleHandScaling = v);
         CreateFloatField(group, "Minimum Unscaled Size", () => runtimeSettings.minimumUnscaledSize, v => runtimeSettings.minimumUnscaledSize = v);
         CreateSliderField(group, "Min Hand Displacement Per Frame", () => runtimeSettings.minHandDisplacementPerFrame, v => runtimeSettings.minHandDisplacementPerFrame = v, 0.0001f, 5f);
-        CreateCurveField(group, "Distance Damper", () => runtimeSettings.distanceDamper, v => runtimeSettings.distanceDamper = v);
+        // Note: distanceDamper curve is now controlled by CurveSettingsSO
+        // and is not included in profiles or the settings UI
+        // CreateCurveField(group, "Distance Damper", () => runtimeSettings.distanceDamper, v => runtimeSettings.distanceDamper = v);
         CreateFloatField(group, "Pulse Scale Damper", () => runtimeSettings.pulseScaleDamper, v => runtimeSettings.pulseScaleDamper = v);
     }
 
@@ -770,14 +775,14 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.stopMovingDistance = loadedSettings.stopMovingDistance;
         runtimeSettings.stopVelocity = loadedSettings.stopVelocity;
         runtimeSettings.attractionRadiusMultiplier = loadedSettings.attractionRadiusMultiplier;
-        runtimeSettings.forceToMiddle = loadedSettings.forceToMiddle;
+        // Note: forceToMiddle curve is managed by CurveSettingsSO, not loaded from profiles
         
         // Hand interaction settings
         runtimeSettings.singleHandOpenForceDamper = loadedSettings.singleHandOpenForceDamper;
         runtimeSettings.pushForce = loadedSettings.pushForce;
         runtimeSettings.minDrag = loadedSettings.minDrag;
         runtimeSettings.maxDrag = loadedSettings.maxDrag;
-        runtimeSettings.alignmentVectorStrength = loadedSettings.alignmentVectorStrength;
+        // Note: alignmentVectorStrength curve is managed by CurveSettingsSO, not loaded from profiles
         runtimeSettings.alignmentVectorStrengthScaler = loadedSettings.alignmentVectorStrengthScaler;
         runtimeSettings.handPushScaler = loadedSettings.handPushScaler;
         
@@ -791,7 +796,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.singleHandScaling = loadedSettings.singleHandScaling;
         runtimeSettings.minimumUnscaledSize = loadedSettings.minimumUnscaledSize;
         runtimeSettings.minHandDisplacementPerFrame = loadedSettings.minHandDisplacementPerFrame;
-        runtimeSettings.distanceDamper = loadedSettings.distanceDamper;
+        // Note: distanceDamper curve is managed by CurveSettingsSO, not loaded from profiles
         runtimeSettings.pulseScaleDamper = loadedSettings.pulseScaleDamper;
         runtimeSettings.mergeSizeScalerDamper = loadedSettings.mergeSizeScalerDamper;
         runtimeSettings.maxDistanceBetweenHands = loadedSettings.maxDistanceBetweenHands;
@@ -861,14 +866,14 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.stopMovingDistance = source.stopMovingDistance;
         destination.stopVelocity = source.stopVelocity;
         destination.attractionRadiusMultiplier = source.attractionRadiusMultiplier;
-        destination.forceToMiddle = source.forceToMiddle;
+        // Note: forceToMiddle curve is managed by CurveSettingsSO and excluded from profiles
         
         // Hand interaction settings
         destination.singleHandOpenForceDamper = source.singleHandOpenForceDamper;
         destination.pushForce = source.pushForce;
         destination.minDrag = source.minDrag;
         destination.maxDrag = source.maxDrag;
-        destination.alignmentVectorStrength = source.alignmentVectorStrength;
+        // Note: alignmentVectorStrength curve is managed by CurveSettingsSO and excluded from profiles
         destination.alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
         destination.handPushScaler = source.handPushScaler;
         
@@ -882,7 +887,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.singleHandScaling = source.singleHandScaling;
         destination.minimumUnscaledSize = source.minimumUnscaledSize;
         destination.minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
-        destination.distanceDamper = source.distanceDamper;
+        // Note: distanceDamper curve is managed by CurveSettingsSO and excluded from profiles
         destination.pulseScaleDamper = source.pulseScaleDamper;
         destination.mergeSizeScalerDamper = source.mergeSizeScalerDamper;
         destination.maxDistanceBetweenHands = source.maxDistanceBetweenHands;
@@ -971,11 +976,13 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.stopMovingDistance = 0.0f;
         destination.stopVelocity = 0.0f;
         destination.attractionRadiusMultiplier = 0.0f;
+        // Note: forceToMiddle curve is managed by CurveSettingsSO (set to default empty curve)
         destination.forceToMiddle = new AnimationCurve();
         destination.singleHandOpenForceDamper = 0.0f;
         destination.pushForce = 0.0f;
         destination.minDrag = 0.0f;
         destination.maxDrag = 0.0f;
+        // Note: alignmentVectorStrength curve is managed by CurveSettingsSO (set to default empty curve)
         destination.alignmentVectorStrength = new AnimationCurve();
         destination.alignmentVectorStrengthScaler = 0.0f;
         destination.handPushScaler = 0.0f;
@@ -986,6 +993,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.singleHandScaling = false;
         destination.minimumUnscaledSize = 0.0f;
         destination.minHandDisplacementPerFrame = 0.0f;
+        // Note: distanceDamper curve is managed by CurveSettingsSO (set to default empty curve)
         destination.distanceDamper = new AnimationCurve();
         destination.pulseScaleDamper = 0.0f;
         destination.mergeSizeScalerDamper = 0.0f;

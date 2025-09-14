@@ -13,6 +13,10 @@ public class SceneController : MonoBehaviour
 
     [Label("Settings Config")]
     public SceneSettingsSO so;
+
+    [Label("Curve Settings Config")]
+    [Tooltip("ScriptableObject containing curve settings (forceToMiddle, alignmentVectorStrength, distanceDamper) that are controlled independently from profiles")]
+    public CurveSettingsSO curveSettings;
     
     [Header("Runtime Settings")]
     public InGameSettingsMenu settingsMenu;
@@ -167,7 +171,19 @@ public class SceneController : MonoBehaviour
         {
             runtimeSettings = settingsMenu.GetCurrentSettings();
         }
-        
+
+        // Ensure we have runtime settings (fallback if needed)
+        if (runtimeSettings == null)
+        {
+            runtimeSettings = CreateFallbackSettings();
+        }
+
+        // Apply curve settings from ScriptableObject (independent of profiles)
+        if (curveSettings != null && runtimeSettings != null)
+        {
+            runtimeSettings.ApplyCurveSettings(curveSettings);
+        }
+
         // Use runtime settings or fallback to SO
         var currentSettings = GetCurrentSettings();
         // transform.position = new Vector3(transform.position.x, transform.position.y, currentSettings.baseZDepth);
@@ -502,10 +518,16 @@ public class SceneController : MonoBehaviour
     private void OnRuntimeSettingsChanged(RuntimeSceneSettings newSettings)
     {
         runtimeSettings = newSettings;
-        
+
+        // Apply curve settings from ScriptableObject (independent of profiles)
+        if (curveSettings != null)
+        {
+            runtimeSettings.ApplyCurveSettings(curveSettings);
+        }
+
         // Update any cached references or trigger updates as needed
         UpdateAllPlayersDebuggingVisuals();
-        
+
         // Update volume profile settings
         if (volumeController != null)
         {

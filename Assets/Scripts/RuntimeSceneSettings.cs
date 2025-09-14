@@ -17,11 +17,13 @@ public class RuntimeSceneSettings
     public float attractionRadiusMultiplier = 1f;
 
     [Header("Hands Attraction")]
+    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
     public float singleHandOpenForceDamper = 1f;
     public float pushForce = 5f;
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
+    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
     public float alignmentVectorStrengthScaler = 1f;
     public float handPushScaler = 1f;
@@ -38,6 +40,7 @@ public class RuntimeSceneSettings
     public float minimumUnscaledSize = 0.5f;
     [Range(0.0001f, 5f)]
     public float minHandDisplacementPerFrame = 0.01f;
+    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
     public float pulseScaleDamper = 1f;
 
@@ -146,12 +149,12 @@ public class RuntimeSceneSettings
         stopMovingDistance = so.stopMovingDistance;
         stopVelocity = so.stopVelocity;
         attractionRadiusMultiplier = so.attractionRadiusMultiplier;
-        forceToMiddle = new AnimationCurve(so.forceToMiddle.keys);
+        // Note: forceToMiddle and alignmentVectorStrength are now managed by CurveSettingsSO
+        // and should not be copied from the main SceneSettingsSO
         singleHandOpenForceDamper = so.singleHandOpenForceDamper;
         pushForce = so.pushForce;
         minDrag = so.minDrag;
         maxDrag = so.maxDrag;
-        alignmentVectorStrength = new AnimationCurve(so.alignmentVectorStrength.keys);
         alignmentVectorStrengthScaler = so.alignmentVectorStrengthScaler;
         handPushScaler = so.handPushScaler;
         pulseAmount = so.pulseAmount;
@@ -161,7 +164,8 @@ public class RuntimeSceneSettings
         singleHandScaling = so.singleHandScaling;
         minimumUnscaledSize = so.minimumUnscaledSize;
         minHandDisplacementPerFrame = so.minHandDisplacementPerFrame;
-        distanceDamper = new AnimationCurve(so.distanceDamper.keys);
+        // Note: distanceDamper is now managed by CurveSettingsSO
+        // and should not be copied from the main SceneSettingsSO
         pulseScaleDamper = so.pulseScaleDamper;
         mergeSizeScalerDamper = so.mergeSizeScalerDamper;
         maxDistanceBetweenHands = so.maxDistanceBetweenHands;
@@ -269,5 +273,19 @@ public class RuntimeSceneSettings
         copy._showHandTrailDistorters = _showHandTrailDistorters;
         copy._showSecondaryAttractor = _showSecondaryAttractor;
         return copy;
+    }
+
+    /// <summary>
+    /// Apply curve settings from a CurveSettingsSO to this runtime settings instance.
+    /// This allows curves to be controlled separately from profile data.
+    /// </summary>
+    public void ApplyCurveSettings(CurveSettingsSO curveSettings)
+    {
+        if (curveSettings != null)
+        {
+            forceToMiddle = new AnimationCurve(curveSettings.forceToMiddle.keys);
+            alignmentVectorStrength = new AnimationCurve(curveSettings.alignmentVectorStrength.keys);
+            distanceDamper = new AnimationCurve(curveSettings.distanceDamper.keys);
+        }
     }
 }
