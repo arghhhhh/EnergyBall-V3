@@ -580,8 +580,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4c690e91c9125f4fbb331dd40da9754, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InGameSettingsMenu
-  uiDocument: {fileID: 1605418795}
-  sceneController: {fileID: 1790478704}
 --- !u!114 &1605418795
 MonoBehaviour:
   m_ObjectHideFlags: 0

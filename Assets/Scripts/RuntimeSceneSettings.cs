@@ -89,7 +89,7 @@ public class RuntimeSceneSettings
     public bool dummyOnlyMode = false;
     public bool showSphereMeshOnHandCollision = false;
     
-    private bool _showAttractionRadius = false;
+    [SerializeField] private bool _showAttractionRadius = false;
     public bool showAttractionRadius
     {
         get => _showAttractionRadius;
@@ -103,7 +103,7 @@ public class RuntimeSceneSettings
         }
     }
 
-    private bool _showHandTrailDistorters = false;
+    [SerializeField] private bool _showHandTrailDistorters = false;
     public bool showHandTrailDistorters
     {
         get => _showHandTrailDistorters;
@@ -117,7 +117,7 @@ public class RuntimeSceneSettings
         }
     }
 
-    private bool _showSecondaryAttractor = false;
+    [SerializeField] private bool _showSecondaryAttractor = false;
     public bool showSecondaryAttractor
     {
         get => _showSecondaryAttractor;

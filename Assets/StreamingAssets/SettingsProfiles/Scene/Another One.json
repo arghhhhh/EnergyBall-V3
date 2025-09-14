@@ -1,0 +1,150 @@
+{
+    "g": 9.8100004196167,
+    "maxTowardsForce": 100.0,
+    "maxAwayFromForce": 10.0,
+    "gravityForceDamper": 1.0,
+    "stopGravityDistance": 0.10000000149011612,
+    "stopMovingDistance": 0.05000000074505806,
+    "stopVelocity": 0.10000000149011612,
+    "attractionRadiusMultiplier": 1.0,
+    "forceToMiddle": {
+        "serializedVersion": "2",
+        "m_Curve": [
+            {
+                "serializedVersion": "3",
+                "time": 0.0,
+                "value": 0.0,
+                "inSlope": 0.0,
+                "outSlope": 1.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            },
+            {
+                "serializedVersion": "3",
+                "time": 1.0,
+                "value": 1.0,
+                "inSlope": 1.0,
+                "outSlope": 0.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            }
+        ],
+        "m_PreInfinity": 2,
+        "m_PostInfinity": 2,
+        "m_RotationOrder": 4
+    },
+    "singleHandOpenForceDamper": 1.0,
+    "pushForce": 5.0,
+    "minDrag": 0.10000000149011612,
+    "maxDrag": 5.0,
+    "alignmentVectorStrength": {
+        "serializedVersion": "2",
+        "m_Curve": [
+            {
+                "serializedVersion": "3",
+                "time": 0.0,
+                "value": 0.0,
+                "inSlope": 0.0,
+                "outSlope": 1.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            },
+            {
+                "serializedVersion": "3",
+                "time": 1.0,
+                "value": 1.0,
+                "inSlope": 1.0,
+                "outSlope": 0.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            }
+        ],
+        "m_PreInfinity": 2,
+        "m_PostInfinity": 2,
+        "m_RotationOrder": 4
+    },
+    "alignmentVectorStrengthScaler": 1.0,
+    "handPushScaler": 1.0,
+    "pulseAmount": 1.0,
+    "pulseSpeed": 1.0,
+    "graphLimit": 10.0,
+    "pulseFreqs": [
+        1.0,
+        2.0,
+        3.0
+    ],
+    "singleHandScaling": true,
+    "minimumUnscaledSize": 0.5,
+    "minHandDisplacementPerFrame": 0.009999999776482582,
+    "distanceDamper": {
+        "serializedVersion": "2",
+        "m_Curve": [
+            {
+                "serializedVersion": "3",
+                "time": 0.0,
+                "value": 0.0,
+                "inSlope": 0.0,
+                "outSlope": 1.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            },
+            {
+                "serializedVersion": "3",
+                "time": 1.0,
+                "value": 1.0,
+                "inSlope": 1.0,
+                "outSlope": 0.0,
+                "tangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": 0.0,
+                "outWeight": 0.0
+            }
+        ],
+        "m_PreInfinity": 2,
+        "m_PostInfinity": 2,
+        "m_RotationOrder": 4
+    },
+    "pulseScaleDamper": 1.0,
+    "mergeSizeScalerDamper": 1.0,
+    "maxDistanceBetweenHands": 2.0,
+    "baseZDepth": 5.0,
+    "defaultUnscaledSize": 1.0,
+    "bodyScale": 1.0,
+    "maxDistanceFromCamera": 10.0,
+    "particleInitializationDelay": 1.0,
+    "bloomThreshold": 1.0,
+    "bloomIntensity": 0.5,
+    "bloomScatter": 0.699999988079071,
+    "lensFlareIntensity": 1.0,
+    "lensFlareRegularMultiplier": 1.0,
+    "lensFlareReversedMultiplier": 1.0,
+    "lensFlareStreaksMultiplier": 1.0,
+    "lensFlareStreaksLength": 0.03999999910593033,
+    "lensFlareStreaksOrientation": 0.0,
+    "lensFlareStreaksThreshold": 0.05000000074505806,
+    "lensFlareChromaticIntensity": 1.0,
+    "lensDistortionIntensity": 0.0,
+    "lensDistortionXMultiplier": 1.0,
+    "lensDistortionYMultiplier": 1.0,
+    "lensDistortionScale": 1.0,
+    "lensDistortionCenterX": 0.5,
+    "lensDistortionCenterY": 0.5,
+    "colorAdjustmentsPostExposure": 0.0,
+    "colorAdjustmentsContrast": 0.0,
+    "colorAdjustmentsHueShift": 0.0,
+    "colorAdjustmentsSaturation": 0.0,
+    "whiteBalanceTemperature": 0.0,
+    "whiteBalanceTint": 0.0,
+    "dummyOnlyMode": true,
+    "showSphereMeshOnHandCollision": false
+}

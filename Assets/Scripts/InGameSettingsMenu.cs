@@ -7,34 +7,60 @@ using UnityEngine.UIElements;
 
 public class InGameSettingsMenu : MonoBehaviour
 {
+    public enum TabType
+    {
+        Scene,
+        PostProcessing
+    }
+    
+    private bool isRefreshingSuppressed = false;
+    
     private UIDocument uiDocument;
     readonly SceneController controller = SceneController.Instance;
     
     private VisualElement settingsPanel;
     private ScrollView sceneSettingsPanel;
     private ScrollView postProcessingPanel;
-    private DropdownField profileDropdown;
-    private Button loadButton, saveButton, saveAsButton, closeButton;
+    private DropdownField sceneProfileDropdown, postProcessingProfileDropdown;
+    private Button sceneLoadButton, sceneSaveButton, sceneSaveAsButton;
+    private Button postProcessingLoadButton, postProcessingSaveButton, postProcessingSaveAsButton;
+    private Button closeButton;
     private Button sceneTab, postProcessingTab;
     
     private RuntimeSceneSettings runtimeSettings;
     private RuntimeSceneSettings originalSettings; // Backup for canceling changes
-    private string currentProfilePath = "";
-    private string profilesDirectory;
-    private string lastUsedProfileKey = "LastUsedProfile";
+    private string currentSceneProfilePath = "";
+    private string currentPostProcessingProfilePath = "";
+    private string sceneProfilesDirectory;
+    private string postProcessingProfilesDirectory;
+    private string lastUsedSceneProfileKey = "LastUsedSceneProfile";
+    private string lastUsedPostProcessingProfileKey = "LastUsedPostProcessingProfile";
     
     private readonly List<VisualElement> settingGroups = new();
     private readonly Dictionary<string, VisualElement> settingElements = new();
     private bool isModalOpen = false;
 
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
+    
+    public enum ProfileType
+    {
+        Scene,
+        PostProcessing
+    }
 
     private void Awake()
     {
-        profilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles");
-        if (!Directory.Exists(profilesDirectory))
+        sceneProfilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles", "Scene");
+        postProcessingProfilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles", "PostProcessing");
+        
+        if (!Directory.Exists(sceneProfilesDirectory))
         {
-            Directory.CreateDirectory(profilesDirectory);
+            Directory.CreateDirectory(sceneProfilesDirectory);
+        }
+        
+        if (!Directory.Exists(postProcessingProfilesDirectory))
+        {
+            Directory.CreateDirectory(postProcessingProfilesDirectory);
         }
 
         if (uiDocument == null)
@@ -45,7 +71,8 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         InitializeRuntimeSettings();
         SetupUI();
-        RefreshProfileDropdown();
+        RefreshSceneProfiles();
+        RefreshPostProcessingProfiles();
         CreateSettingsUI();
     }
 
@@ -68,42 +95,104 @@ public class InGameSettingsMenu : MonoBehaviour
             // Subscribe to runtime settings changes
             runtimeSettings.OnAnyDebuggingSettingChanged += () => OnSettingsChanged?.Invoke(runtimeSettings);
         }
+        else
+        {
+            // Create default runtime settings if controller is not available
+            runtimeSettings = new RuntimeSceneSettings();
+            originalSettings = runtimeSettings.DeepCopy();
+        }
     }
 
     private void SetupUI()
     {
+        if (uiDocument == null)
+        {
+            Debug.LogError("UIDocument is null, cannot setup UI");
+            return;
+        }
+        
         var root = uiDocument.rootVisualElement;
         
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         sceneSettingsPanel = root.Q<ScrollView>("SceneSettingsPanel");
         postProcessingPanel = root.Q<ScrollView>("PostProcessingPanel");
-        profileDropdown = root.Q<DropdownField>("ProfileDropdown");
-        loadButton = root.Q<Button>("LoadButton");
-        saveButton = root.Q<Button>("SaveButton");
-        saveAsButton = root.Q<Button>("SaveAsButton");
+        
+        // Scene tab controls
+        var sceneTabContent = root.Q<VisualElement>("SceneTabContent");
+        if (sceneTabContent != null)
+        {
+            sceneProfileDropdown = sceneTabContent.Q<DropdownField>("SceneProfileDropdown");
+            sceneLoadButton = sceneTabContent.Q<Button>("SceneLoadButton");
+            sceneSaveButton = sceneTabContent.Q<Button>("SceneSaveButton");
+            sceneSaveAsButton = sceneTabContent.Q<Button>("SceneSaveAsButton");
+        }
+        
+        // Post-processing tab controls
+        var postProcessingTabContent = root.Q<VisualElement>("PostProcessingTabContent");
+        if (postProcessingTabContent != null)
+        {
+            postProcessingProfileDropdown = postProcessingTabContent.Q<DropdownField>("PostProcessingProfileDropdown");
+            postProcessingLoadButton = postProcessingTabContent.Q<Button>("PostProcessingLoadButton");
+            postProcessingSaveButton = postProcessingTabContent.Q<Button>("PostProcessingSaveButton");
+            postProcessingSaveAsButton = postProcessingTabContent.Q<Button>("PostProcessingSaveAsButton");
+        }
+        
         closeButton = root.Q<Button>("CloseButton");
         sceneTab = root.Q<Button>("SceneTab");
         postProcessingTab = root.Q<Button>("PostProcessingTab");
         
         // Setup button callbacks
         closeButton.clicked += CloseMenu;
-        loadButton.clicked += LoadSelectedProfile;
-        saveButton.clicked += SaveCurrentProfile;
-        saveAsButton.clicked += ShowSaveAsDialog;
+        
+        // Scene tab callbacks
+        if (sceneLoadButton != null) sceneLoadButton.clicked += () => LoadSelectedProfile("scene");
+        if (sceneSaveButton != null) sceneSaveButton.clicked += () => SaveCurrentProfile(TabType.Scene);
+        if (sceneSaveAsButton != null) sceneSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.Scene);
+        
+        // Post-processing tab callbacks
+        if (postProcessingLoadButton != null) postProcessingLoadButton.clicked += () => LoadSelectedProfile("postprocessing");
+        if (postProcessingSaveButton != null) postProcessingSaveButton.clicked += () => SaveCurrentProfile(TabType.PostProcessing);
+        if (postProcessingSaveAsButton != null) postProcessingSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.PostProcessing);
+        
         sceneTab.clicked += () => SwitchTab("scene");
         postProcessingTab.clicked += () => SwitchTab("postprocessing");
         
-        // Auto-load when dropdown selection changes
-        profileDropdown.RegisterValueChangedCallback(evt => {
-            if (!string.IsNullOrEmpty(evt.newValue))
-            {
-                LoadSelectedProfile();
-            }
-        });
+        // Auto-load when dropdown selections change
+        if (sceneProfileDropdown != null)
+        {
+            sceneProfileDropdown.RegisterValueChangedCallback(evt => {
+                if (!string.IsNullOrEmpty(evt.newValue))
+                {
+                    LoadSelectedProfile("scene");
+                }
+            });
+        }
+        
+        if (postProcessingProfileDropdown != null)
+        {
+            postProcessingProfileDropdown.RegisterValueChangedCallback(evt => {
+                if (!string.IsNullOrEmpty(evt.newValue))
+                {
+                    LoadSelectedProfile("postprocessing");
+                }
+            });
+        }
     }
 
     private void CreateSettingsUI()
     {
+        if (runtimeSettings == null)
+        {
+            Debug.LogError("RuntimeSettings is null, cannot create settings UI");
+            return;
+        }
+        
+        if (sceneSettingsPanel == null || postProcessingPanel == null)
+        {
+            Debug.LogError("UI panels not found, cannot create settings UI");
+            return;
+        }
+        
         sceneSettingsPanel.Clear();
         postProcessingPanel.Clear();
         settingElements.Clear();
@@ -133,19 +222,23 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void SwitchTab(string tabName)
     {
+        var root = uiDocument.rootVisualElement;
+        var sceneTabContent = root.Q<VisualElement>("SceneTabContent");
+        var postProcessingTabContent = root.Q<VisualElement>("PostProcessingTabContent");
+        
         if (tabName == "scene")
         {
             sceneTab.AddToClassList("active");
             postProcessingTab.RemoveFromClassList("active");
-            sceneSettingsPanel.AddToClassList("active");
-            postProcessingPanel.RemoveFromClassList("active");
+            sceneTabContent?.AddToClassList("active");
+            postProcessingTabContent?.RemoveFromClassList("active");
         }
         else if (tabName == "postprocessing")
         {
             sceneTab.RemoveFromClassList("active");
             postProcessingTab.AddToClassList("active");
-            sceneSettingsPanel.RemoveFromClassList("active");
-            postProcessingPanel.AddToClassList("active");
+            sceneTabContent?.RemoveFromClassList("active");
+            postProcessingTabContent?.AddToClassList("active");
         }
     }
 
@@ -624,37 +717,80 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSettingsUI();
     }
 
-    private void RefreshProfileDropdown()
+    private void RefreshSceneProfiles()
     {
-        var profileFiles = Directory.GetFiles(profilesDirectory, "*.json")
+        if (sceneProfileDropdown == null) return;
+        
+        var profileFiles = Directory.GetFiles(sceneProfilesDirectory, "*.json")
             .Select(Path.GetFileNameWithoutExtension)
             .ToList();
         
-        profileDropdown.choices = profileFiles;
+        sceneProfileDropdown.choices = profileFiles;
         
-        // Try to restore last used profile
-        string lastUsedProfile = PlayerPrefs.GetString(lastUsedProfileKey, "");
+        // Skip loading profile if refresh is suppressed (during save operations)
+        if (isRefreshingSuppressed) return;
+        
+        // Try to restore last used scene profile
+        string lastUsedProfile = PlayerPrefs.GetString(lastUsedSceneProfileKey, "");
         if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
         {
-            profileDropdown.value = lastUsedProfile;
-            LoadProfile(Path.Combine(profilesDirectory, lastUsedProfile + ".json"));
+            sceneProfileDropdown.SetValueWithoutNotify(lastUsedProfile);
+            LoadProfile(Path.Combine(sceneProfilesDirectory, lastUsedProfile + ".json"), ProfileType.Scene);
         }
         else if (profileFiles.Count > 0)
         {
-            profileDropdown.value = profileFiles[0];
-            LoadProfile(Path.Combine(profilesDirectory, profileFiles[0] + ".json"));
+            sceneProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
+            LoadProfile(Path.Combine(sceneProfilesDirectory, profileFiles[0] + ".json"), ProfileType.Scene);
+        }
+    }
+    
+    private void RefreshPostProcessingProfiles()
+    {
+        if (postProcessingProfileDropdown == null) return;
+        
+        var profileFiles = Directory.GetFiles(postProcessingProfilesDirectory, "*.json")
+            .Select(Path.GetFileNameWithoutExtension)
+            .ToList();
+        
+        postProcessingProfileDropdown.choices = profileFiles;
+        
+        // Try to restore last used post-processing profile
+        string lastUsedProfile = PlayerPrefs.GetString(lastUsedPostProcessingProfileKey, "");
+        if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
+        {
+            postProcessingProfileDropdown.SetValueWithoutNotify(lastUsedProfile);
+            LoadProfile(Path.Combine(postProcessingProfilesDirectory, lastUsedProfile + ".json"), ProfileType.PostProcessing);
+        }
+        else if (profileFiles.Count > 0)
+        {
+            postProcessingProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
+            LoadProfile(Path.Combine(postProcessingProfilesDirectory, profileFiles[0] + ".json"), ProfileType.PostProcessing);
+        }
+    }
+    
+    private void RefreshProfileDropdowns()
+    {
+        RefreshSceneProfiles();
+        RefreshPostProcessingProfiles();
+    }
+
+    private void LoadSelectedProfile(string tabType)
+    {
+        if (tabType == "scene")
+        {
+            if (sceneProfileDropdown == null || string.IsNullOrEmpty(sceneProfileDropdown.value)) return;
+            var profilePath = Path.Combine(sceneProfilesDirectory, sceneProfileDropdown.value + ".json");
+            LoadProfile(profilePath, ProfileType.Scene);
+        }
+        else if (tabType == "postprocessing")
+        {
+            if (postProcessingProfileDropdown == null || string.IsNullOrEmpty(postProcessingProfileDropdown.value)) return;
+            var profilePath = Path.Combine(postProcessingProfilesDirectory, postProcessingProfileDropdown.value + ".json");
+            LoadProfile(profilePath, ProfileType.PostProcessing);
         }
     }
 
-    private void LoadSelectedProfile()
-    {
-        if (string.IsNullOrEmpty(profileDropdown.value)) return;
-        
-        var profilePath = Path.Combine(profilesDirectory, profileDropdown.value + ".json");
-        LoadProfile(profilePath);
-    }
-
-    private void LoadProfile(string path)
+    private void LoadProfile(string path, ProfileType profileType)
     {
         if (!File.Exists(path)) return;
         
@@ -663,41 +799,314 @@ public class InGameSettingsMenu : MonoBehaviour
             var json = File.ReadAllText(path);
             var loadedSettings = JsonUtility.FromJson<RuntimeSceneSettings>(json);
             
-            runtimeSettings = loadedSettings;
-            currentProfilePath = path;
-            
-            // Save as last used profile
-            string profileName = Path.GetFileNameWithoutExtension(path);
-            PlayerPrefs.SetString(lastUsedProfileKey, profileName);
-            PlayerPrefs.Save();
+            // Merge loaded settings based on profile type
+            if (profileType == ProfileType.Scene)
+            {
+                // Load only scene settings, keep current post-processing settings
+                MergeSceneSettings(loadedSettings);
+                currentSceneProfilePath = path;
+                
+                // Save as last used scene profile
+                string profileName = Path.GetFileNameWithoutExtension(path);
+                PlayerPrefs.SetString(lastUsedSceneProfileKey, profileName);
+                PlayerPrefs.Save();
+            }
+            else if (profileType == ProfileType.PostProcessing)
+            {
+                // Load only post-processing settings, keep current scene settings
+                MergePostProcessingSettings(loadedSettings);
+                currentPostProcessingProfilePath = path;
+                
+                // Save as last used post-processing profile
+                string profileName = Path.GetFileNameWithoutExtension(path);
+                PlayerPrefs.SetString(lastUsedPostProcessingProfileKey, profileName);
+                PlayerPrefs.Save();
+                
+                // Update Volume Profile with post-processing settings (during play mode)
+                if (Application.isPlaying)
+                {
+                    VolumeController.OnProfileSaved(runtimeSettings);
+                }
+            }
             
             RefreshUI();
             OnSettingsChanged?.Invoke(runtimeSettings);
-            
-            // Update Volume Profile with loaded settings (during play mode)
-            if (Application.isPlaying)
-            {
-                VolumeController.OnProfileSaved(runtimeSettings);
-            }
         }
         catch (Exception e)
         {
             Debug.LogError($"Failed to load profile: {e.Message}");
         }
     }
-
-    private void SaveCurrentProfile()
+    
+    private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
     {
-        if (string.IsNullOrEmpty(currentProfilePath))
-        {
-            ShowSaveAsDialog();
-            return;
-        }
+        // Copy only non-post-processing settings from loaded profile
+        // Keep the current post-processing settings intact
         
-        SaveProfile(currentProfilePath);
+        // Gravity and Force settings
+        runtimeSettings.g = loadedSettings.g;
+        runtimeSettings.maxTowardsForce = loadedSettings.maxTowardsForce;
+        runtimeSettings.maxAwayFromForce = loadedSettings.maxAwayFromForce;
+        runtimeSettings.gravityForceDamper = loadedSettings.gravityForceDamper;
+        runtimeSettings.stopGravityDistance = loadedSettings.stopGravityDistance;
+        runtimeSettings.stopMovingDistance = loadedSettings.stopMovingDistance;
+        runtimeSettings.stopVelocity = loadedSettings.stopVelocity;
+        runtimeSettings.attractionRadiusMultiplier = loadedSettings.attractionRadiusMultiplier;
+        runtimeSettings.forceToMiddle = loadedSettings.forceToMiddle;
+        
+        // Hand interaction settings
+        runtimeSettings.singleHandOpenForceDamper = loadedSettings.singleHandOpenForceDamper;
+        runtimeSettings.pushForce = loadedSettings.pushForce;
+        runtimeSettings.minDrag = loadedSettings.minDrag;
+        runtimeSettings.maxDrag = loadedSettings.maxDrag;
+        runtimeSettings.alignmentVectorStrength = loadedSettings.alignmentVectorStrength;
+        runtimeSettings.alignmentVectorStrengthScaler = loadedSettings.alignmentVectorStrengthScaler;
+        runtimeSettings.handPushScaler = loadedSettings.handPushScaler;
+        
+        // Pulsation settings
+        runtimeSettings.pulseAmount = loadedSettings.pulseAmount;
+        runtimeSettings.pulseSpeed = loadedSettings.pulseSpeed;
+        runtimeSettings.graphLimit = loadedSettings.graphLimit;
+        runtimeSettings.pulseFreqs = loadedSettings.pulseFreqs;
+        
+        // Size and scaling settings
+        runtimeSettings.singleHandScaling = loadedSettings.singleHandScaling;
+        runtimeSettings.minimumUnscaledSize = loadedSettings.minimumUnscaledSize;
+        runtimeSettings.minHandDisplacementPerFrame = loadedSettings.minHandDisplacementPerFrame;
+        runtimeSettings.distanceDamper = loadedSettings.distanceDamper;
+        runtimeSettings.pulseScaleDamper = loadedSettings.pulseScaleDamper;
+        runtimeSettings.mergeSizeScalerDamper = loadedSettings.mergeSizeScalerDamper;
+        runtimeSettings.maxDistanceBetweenHands = loadedSettings.maxDistanceBetweenHands;
+        runtimeSettings.baseZDepth = loadedSettings.baseZDepth;
+        runtimeSettings.defaultUnscaledSize = loadedSettings.defaultUnscaledSize;
+        runtimeSettings.bodyScale = loadedSettings.bodyScale;
+        runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
+        runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
+        
+        // Debug/visibility settings
+        runtimeSettings.dummyOnlyMode = loadedSettings.dummyOnlyMode;
+        runtimeSettings.showSphereMeshOnHandCollision = loadedSettings.showSphereMeshOnHandCollision;
+        runtimeSettings.showAttractionRadius = loadedSettings.showAttractionRadius;
+        runtimeSettings.showHandTrailDistorters = loadedSettings.showHandTrailDistorters;
+        runtimeSettings.showSecondaryAttractor = loadedSettings.showSecondaryAttractor;
+    }
+    
+    private void MergePostProcessingSettings(RuntimeSceneSettings loadedSettings)
+    {
+        // Copy only post-processing settings from loaded profile
+        // Keep the current scene settings intact
+        
+        // Bloom settings
+        runtimeSettings.bloomThreshold = loadedSettings.bloomThreshold;
+        runtimeSettings.bloomIntensity = loadedSettings.bloomIntensity;
+        runtimeSettings.bloomScatter = loadedSettings.bloomScatter;
+        
+        // Lens Flare settings
+        runtimeSettings.lensFlareIntensity = loadedSettings.lensFlareIntensity;
+        runtimeSettings.lensFlareRegularMultiplier = loadedSettings.lensFlareRegularMultiplier;
+        runtimeSettings.lensFlareReversedMultiplier = loadedSettings.lensFlareReversedMultiplier;
+        runtimeSettings.lensFlareStreaksMultiplier = loadedSettings.lensFlareStreaksMultiplier;
+        runtimeSettings.lensFlareStreaksLength = loadedSettings.lensFlareStreaksLength;
+        runtimeSettings.lensFlareStreaksOrientation = loadedSettings.lensFlareStreaksOrientation;
+        runtimeSettings.lensFlareStreaksThreshold = loadedSettings.lensFlareStreaksThreshold;
+        runtimeSettings.lensFlareChromaticIntensity = loadedSettings.lensFlareChromaticIntensity;
+        
+        // Lens Distortion settings
+        runtimeSettings.lensDistortionIntensity = loadedSettings.lensDistortionIntensity;
+        runtimeSettings.lensDistortionXMultiplier = loadedSettings.lensDistortionXMultiplier;
+        runtimeSettings.lensDistortionYMultiplier = loadedSettings.lensDistortionYMultiplier;
+        runtimeSettings.lensDistortionScale = loadedSettings.lensDistortionScale;
+        runtimeSettings.lensDistortionCenterX = loadedSettings.lensDistortionCenterX;
+        runtimeSettings.lensDistortionCenterY = loadedSettings.lensDistortionCenterY;
+        
+        // Color Adjustments settings
+        runtimeSettings.colorAdjustmentsPostExposure = loadedSettings.colorAdjustmentsPostExposure;
+        runtimeSettings.colorAdjustmentsContrast = loadedSettings.colorAdjustmentsContrast;
+        runtimeSettings.colorAdjustmentsHueShift = loadedSettings.colorAdjustmentsHueShift;
+        runtimeSettings.colorAdjustmentsSaturation = loadedSettings.colorAdjustmentsSaturation;
+        
+        // White Balance settings
+        runtimeSettings.whiteBalanceTemperature = loadedSettings.whiteBalanceTemperature;
+        runtimeSettings.whiteBalanceTint = loadedSettings.whiteBalanceTint;
+    }
+    
+    private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
+    {
+        // Copy only non-post-processing settings to destination
+        
+        // Gravity and Force settings
+        destination.g = source.g;
+        destination.maxTowardsForce = source.maxTowardsForce;
+        destination.maxAwayFromForce = source.maxAwayFromForce;
+        destination.gravityForceDamper = source.gravityForceDamper;
+        destination.stopGravityDistance = source.stopGravityDistance;
+        destination.stopMovingDistance = source.stopMovingDistance;
+        destination.stopVelocity = source.stopVelocity;
+        destination.attractionRadiusMultiplier = source.attractionRadiusMultiplier;
+        destination.forceToMiddle = source.forceToMiddle;
+        
+        // Hand interaction settings
+        destination.singleHandOpenForceDamper = source.singleHandOpenForceDamper;
+        destination.pushForce = source.pushForce;
+        destination.minDrag = source.minDrag;
+        destination.maxDrag = source.maxDrag;
+        destination.alignmentVectorStrength = source.alignmentVectorStrength;
+        destination.alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
+        destination.handPushScaler = source.handPushScaler;
+        
+        // Pulsation settings
+        destination.pulseAmount = source.pulseAmount;
+        destination.pulseSpeed = source.pulseSpeed;
+        destination.graphLimit = source.graphLimit;
+        destination.pulseFreqs = source.pulseFreqs;
+        
+        // Size and scaling settings
+        destination.singleHandScaling = source.singleHandScaling;
+        destination.minimumUnscaledSize = source.minimumUnscaledSize;
+        destination.minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
+        destination.distanceDamper = source.distanceDamper;
+        destination.pulseScaleDamper = source.pulseScaleDamper;
+        destination.mergeSizeScalerDamper = source.mergeSizeScalerDamper;
+        destination.maxDistanceBetweenHands = source.maxDistanceBetweenHands;
+        destination.baseZDepth = source.baseZDepth;
+        destination.defaultUnscaledSize = source.defaultUnscaledSize;
+        destination.bodyScale = source.bodyScale;
+        destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
+        destination.particleInitializationDelay = source.particleInitializationDelay;
+        
+        // Debug/visibility settings
+        destination.dummyOnlyMode = source.dummyOnlyMode;
+        destination.showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
+        destination.showAttractionRadius = source.showAttractionRadius;
+        destination.showHandTrailDistorters = source.showHandTrailDistorters;
+        destination.showSecondaryAttractor = source.showSecondaryAttractor;
+        
+        // Explicitly set all post-processing values to zero/defaults to prevent them from being saved in scene profiles
+        destination.bloomThreshold = 0.0f;
+        destination.bloomIntensity = 0.0f;
+        destination.bloomScatter = 0.0f;
+        destination.lensFlareIntensity = 0.0f;
+        destination.lensFlareRegularMultiplier = 0.0f;
+        destination.lensFlareReversedMultiplier = 0.0f;
+        destination.lensFlareStreaksMultiplier = 0.0f;
+        destination.lensFlareStreaksLength = 0.0f;
+        destination.lensFlareStreaksOrientation = 0.0f;
+        destination.lensFlareStreaksThreshold = 0.0f;
+        destination.lensFlareChromaticIntensity = 0.0f;
+        destination.lensDistortionIntensity = 0.0f;
+        destination.lensDistortionXMultiplier = 0.0f;
+        destination.lensDistortionYMultiplier = 0.0f;
+        destination.lensDistortionScale = 0.0f;
+        destination.lensDistortionCenterX = 0.0f;
+        destination.lensDistortionCenterY = 0.0f;
+        destination.colorAdjustmentsPostExposure = 0.0f;
+        destination.colorAdjustmentsContrast = 0.0f;
+        destination.colorAdjustmentsHueShift = 0.0f;
+        destination.colorAdjustmentsSaturation = 0.0f;
+        destination.whiteBalanceTemperature = 0.0f;
+        destination.whiteBalanceTint = 0.0f;
+    }
+    
+    private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
+    {
+        // Copy only post-processing settings to destination
+        
+        // Bloom settings
+        destination.bloomThreshold = source.bloomThreshold;
+        destination.bloomIntensity = source.bloomIntensity;
+        destination.bloomScatter = source.bloomScatter;
+        
+        // Lens Flare settings
+        destination.lensFlareIntensity = source.lensFlareIntensity;
+        destination.lensFlareRegularMultiplier = source.lensFlareRegularMultiplier;
+        destination.lensFlareReversedMultiplier = source.lensFlareReversedMultiplier;
+        destination.lensFlareStreaksMultiplier = source.lensFlareStreaksMultiplier;
+        destination.lensFlareStreaksLength = source.lensFlareStreaksLength;
+        destination.lensFlareStreaksOrientation = source.lensFlareStreaksOrientation;
+        destination.lensFlareStreaksThreshold = source.lensFlareStreaksThreshold;
+        destination.lensFlareChromaticIntensity = source.lensFlareChromaticIntensity;
+        
+        // Lens Distortion settings
+        destination.lensDistortionIntensity = source.lensDistortionIntensity;
+        destination.lensDistortionXMultiplier = source.lensDistortionXMultiplier;
+        destination.lensDistortionYMultiplier = source.lensDistortionYMultiplier;
+        destination.lensDistortionScale = source.lensDistortionScale;
+        destination.lensDistortionCenterX = source.lensDistortionCenterX;
+        destination.lensDistortionCenterY = source.lensDistortionCenterY;
+        
+        // Color Adjustments settings
+        destination.colorAdjustmentsPostExposure = source.colorAdjustmentsPostExposure;
+        destination.colorAdjustmentsContrast = source.colorAdjustmentsContrast;
+        destination.colorAdjustmentsHueShift = source.colorAdjustmentsHueShift;
+        destination.colorAdjustmentsSaturation = source.colorAdjustmentsSaturation;
+        
+        // White Balance settings
+        destination.whiteBalanceTemperature = source.whiteBalanceTemperature;
+        destination.whiteBalanceTint = source.whiteBalanceTint;
+        
+        // Explicitly set all scene-specific values to defaults to prevent them from being saved in post-processing profiles
+        destination.g = 0.0f;
+        destination.maxTowardsForce = 0.0f;
+        destination.maxAwayFromForce = 0.0f;
+        destination.gravityForceDamper = 0.0f;
+        destination.stopGravityDistance = 0.0f;
+        destination.stopMovingDistance = 0.0f;
+        destination.stopVelocity = 0.0f;
+        destination.attractionRadiusMultiplier = 0.0f;
+        destination.forceToMiddle = new AnimationCurve();
+        destination.singleHandOpenForceDamper = 0.0f;
+        destination.pushForce = 0.0f;
+        destination.minDrag = 0.0f;
+        destination.maxDrag = 0.0f;
+        destination.alignmentVectorStrength = new AnimationCurve();
+        destination.alignmentVectorStrengthScaler = 0.0f;
+        destination.handPushScaler = 0.0f;
+        destination.pulseAmount = 0.0f;
+        destination.pulseSpeed = 0.0f;
+        destination.graphLimit = 0.0f;
+        destination.pulseFreqs = new float[0];
+        destination.singleHandScaling = false;
+        destination.minimumUnscaledSize = 0.0f;
+        destination.minHandDisplacementPerFrame = 0.0f;
+        destination.distanceDamper = new AnimationCurve();
+        destination.pulseScaleDamper = 0.0f;
+        destination.mergeSizeScalerDamper = 0.0f;
+        destination.maxDistanceBetweenHands = 0.0f;
+        destination.baseZDepth = 0.0f;
+        destination.defaultUnscaledSize = 0.0f;
+        destination.bodyScale = 0.0f;
+        destination.maxDistanceFromCamera = 0.0f;
+        destination.particleInitializationDelay = 0.0f;
+        destination.dummyOnlyMode = false;
+        destination.showSphereMeshOnHandCollision = false;
+        destination.showAttractionRadius = false;
+        destination.showHandTrailDistorters = false;
+        destination.showSecondaryAttractor = false;
     }
 
-    private void ShowSaveAsDialog()
+    private void SaveCurrentProfile(TabType tabType)
+    {
+        if (tabType == TabType.Scene)
+        {
+            if (string.IsNullOrEmpty(currentSceneProfilePath))
+            {
+                ShowSaveAsDialog(tabType);
+                return;
+            }
+            SaveProfile(currentSceneProfilePath, tabType);
+        }
+        else if (tabType == TabType.PostProcessing)
+        {
+            if (string.IsNullOrEmpty(currentPostProcessingProfilePath))
+            {
+                ShowSaveAsDialog(tabType);
+                return;
+            }
+            SaveProfile(currentPostProcessingProfilePath, tabType);
+        }
+    }
+
+    private void ShowSaveAsDialog(TabType tabType)
     {
         isModalOpen = true;
         
@@ -755,7 +1164,7 @@ public class InGameSettingsMenu : MonoBehaviour
                     profileName = profileName.Replace(c, '_');
                 }
                 
-                SaveAsNewProfile(profileName);
+                SaveAsNewProfile(profileName, tabType);
                 settingsPanel.Remove(modal);
                 isModalOpen = false;
             }
@@ -796,7 +1205,7 @@ public class InGameSettingsMenu : MonoBehaviour
                         profileName = profileName.Replace(c, '_');
                     }
                     
-                    SaveAsNewProfile(profileName);
+                    SaveAsNewProfile(profileName, tabType);
                     settingsPanel.Remove(modal);
                     isModalOpen = false;
                 }
@@ -809,35 +1218,75 @@ public class InGameSettingsMenu : MonoBehaviour
         });
     }
 
-    private void SaveAsNewProfile(string profileName)
+    private void SaveAsNewProfile(string profileName, TabType tabType)
     {
-        var profilePath = Path.Combine(profilesDirectory, profileName + ".json");
+        string profilePath;
+        string lastUsedKey;
         
-        SaveProfile(profilePath);
-        RefreshProfileDropdown();
-        profileDropdown.value = profileName;
+        if (tabType == TabType.Scene)
+        {
+            profilePath = Path.Combine(sceneProfilesDirectory, profileName + ".json");
+            lastUsedKey = lastUsedSceneProfileKey;
+        }
+        else
+        {
+            profilePath = Path.Combine(postProcessingProfilesDirectory, profileName + ".json");
+            lastUsedKey = lastUsedPostProcessingProfileKey;
+        }
         
-        // Save as last used profile
-        PlayerPrefs.SetString(lastUsedProfileKey, profileName);
+        SaveProfile(profilePath, tabType);
+        
+        // Suppress profile loading during dropdown refresh
+        isRefreshingSuppressed = true;
+        RefreshProfileDropdowns();
+        isRefreshingSuppressed = false;
+        
+        // Set dropdown value without triggering the callback (to avoid reloading the profile we just saved)
+        if (tabType == TabType.Scene)
+        {
+            sceneProfileDropdown.SetValueWithoutNotify(profileName);
+        }
+        else
+        {
+            postProcessingProfileDropdown.SetValueWithoutNotify(profileName);
+        }
+        
+        // Save as last used profile for this tab
+        PlayerPrefs.SetString(lastUsedKey, profileName);
         PlayerPrefs.Save();
     }
 
-    private void SaveProfile(string path)
+    private void SaveProfile(string path, TabType tabType)
     {
         try
         {
-            var json = JsonUtility.ToJson(runtimeSettings, true);
+            RuntimeSceneSettings settingsToSave;
+            
+            if (tabType == TabType.Scene)
+            {
+                // Create a clean settings object with only scene-related data
+                settingsToSave = new RuntimeSceneSettings();
+                // Important: Only copy scene settings, leave all post-processing settings at their default values
+                CopySceneSettings(runtimeSettings, settingsToSave);
+                currentSceneProfilePath = path;
+            }
+            else
+            {
+                // Create a settings object with only post-processing data
+                settingsToSave = new RuntimeSceneSettings();
+                CopyPostProcessingSettings(runtimeSettings, settingsToSave);
+                currentPostProcessingProfilePath = path;
+                
+                // Only notify VolumeController for post-processing saves
+                VolumeController.OnProfileSaved(runtimeSettings);
+            }
+            
+            var json = JsonUtility.ToJson(settingsToSave, true);
             File.WriteAllText(path, json);
-            currentProfilePath = path;
-            
-            // Notify VolumeController that a profile was saved
-            VolumeController.OnProfileSaved(runtimeSettings);
-            
-            Debug.Log($"Profile saved: {Path.GetFileName(path)}");
         }
         catch (Exception e)
         {
-            Debug.LogError($"Failed to save profile: {e.Message}");
+            Debug.LogError($"Failed to save {tabType} profile: {e.Message}");
         }
     }
 
