@@ -87,9 +87,12 @@ public class HandEffects
 
     public void ManageHandTrailDistorters(PlayerConstructor player)
     {
+        float sphereRadius = player.sphere.transform.localScale.x / 4f;
+
         // LEFT HAND
         Vector3 leftStart = player.leftHandCollider.position;
-        Vector3 leftEnd = player.sphere.position - player.sphere.transform.forward * player.sphere.transform.localScale.x / 2f;
+        Vector3 directionToLeftHand = (leftStart - player.sphere.position).normalized;
+        Vector3 leftEnd = player.sphere.position + directionToLeftHand * sphereRadius;
         int numDistortersLeft = player.leftHandTrailDistorters.Length;
         for (int i = 0; i < numDistortersLeft; i++)
         {
@@ -113,7 +116,8 @@ public class HandEffects
 
         // RIGHT HAND
         Vector3 rightStart = player.rightHandCollider.position;
-        Vector3 rightEnd = player.sphere.position - player.sphere.transform.forward * player.sphere.transform.localScale.x / 2f;
+        Vector3 directionToRightHand = (rightStart - player.sphere.position).normalized;
+        Vector3 rightEnd = player.sphere.position + directionToRightHand * sphereRadius;
         int numDistortersRight = player.rightHandTrailDistorters.Length;
         for (int i = 0; i < numDistortersRight; i++)
         {

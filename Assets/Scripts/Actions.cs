@@ -6,4 +6,5 @@ public class Actions
     // public static Action<ulong> OnPlayerRemoved;
     public static Action<PlayerConstructor> OnDummyAdded;
     public static Action<ulong> OnDummyRemoved;
+    public static Action<bool> OnCustomColorsChanged;
 }

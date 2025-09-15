@@ -7,12 +7,11 @@ using UnityEngine.SceneManagement;
 using Windows.Kinect;
 using Joint = Windows.Kinect.Joint;
 
+[DefaultExecutionOrder(-200)]
 public class SceneController : MonoBehaviour
 {
     public static SceneController Instance { get; private set; } // singleton pattern
 
-    // Inspector-editable settings (moved from ScriptableObjects)
-    [Header("Scene Settings")]
     [BoxGroup("Gravity Attraction")]
     public float g = 9.81f;
     [BoxGroup("Gravity Attraction")]
@@ -97,14 +96,52 @@ public class SceneController : MonoBehaviour
     [BoxGroup("Movement-Based Pulsation Curves")]
     [Tooltip("Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands")]
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
+    
+    [BoxGroup("Style Settings")]
+    public bool customColors = false;
+    [BoxGroup("Style Settings")]
+    [HideIf("customColors")]
+    [Tooltip("Use tracking state colors for the skeleton")]
+    public bool useTrackingStateColors = true;
+    [BoxGroup("Style Settings")]
+    [HideIf(EConditionOperator.Or, "customColors", "useTrackingStateColors")]
+    public Color skeletonColor = Color.magenta;
+    [BoxGroup("Style Settings")]
+    [HideIf("customColors")]
+    [GradientUsage(true)]
+    public Gradient particleColor = new();
+    private int lastColorIndex;
+    [ShowIf("customColors")]
+    [BoxGroup("Style Settings")]
+    public Color[] skeletonColors = new Color[]
+    {
+        Color.blue,
+        Color.cyan,
+        Color.green,
+        Color.magenta,
+        Color.red,
+        new (1, 0.5f, 0),
+        Color.yellow
+    };
+    [ShowIf("customColors")]
+    [BoxGroup("Style Settings")]
+    [GradientUsage(true)]
+    public Gradient[] particleColors = new Gradient[]
+    {
+        new(),
+        new(),
+        new(),
+        new(),
+        new(),
+        new(),
+        new()
+    };
 
     [Header("Debugging")]
     [BoxGroup("Debugging")]
     public bool dummyOnlyMode = false;
     [BoxGroup("Debugging")]
     public bool drawSkeleton = false;
-    [BoxGroup("Debugging")]
-    public bool customColors = false;
     [BoxGroup("Debugging")]
     public bool showSphereMeshOnHandCollision = false;
     [BoxGroup("Debugging")]
@@ -170,38 +207,13 @@ public class SceneController : MonoBehaviour
             // { JointType.Neck, JointType.Head },
         };
 
-    private int lastColorIndex;
-    public Color[] colors = new Color[]
-    {
-        Color.blue,
-        Color.cyan,
-        Color.green,
-        Color.magenta,
-        Color.red,
-        new (1, 0.5f, 0),
-        Color.yellow
-    };
-
-    [GradientUsage(true)]
-    public Gradient[] gradients = new Gradient[]
-    {
-        new(),
-        new(),
-        new(),
-        new(),
-        new(),
-        new(),
-        new()
-    };
-
-
-
     private void OnEnable()
     {
         // Actions.OnPlayerAdded += AddPlayer;
         // Actions.OnPlayerRemoved += RemovePlayer;
         Actions.OnDummyAdded += InitializeNewDummy;
         Actions.OnDummyRemoved += RemovePlayer;
+        Actions.OnCustomColorsChanged += OnCustomColorsChanged;
 
         // Debugging setting changes are now handled via OnValidate() when inspector values change
         
@@ -218,6 +230,7 @@ public class SceneController : MonoBehaviour
         // Actions.OnPlayerRemoved -= RemovePlayer;
         Actions.OnDummyAdded -= InitializeNewDummy;
         Actions.OnDummyRemoved -= RemovePlayer;
+        Actions.OnCustomColorsChanged -= OnCustomColorsChanged;
 
         // Debugging setting changes are now handled via OnValidate() when inspector values change
         
@@ -370,15 +383,23 @@ public class SceneController : MonoBehaviour
 
     void ChoosePlayerColor(PlayerConstructor player)
     {
-        int colorIndex = Random.Range(0, colors.Length);
-        while (colorIndex == lastColorIndex)
+        if (CurrentSettings.customColors)
         {
-            colorIndex = Random.Range(0, colors.Length);
+            int colorIndex = Random.Range(0, skeletonColors.Length);
+            while (colorIndex == lastColorIndex)
+            {
+                colorIndex = Random.Range(0, skeletonColors.Length);
+            }
+            lastColorIndex = colorIndex;
+            player.skeletonColor = skeletonColors[colorIndex];
+            player.leftHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
+            player.rightHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
+        } else {
+            player.skeletonColor = skeletonColor;
+            player.leftHandVfx.SetGradient("playerAuraBase", particleColor);
+            player.rightHandVfx.SetGradient("playerAuraBase", particleColor);
         }
-        lastColorIndex = colorIndex;
-        player.skeletonColor = colors[colorIndex];
-        player.leftHandVfx.SetGradient("playerAuraBase", gradients[colorIndex]);
-        player.rightHandVfx.SetGradient("playerAuraBase", gradients[colorIndex]);
+
     }
 
     void SetPlayerHandStates(Body body, PlayerConstructor player)
@@ -503,15 +524,13 @@ public class SceneController : MonoBehaviour
                             lr.enabled = true;
                             lr.SetPosition(0, jointObject.localPosition);
                             lr.SetPosition(1, GetVector3FromJoint(targetJoint.Value));
-                            if (CurrentSettings.customColors)
-                            {
-                                lr.startColor = playerConstructor.skeletonColor;
-                                lr.endColor = playerConstructor.skeletonColor;
-                            }
-                            else
+                            if (CurrentSettings.useTrackingStateColors)
                             {
                                 lr.startColor = ColorSkeleton(sourceJoint.TrackingState);
                                 lr.endColor = ColorSkeleton(targetJoint.Value.TrackingState);
+                            } else {
+                                lr.startColor = playerConstructor.skeletonColor;
+                                lr.endColor = playerConstructor.skeletonColor;
                             }
                         }
                     }
@@ -780,6 +799,18 @@ public class SceneController : MonoBehaviour
         if (volumeController != null)
         {
             volumeController.ApplyCurrentSettings(newSettings);
+        }
+
+    }
+
+    private void OnCustomColorsChanged(bool enabled)
+    {
+        foreach (var player in players.Values)
+        {
+            if (player == null) continue;
+            var pc = player.GetComponent<PlayerConstructor>();
+            ChoosePlayerColor(pc);
+
         }
     }
 

@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.VFX;
 using Windows.Kinect;
 
+[DefaultExecutionOrder(100)]
 public class PlayerConstructor : MonoBehaviour
 {
     [HideInInspector]

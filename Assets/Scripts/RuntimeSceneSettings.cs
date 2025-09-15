@@ -55,6 +55,25 @@ public class RuntimeSceneSettings
     [Header("Animation")]
     public float particleInitializationDelay = 1f;
 
+    [Header("Style")]
+    [SerializeField] private bool _customColors = false;
+    public bool customColors
+    {
+        get => _customColors;
+        set
+        {
+            if (_customColors != value)
+            {
+                _customColors = value;
+                // Notify listeners with the new value so handlers don't depend on
+                // timing of other settings updates.
+                Actions.OnCustomColorsChanged?.Invoke(_customColors);
+            }
+        }
+    }
+    public bool drawSkeleton = false;
+    public bool useTrackingStateColors = true;
+
     [Header("Bloom")]
     public float bloomThreshold = 1.0f;
     public float bloomIntensity = 0.5f;
@@ -90,8 +109,6 @@ public class RuntimeSceneSettings
 
     [Header("Debugging")]
     public bool dummyOnlyMode = false;
-    public bool drawSkeleton = false;
-    public bool customColors = false;
     public bool showSphereMeshOnHandCollision = false;
     
     [SerializeField] private bool _showAttractionRadius = false;
@@ -209,7 +226,8 @@ public class RuntimeSceneSettings
         copy.whiteBalanceTint = whiteBalanceTint;
         copy.dummyOnlyMode = dummyOnlyMode;
         copy.drawSkeleton = drawSkeleton;
-        copy.customColors = customColors;
+        copy._customColors = _customColors;
+        copy.useTrackingStateColors = useTrackingStateColors;
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         copy._showAttractionRadius = _showAttractionRadius;
         copy._showHandTrailDistorters = _showHandTrailDistorters;

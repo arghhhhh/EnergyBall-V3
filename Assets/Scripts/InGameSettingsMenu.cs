@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+[DefaultExecutionOrder(-100)]
 public class InGameSettingsMenu : MonoBehaviour
 {
     public enum TabType
@@ -245,6 +246,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateMovementPulsationGroup(sceneSettingsPanel);
         CreateMiscellaneousGroup(sceneSettingsPanel);
         CreateAnimationGroup(sceneSettingsPanel);
+        CreateStyleGroup(sceneSettingsPanel);
         CreateDebuggingGroup(sceneSettingsPanel);
     }
 
@@ -389,13 +391,20 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(whiteBalanceGroup, "Tint", () => runtimeSettings.whiteBalanceTint, v => runtimeSettings.whiteBalanceTint = v, -100f, 100f);
     }
 
+    private void CreateStyleGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Style", parentContainer);
+        
+        CreateToggleField(group, "Custom Colors", () => runtimeSettings.customColors, v => runtimeSettings.customColors = v);
+        CreateToggleField(group, "Draw Skeleton", () => runtimeSettings.drawSkeleton, v => runtimeSettings.drawSkeleton = v);
+        CreateToggleField(group, "Use Tracking State Colors", () => runtimeSettings.useTrackingStateColors, v => runtimeSettings.useTrackingStateColors = v);
+    }
+
     private void CreateDebuggingGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Debugging", parentContainer);
         
         CreateToggleField(group, "Dummy Only Mode", () => runtimeSettings.dummyOnlyMode, v => runtimeSettings.dummyOnlyMode = v);
-        CreateToggleField(group, "Draw Skeleton", () => runtimeSettings.drawSkeleton, v => runtimeSettings.drawSkeleton = v);
-        CreateToggleField(group, "Custom Colors", () => runtimeSettings.customColors, v => runtimeSettings.customColors = v);
         CreateToggleField(group, "Show Sphere Mesh On Hand Collision", () => runtimeSettings.showSphereMeshOnHandCollision, v => runtimeSettings.showSphereMeshOnHandCollision = v);
         CreateToggleField(group, "Show Attraction Radius", () => runtimeSettings.showAttractionRadius, v => runtimeSettings.showAttractionRadius = v);
         CreateToggleField(group, "Show Hand Trail Distorters", () => runtimeSettings.showHandTrailDistorters, v => runtimeSettings.showHandTrailDistorters = v);
@@ -867,10 +876,13 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
         
-        // Debug/visibility settings
-        runtimeSettings.dummyOnlyMode = loadedSettings.dummyOnlyMode;
-        runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
+        // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
+        runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
+        runtimeSettings.useTrackingStateColors = loadedSettings.useTrackingStateColors;
+
+        // Debug settings
+        runtimeSettings.dummyOnlyMode = loadedSettings.dummyOnlyMode;
         runtimeSettings.showSphereMeshOnHandCollision = loadedSettings.showSphereMeshOnHandCollision;
         runtimeSettings.showAttractionRadius = loadedSettings.showAttractionRadius;
         runtimeSettings.showHandTrailDistorters = loadedSettings.showHandTrailDistorters;
@@ -959,11 +971,14 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.bodyScale = source.bodyScale;
         destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
         destination.particleInitializationDelay = source.particleInitializationDelay;
-        
-        // Debug/visibility settings
-        destination.dummyOnlyMode = source.dummyOnlyMode;
-        destination.drawSkeleton = source.drawSkeleton;
+
+        // Style settings
         destination.customColors = source.customColors;
+        destination.drawSkeleton = source.drawSkeleton;
+        destination.useTrackingStateColors = source.useTrackingStateColors;
+        
+        // Debug settings
+        destination.dummyOnlyMode = source.dummyOnlyMode;
         destination.showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         destination.showAttractionRadius = source.showAttractionRadius;
         destination.showHandTrailDistorters = source.showHandTrailDistorters;
