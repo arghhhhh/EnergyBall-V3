@@ -17,6 +17,7 @@ Before adding a new tab, ensure you understand:
 - C# serialization with `[SerializeField]`
 - The existing `RuntimeSceneSettings` class structure
 - How `JsonUtility.ToJson()` works with Unity objects
+- The SceneController inspector-based settings system
 
 ## Step-by-Step Guide
 
@@ -35,11 +36,28 @@ public enum TabType
 }
 ```
 
-### 2. Add Settings Properties to RuntimeSceneSettings
+### 2. Add Settings to SceneController Inspector
+
+**File:** `Assets/Scripts/SceneController.cs`
+
+Add your new settings directly to the SceneController for inspector editing. **IMPORTANT:** Follow the existing patterns:
+
+```csharp
+[Header("Your New Settings Category")]
+[BoxGroup("Your New Settings")]
+public float yourNewFloatSetting = 1.0f;
+[BoxGroup("Your New Settings")]
+public bool yourNewBoolSetting = false;
+[BoxGroup("Your New Settings")]
+[Range(0, 10f)]
+public float yourRangedSetting = 5.0f;
+```
+
+### 3. Add Settings Properties to RuntimeSceneSettings
 
 **File:** `Assets/Scripts/RuntimeSceneSettings.cs`
 
-Add your new settings properties. **IMPORTANT:** Follow the serialization patterns:
+Add corresponding properties in RuntimeSceneSettings. **IMPORTANT:** Follow the serialization patterns:
 
 ```csharp
 [Header("Your New Settings Category")]
@@ -65,7 +83,25 @@ public float yourComplexSetting
 
 **⚠️ Critical:** Properties with private backing fields MUST have `[SerializeField]` on the private field, or they won't be saved to JSON.
 
-### 3. Update UXML Structure
+### 4. Update SceneController Copy Methods
+
+**File:** `Assets/Scripts/SceneController.cs`
+
+Update the `CopyInspectorToRuntime()` and `CopyRuntimeToInspector()` methods to handle your new settings:
+
+```csharp
+// In CopyInspectorToRuntime() method, add:
+target.yourNewFloatSetting = yourNewFloatSetting;
+target.yourNewBoolSetting = yourNewBoolSetting;
+target.yourRangedSetting = yourRangedSetting;
+
+// In CopyRuntimeToInspector() method, add:
+yourNewFloatSetting = source.yourNewFloatSetting;
+yourNewBoolSetting = source.yourNewBoolSetting;
+yourRangedSetting = source.yourRangedSetting;
+```
+
+### 5. Update UXML Structure
 
 **File:** `Assets/UI/SettingsMenu.uxml`
 
@@ -95,7 +131,7 @@ Add your new tab button and content:
 </ui:VisualElement>
 ```
 
-### 4. Add Private Fields to InGameSettingsMenu
+### 6. Add Private Fields to InGameSettingsMenu
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -122,13 +158,13 @@ private string currentSceneProfilePath = "";
 private string currentPostProcessingProfilePath = "";
 private string currentYourNewTabProfilePath = ""; // Add this
 
-// PlayerPrefs keys
-private readonly string lastUsedSceneProfileKey = "LastUsedSceneProfile";
-private readonly string lastUsedPostProcessingProfileKey = "LastUsedPostProcessingProfile";
-private readonly string lastUsedYourNewTabProfileKey = "LastUsedYourNewTabProfile"; // Add this
+// PlayerPrefs keys (now scene-specific)
+private string lastUsedSceneProfileKey = "LastUsedSceneProfile";
+private string lastUsedPostProcessingProfileKey = "LastUsedPostProcessingProfile";
+private string lastUsedYourNewTabProfileKey = "LastUsedYourNewTabProfile"; // Add this
 ```
 
-### 5. Initialize Directory in Awake()
+### 7. Initialize Directory in Awake()
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -136,16 +172,19 @@ private readonly string lastUsedYourNewTabProfileKey = "LastUsedYourNewTabProfil
 void Awake()
 {
     // Existing directory creation...
-    
+
     yourNewTabProfilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles", "YourNewTab");
     if (!Directory.Exists(yourNewTabProfilesDirectory))
     {
         Directory.CreateDirectory(yourNewTabProfilesDirectory);
     }
+
+    // Initialize scene-specific keys early (this automatically handles per-scene persistence)
+    InitializeSceneSpecificKeysFromController();
 }
 ```
 
-### 6. Update SetupUI() Method
+### 8. Update SetupUI() Method
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -189,7 +228,7 @@ private void SetupUI()
 }
 ```
 
-### 7. Update Start() Method
+### 9. Update Start() Method
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -207,7 +246,7 @@ private void Start()
 }
 ```
 
-### 8. Create Settings UI Method
+### 10. Create Settings UI Method
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -253,7 +292,7 @@ private void CreateSettingsUI()
 }
 ```
 
-### 9. Create Profile Management Methods
+### 11. Create Profile Management Methods
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -263,27 +302,31 @@ Add the refresh and copy methods for your tab:
 private void RefreshYourNewTabProfiles()
 {
     if (yourNewTabProfileDropdown == null) return;
-    
+
+    // Ensure we're using scene-specific keys
+    EnsureSceneSpecificKeys();
+
     var profileFiles = Directory.GetFiles(yourNewTabProfilesDirectory, "*.json")
         .Select(Path.GetFileNameWithoutExtension)
         .ToList();
-    
+
     yourNewTabProfileDropdown.choices = profileFiles;
-    
+
     // Skip loading profile if refresh is suppressed (during save operations)
     if (isRefreshingSuppressed) return;
-    
-    // Try to restore last used profile
+
+    // Try to restore last used profile for this specific scene
     string lastUsedProfile = PlayerPrefs.GetString(lastUsedYourNewTabProfileKey, "");
     if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
     {
         yourNewTabProfileDropdown.SetValueWithoutNotify(lastUsedProfile);
-        LoadProfile(Path.Combine(yourNewTabProfilesDirectory, lastUsedProfile + ".json"), TabType.YourNewTab);
+        LoadProfile(Path.Combine(yourNewTabProfilesDirectory, lastUsedProfile + ".json"), ProfileType.YourNewTab);
     }
     else if (profileFiles.Count > 0)
     {
+        // If no scene-specific profile exists, use the first available but don't save it as preference yet
         yourNewTabProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
-        LoadProfile(Path.Combine(yourNewTabProfilesDirectory, profileFiles[0] + ".json"), TabType.YourNewTab);
+        LoadProfile(Path.Combine(yourNewTabProfilesDirectory, profileFiles[0] + ".json"), ProfileType.YourNewTab);
     }
 }
 
@@ -316,7 +359,7 @@ private void MergeYourNewTabSettings(RuntimeSceneSettings loadedSettings)
 }
 ```
 
-### 10. Update Existing Methods
+### 12. Update Existing Methods
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -541,7 +584,7 @@ private void SwitchTab(string tabName)
 }
 ```
 
-### 11. Create Default Profile
+### 13. Create Default Profile
 
 Create a default profile file for your new tab:
 
@@ -557,35 +600,27 @@ Create a default profile file for your new tab:
 
 Make sure to only include settings relevant to your tab and set all other values to zero/defaults.
 
-### 12. Update RuntimeSceneSettings Methods
+### 14. Update RuntimeSceneSettings Methods
 
 **File:** `Assets/Scripts/RuntimeSceneSettings.cs`
 
-Update the `CopyFromScriptableObject()` and `DeepCopy()` methods to handle your new settings:
+Update the `DeepCopy()` method to handle your new settings:
 
 ```csharp
-public void CopyFromScriptableObject(SceneSettingsSO so)
-{
-    // Existing code...
-    
-    // Add your new settings:
-    yourNewFloatSetting = so.yourNewFloatSetting;
-    yourNewBoolSetting = so.yourNewBoolSetting;
-    _yourComplexSetting = so.yourComplexSetting;
-}
-
 public RuntimeSceneSettings DeepCopy()
 {
     // Existing code...
-    
+
     // Add your new settings:
     copy.yourNewFloatSetting = yourNewFloatSetting;
     copy.yourNewBoolSetting = yourNewBoolSetting;
     copy._yourComplexSetting = _yourComplexSetting;
-    
+
     return copy;
 }
 ```
+
+**Note:** The old `CopyFromScriptableObject()` method is now deprecated since settings are managed directly in the SceneController inspector.
 
 ## Common Pitfalls to Avoid
 
@@ -595,6 +630,8 @@ public RuntimeSceneSettings DeepCopy()
 4. **Missing Refresh**: Don't forget to call your refresh method in `Start()` and `RefreshProfileDropdowns()`
 5. **Tab Switching**: Update all tab visibility states in `SwitchTab()` method
 6. **Directory Creation**: Initialize your profile directory in `Awake()`
+7. **Scene-Specific Keys**: Call `EnsureSceneSpecificKeys()` in your refresh methods for per-scene persistence
+8. **Inspector Sync**: Update both `CopyInspectorToRuntime()` and `CopyRuntimeToInspector()` methods in SceneController
 
 ## Testing Checklist
 
@@ -608,9 +645,12 @@ After implementing your new tab:
 - [ ] Save As creates new profile with current settings
 - [ ] Load button loads selected profile
 - [ ] Switching profiles via dropdown loads correctly
-- [ ] Settings persist between game sessions
+- [ ] Settings persist between game sessions (per-scene)
 - [ ] Other tabs' settings are not affected
 - [ ] Profile files only contain relevant settings
+- [ ] Inspector values sync with runtime settings menu
+- [ ] Per-scene profile persistence works (different scenes remember different profiles)
+- [ ] Settings changes in inspector immediately update runtime menu
 
 ## File Structure
 
@@ -624,10 +664,20 @@ Assets/
 │       └── YourNewTab/          <- New directory
 │           └── Default.json     <- New default profile
 ├── Scripts/
-│   ├── InGameSettingsMenu.cs    <- Updated
-│   └── RuntimeSceneSettings.cs  <- Updated
+│   ├── SceneController.cs       <- Updated (inspector settings + sync methods)
+│   ├── InGameSettingsMenu.cs    <- Updated (UI + profile management)
+│   └── RuntimeSceneSettings.cs  <- Updated (properties)
 └── UI/
-    └── SettingsMenu.uxml        <- Updated
+    └── SettingsMenu.uxml        <- Updated (tab UI)
 ```
+
+## New System Features
+
+This updated guide reflects the new architecture:
+
+- **Inspector-Based Settings**: All settings are directly editable in the SceneController inspector
+- **Bidirectional Sync**: Inspector ↔ Runtime settings menu synchronization
+- **Per-Scene Persistence**: Each scene remembers its own profile selections independently
+- **No ScriptableObjects**: Settings management moved away from ScriptableObject dependencies
 
 This guide ensures your new tab follows the same patterns and architecture as the existing Scene and Post-Processing tabs, maintaining consistency and preventing common issues.
