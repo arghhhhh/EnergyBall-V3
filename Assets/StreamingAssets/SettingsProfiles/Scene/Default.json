@@ -31,7 +31,7 @@
     "baseZDepth": 5.0,
     "defaultUnscaledSize": 2.5,
     "bodyScale": 5.0,
-    "maxDistanceFromCamera": 15.0,
+    "maxDistanceFromCamera": 13.0,
     "particleInitializationDelay": 1.75,
     "_customColors": true,
     "drawSkeleton": false,

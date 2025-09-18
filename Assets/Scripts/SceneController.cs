@@ -498,7 +498,7 @@ public class SceneController : MonoBehaviour
                 jointObject.position = targetPosition;
 
                 if (
-                    (joint == JointType.ShoulderLeft || joint == JointType.ShoulderRight)
+                    (joint == JointType.HandLeft || joint == JointType.HandRight)
                     && targetPosition.z > CurrentSettings.maxDistanceFromCamera
                 )
                 {
@@ -514,11 +514,11 @@ public class SceneController : MonoBehaviour
                     return;
                 }
 
+                playerConstructor.leftHandCollider.gameObject.SetActive(true);
+                playerConstructor.rightHandCollider.gameObject.SetActive(true);
+
                 if (CurrentSettings.drawSkeleton)
                 {
-                    playerConstructor.leftHandCollider.gameObject.SetActive(true);
-                    playerConstructor.rightHandCollider.gameObject.SetActive(true);
-
                     if (boneMap.ContainsKey(joint))
                     {
                         Joint? targetJoint = body.Joints[boneMap[joint]];
