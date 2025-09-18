@@ -491,8 +491,8 @@ public class SceneController : MonoBehaviour
 
                 // debugText.text = $"userId: {playerConstructor.userId}\n" +
                 //     $"joint: {joint}\n" +
-                //     $"position: {targetPosition}\n" +
-                //     $"maxDistanceFromCamera: {so.maxDistanceFromCamera}";
+                //     $"position: {player}\n" +
+                //     $"maxDistanceFromCamera: {CurrentSettings.maxDistanceFromCamera}";
 
                 Transform jointObject = playerConstructor.jointMap[joint].transform;
                 jointObject.position = targetPosition;
@@ -559,8 +559,7 @@ public class SceneController : MonoBehaviour
         {
             if (!dummies.ContainsKey(trackingId))
             {
-                Destroy(players[trackingId]);
-                players.Remove(trackingId);
+                RemovePlayer(trackingId);
             }
         }
     }
@@ -594,7 +593,7 @@ public class SceneController : MonoBehaviour
                 }
             }
 
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && (settingsMenu == null || !settingsMenu.IsMenuOpen))
             {
                 DeleteAllBodies(knownIds);
             }

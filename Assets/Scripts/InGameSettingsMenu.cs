@@ -46,6 +46,8 @@ public class InGameSettingsMenu : MonoBehaviour
     private bool isModalOpen = false;
 
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
+
+    public bool IsMenuOpen => !settingsPanel.ClassListContains("hidden");
     
     public enum ProfileType
     {
