@@ -8,10 +8,12 @@ using Windows.Kinect;
 using Joint = Windows.Kinect.Joint;
 
 [DefaultExecutionOrder(-200)]
+[RequireComponent(typeof(MetaballsToSDF))]
 public class SceneController : MonoBehaviour
 {
     public static SceneController Instance { get; private set; } // singleton pattern
 
+    #region Inspector Settings
     [BoxGroup("Gravity Attraction")]
     public float g = 9.81f;
     [BoxGroup("Gravity Attraction")]
@@ -96,7 +98,7 @@ public class SceneController : MonoBehaviour
     [BoxGroup("Movement-Based Pulsation Curves")]
     [Tooltip("Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands")]
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
-    
+
     [BoxGroup("Style Settings")]
     public bool customColors = false;
     [BoxGroup("Style Settings")]
@@ -150,6 +152,7 @@ public class SceneController : MonoBehaviour
     public bool showHandTrailDistorters = false;
     [BoxGroup("Debugging")]
     public bool showSecondaryAttractor = false;
+    #endregion
 
     [Header("Runtime Settings")]
     public InGameSettingsMenu settingsMenu;
@@ -216,7 +219,7 @@ public class SceneController : MonoBehaviour
         Actions.OnCustomColorsChanged += OnCustomColorsChanged;
 
         // Debugging setting changes are now handled via OnValidate() when inspector values change
-        
+
         // Subscribe to runtime settings changes
         if (settingsMenu != null)
         {
@@ -233,7 +236,7 @@ public class SceneController : MonoBehaviour
         Actions.OnCustomColorsChanged -= OnCustomColorsChanged;
 
         // Debugging setting changes are now handled via OnValidate() when inspector values change
-        
+
         // Unsubscribe from runtime settings changes
         if (settingsMenu != null)
         {
@@ -265,7 +268,7 @@ public class SceneController : MonoBehaviour
         playerScaleController = new();
         metaballsToSDF = GetComponent<MetaballsToSDF>();
         bodySourceManager = GetComponent<BodySourceManager>();
-        
+
         // Initialize runtime settings from inspector values
         if (settingsMenu != null)
         {
@@ -394,7 +397,9 @@ public class SceneController : MonoBehaviour
             player.skeletonColor = skeletonColors[colorIndex];
             player.leftHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
             player.rightHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
-        } else {
+        }
+        else
+        {
             player.skeletonColor = skeletonColor;
             player.leftHandVfx.SetGradient("playerAuraBase", particleColor);
             player.rightHandVfx.SetGradient("playerAuraBase", particleColor);
@@ -528,7 +533,9 @@ public class SceneController : MonoBehaviour
                             {
                                 lr.startColor = ColorSkeleton(sourceJoint.TrackingState);
                                 lr.endColor = ColorSkeleton(targetJoint.Value.TrackingState);
-                            } else {
+                            }
+                            else
+                            {
                                 lr.startColor = playerConstructor.skeletonColor;
                                 lr.endColor = playerConstructor.skeletonColor;
                             }
