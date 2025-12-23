@@ -9,12 +9,12 @@ namespace Windows.Kinect
     [RootSystem.Flags]
     public enum KinectCapabilities : uint
     {
-        None                                     =0,
-        Vision                                   =1,
-        Audio                                    =2,
-        Face                                     =4,
-        Expressions                              =8,
-        Gamechat                                 =16,
+        None = 0,
+        Vision = 1,
+        Audio = 2,
+        Face = 4,
+        Expressions = 8,
+        Gamechat = 16,
     }
 
 }

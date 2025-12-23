@@ -8,10 +8,10 @@ namespace Windows.Kinect
     //
     public enum DetectionResult : int
     {
-        Unknown                                  =0,
-        No                                       =1,
-        Maybe                                    =2,
-        Yes                                      =3,
+        Unknown = 0,
+        No = 1,
+        Maybe = 2,
+        Yes = 3,
     }
 
 }

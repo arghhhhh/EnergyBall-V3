@@ -100,7 +100,7 @@ public class HandForce
     void PushToTarget(PlayerConstructor player, float distance, Vector3 direction)
     {
         var runtimeSettings = controller.GetRuntimeSettings();
-        
+
         float relativeDistance = Mathf.InverseLerp(
             runtimeSettings.maxDistanceBetweenHands,
             0,

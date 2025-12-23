@@ -24,9 +24,9 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_AddRefObject(ref RootSystem.IntPtr pNative);
         private void Dispose(bool disposing)
         {
@@ -38,7 +38,7 @@ namespace Windows.Kinect
             __EventCleanup();
 
             Helper.NativeObjectCache.RemoveObject<CoordinateMapper>(_pNative);
-                Windows_Kinect_CoordinateMapper_ReleaseObject(ref _pNative);
+            Windows_Kinect_CoordinateMapper_ReleaseObject(ref _pNative);
 
             _pNative = RootSystem.IntPtr.Zero;
         }
@@ -54,19 +54,19 @@ namespace Windows.Kinect
         {
             List<RootSystem.EventHandler<Windows.Kinect.CoordinateMappingChangedEventArgs>> callbackList = null;
             Windows_Kinect_CoordinateMappingChangedEventArgs_Delegate_callbacks.TryGetValue(pNative, out callbackList);
-            lock(callbackList)
+            lock (callbackList)
             {
                 var objThis = Helper.NativeObjectCache.GetObject<CoordinateMapper>(pNative);
                 var args = new Windows.Kinect.CoordinateMappingChangedEventArgs(result);
-                foreach(var func in callbackList)
+                foreach (var func in callbackList)
                 {
                     Helper.EventPump.Instance.Enqueue(() => { try { func(objThis, args); } catch { } });
                 }
             }
         }
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_add_CoordinateMappingChanged(RootSystem.IntPtr pNative, _Windows_Kinect_CoordinateMappingChangedEventArgs_Delegate eventCallback, bool unsubscribe);
-        public  event RootSystem.EventHandler<Windows.Kinect.CoordinateMappingChangedEventArgs> CoordinateMappingChanged
+        public event RootSystem.EventHandler<Windows.Kinect.CoordinateMappingChangedEventArgs> CoordinateMappingChanged
         {
             add
             {
@@ -77,7 +77,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Add(value);
-                    if(callbackList.Count == 1)
+                    if (callbackList.Count == 1)
                     {
                         var del = new _Windows_Kinect_CoordinateMappingChangedEventArgs_Delegate(Windows_Kinect_CoordinateMappingChangedEventArgs_Delegate_Handler);
                         _Windows_Kinect_CoordinateMappingChangedEventArgs_Delegate_Handle = RootSystem.Runtime.InteropServices.GCHandle.Alloc(del);
@@ -97,7 +97,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Remove(value);
-                    if(callbackList.Count == 0)
+                    if (callbackList.Count == 0)
                     {
                         Windows_Kinect_CoordinateMapper_add_CoordinateMappingChanged(_pNative, Windows_Kinect_CoordinateMappingChangedEventArgs_Delegate_Handler, true);
                         _Windows_Kinect_CoordinateMappingChangedEventArgs_Delegate_Handle.Free();
@@ -108,7 +108,7 @@ namespace Windows.Kinect
 
 
         // Public Methods
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_CoordinateMapper_MapCameraPointToDepthSpace(RootSystem.IntPtr pNative, Windows.Kinect.CameraSpacePoint cameraPoint);
         public Windows.Kinect.DepthSpacePoint MapCameraPointToDepthSpace(Windows.Kinect.CameraSpacePoint cameraPoint)
         {
@@ -124,7 +124,7 @@ namespace Windows.Kinect
             return obj;
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_CoordinateMapper_MapCameraPointToColorSpace(RootSystem.IntPtr pNative, Windows.Kinect.CameraSpacePoint cameraPoint);
         public Windows.Kinect.ColorSpacePoint MapCameraPointToColorSpace(Windows.Kinect.CameraSpacePoint cameraPoint)
         {
@@ -140,7 +140,7 @@ namespace Windows.Kinect
             return obj;
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_CoordinateMapper_MapDepthPointToCameraSpace(RootSystem.IntPtr pNative, Windows.Kinect.DepthSpacePoint depthPoint, ushort depth);
         public Windows.Kinect.CameraSpacePoint MapDepthPointToCameraSpace(Windows.Kinect.DepthSpacePoint depthPoint, ushort depth)
         {
@@ -156,7 +156,7 @@ namespace Windows.Kinect
             return obj;
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_CoordinateMapper_MapDepthPointToColorSpace(RootSystem.IntPtr pNative, Windows.Kinect.DepthSpacePoint depthPoint, ushort depth);
         public Windows.Kinect.ColorSpacePoint MapDepthPointToColorSpace(Windows.Kinect.DepthSpacePoint depthPoint, ushort depth)
         {
@@ -172,7 +172,7 @@ namespace Windows.Kinect
             return obj;
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapCameraPointsToDepthSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr cameraPoints, int cameraPointsSize, RootSystem.IntPtr depthPoints, int depthPointsSize);
         public void MapCameraPointsToDepthSpace(Windows.Kinect.CameraSpacePoint[] cameraPoints, Windows.Kinect.DepthSpacePoint[] depthPoints)
         {
@@ -189,7 +189,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapCameraPointsToColorSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr cameraPoints, int cameraPointsSize, RootSystem.IntPtr colorPoints, int colorPointsSize);
         public void MapCameraPointsToColorSpace(Windows.Kinect.CameraSpacePoint[] cameraPoints, Windows.Kinect.ColorSpacePoint[] colorPoints)
         {
@@ -206,7 +206,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapDepthPointsToCameraSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr depthPoints, int depthPointsSize, RootSystem.IntPtr depths, int depthsSize, RootSystem.IntPtr cameraPoints, int cameraPointsSize);
         public void MapDepthPointsToCameraSpace(Windows.Kinect.DepthSpacePoint[] depthPoints, ushort[] depths, Windows.Kinect.CameraSpacePoint[] cameraPoints)
         {
@@ -225,7 +225,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapDepthPointsToColorSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr depthPoints, int depthPointsSize, RootSystem.IntPtr depths, int depthsSize, RootSystem.IntPtr colorPoints, int colorPointsSize);
         public void MapDepthPointsToColorSpace(Windows.Kinect.DepthSpacePoint[] depthPoints, ushort[] depths, Windows.Kinect.ColorSpacePoint[] colorPoints)
         {
@@ -244,7 +244,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapDepthFrameToCameraSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr depthFrameData, int depthFrameDataSize, RootSystem.IntPtr cameraSpacePoints, int cameraSpacePointsSize);
         public void MapDepthFrameToCameraSpace(ushort[] depthFrameData, Windows.Kinect.CameraSpacePoint[] cameraSpacePoints)
         {
@@ -261,7 +261,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapDepthFrameToColorSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr depthFrameData, int depthFrameDataSize, RootSystem.IntPtr colorSpacePoints, int colorSpacePointsSize);
         public void MapDepthFrameToColorSpace(ushort[] depthFrameData, Windows.Kinect.ColorSpacePoint[] colorSpacePoints)
         {
@@ -278,7 +278,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapColorFrameToDepthSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr depthFrameData, int depthFrameDataSize, RootSystem.IntPtr depthSpacePoints, int depthSpacePointsSize);
         public void MapColorFrameToDepthSpace(ushort[] depthFrameData, Windows.Kinect.DepthSpacePoint[] depthSpacePoints)
         {
@@ -295,7 +295,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_CoordinateMapper_MapColorFrameToCameraSpace(RootSystem.IntPtr pNative, RootSystem.IntPtr depthFrameData, int depthFrameDataSize, RootSystem.IntPtr cameraSpacePoints, int cameraSpacePointsSize);
         public void MapColorFrameToCameraSpace(ushort[] depthFrameData, Windows.Kinect.CameraSpacePoint[] cameraSpacePoints)
         {

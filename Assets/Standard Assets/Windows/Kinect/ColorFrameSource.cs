@@ -24,9 +24,9 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_ColorFrameSource_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_ColorFrameSource_AddRefObject(ref RootSystem.IntPtr pNative);
         private void Dispose(bool disposing)
         {
@@ -38,16 +38,16 @@ namespace Windows.Kinect
             __EventCleanup();
 
             Helper.NativeObjectCache.RemoveObject<ColorFrameSource>(_pNative);
-                Windows_Kinect_ColorFrameSource_ReleaseObject(ref _pNative);
+            Windows_Kinect_ColorFrameSource_ReleaseObject(ref _pNative);
 
             _pNative = RootSystem.IntPtr.Zero;
         }
 
 
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_ColorFrameSource_get_FrameDescription(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.FrameDescription FrameDescription
+        public Windows.Kinect.FrameDescription FrameDescription
         {
             get
             {
@@ -67,9 +67,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern bool Windows_Kinect_ColorFrameSource_get_IsActive(RootSystem.IntPtr pNative);
-        public  bool IsActive
+        public bool IsActive
         {
             get
             {
@@ -82,9 +82,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_ColorFrameSource_get_KinectSensor(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.KinectSensor KinectSensor
+        public Windows.Kinect.KinectSensor KinectSensor
         {
             get
             {
@@ -115,19 +115,19 @@ namespace Windows.Kinect
         {
             List<RootSystem.EventHandler<Windows.Kinect.FrameCapturedEventArgs>> callbackList = null;
             Windows_Kinect_FrameCapturedEventArgs_Delegate_callbacks.TryGetValue(pNative, out callbackList);
-            lock(callbackList)
+            lock (callbackList)
             {
                 var objThis = Helper.NativeObjectCache.GetObject<ColorFrameSource>(pNative);
                 var args = new Windows.Kinect.FrameCapturedEventArgs(result);
-                foreach(var func in callbackList)
+                foreach (var func in callbackList)
                 {
                     Helper.EventPump.Instance.Enqueue(() => { try { func(objThis, args); } catch { } });
                 }
             }
         }
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_ColorFrameSource_add_FrameCaptured(RootSystem.IntPtr pNative, _Windows_Kinect_FrameCapturedEventArgs_Delegate eventCallback, bool unsubscribe);
-        public  event RootSystem.EventHandler<Windows.Kinect.FrameCapturedEventArgs> FrameCaptured
+        public event RootSystem.EventHandler<Windows.Kinect.FrameCapturedEventArgs> FrameCaptured
         {
             add
             {
@@ -138,7 +138,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Add(value);
-                    if(callbackList.Count == 1)
+                    if (callbackList.Count == 1)
                     {
                         var del = new _Windows_Kinect_FrameCapturedEventArgs_Delegate(Windows_Kinect_FrameCapturedEventArgs_Delegate_Handler);
                         _Windows_Kinect_FrameCapturedEventArgs_Delegate_Handle = RootSystem.Runtime.InteropServices.GCHandle.Alloc(del);
@@ -158,7 +158,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Remove(value);
-                    if(callbackList.Count == 0)
+                    if (callbackList.Count == 0)
                     {
                         Windows_Kinect_ColorFrameSource_add_FrameCaptured(_pNative, Windows_Kinect_FrameCapturedEventArgs_Delegate_Handler, true);
                         _Windows_Kinect_FrameCapturedEventArgs_Delegate_Handle.Free();
@@ -176,19 +176,19 @@ namespace Windows.Kinect
         {
             List<RootSystem.EventHandler<Windows.Data.PropertyChangedEventArgs>> callbackList = null;
             Windows_Data_PropertyChangedEventArgs_Delegate_callbacks.TryGetValue(pNative, out callbackList);
-            lock(callbackList)
+            lock (callbackList)
             {
                 var objThis = Helper.NativeObjectCache.GetObject<ColorFrameSource>(pNative);
                 var args = new Windows.Data.PropertyChangedEventArgs(result);
-                foreach(var func in callbackList)
+                foreach (var func in callbackList)
                 {
                     Helper.EventPump.Instance.Enqueue(() => { try { func(objThis, args); } catch { } });
                 }
             }
         }
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_ColorFrameSource_add_PropertyChanged(RootSystem.IntPtr pNative, _Windows_Data_PropertyChangedEventArgs_Delegate eventCallback, bool unsubscribe);
-        public  event RootSystem.EventHandler<Windows.Data.PropertyChangedEventArgs> PropertyChanged
+        public event RootSystem.EventHandler<Windows.Data.PropertyChangedEventArgs> PropertyChanged
         {
             add
             {
@@ -199,7 +199,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Add(value);
-                    if(callbackList.Count == 1)
+                    if (callbackList.Count == 1)
                     {
                         var del = new _Windows_Data_PropertyChangedEventArgs_Delegate(Windows_Data_PropertyChangedEventArgs_Delegate_Handler);
                         _Windows_Data_PropertyChangedEventArgs_Delegate_Handle = RootSystem.Runtime.InteropServices.GCHandle.Alloc(del);
@@ -219,7 +219,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Remove(value);
-                    if(callbackList.Count == 0)
+                    if (callbackList.Count == 0)
                     {
                         Windows_Kinect_ColorFrameSource_add_PropertyChanged(_pNative, Windows_Data_PropertyChangedEventArgs_Delegate_Handler, true);
                         _Windows_Data_PropertyChangedEventArgs_Delegate_Handle.Free();
@@ -230,7 +230,7 @@ namespace Windows.Kinect
 
 
         // Public Methods
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_ColorFrameSource_OpenReader(RootSystem.IntPtr pNative);
         public Windows.Kinect.ColorFrameReader OpenReader()
         {
@@ -249,7 +249,7 @@ namespace Windows.Kinect
             return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.ColorFrameReader>(objectPointer, n => new Windows.Kinect.ColorFrameReader(n));
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_ColorFrameSource_CreateFrameDescription(RootSystem.IntPtr pNative, Windows.Kinect.ColorImageFormat format);
         public Windows.Kinect.FrameDescription CreateFrameDescription(Windows.Kinect.ColorImageFormat format)
         {

@@ -18,7 +18,7 @@ public static class KinectCopyPluginDataHelper
     public static void CopyPluginData(BuildTarget target, string buildTargetPath, string subDirToCopy)
     {
         string subDirName;
-        if (!TargetToDirName.TryGetValue (target, out subDirName))
+        if (!TargetToDirName.TryGetValue(target, out subDirName))
         {
             // No work to do
             return;
@@ -33,7 +33,7 @@ public static class KinectCopyPluginDataHelper
         var tgtPluginsDir = buildDataDir + separator + PluginsDirName + separator + subDirToCopy + separator;
         var srcPluginsDir = Application.dataPath + separator + PluginsDirName + separator + subDirName + separator + subDirToCopy + separator;
 
-        CopyAll (new DirectoryInfo (srcPluginsDir), new DirectoryInfo(tgtPluginsDir));
+        CopyAll(new DirectoryInfo(srcPluginsDir), new DirectoryInfo(tgtPluginsDir));
     }
 
     /// <summary>
@@ -56,9 +56,9 @@ public static class KinectCopyPluginDataHelper
         // Copy each file into it’s new directory.
         foreach (var fileInfo in source.GetFiles())
         {
-            fileInfo.CopyTo (Path.Combine (target.ToString (), fileInfo.Name), true);
+            fileInfo.CopyTo(Path.Combine(target.ToString(), fileInfo.Name), true);
         }
-        
+
         // Copy each subdirectory using recursion.
         foreach (var subDirInfo in source.GetDirectories())
         {

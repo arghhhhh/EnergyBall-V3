@@ -9,13 +9,13 @@ namespace Helper
     {
         public static System.IntPtr GetNativePtr(Object obj)
         {
-        	if(obj == null)
-        	{
-        		return System.IntPtr.Zero;
-        	}
+            if (obj == null)
+            {
+                return System.IntPtr.Zero;
+            }
 
             var nativeWrapperIface = obj as INativeWrapper;
-            if(nativeWrapperIface != null)
+            if (nativeWrapperIface != null)
             {
                 return nativeWrapperIface.nativePtr;
             }

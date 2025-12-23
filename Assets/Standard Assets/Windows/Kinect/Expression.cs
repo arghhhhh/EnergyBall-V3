@@ -8,8 +8,8 @@ namespace Windows.Kinect
     //
     public enum Expression : int
     {
-        Neutral                                  =0,
-        Happy                                    =1,
+        Neutral = 0,
+        Happy = 1,
     }
 
 }

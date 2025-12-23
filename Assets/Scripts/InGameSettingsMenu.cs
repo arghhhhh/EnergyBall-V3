@@ -13,16 +13,16 @@ public class InGameSettingsMenu : MonoBehaviour
         Scene,
         PostProcessing
     }
-    
+
     private bool isRefreshingSuppressed = false;
-    
+
     private UIDocument uiDocument;
 
     /// <summary>
     /// Get the SceneController instance dynamically
     /// </summary>
     private SceneController Controller => SceneController.Instance;
-    
+
     private VisualElement settingsPanel;
     private ScrollView sceneSettingsPanel;
     private ScrollView postProcessingPanel;
@@ -31,7 +31,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private Button postProcessingLoadButton, postProcessingSaveButton, postProcessingSaveAsButton;
     private Button closeButton;
     private Button sceneTab, postProcessingTab;
-    
+
     private RuntimeSceneSettings runtimeSettings;
     private RuntimeSceneSettings originalSettings; // Backup for canceling changes
     private string currentSceneProfilePath = "";
@@ -40,7 +40,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private string postProcessingProfilesDirectory;
     private string lastUsedSceneProfileKey = "LastUsedSceneProfile";
     private string lastUsedPostProcessingProfileKey = "LastUsedPostProcessingProfile";
-    
+
     private readonly List<VisualElement> settingGroups = new();
     private readonly Dictionary<string, VisualElement> settingElements = new();
     private bool isModalOpen = false;
@@ -48,7 +48,7 @@ public class InGameSettingsMenu : MonoBehaviour
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
 
     public bool IsMenuOpen => !settingsPanel.ClassListContains("hidden");
-    
+
     public enum ProfileType
     {
         Scene,
@@ -146,13 +146,13 @@ public class InGameSettingsMenu : MonoBehaviour
             Debug.LogError("UIDocument is null, cannot setup UI");
             return;
         }
-        
+
         var root = uiDocument.rootVisualElement;
-        
+
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         sceneSettingsPanel = root.Q<ScrollView>("SceneSettingsPanel");
         postProcessingPanel = root.Q<ScrollView>("PostProcessingPanel");
-        
+
         // Scene tab controls
         var sceneTabContent = root.Q<VisualElement>("SceneTabContent");
         if (sceneTabContent != null)
@@ -162,7 +162,7 @@ public class InGameSettingsMenu : MonoBehaviour
             sceneSaveButton = sceneTabContent.Q<Button>("SceneSaveButton");
             sceneSaveAsButton = sceneTabContent.Q<Button>("SceneSaveAsButton");
         }
-        
+
         // Post-processing tab controls
         var postProcessingTabContent = root.Q<VisualElement>("PostProcessingTabContent");
         if (postProcessingTabContent != null)
@@ -172,41 +172,43 @@ public class InGameSettingsMenu : MonoBehaviour
             postProcessingSaveButton = postProcessingTabContent.Q<Button>("PostProcessingSaveButton");
             postProcessingSaveAsButton = postProcessingTabContent.Q<Button>("PostProcessingSaveAsButton");
         }
-        
+
         closeButton = root.Q<Button>("CloseButton");
         sceneTab = root.Q<Button>("SceneTab");
         postProcessingTab = root.Q<Button>("PostProcessingTab");
-        
+
         // Setup button callbacks
         closeButton.clicked += CloseMenu;
-        
+
         // Scene tab callbacks
         if (sceneLoadButton != null) sceneLoadButton.clicked += () => LoadSelectedProfile("scene");
         if (sceneSaveButton != null) sceneSaveButton.clicked += () => SaveCurrentProfile(TabType.Scene);
         if (sceneSaveAsButton != null) sceneSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.Scene);
-        
+
         // Post-processing tab callbacks
         if (postProcessingLoadButton != null) postProcessingLoadButton.clicked += () => LoadSelectedProfile("postprocessing");
         if (postProcessingSaveButton != null) postProcessingSaveButton.clicked += () => SaveCurrentProfile(TabType.PostProcessing);
         if (postProcessingSaveAsButton != null) postProcessingSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.PostProcessing);
-        
+
         sceneTab.clicked += () => SwitchTab("scene");
         postProcessingTab.clicked += () => SwitchTab("postprocessing");
-        
+
         // Auto-load when dropdown selections change
         if (sceneProfileDropdown != null)
         {
-            sceneProfileDropdown.RegisterValueChangedCallback(evt => {
+            sceneProfileDropdown.RegisterValueChangedCallback(evt =>
+            {
                 if (!string.IsNullOrEmpty(evt.newValue))
                 {
                     LoadSelectedProfile("scene");
                 }
             });
         }
-        
+
         if (postProcessingProfileDropdown != null)
         {
-            postProcessingProfileDropdown.RegisterValueChangedCallback(evt => {
+            postProcessingProfileDropdown.RegisterValueChangedCallback(evt =>
+            {
                 if (!string.IsNullOrEmpty(evt.newValue))
                 {
                     LoadSelectedProfile("postprocessing");
@@ -222,20 +224,20 @@ public class InGameSettingsMenu : MonoBehaviour
             Debug.LogError("RuntimeSettings is null, cannot create settings UI");
             return;
         }
-        
+
         if (sceneSettingsPanel == null || postProcessingPanel == null)
         {
             Debug.LogError("UI panels not found, cannot create settings UI");
             return;
         }
-        
+
         sceneSettingsPanel.Clear();
         postProcessingPanel.Clear();
         settingElements.Clear();
-        
+
         // Scene Settings Tab
         CreateSceneSettingsContent();
-        
+
         // Post Processing Tab
         CreatePostProcessingContent();
     }
@@ -262,7 +264,7 @@ public class InGameSettingsMenu : MonoBehaviour
         var root = uiDocument.rootVisualElement;
         var sceneTabContent = root.Q<VisualElement>("SceneTabContent");
         var postProcessingTabContent = root.Q<VisualElement>("PostProcessingTabContent");
-        
+
         if (tabName == "scene")
         {
             sceneTab.AddToClassList("active");
@@ -282,7 +284,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateGravityAttractionGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Gravity Attraction", parentContainer);
-        
+
         CreateFloatField(group, "G", () => runtimeSettings.g, v => runtimeSettings.g = v);
         CreateFloatField(group, "Max Towards Force", () => runtimeSettings.maxTowardsForce, v => runtimeSettings.maxTowardsForce = v);
         CreateFloatField(group, "Max Away Force", () => runtimeSettings.maxAwayFromForce, v => runtimeSettings.maxAwayFromForce = v);
@@ -304,7 +306,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(group, "Push Force", () => runtimeSettings.pushForce, v => runtimeSettings.pushForce = v);
         CreateFloatField(group, "Min Drag", () => runtimeSettings.minDrag, v => runtimeSettings.minDrag = v);
         CreateFloatField(group, "Max Drag", () => runtimeSettings.maxDrag, v => runtimeSettings.maxDrag = v);
-        
+
         // CreateCurveField(group, "Alignment Vector Strength", () => runtimeSettings.alignmentVectorStrength, v => runtimeSettings.alignmentVectorStrength = v);
         CreateFloatField(group, "Alignment Vector Strength Scaler", () => runtimeSettings.alignmentVectorStrengthScaler, v => runtimeSettings.alignmentVectorStrengthScaler = v);
         CreateFloatField(group, "Hand Push Scaler", () => runtimeSettings.handPushScaler, v => runtimeSettings.handPushScaler = v);
@@ -313,7 +315,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateIntrinsicPulsationGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Intrinsic Pulsation", parentContainer);
-        
+
         CreateSliderField(group, "Pulse Amount", () => runtimeSettings.pulseAmount, v => runtimeSettings.pulseAmount = v, 0f, 10f);
         CreateFloatField(group, "Pulse Speed", () => runtimeSettings.pulseSpeed, v => runtimeSettings.pulseSpeed = v);
         CreateFloatField(group, "Graph Limit", () => runtimeSettings.graphLimit, v => runtimeSettings.graphLimit = v);
@@ -336,7 +338,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateMiscellaneousGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Miscellaneous", parentContainer);
-        
+
         CreateFloatField(group, "Merge Size Scaler Damper", () => runtimeSettings.mergeSizeScalerDamper, v => runtimeSettings.mergeSizeScalerDamper = v);
         CreateFloatField(group, "Max Distance Between Hands", () => runtimeSettings.maxDistanceBetweenHands, v => runtimeSettings.maxDistanceBetweenHands = v);
         CreateFloatField(group, "Base Z Depth", () => runtimeSettings.baseZDepth, v => runtimeSettings.baseZDepth = v);
@@ -348,20 +350,20 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateAnimationGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Animation", parentContainer);
-        
+
         CreateFloatField(group, "Particle Initialization Delay", () => runtimeSettings.particleInitializationDelay, v => runtimeSettings.particleInitializationDelay = v);
     }
 
     private void CreatePostProcessingGroup(ScrollView parentContainer)
     {
         var bloomGroup = CreateGroup("Bloom", parentContainer);
-        
+
         CreateFloatField(bloomGroup, "Bloom Threshold", () => runtimeSettings.bloomThreshold, v => runtimeSettings.bloomThreshold = v);
         CreateSliderField(bloomGroup, "Bloom Intensity", () => runtimeSettings.bloomIntensity, v => runtimeSettings.bloomIntensity = v, 0f, 3f);
         CreateSliderField(bloomGroup, "Bloom Scatter", () => runtimeSettings.bloomScatter, v => runtimeSettings.bloomScatter = v, 0f, 1f);
-        
+
         var lensFlareGroup = CreateGroup("Screen Space Lens Flare", parentContainer);
-        
+
         CreateSliderField(lensFlareGroup, "Intensity", () => runtimeSettings.lensFlareIntensity, v => runtimeSettings.lensFlareIntensity = v, 0f, 3f);
         CreateSliderField(lensFlareGroup, "Regular Multiplier (Flares)", () => runtimeSettings.lensFlareRegularMultiplier, v => runtimeSettings.lensFlareRegularMultiplier = v, 0f, 3f);
         CreateSliderField(lensFlareGroup, "Reversed Multiplier (Flares)", () => runtimeSettings.lensFlareReversedMultiplier, v => runtimeSettings.lensFlareReversedMultiplier = v, 0f, 3f);
@@ -370,25 +372,25 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(lensFlareGroup, "Orientation (Streaks)", () => runtimeSettings.lensFlareStreaksOrientation, v => runtimeSettings.lensFlareStreaksOrientation = v, -180f, 180f);
         CreateSliderField(lensFlareGroup, "Threshold (Streaks)", () => runtimeSettings.lensFlareStreaksThreshold, v => runtimeSettings.lensFlareStreaksThreshold = v, 0f, 1f);
         CreateSliderField(lensFlareGroup, "Chromatic Aberration Intensity", () => runtimeSettings.lensFlareChromaticIntensity, v => runtimeSettings.lensFlareChromaticIntensity = v, 0f, 1f);
-        
+
         var lensDistortionGroup = CreateGroup("Lens Distortion", parentContainer);
-        
+
         CreateSliderField(lensDistortionGroup, "Intensity", () => runtimeSettings.lensDistortionIntensity, v => runtimeSettings.lensDistortionIntensity = v, -1f, 1f);
         CreateSliderField(lensDistortionGroup, "X Multiplier", () => runtimeSettings.lensDistortionXMultiplier, v => runtimeSettings.lensDistortionXMultiplier = v, 0f, 2f);
         CreateSliderField(lensDistortionGroup, "Y Multiplier", () => runtimeSettings.lensDistortionYMultiplier, v => runtimeSettings.lensDistortionYMultiplier = v, 0f, 2f);
         CreateSliderField(lensDistortionGroup, "Scale", () => runtimeSettings.lensDistortionScale, v => runtimeSettings.lensDistortionScale = v, 0.01f, 3f);
         CreateSliderField(lensDistortionGroup, "Center X", () => runtimeSettings.lensDistortionCenterX, v => runtimeSettings.lensDistortionCenterX = v, 0f, 1f);
         CreateSliderField(lensDistortionGroup, "Center Y", () => runtimeSettings.lensDistortionCenterY, v => runtimeSettings.lensDistortionCenterY = v, 0f, 1f);
-        
+
         var colorAdjustmentsGroup = CreateGroup("Color Adjustments", parentContainer);
-        
+
         CreateFloatField(colorAdjustmentsGroup, "Post Exposure", () => runtimeSettings.colorAdjustmentsPostExposure, v => runtimeSettings.colorAdjustmentsPostExposure = v);
         CreateSliderField(colorAdjustmentsGroup, "Contrast", () => runtimeSettings.colorAdjustmentsContrast, v => runtimeSettings.colorAdjustmentsContrast = v, -100f, 100f);
         CreateSliderField(colorAdjustmentsGroup, "Hue Shift", () => runtimeSettings.colorAdjustmentsHueShift, v => runtimeSettings.colorAdjustmentsHueShift = v, -180f, 180f);
         CreateSliderField(colorAdjustmentsGroup, "Saturation", () => runtimeSettings.colorAdjustmentsSaturation, v => runtimeSettings.colorAdjustmentsSaturation = v, -100f, 100f);
-        
+
         var whiteBalanceGroup = CreateGroup("White Balance", parentContainer);
-        
+
         CreateSliderField(whiteBalanceGroup, "Temperature", () => runtimeSettings.whiteBalanceTemperature, v => runtimeSettings.whiteBalanceTemperature = v, -100f, 100f);
         CreateSliderField(whiteBalanceGroup, "Tint", () => runtimeSettings.whiteBalanceTint, v => runtimeSettings.whiteBalanceTint = v, -100f, 100f);
     }
@@ -396,7 +398,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateStyleGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Style", parentContainer);
-        
+
         CreateToggleField(group, "Custom Colors", () => runtimeSettings.customColors, v => runtimeSettings.customColors = v);
         CreateToggleField(group, "Draw Skeleton", () => runtimeSettings.drawSkeleton, v => runtimeSettings.drawSkeleton = v);
         CreateToggleField(group, "Use Tracking State Colors", () => runtimeSettings.useTrackingStateColors, v => runtimeSettings.useTrackingStateColors = v);
@@ -405,7 +407,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CreateDebuggingGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Debugging", parentContainer);
-        
+
         CreateToggleField(group, "Dummy Only Mode", () => runtimeSettings.dummyOnlyMode, v => runtimeSettings.dummyOnlyMode = v);
         CreateToggleField(group, "Show Sphere Mesh On Hand Collision", () => runtimeSettings.showSphereMeshOnHandCollision, v => runtimeSettings.showSphereMeshOnHandCollision = v);
         CreateToggleField(group, "Show Attraction Radius", () => runtimeSettings.showAttractionRadius, v => runtimeSettings.showAttractionRadius = v);
@@ -417,14 +419,14 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = new VisualElement();
         group.AddToClassList("settings-group");
-        
+
         var header = new Label(title);
         header.AddToClassList("group-header");
         group.Add(header);
-        
+
         parentContainer.Add(group);
         settingGroups.Add(group);
-        
+
         return group;
     }
 
@@ -432,22 +434,23 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
-        
+
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
-        
+
         var field = new FloatField();
         field.AddToClassList("setting-input");
         field.value = getter();
-        field.RegisterValueChangedCallback(evt => {
+        field.RegisterValueChangedCallback(evt =>
+        {
             setter(evt.newValue);
             OnSettingsChanged?.Invoke(runtimeSettings);
         });
-        
+
         row.Add(labelElement);
         row.Add(field);
         parent.Add(row);
-        
+
         settingElements[label] = field;
     }
 
@@ -455,38 +458,39 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
-        
+
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
-        
+
         var inputContainer = new VisualElement();
         inputContainer.style.flexDirection = FlexDirection.Row;
         inputContainer.style.alignItems = Align.Center;
         inputContainer.AddToClassList("setting-input");
-        
+
         var slider = new Slider(min, max);
         slider.style.flexGrow = 1;
         slider.value = getter();
-        
+
         var valueLabel = new Label($"{getter():F2}");
         valueLabel.style.minWidth = 50;
         valueLabel.style.unityTextAlign = TextAnchor.MiddleRight;
         valueLabel.style.color = Color.gray;
         valueLabel.style.marginLeft = 5;
-        
-        slider.RegisterValueChangedCallback(evt => {
+
+        slider.RegisterValueChangedCallback(evt =>
+        {
             setter(evt.newValue);
             valueLabel.text = $"{evt.newValue:F2}";
             OnSettingsChanged?.Invoke(runtimeSettings);
         });
-        
+
         inputContainer.Add(slider);
         inputContainer.Add(valueLabel);
-        
+
         row.Add(labelElement);
         row.Add(inputContainer);
         parent.Add(row);
-        
+
         settingElements[label] = slider;
         settingElements[label + "_ValueLabel"] = valueLabel;
     }
@@ -495,22 +499,23 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
-        
+
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
-        
+
         var toggle = new Toggle();
         toggle.AddToClassList("toggle");
         toggle.value = getter();
-        toggle.RegisterValueChangedCallback(evt => {
+        toggle.RegisterValueChangedCallback(evt =>
+        {
             setter(evt.newValue);
             OnSettingsChanged?.Invoke(runtimeSettings);
         });
-        
+
         row.Add(labelElement);
         row.Add(toggle);
         parent.Add(row);
-        
+
         settingElements[label] = toggle;
     }
 
@@ -518,19 +523,19 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
-        
+
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
-        
+
         // Create text label with note that curve editing is coming soon
         var curveNote = new TextElement();
         curveNote.text = "Curve editing coming soon...";
         curveNote.AddToClassList("curve-note");
-        
+
         row.Add(labelElement);
         row.Add(curveNote);
         parent.Add(row);
-        
+
         settingElements[label] = curveNote;
     }
 
@@ -538,44 +543,45 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
-        
+
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
-        
+
         var arrayContainer = new VisualElement();
         arrayContainer.AddToClassList("array-container");
-        
+
         // Create header container for collapse button and controls
         var headerContainer = new VisualElement();
         headerContainer.AddToClassList("array-header");
-        
+
         var collapseButton = new Button();
         collapseButton.text = "⇓"; // Right arrow for collapsed state
         collapseButton.AddToClassList("array-collapse-button");
-        
+
         var countLabel = new Label();
         countLabel.AddToClassList("array-count-label");
-        
+
         var addButton = new Button(() => AddArrayElement(arrayContainer, getter, setter, collapseButton, countLabel));
         addButton.text = "Add Element";
         addButton.AddToClassList("array-button");
         addButton.AddToClassList("hidden"); // Start hidden since we start collapsed
-        
+
         // Create content container that will be hidden/shown
         var contentContainer = new VisualElement();
         contentContainer.AddToClassList("array-content");
         contentContainer.AddToClassList("collapsed"); // Start collapsed
-        
+
         headerContainer.Add(collapseButton);
         headerContainer.Add(countLabel);
         headerContainer.Add(addButton);
-        
+
         arrayContainer.Add(headerContainer);
         arrayContainer.Add(contentContainer);
-        
+
         // Setup collapse/expand functionality
         bool isCollapsed = true;
-        collapseButton.clicked += () => {
+        collapseButton.clicked += () =>
+        {
             isCollapsed = !isCollapsed;
             if (isCollapsed)
             {
@@ -590,16 +596,16 @@ public class InGameSettingsMenu : MonoBehaviour
                 addButton.RemoveFromClassList("hidden");
             }
         };
-        
+
         RefreshFloatArray(arrayContainer, getter(), setter, collapseButton, countLabel);
-        
+
         var container = new VisualElement();
         container.AddToClassList("array-row-subcontainer");
         container.Add(labelElement);
         container.Add(arrayContainer);
         row.Add(container);
         parent.Add(row);
-        
+
         settingElements[label] = arrayContainer;
     }
 
@@ -618,27 +624,29 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         // Update count label
         countLabel.text = $"({array.Length} items)";
-        
+
         // Find the content container (second child after header)
         var contentContainer = container.Children().ElementAt(1);
         contentContainer.Clear();
-        
+
         for (int i = 0; i < array.Length; i++)
         {
             int index = i; // Capture for closure
             var elementRow = new VisualElement();
             elementRow.AddToClassList("array-element");
-            
+
             var field = new FloatField();
             field.AddToClassList("array-element-input");
             field.value = array[index];
-            field.RegisterValueChangedCallback(evt => {
+            field.RegisterValueChangedCallback(evt =>
+            {
                 array[index] = evt.newValue;
                 setter(array);
                 OnSettingsChanged?.Invoke(runtimeSettings);
             });
-            
-            var removeButton = new Button(() => {
+
+            var removeButton = new Button(() =>
+            {
                 var newArray = new float[array.Length - 1];
                 Array.Copy(array, 0, newArray, 0, index);
                 Array.Copy(array, index + 1, newArray, index, array.Length - index - 1);
@@ -648,7 +656,7 @@ public class InGameSettingsMenu : MonoBehaviour
             });
             removeButton.text = "-";
             removeButton.AddToClassList("array-button");
-            
+
             elementRow.Add(field);
             elementRow.Add(removeButton);
             contentContainer.Add(elementRow);
@@ -693,7 +701,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void RefreshUI()
     {
         if (runtimeSettings == null) return;
-        
+
         // Recreate the entire UI to ensure all values are current
         CreateSettingsUI();
     }
@@ -729,7 +737,7 @@ public class InGameSettingsMenu : MonoBehaviour
             LoadProfile(Path.Combine(sceneProfilesDirectory, profileFiles[0] + ".json"), ProfileType.Scene);
         }
     }
-    
+
     private void RefreshPostProcessingProfiles()
     {
         if (postProcessingProfileDropdown == null) return;
@@ -742,7 +750,7 @@ public class InGameSettingsMenu : MonoBehaviour
             .ToList();
 
         postProcessingProfileDropdown.choices = profileFiles;
-        
+
         // Try to restore last used post-processing profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedPostProcessingProfileKey, "");
         if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
@@ -757,7 +765,7 @@ public class InGameSettingsMenu : MonoBehaviour
             LoadProfile(Path.Combine(postProcessingProfilesDirectory, profileFiles[0] + ".json"), ProfileType.PostProcessing);
         }
     }
-    
+
     private void RefreshProfileDropdowns()
     {
         RefreshSceneProfiles();
@@ -783,19 +791,19 @@ public class InGameSettingsMenu : MonoBehaviour
     private void LoadProfile(string path, ProfileType profileType)
     {
         if (!File.Exists(path)) return;
-        
+
         try
         {
             var json = File.ReadAllText(path);
             var loadedSettings = JsonUtility.FromJson<RuntimeSceneSettings>(json);
-            
+
             // Merge loaded settings based on profile type
             if (profileType == ProfileType.Scene)
             {
                 // Load only scene settings, keep current post-processing settings
                 MergeSceneSettings(loadedSettings);
                 currentSceneProfilePath = path;
-                
+
                 // Save as last used scene profile
                 string profileName = Path.GetFileNameWithoutExtension(path);
                 PlayerPrefs.SetString(lastUsedSceneProfileKey, profileName);
@@ -806,12 +814,12 @@ public class InGameSettingsMenu : MonoBehaviour
                 // Load only post-processing settings, keep current scene settings
                 MergePostProcessingSettings(loadedSettings);
                 currentPostProcessingProfilePath = path;
-                
+
                 // Save as last used post-processing profile
                 string profileName = Path.GetFileNameWithoutExtension(path);
                 PlayerPrefs.SetString(lastUsedPostProcessingProfileKey, profileName);
                 PlayerPrefs.Save();
-                
+
                 // Update Volume Profile with post-processing settings (during play mode)
                 if (Application.isPlaying && Controller?.volumeController != null)
                 {
@@ -823,7 +831,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 VolumeController.OnProfileSaved(runtimeSettings);
 #endif
             }
-            
+
             RefreshUI();
             OnSettingsChanged?.Invoke(runtimeSettings);
         }
@@ -832,12 +840,12 @@ public class InGameSettingsMenu : MonoBehaviour
             Debug.LogError($"Failed to load profile: {e.Message}");
         }
     }
-    
+
     private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
     {
         // Copy only non-post-processing settings from loaded profile
         // Keep the current post-processing settings intact
-        
+
         // Gravity and Force settings
         runtimeSettings.g = loadedSettings.g;
         runtimeSettings.maxTowardsForce = loadedSettings.maxTowardsForce;
@@ -848,7 +856,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.stopVelocity = loadedSettings.stopVelocity;
         runtimeSettings.attractionRadiusMultiplier = loadedSettings.attractionRadiusMultiplier;
         // Note: forceToMiddle curve is managed by CurveSettingsSO, not loaded from profiles
-        
+
         // Hand interaction settings
         runtimeSettings.singleHandOpenForceDamper = loadedSettings.singleHandOpenForceDamper;
         runtimeSettings.pushForce = loadedSettings.pushForce;
@@ -857,13 +865,13 @@ public class InGameSettingsMenu : MonoBehaviour
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO, not loaded from profiles
         runtimeSettings.alignmentVectorStrengthScaler = loadedSettings.alignmentVectorStrengthScaler;
         runtimeSettings.handPushScaler = loadedSettings.handPushScaler;
-        
+
         // Pulsation settings
         runtimeSettings.pulseAmount = loadedSettings.pulseAmount;
         runtimeSettings.pulseSpeed = loadedSettings.pulseSpeed;
         runtimeSettings.graphLimit = loadedSettings.graphLimit;
         runtimeSettings.pulseFreqs = loadedSettings.pulseFreqs;
-        
+
         // Size and scaling settings
         runtimeSettings.singleHandScaling = loadedSettings.singleHandScaling;
         runtimeSettings.minimumUnscaledSize = loadedSettings.minimumUnscaledSize;
@@ -877,7 +885,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.bodyScale = loadedSettings.bodyScale;
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
-        
+
         // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
@@ -890,17 +898,17 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.showHandTrailDistorters = loadedSettings.showHandTrailDistorters;
         runtimeSettings.showSecondaryAttractor = loadedSettings.showSecondaryAttractor;
     }
-    
+
     private void MergePostProcessingSettings(RuntimeSceneSettings loadedSettings)
     {
         // Copy only post-processing settings from loaded profile
         // Keep the current scene settings intact
-        
+
         // Bloom settings
         runtimeSettings.bloomThreshold = loadedSettings.bloomThreshold;
         runtimeSettings.bloomIntensity = loadedSettings.bloomIntensity;
         runtimeSettings.bloomScatter = loadedSettings.bloomScatter;
-        
+
         // Lens Flare settings
         runtimeSettings.lensFlareIntensity = loadedSettings.lensFlareIntensity;
         runtimeSettings.lensFlareRegularMultiplier = loadedSettings.lensFlareRegularMultiplier;
@@ -910,7 +918,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.lensFlareStreaksOrientation = loadedSettings.lensFlareStreaksOrientation;
         runtimeSettings.lensFlareStreaksThreshold = loadedSettings.lensFlareStreaksThreshold;
         runtimeSettings.lensFlareChromaticIntensity = loadedSettings.lensFlareChromaticIntensity;
-        
+
         // Lens Distortion settings
         runtimeSettings.lensDistortionIntensity = loadedSettings.lensDistortionIntensity;
         runtimeSettings.lensDistortionXMultiplier = loadedSettings.lensDistortionXMultiplier;
@@ -918,22 +926,22 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.lensDistortionScale = loadedSettings.lensDistortionScale;
         runtimeSettings.lensDistortionCenterX = loadedSettings.lensDistortionCenterX;
         runtimeSettings.lensDistortionCenterY = loadedSettings.lensDistortionCenterY;
-        
+
         // Color Adjustments settings
         runtimeSettings.colorAdjustmentsPostExposure = loadedSettings.colorAdjustmentsPostExposure;
         runtimeSettings.colorAdjustmentsContrast = loadedSettings.colorAdjustmentsContrast;
         runtimeSettings.colorAdjustmentsHueShift = loadedSettings.colorAdjustmentsHueShift;
         runtimeSettings.colorAdjustmentsSaturation = loadedSettings.colorAdjustmentsSaturation;
-        
+
         // White Balance settings
         runtimeSettings.whiteBalanceTemperature = loadedSettings.whiteBalanceTemperature;
         runtimeSettings.whiteBalanceTint = loadedSettings.whiteBalanceTint;
     }
-    
+
     private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
     {
         // Copy only non-post-processing settings to destination
-        
+
         // Gravity and Force settings
         destination.g = source.g;
         destination.maxTowardsForce = source.maxTowardsForce;
@@ -944,7 +952,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.stopVelocity = source.stopVelocity;
         destination.attractionRadiusMultiplier = source.attractionRadiusMultiplier;
         // Note: forceToMiddle curve is managed by CurveSettingsSO and excluded from profiles
-        
+
         // Hand interaction settings
         destination.singleHandOpenForceDamper = source.singleHandOpenForceDamper;
         destination.pushForce = source.pushForce;
@@ -953,13 +961,13 @@ public class InGameSettingsMenu : MonoBehaviour
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO and excluded from profiles
         destination.alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
         destination.handPushScaler = source.handPushScaler;
-        
+
         // Pulsation settings
         destination.pulseAmount = source.pulseAmount;
         destination.pulseSpeed = source.pulseSpeed;
         destination.graphLimit = source.graphLimit;
         destination.pulseFreqs = source.pulseFreqs;
-        
+
         // Size and scaling settings
         destination.singleHandScaling = source.singleHandScaling;
         destination.minimumUnscaledSize = source.minimumUnscaledSize;
@@ -978,14 +986,14 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.customColors = source.customColors;
         destination.drawSkeleton = source.drawSkeleton;
         destination.useTrackingStateColors = source.useTrackingStateColors;
-        
+
         // Debug settings
         destination.dummyOnlyMode = source.dummyOnlyMode;
         destination.showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         destination.showAttractionRadius = source.showAttractionRadius;
         destination.showHandTrailDistorters = source.showHandTrailDistorters;
         destination.showSecondaryAttractor = source.showSecondaryAttractor;
-        
+
         // Explicitly set all post-processing values to zero/defaults to prevent them from being saved in scene profiles
         destination.bloomThreshold = 0.0f;
         destination.bloomIntensity = 0.0f;
@@ -1011,16 +1019,16 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.whiteBalanceTemperature = 0.0f;
         destination.whiteBalanceTint = 0.0f;
     }
-    
+
     private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
     {
         // Copy only post-processing settings to destination
-        
+
         // Bloom settings
         destination.bloomThreshold = source.bloomThreshold;
         destination.bloomIntensity = source.bloomIntensity;
         destination.bloomScatter = source.bloomScatter;
-        
+
         // Lens Flare settings
         destination.lensFlareIntensity = source.lensFlareIntensity;
         destination.lensFlareRegularMultiplier = source.lensFlareRegularMultiplier;
@@ -1030,7 +1038,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.lensFlareStreaksOrientation = source.lensFlareStreaksOrientation;
         destination.lensFlareStreaksThreshold = source.lensFlareStreaksThreshold;
         destination.lensFlareChromaticIntensity = source.lensFlareChromaticIntensity;
-        
+
         // Lens Distortion settings
         destination.lensDistortionIntensity = source.lensDistortionIntensity;
         destination.lensDistortionXMultiplier = source.lensDistortionXMultiplier;
@@ -1038,17 +1046,17 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.lensDistortionScale = source.lensDistortionScale;
         destination.lensDistortionCenterX = source.lensDistortionCenterX;
         destination.lensDistortionCenterY = source.lensDistortionCenterY;
-        
+
         // Color Adjustments settings
         destination.colorAdjustmentsPostExposure = source.colorAdjustmentsPostExposure;
         destination.colorAdjustmentsContrast = source.colorAdjustmentsContrast;
         destination.colorAdjustmentsHueShift = source.colorAdjustmentsHueShift;
         destination.colorAdjustmentsSaturation = source.colorAdjustmentsSaturation;
-        
+
         // White Balance settings
         destination.whiteBalanceTemperature = source.whiteBalanceTemperature;
         destination.whiteBalanceTint = source.whiteBalanceTint;
-        
+
         // Explicitly set all scene-specific values to defaults to prevent them from being saved in post-processing profiles
         destination.g = 0.0f;
         destination.maxTowardsForce = 0.0f;
@@ -1119,7 +1127,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void ShowSaveAsDialog(TabType tabType)
     {
         isModalOpen = true;
-        
+
         // Create modal dialog for save as
         var modal = new VisualElement();
         modal.style.position = Position.Absolute;
@@ -1130,7 +1138,7 @@ public class InGameSettingsMenu : MonoBehaviour
         modal.style.backgroundColor = new Color(0, 0, 0, 0.8f);
         modal.style.alignItems = Align.Center;
         modal.style.justifyContent = Justify.Center;
-        
+
         var panel = new VisualElement();
         panel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
         panel.style.borderTopWidth = 2;
@@ -1146,25 +1154,26 @@ public class InGameSettingsMenu : MonoBehaviour
         panel.style.paddingLeft = 20;
         panel.style.paddingRight = 20;
         panel.style.width = 400;
-        
+
         var title = new Label("Save Profile As...");
         title.style.fontSize = 18;
         title.style.color = Color.white;
         title.style.marginBottom = 15;
         panel.Add(title);
-        
+
         var nameField = new TextField("Profile Name:");
         nameField.style.marginBottom = 15;
         nameField.value = $"Profile_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
         nameField.SelectAll();
         panel.Add(nameField);
-        
+
         var buttonContainer = new VisualElement();
         buttonContainer.style.flexDirection = FlexDirection.Row;
         buttonContainer.style.justifyContent = Justify.Center;
         buttonContainer.style.marginTop = 10;
-        
-        var saveButton = new Button(() => {
+
+        var saveButton = new Button(() =>
+        {
             var profileName = nameField.value.Trim();
             if (!string.IsNullOrEmpty(profileName))
             {
@@ -1173,7 +1182,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 {
                     profileName = profileName.Replace(c, '_');
                 }
-                
+
                 SaveAsNewProfile(profileName, tabType);
                 settingsPanel.Remove(modal);
                 isModalOpen = false;
@@ -1183,27 +1192,29 @@ public class InGameSettingsMenu : MonoBehaviour
         saveButton.style.marginRight = 10;
         saveButton.style.paddingLeft = 15;
         saveButton.style.paddingRight = 15;
-        
-        var cancelButton = new Button(() => {
+
+        var cancelButton = new Button(() =>
+        {
             settingsPanel.Remove(modal);
             isModalOpen = false;
         });
         cancelButton.text = "Cancel";
         cancelButton.style.paddingLeft = 15;
         cancelButton.style.paddingRight = 15;
-        
+
         buttonContainer.Add(saveButton);
         buttonContainer.Add(cancelButton);
         panel.Add(buttonContainer);
-        
+
         modal.Add(panel);
         settingsPanel.Add(modal);
-        
+
         // Focus the text field and select all text
         nameField.Focus();
-        
+
         // Handle Enter key to save
-        nameField.RegisterCallback<KeyDownEvent>(evt => {
+        nameField.RegisterCallback<KeyDownEvent>(evt =>
+        {
             if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
             {
                 var profileName = nameField.value.Trim();
@@ -1214,7 +1225,7 @@ public class InGameSettingsMenu : MonoBehaviour
                     {
                         profileName = profileName.Replace(c, '_');
                     }
-                    
+
                     SaveAsNewProfile(profileName, tabType);
                     settingsPanel.Remove(modal);
                     isModalOpen = false;
@@ -1232,7 +1243,7 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         string profilePath;
         string lastUsedKey;
-        
+
         if (tabType == TabType.Scene)
         {
             profilePath = Path.Combine(sceneProfilesDirectory, profileName + ".json");
@@ -1243,14 +1254,14 @@ public class InGameSettingsMenu : MonoBehaviour
             profilePath = Path.Combine(postProcessingProfilesDirectory, profileName + ".json");
             lastUsedKey = lastUsedPostProcessingProfileKey;
         }
-        
+
         SaveProfile(profilePath, tabType);
-        
+
         // Suppress profile loading during dropdown refresh
         isRefreshingSuppressed = true;
         RefreshProfileDropdowns();
         isRefreshingSuppressed = false;
-        
+
         // Set dropdown value without triggering the callback (to avoid reloading the profile we just saved)
         if (tabType == TabType.Scene)
         {
@@ -1260,7 +1271,7 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             postProcessingProfileDropdown.SetValueWithoutNotify(profileName);
         }
-        
+
         // Save as last used profile for this tab
         PlayerPrefs.SetString(lastUsedKey, profileName);
         PlayerPrefs.Save();
@@ -1271,7 +1282,7 @@ public class InGameSettingsMenu : MonoBehaviour
         try
         {
             RuntimeSceneSettings settingsToSave;
-            
+
             if (tabType == TabType.Scene)
             {
                 // Create a clean settings object with only scene-related data
@@ -1286,7 +1297,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 settingsToSave = new RuntimeSceneSettings();
                 CopyPostProcessingSettings(runtimeSettings, settingsToSave);
                 currentPostProcessingProfilePath = path;
-                
+
                 // Update volume controller with post-processing settings
                 if (Controller?.volumeController != null)
                 {
@@ -1298,7 +1309,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 VolumeController.OnProfileSaved(runtimeSettings);
 #endif
             }
-            
+
             var json = JsonUtility.ToJson(settingsToSave, true);
             File.WriteAllText(path, json);
         }

@@ -51,15 +51,11 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "EnergyBall-V3.sln",
+    "dotnet.defaultSolution": "EnergyBall-V3.slnx",
     "dotnet.preferCSharpExtension": true,
-
-    // General formatting settings
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-
-    // C# specific formatting settings
     "[csharp]": {
         "editor.defaultFormatter": "ms-dotnettools.csharp",
         "editor.formatOnSave": true,
@@ -68,13 +64,9 @@
         "editor.tabSize": 4,
         "editor.insertSpaces": true
     },
-
-    // C# formatting options
     "csharp.format.enable": true,
     "csharp.semanticHighlighting.enabled": true,
     "omnisharp.enableEditorConfigSupport": true,
-
-    // File-specific formatter settings
     "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
@@ -111,8 +103,6 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
     },
-
-    // Prettier-specific settings
     "prettier.tabWidth": 4,
     "prettier.useTabs": false,
     "prettier.semi": true,
@@ -121,5 +111,9 @@
     "prettier.bracketSpacing": true,
     "prettier.bracketSameLine": false,
     "prettier.arrowParens": "avoid",
-    "prettier.endOfLine": "lf"
+    "prettier.endOfLine": "lf",
+    "dotrush.roslyn.projectOrSolutionFiles": [
+        "c:\\Users\\Joss\\Desktop\\Projects\\Mine\\EnergyBall-V3\\EnergyBall-V3.sln",
+        "c:\\Users\\Joss\\Desktop\\Projects\\Mine\\EnergyBall-V3\\EnergyBall-V3.slnx"
+    ]
 }

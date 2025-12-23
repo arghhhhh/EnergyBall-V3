@@ -15,7 +15,9 @@ public class HandEffects
                     player.StopCoroutine(player.leftHandOpenCoroutine);
                 }
                 player.leftHandOpenCoroutine = player.StartCoroutine(player.PlayLeftHandOpenAnimationDelayed());
-            } else {
+            }
+            else
+            {
                 player.leftHandAnimator.CrossFade(player.openClip.name, 1f);
             }
             player.leftHandVfx.SendEvent("handOpen");
@@ -47,7 +49,9 @@ public class HandEffects
                     player.StopCoroutine(player.rightHandOpenCoroutine);
                 }
                 player.rightHandOpenCoroutine = player.StartCoroutine(player.PlayRightHandOpenAnimationDelayed());
-            } else {
+            }
+            else
+            {
                 player.rightHandAnimator.CrossFade(player.openClip.name, 1f);
             }
             player.rightHandVfx.SendEvent("handOpen");
@@ -73,14 +77,18 @@ public class HandEffects
         if (player.leftHandStateClamped == HandState.Closed)
         {
             player.leftHandSecondaryAttractor.position = player.HandLeft.transform.position;
-        } else {
+        }
+        else
+        {
             player.leftHandSecondaryAttractor.position = player.sphere.position;
         }
 
         if (player.rightHandStateClamped == HandState.Closed)
         {
             player.rightHandSecondaryAttractor.position = player.HandRight.transform.position;
-        } else {
+        }
+        else
+        {
             player.rightHandSecondaryAttractor.position = player.sphere.position;
         }
     }

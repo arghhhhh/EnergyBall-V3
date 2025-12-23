@@ -24,9 +24,9 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_MultiSourceFrame_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_MultiSourceFrame_AddRefObject(ref RootSystem.IntPtr pNative);
         private void Dispose(bool disposing)
         {
@@ -38,16 +38,16 @@ namespace Windows.Kinect
             __EventCleanup();
 
             Helper.NativeObjectCache.RemoveObject<MultiSourceFrame>(_pNative);
-                Windows_Kinect_MultiSourceFrame_ReleaseObject(ref _pNative);
+            Windows_Kinect_MultiSourceFrame_ReleaseObject(ref _pNative);
 
             _pNative = RootSystem.IntPtr.Zero;
         }
 
 
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_MultiSourceFrame_get_BodyFrameReference(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.BodyFrameReference BodyFrameReference
+        public Windows.Kinect.BodyFrameReference BodyFrameReference
         {
             get
             {
@@ -67,9 +67,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_MultiSourceFrame_get_BodyIndexFrameReference(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.BodyIndexFrameReference BodyIndexFrameReference
+        public Windows.Kinect.BodyIndexFrameReference BodyIndexFrameReference
         {
             get
             {
@@ -89,9 +89,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_MultiSourceFrame_get_ColorFrameReference(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.ColorFrameReference ColorFrameReference
+        public Windows.Kinect.ColorFrameReference ColorFrameReference
         {
             get
             {
@@ -111,9 +111,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_MultiSourceFrame_get_DepthFrameReference(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.DepthFrameReference DepthFrameReference
+        public Windows.Kinect.DepthFrameReference DepthFrameReference
         {
             get
             {
@@ -133,9 +133,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_MultiSourceFrame_get_InfraredFrameReference(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.InfraredFrameReference InfraredFrameReference
+        public Windows.Kinect.InfraredFrameReference InfraredFrameReference
         {
             get
             {
@@ -155,9 +155,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_MultiSourceFrame_get_LongExposureInfraredFrameReference(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.LongExposureInfraredFrameReference LongExposureInfraredFrameReference
+        public Windows.Kinect.LongExposureInfraredFrameReference LongExposureInfraredFrameReference
         {
             get
             {

@@ -8,8 +8,8 @@ namespace Windows.Kinect
     //
     public enum AudioBeamMode : int
     {
-        Automatic                                =0,
-        Manual                                   =1,
+        Automatic = 0,
+        Manual = 1,
     }
 
 }

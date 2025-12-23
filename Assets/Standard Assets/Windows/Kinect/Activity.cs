@@ -8,11 +8,11 @@ namespace Windows.Kinect
     //
     public enum Activity : int
     {
-        EyeLeftClosed                            =0,
-        EyeRightClosed                           =1,
-        MouthOpen                                =2,
-        MouthMoved                               =3,
-        LookingAway                              =4,
+        EyeLeftClosed = 0,
+        EyeRightClosed = 1,
+        MouthOpen = 2,
+        MouthMoved = 3,
+        LookingAway = 4,
     }
 
 }

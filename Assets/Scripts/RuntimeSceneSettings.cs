@@ -110,7 +110,7 @@ public class RuntimeSceneSettings
     [Header("Debugging")]
     public bool dummyOnlyMode = false;
     public bool showSphereMeshOnHandCollision = false;
-    
+
     [SerializeField] private bool _showAttractionRadius = false;
     public bool showAttractionRadius
     {

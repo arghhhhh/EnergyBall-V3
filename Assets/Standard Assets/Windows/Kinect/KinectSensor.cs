@@ -24,15 +24,15 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_KinectSensor_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_KinectSensor_AddRefObject(ref RootSystem.IntPtr pNative);
 
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_AudioSource(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.AudioSource AudioSource
+        public Windows.Kinect.AudioSource AudioSource
         {
             get
             {
@@ -52,9 +52,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_BodyFrameSource(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.BodyFrameSource BodyFrameSource
+        public Windows.Kinect.BodyFrameSource BodyFrameSource
         {
             get
             {
@@ -74,9 +74,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_BodyIndexFrameSource(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.BodyIndexFrameSource BodyIndexFrameSource
+        public Windows.Kinect.BodyIndexFrameSource BodyIndexFrameSource
         {
             get
             {
@@ -96,9 +96,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_ColorFrameSource(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.ColorFrameSource ColorFrameSource
+        public Windows.Kinect.ColorFrameSource ColorFrameSource
         {
             get
             {
@@ -118,9 +118,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_CoordinateMapper(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.CoordinateMapper CoordinateMapper
+        public Windows.Kinect.CoordinateMapper CoordinateMapper
         {
             get
             {
@@ -140,9 +140,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_DepthFrameSource(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.DepthFrameSource DepthFrameSource
+        public Windows.Kinect.DepthFrameSource DepthFrameSource
         {
             get
             {
@@ -162,9 +162,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_InfraredFrameSource(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.InfraredFrameSource InfraredFrameSource
+        public Windows.Kinect.InfraredFrameSource InfraredFrameSource
         {
             get
             {
@@ -184,9 +184,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern bool Windows_Kinect_KinectSensor_get_IsAvailable(RootSystem.IntPtr pNative);
-        public  bool IsAvailable
+        public bool IsAvailable
         {
             get
             {
@@ -199,9 +199,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern bool Windows_Kinect_KinectSensor_get_IsOpen(RootSystem.IntPtr pNative);
-        public  bool IsOpen
+        public bool IsOpen
         {
             get
             {
@@ -214,9 +214,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.KinectCapabilities Windows_Kinect_KinectSensor_get_KinectCapabilities(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.KinectCapabilities KinectCapabilities
+        public Windows.Kinect.KinectCapabilities KinectCapabilities
         {
             get
             {
@@ -229,9 +229,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_LongExposureInfraredFrameSource(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.LongExposureInfraredFrameSource LongExposureInfraredFrameSource
+        public Windows.Kinect.LongExposureInfraredFrameSource LongExposureInfraredFrameSource
         {
             get
             {
@@ -251,9 +251,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_get_UniqueKinectId(RootSystem.IntPtr pNative);
-        public  string UniqueKinectId
+        public string UniqueKinectId
         {
             get
             {
@@ -282,19 +282,19 @@ namespace Windows.Kinect
         {
             List<RootSystem.EventHandler<Windows.Kinect.IsAvailableChangedEventArgs>> callbackList = null;
             Windows_Kinect_IsAvailableChangedEventArgs_Delegate_callbacks.TryGetValue(pNative, out callbackList);
-            lock(callbackList)
+            lock (callbackList)
             {
                 var objThis = Helper.NativeObjectCache.GetObject<KinectSensor>(pNative);
                 var args = new Windows.Kinect.IsAvailableChangedEventArgs(result);
-                foreach(var func in callbackList)
+                foreach (var func in callbackList)
                 {
                     Helper.EventPump.Instance.Enqueue(() => { try { func(objThis, args); } catch { } });
                 }
             }
         }
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_KinectSensor_add_IsAvailableChanged(RootSystem.IntPtr pNative, _Windows_Kinect_IsAvailableChangedEventArgs_Delegate eventCallback, bool unsubscribe);
-        public  event RootSystem.EventHandler<Windows.Kinect.IsAvailableChangedEventArgs> IsAvailableChanged
+        public event RootSystem.EventHandler<Windows.Kinect.IsAvailableChangedEventArgs> IsAvailableChanged
         {
             add
             {
@@ -305,7 +305,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Add(value);
-                    if(callbackList.Count == 1)
+                    if (callbackList.Count == 1)
                     {
                         var del = new _Windows_Kinect_IsAvailableChangedEventArgs_Delegate(Windows_Kinect_IsAvailableChangedEventArgs_Delegate_Handler);
                         _Windows_Kinect_IsAvailableChangedEventArgs_Delegate_Handle = RootSystem.Runtime.InteropServices.GCHandle.Alloc(del);
@@ -325,7 +325,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Remove(value);
-                    if(callbackList.Count == 0)
+                    if (callbackList.Count == 0)
                     {
                         Windows_Kinect_KinectSensor_add_IsAvailableChanged(_pNative, Windows_Kinect_IsAvailableChangedEventArgs_Delegate_Handler, true);
                         _Windows_Kinect_IsAvailableChangedEventArgs_Delegate_Handle.Free();
@@ -343,19 +343,19 @@ namespace Windows.Kinect
         {
             List<RootSystem.EventHandler<Windows.Data.PropertyChangedEventArgs>> callbackList = null;
             Windows_Data_PropertyChangedEventArgs_Delegate_callbacks.TryGetValue(pNative, out callbackList);
-            lock(callbackList)
+            lock (callbackList)
             {
                 var objThis = Helper.NativeObjectCache.GetObject<KinectSensor>(pNative);
                 var args = new Windows.Data.PropertyChangedEventArgs(result);
-                foreach(var func in callbackList)
+                foreach (var func in callbackList)
                 {
                     Helper.EventPump.Instance.Enqueue(() => { try { func(objThis, args); } catch { } });
                 }
             }
         }
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_KinectSensor_add_PropertyChanged(RootSystem.IntPtr pNative, _Windows_Data_PropertyChangedEventArgs_Delegate eventCallback, bool unsubscribe);
-        public  event RootSystem.EventHandler<Windows.Data.PropertyChangedEventArgs> PropertyChanged
+        public event RootSystem.EventHandler<Windows.Data.PropertyChangedEventArgs> PropertyChanged
         {
             add
             {
@@ -366,7 +366,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Add(value);
-                    if(callbackList.Count == 1)
+                    if (callbackList.Count == 1)
                     {
                         var del = new _Windows_Data_PropertyChangedEventArgs_Delegate(Windows_Data_PropertyChangedEventArgs_Delegate_Handler);
                         _Windows_Data_PropertyChangedEventArgs_Delegate_Handle = RootSystem.Runtime.InteropServices.GCHandle.Alloc(del);
@@ -386,7 +386,7 @@ namespace Windows.Kinect
                 lock (callbackList)
                 {
                     callbackList.Remove(value);
-                    if(callbackList.Count == 0)
+                    if (callbackList.Count == 0)
                     {
                         Windows_Kinect_KinectSensor_add_PropertyChanged(_pNative, Windows_Data_PropertyChangedEventArgs_Delegate_Handler, true);
                         _Windows_Data_PropertyChangedEventArgs_Delegate_Handle.Free();
@@ -397,7 +397,7 @@ namespace Windows.Kinect
 
 
         // Static Methods
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_GetDefault();
         public static Windows.Kinect.KinectSensor GetDefault()
         {
@@ -413,7 +413,7 @@ namespace Windows.Kinect
 
 
         // Public Methods
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_KinectSensor_Open(RootSystem.IntPtr pNative);
         public void Open()
         {
@@ -426,7 +426,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_KinectSensor_Close(RootSystem.IntPtr pNative);
         public void Close()
         {
@@ -439,7 +439,7 @@ namespace Windows.Kinect
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern RootSystem.IntPtr Windows_Kinect_KinectSensor_OpenMultiSourceFrameReader(RootSystem.IntPtr pNative, Windows.Kinect.FrameSourceTypes enabledFrameSourceTypes);
         public Windows.Kinect.MultiSourceFrameReader OpenMultiSourceFrameReader(Windows.Kinect.FrameSourceTypes enabledFrameSourceTypes)
         {

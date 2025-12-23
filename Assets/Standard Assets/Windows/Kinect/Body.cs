@@ -24,9 +24,9 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_Body_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern void Windows_Kinect_Body_AddRefObject(ref RootSystem.IntPtr pNative);
         private void Dispose(bool disposing)
         {
@@ -38,18 +38,18 @@ namespace Windows.Kinect
             __EventCleanup();
 
             Helper.NativeObjectCache.RemoveObject<Body>(_pNative);
-                Windows_Kinect_Body_ReleaseObject(ref _pNative);
+            Windows_Kinect_Body_ReleaseObject(ref _pNative);
 
             _pNative = RootSystem.IntPtr.Zero;
         }
 
 
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Activities(RootSystem.IntPtr pNative, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.Activity[] outKeys, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.DetectionResult[] outValues, int outCollectionSize);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Activities_Length(RootSystem.IntPtr pNative);
-        public  RootSystem.Collections.Generic.Dictionary<Windows.Kinect.Activity, Windows.Kinect.DetectionResult> Activities
+        public RootSystem.Collections.Generic.Dictionary<Windows.Kinect.Activity, Windows.Kinect.DetectionResult> Activities
         {
             get
             {
@@ -65,7 +65,7 @@ namespace Windows.Kinect
 
                 outCollectionSize = Windows_Kinect_Body_get_Activities(_pNative, outKeys, outValues, outCollectionSize);
                 Helper.ExceptionHelper.CheckLastError();
-                for(int i=0;i<outCollectionSize;i++)
+                for (int i = 0; i < outCollectionSize; i++)
                 {
                     managedDictionary.Add(outKeys[i], outValues[i]);
                 }
@@ -73,11 +73,11 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Appearance(RootSystem.IntPtr pNative, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.Appearance[] outKeys, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.DetectionResult[] outValues, int outCollectionSize);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Appearance_Length(RootSystem.IntPtr pNative);
-        public  RootSystem.Collections.Generic.Dictionary<Windows.Kinect.Appearance, Windows.Kinect.DetectionResult> Appearance
+        public RootSystem.Collections.Generic.Dictionary<Windows.Kinect.Appearance, Windows.Kinect.DetectionResult> Appearance
         {
             get
             {
@@ -93,7 +93,7 @@ namespace Windows.Kinect
 
                 outCollectionSize = Windows_Kinect_Body_get_Appearance(_pNative, outKeys, outValues, outCollectionSize);
                 Helper.ExceptionHelper.CheckLastError();
-                for(int i=0;i<outCollectionSize;i++)
+                for (int i = 0; i < outCollectionSize; i++)
                 {
                     managedDictionary.Add(outKeys[i], outValues[i]);
                 }
@@ -101,9 +101,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.FrameEdges Windows_Kinect_Body_get_ClippedEdges(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.FrameEdges ClippedEdges
+        public Windows.Kinect.FrameEdges ClippedEdges
         {
             get
             {
@@ -116,9 +116,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.DetectionResult Windows_Kinect_Body_get_Engaged(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.DetectionResult Engaged
+        public Windows.Kinect.DetectionResult Engaged
         {
             get
             {
@@ -131,11 +131,11 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Expressions(RootSystem.IntPtr pNative, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.Expression[] outKeys, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.DetectionResult[] outValues, int outCollectionSize);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Expressions_Length(RootSystem.IntPtr pNative);
-        public  RootSystem.Collections.Generic.Dictionary<Windows.Kinect.Expression, Windows.Kinect.DetectionResult> Expressions
+        public RootSystem.Collections.Generic.Dictionary<Windows.Kinect.Expression, Windows.Kinect.DetectionResult> Expressions
         {
             get
             {
@@ -151,7 +151,7 @@ namespace Windows.Kinect
 
                 outCollectionSize = Windows_Kinect_Body_get_Expressions(_pNative, outKeys, outValues, outCollectionSize);
                 Helper.ExceptionHelper.CheckLastError();
-                for(int i=0;i<outCollectionSize;i++)
+                for (int i = 0; i < outCollectionSize; i++)
                 {
                     managedDictionary.Add(outKeys[i], outValues[i]);
                 }
@@ -159,9 +159,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.TrackingConfidence Windows_Kinect_Body_get_HandLeftConfidence(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.TrackingConfidence HandLeftConfidence
+        public Windows.Kinect.TrackingConfidence HandLeftConfidence
         {
             get
             {
@@ -174,9 +174,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.HandState Windows_Kinect_Body_get_HandLeftState(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.HandState HandLeftState
+        public Windows.Kinect.HandState HandLeftState
         {
             get
             {
@@ -189,9 +189,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.TrackingConfidence Windows_Kinect_Body_get_HandRightConfidence(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.TrackingConfidence HandRightConfidence
+        public Windows.Kinect.TrackingConfidence HandRightConfidence
         {
             get
             {
@@ -204,9 +204,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.HandState Windows_Kinect_Body_get_HandRightState(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.HandState HandRightState
+        public Windows.Kinect.HandState HandRightState
         {
             get
             {
@@ -219,9 +219,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern bool Windows_Kinect_Body_get_IsRestricted(RootSystem.IntPtr pNative);
-        public  bool IsRestricted
+        public bool IsRestricted
         {
             get
             {
@@ -234,9 +234,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern bool Windows_Kinect_Body_get_IsTracked(RootSystem.IntPtr pNative);
-        public  bool IsTracked
+        public bool IsTracked
         {
             get
             {
@@ -249,11 +249,11 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_JointOrientations(RootSystem.IntPtr pNative, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.JointType[] outKeys, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.JointOrientation[] outValues, int outCollectionSize);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_JointOrientations_Length(RootSystem.IntPtr pNative);
-        public  RootSystem.Collections.Generic.Dictionary<Windows.Kinect.JointType, Windows.Kinect.JointOrientation> JointOrientations
+        public RootSystem.Collections.Generic.Dictionary<Windows.Kinect.JointType, Windows.Kinect.JointOrientation> JointOrientations
         {
             get
             {
@@ -269,7 +269,7 @@ namespace Windows.Kinect
 
                 outCollectionSize = Windows_Kinect_Body_get_JointOrientations(_pNative, outKeys, outValues, outCollectionSize);
                 Helper.ExceptionHelper.CheckLastError();
-                for(int i=0;i<outCollectionSize;i++)
+                for (int i = 0; i < outCollectionSize; i++)
                 {
                     managedDictionary.Add(outKeys[i], outValues[i]);
                 }
@@ -277,11 +277,11 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Joints(RootSystem.IntPtr pNative, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.JointType[] outKeys, [RootSystem.Runtime.InteropServices.Out] Windows.Kinect.Joint[] outValues, int outCollectionSize);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_Joints_Length(RootSystem.IntPtr pNative);
-        public  RootSystem.Collections.Generic.Dictionary<Windows.Kinect.JointType, Windows.Kinect.Joint> Joints
+        public RootSystem.Collections.Generic.Dictionary<Windows.Kinect.JointType, Windows.Kinect.Joint> Joints
         {
             get
             {
@@ -297,7 +297,7 @@ namespace Windows.Kinect
 
                 outCollectionSize = Windows_Kinect_Body_get_Joints(_pNative, outKeys, outValues, outCollectionSize);
                 Helper.ExceptionHelper.CheckLastError();
-                for(int i=0;i<outCollectionSize;i++)
+                for (int i = 0; i < outCollectionSize; i++)
                 {
                     managedDictionary.Add(outKeys[i], outValues[i]);
                 }
@@ -305,9 +305,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern Windows.Kinect.TrackingState Windows_Kinect_Body_get_LeanTrackingState(RootSystem.IntPtr pNative);
-        public  Windows.Kinect.TrackingState LeanTrackingState
+        public Windows.Kinect.TrackingState LeanTrackingState
         {
             get
             {
@@ -320,9 +320,9 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern ulong Windows_Kinect_Body_get_TrackingId(RootSystem.IntPtr pNative);
-        public  ulong TrackingId
+        public ulong TrackingId
         {
             get
             {
@@ -335,7 +335,7 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
+        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
         private static extern int Windows_Kinect_Body_get_JointCount();
         public static int JointCount
         {

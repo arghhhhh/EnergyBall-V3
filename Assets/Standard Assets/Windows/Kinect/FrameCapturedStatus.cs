@@ -8,9 +8,9 @@ namespace Windows.Kinect
     //
     public enum FrameCapturedStatus : int
     {
-        Unknown                                  =0,
-        Queued                                   =1,
-        Dropped                                  =2,
+        Unknown = 0,
+        Queued = 1,
+        Dropped = 2,
     }
 
 }

@@ -8,12 +8,12 @@ namespace Windows.Kinect
     //
     public enum ColorImageFormat : int
     {
-        None                                     =0,
-        Rgba                                     =1,
-        Yuv                                      =2,
-        Bgra                                     =3,
-        Bayer                                    =4,
-        Yuy2                                     =5,
+        None = 0,
+        Rgba = 1,
+        Yuv = 2,
+        Bgra = 3,
+        Bayer = 4,
+        Yuy2 = 5,
     }
 
 }

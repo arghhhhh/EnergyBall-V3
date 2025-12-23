@@ -8,8 +8,8 @@ namespace Windows.Kinect
     //
     public enum TrackingConfidence : int
     {
-        Low                                      =0,
-        High                                     =1,
+        Low = 0,
+        High = 1,
     }
 
 }

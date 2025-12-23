@@ -27,14 +27,14 @@ namespace Helper
 
         public static void Flush()
         {
-            lock(_lock)
+            lock (_lock)
             {
                 foreach (var byType in _objectCache.ToArray())
                 {
-                    foreach(var kvp in byType.Value.ToArray())
+                    foreach (var kvp in byType.Value.ToArray())
                     {
                         IDisposable disp = kvp.Value.Target as IDisposable;
-                        if(disp != null)
+                        if (disp != null)
                         {
                             disp.Dispose();
                         }
@@ -92,7 +92,7 @@ namespace Helper
             }
         }
 
-        public static T CreateOrGetObject<T>(IntPtr nativePtr, Func<System.IntPtr,T> create) where T : class
+        public static T CreateOrGetObject<T>(IntPtr nativePtr, Func<System.IntPtr, T> create) where T : class
         {
             T outputValue = null;
 
@@ -116,13 +116,13 @@ namespace Helper
                 }
 
                 if (outputValue == null)
-                { 
+                {
                     if (create != null)
                     {
                         outputValue = create(nativePtr);
                         objCache[nativePtr] = new WeakReference(outputValue);
                     }
-                    else if(typeof(T) == typeof(System.Object)) 
+                    else if (typeof(T) == typeof(System.Object))
                     {
                         //T is an object, so lets just pass back our IntPtr, which is an object.
                         outputValue = (T)(System.Object)nativePtr;
