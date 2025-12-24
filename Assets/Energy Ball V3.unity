@@ -787,6 +787,8 @@ MonoBehaviour:
   maxDrag: 5
   alignmentVectorStrengthScaler: 1
   handPushScaler: 1
+  prayToActivate: 1
+  prayToActivateDistance: 0.7
   pulseAmount: 1
   pulseSpeed: 1
   graphLimit: 10
