@@ -27,6 +27,8 @@ public class RuntimeSceneSettings
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
     public float alignmentVectorStrengthScaler = 1f;
     public float handPushScaler = 1f;
+    public bool prayToActivate = false;
+    public float prayToActivateDistance = 0.65f;
 
     [Header("Intrinsic Pulsation")]
     [Range(0, 10f)]
@@ -185,6 +187,8 @@ public class RuntimeSceneSettings
         copy.alignmentVectorStrength = new AnimationCurve(alignmentVectorStrength.keys);
         copy.alignmentVectorStrengthScaler = alignmentVectorStrengthScaler;
         copy.handPushScaler = handPushScaler;
+        copy.prayToActivate = prayToActivate;
+        copy.prayToActivateDistance = prayToActivateDistance;
         copy.pulseAmount = pulseAmount;
         copy.pulseSpeed = pulseSpeed;
         copy.graphLimit = graphLimit;

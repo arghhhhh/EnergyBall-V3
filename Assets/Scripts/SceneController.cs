@@ -44,6 +44,11 @@ public class SceneController : MonoBehaviour
     public float alignmentVectorStrengthScaler = 1f;
     [BoxGroup("Hands Attraction")]
     public float handPushScaler = 1f;
+    [BoxGroup("Hands Attraction")]
+    public bool prayToActivate = false;
+    [BoxGroup("Hands Attraction")]
+    [ShowIf("prayToActivate")]
+    public float prayToActivateDistance = 0.65f;
 
     [BoxGroup("Intrinsic Pulsation")]
     [Range(0, 10f)]
@@ -461,7 +466,7 @@ public class SceneController : MonoBehaviour
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);
-            handEffectsController.ManageHandEffects(playerConstructor);
+            handEffectsController.ManageHandEffects(playerConstructor, cachedCurrentSettings);
             handEffectsController.ManageHandTrailDistorters(playerConstructor);
             playerScaleController.ScaleSetup(playerConstructor);
         }
@@ -673,6 +678,8 @@ public class SceneController : MonoBehaviour
         target.alignmentVectorStrength = new AnimationCurve(alignmentVectorStrength.keys);
         target.alignmentVectorStrengthScaler = alignmentVectorStrengthScaler;
         target.handPushScaler = handPushScaler;
+        target.prayToActivate = prayToActivate;
+        target.prayToActivateDistance = prayToActivateDistance;
 
         // Intrinsic Pulsation
         target.pulseAmount = pulseAmount;
@@ -730,6 +737,8 @@ public class SceneController : MonoBehaviour
         alignmentVectorStrength = new AnimationCurve(source.alignmentVectorStrength.keys);
         alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
         handPushScaler = source.handPushScaler;
+        prayToActivate = source.prayToActivate;
+        prayToActivateDistance = source.prayToActivateDistance;
 
         // Intrinsic Pulsation
         pulseAmount = source.pulseAmount;

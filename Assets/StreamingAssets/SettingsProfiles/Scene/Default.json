@@ -13,6 +13,8 @@
     "maxDrag": 1.0,
     "alignmentVectorStrengthScaler": 0.3499999940395355,
     "handPushScaler": 10.0,
+    "prayToActivate": true,
+    "prayToActivateDistance": 0.699999988079071,
     "pulseAmount": 2.0,
     "pulseSpeed": 3.0,
     "graphLimit": 3.882999897003174,

@@ -310,6 +310,8 @@ public class InGameSettingsMenu : MonoBehaviour
         // CreateCurveField(group, "Alignment Vector Strength", () => runtimeSettings.alignmentVectorStrength, v => runtimeSettings.alignmentVectorStrength = v);
         CreateFloatField(group, "Alignment Vector Strength Scaler", () => runtimeSettings.alignmentVectorStrengthScaler, v => runtimeSettings.alignmentVectorStrengthScaler = v);
         CreateFloatField(group, "Hand Push Scaler", () => runtimeSettings.handPushScaler, v => runtimeSettings.handPushScaler = v);
+        CreateToggleField(group, "Pray To Activate", () => runtimeSettings.prayToActivate, v => runtimeSettings.prayToActivate = v);
+        CreateFloatField(group, "Pray To Activate Distance", () => runtimeSettings.prayToActivateDistance, v => runtimeSettings.prayToActivateDistance = v);
     }
 
     private void CreateIntrinsicPulsationGroup(ScrollView parentContainer)
@@ -865,6 +867,8 @@ public class InGameSettingsMenu : MonoBehaviour
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO, not loaded from profiles
         runtimeSettings.alignmentVectorStrengthScaler = loadedSettings.alignmentVectorStrengthScaler;
         runtimeSettings.handPushScaler = loadedSettings.handPushScaler;
+        runtimeSettings.prayToActivate = loadedSettings.prayToActivate;
+        runtimeSettings.prayToActivateDistance = loadedSettings.prayToActivateDistance;
 
         // Pulsation settings
         runtimeSettings.pulseAmount = loadedSettings.pulseAmount;
@@ -961,6 +965,8 @@ public class InGameSettingsMenu : MonoBehaviour
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO and excluded from profiles
         destination.alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
         destination.handPushScaler = source.handPushScaler;
+        destination.prayToActivate = source.prayToActivate;
+        destination.prayToActivateDistance = source.prayToActivateDistance;
 
         // Pulsation settings
         destination.pulseAmount = source.pulseAmount;
@@ -1076,6 +1082,8 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.alignmentVectorStrength = new AnimationCurve();
         destination.alignmentVectorStrengthScaler = 0.0f;
         destination.handPushScaler = 0.0f;
+        destination.prayToActivate = false;
+        destination.prayToActivateDistance = 0.0f;
         destination.pulseAmount = 0.0f;
         destination.pulseSpeed = 0.0f;
         destination.graphLimit = 0.0f;

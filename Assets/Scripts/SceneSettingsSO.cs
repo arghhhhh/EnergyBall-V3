@@ -51,6 +51,14 @@ public class SceneSettingsSO : ScriptableObject
     [BoxGroup("Hands Attraction")]
     public float handPushScaler;
 
+    [BoxGroup("Hands Attraction")]
+    [Tooltip("When enabled, players must bring their hands together to initialize. When disabled, players start initialized.")]
+    public bool prayToActivate;
+
+    [BoxGroup("Hands Attraction")]
+    [Tooltip("The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled.")]
+    public float prayToActivateDistance = 0.65f;
+
     [BoxGroup("Intrinsic Pulsation")]
     [Range(0, 10f)]
     public float pulseAmount;

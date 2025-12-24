@@ -3,9 +3,20 @@ using Windows.Kinect;
 
 public class HandEffects
 {
-    public void ManageHandEffects(PlayerConstructor player)
+    public void ManageHandEffects(PlayerConstructor player, RuntimeSceneSettings settings)
     {
-        if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open)
+        // Check if hands are brought together to initialize the player
+        if (!player.initialized)
+        {
+            float activationDistance = settings?.prayToActivateDistance ?? 0.7f;
+
+            float handDistance = Vector3.Distance(player.HandLeft.transform.position, player.HandRight.transform.position);
+            if (handDistance < activationDistance)
+            {
+                player.initialized = true;
+            }
+        }
+        if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
             if (timeSinceStateChange > 2.0f)
@@ -26,7 +37,7 @@ public class HandEffects
         }
         else if (
             player.leftHandState == HandState.Closed
-            && player.leftHandStateClamped != HandState.Closed
+            && player.leftHandStateClamped != HandState.Closed && (player.isDummy || player.initialized)
         )
         {
             if (player.leftHandOpenCoroutine != null)
@@ -39,7 +50,7 @@ public class HandEffects
             player.leftHandStateClamped = HandState.Closed;
             player.leftHandStateChangeTime = Time.time;
         }
-        if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open)
+        if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.rightHandStateChangeTime;
             if (timeSinceStateChange > 2.0f)
@@ -60,7 +71,7 @@ public class HandEffects
         }
         else if (
             player.rightHandState == HandState.Closed
-            && player.rightHandStateClamped != HandState.Closed
+            && player.rightHandStateClamped != HandState.Closed && player.initialized
         )
         {
             if (player.rightHandOpenCoroutine != null)
