@@ -1,4 +1,36 @@
 {
-  "tabWidth": 2,
-  "useTabs": false
+  "tabWidth": 4,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": false,
+  "quoteProps": "as-needed",
+  "trailingComma": "none",
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "printWidth": 120,
+  "overrides": [
+    {
+      "files": "*.cs",
+      "options": {
+        "parser": "cs",
+        "tabWidth": 4
+      }
+    },
+    {
+      "files": [
+        "*.json",
+        "*.yml",
+        "*.yaml",
+        "*.xml",
+        "*.js",
+        "*.ts",
+        "*.html",
+        "*.css"
+      ],
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
 }
