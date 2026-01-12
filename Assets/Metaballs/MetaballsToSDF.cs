@@ -204,6 +204,7 @@ namespace MarchingCubes
             {
                 if (!activeMetaballIndices.Contains(i))
                 {
+                    Debug.Log($"Adding metaball index: {i}");
                     activeMetaballIndices.Add(i);
                     player.metaballIndex = i;
                     break;
@@ -213,6 +214,7 @@ namespace MarchingCubes
 
         public void RemoveMetaballIndex(int index)
         {
+            Debug.Log($"Removing metaball index: {index}");
             activeMetaballIndices.Remove(index);
             metaballs[index].Position = new Vector3(-100f, -100f, -100f);
             metaballs[index].Radius = 0f;

@@ -2,22 +2,39 @@
     <Style src="project://database/Assets/UI/SettingsMenu.uss?fileID=7433441132597879392&amp;guid=41a899a2ddc30fc4f8fcf27b8ccae449&amp;type=3#SettingsMenu" />
     <ui:VisualElement name="SettingsPanel" class="settings-panel hidden" style="max-height: none;">
         <ui:VisualElement name="Header" class="settings-header">
-            <ui:Label text="Scene Settings" class="settings-title" />
+            <ui:Label text="Settings" class="settings-title" />
             <ui:Button text="×" name="CloseButton" class="close-button" />
         </ui:VisualElement>
-        <ui:VisualElement name="ProfileControls" class="profile-controls">
-            <ui:DropdownField name="ProfileDropdown" style="flex-grow: 1;" />
-            <ui:Button text="Load" name="LoadButton" class="profile-button" />
-            <ui:Button text="Save" name="SaveButton" class="profile-button" />
-            <ui:Button text="Save As..." name="SaveAsButton" class="profile-button" />
-        </ui:VisualElement>
+        
         <ui:VisualElement name="TabContainer" class="tab-container">
-            <ui:Button text="Scene Settings" name="SceneTab" class="tab-button active" />
+            <ui:Button text="Scene" name="SceneTab" class="tab-button active" />
             <ui:Button text="Post Processing" name="PostProcessingTab" class="tab-button" />
         </ui:VisualElement>
-        <ui:VisualElement name="TabContent" class="tab-content" style="display: flex;">
-            <ui:ScrollView name="SceneSettingsPanel" class="tab-panel active" />
-            <ui:ScrollView name="PostProcessingPanel" class="tab-panel" />
+        
+        <ui:VisualElement name="TabContent" class="tab-content">
+            <ui:VisualElement name="SceneTabContent" class="tab-panel active">
+                <ui:VisualElement name="SceneProfileControls" class="profile-controls">
+                    <ui:DropdownField name="SceneProfileDropdown" style="flex-grow: 1;" />
+                    <ui:Button text="Load" name="SceneLoadButton" class="profile-button" />
+                    <ui:Button text="Save" name="SceneSaveButton" class="profile-button" />
+                    <ui:Button text="Save As..." name="SceneSaveAsButton" class="profile-button" />
+                </ui:VisualElement>
+                <ui:ScrollView name="SceneSettingsPanel" class="settings-scroll">
+                    <!-- Scene settings will be populated dynamically -->
+                </ui:ScrollView>
+            </ui:VisualElement>
+            
+            <ui:VisualElement name="PostProcessingTabContent" class="tab-panel">
+                <ui:VisualElement name="PostProcessingProfileControls" class="profile-controls">
+                    <ui:DropdownField name="PostProcessingProfileDropdown" style="flex-grow: 1;" />
+                    <ui:Button text="Load" name="PostProcessingLoadButton" class="profile-button" />
+                    <ui:Button text="Save" name="PostProcessingSaveButton" class="profile-button" />
+                    <ui:Button text="Save As..." name="PostProcessingSaveAsButton" class="profile-button" />
+                </ui:VisualElement>
+                <ui:ScrollView name="PostProcessingPanel" class="settings-scroll">
+                    <!-- Post processing settings will be populated dynamically -->
+                </ui:ScrollView>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

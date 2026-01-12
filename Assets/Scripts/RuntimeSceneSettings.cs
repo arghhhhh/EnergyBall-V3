@@ -17,14 +17,18 @@ public class RuntimeSceneSettings
     public float attractionRadiusMultiplier = 1f;
 
     [Header("Hands Attraction")]
+    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
     public float singleHandOpenForceDamper = 1f;
     public float pushForce = 5f;
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
+    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
     public float alignmentVectorStrengthScaler = 1f;
     public float handPushScaler = 1f;
+    public bool prayToActivate = false;
+    public float prayToActivateDistance = 0.65f;
 
     [Header("Intrinsic Pulsation")]
     [Range(0, 10f)]
@@ -38,6 +42,7 @@ public class RuntimeSceneSettings
     public float minimumUnscaledSize = 0.5f;
     [Range(0.0001f, 5f)]
     public float minHandDisplacementPerFrame = 0.01f;
+    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
     public float pulseScaleDamper = 1f;
 
@@ -51,6 +56,25 @@ public class RuntimeSceneSettings
 
     [Header("Animation")]
     public float particleInitializationDelay = 1f;
+
+    [Header("Style")]
+    [SerializeField] private bool _customColors = false;
+    public bool customColors
+    {
+        get => _customColors;
+        set
+        {
+            if (_customColors != value)
+            {
+                _customColors = value;
+                // Notify listeners with the new value so handlers don't depend on
+                // timing of other settings updates.
+                Actions.OnCustomColorsChanged?.Invoke(_customColors);
+            }
+        }
+    }
+    public bool drawSkeleton = false;
+    public bool useTrackingStateColors = true;
 
     [Header("Bloom")]
     public float bloomThreshold = 1.0f;
@@ -88,8 +112,8 @@ public class RuntimeSceneSettings
     [Header("Debugging")]
     public bool dummyOnlyMode = false;
     public bool showSphereMeshOnHandCollision = false;
-    
-    private bool _showAttractionRadius = false;
+
+    [SerializeField] private bool _showAttractionRadius = false;
     public bool showAttractionRadius
     {
         get => _showAttractionRadius;
@@ -103,7 +127,7 @@ public class RuntimeSceneSettings
         }
     }
 
-    private bool _showHandTrailDistorters = false;
+    [SerializeField] private bool _showHandTrailDistorters = false;
     public bool showHandTrailDistorters
     {
         get => _showHandTrailDistorters;
@@ -117,7 +141,7 @@ public class RuntimeSceneSettings
         }
     }
 
-    private bool _showSecondaryAttractor = false;
+    [SerializeField] private bool _showSecondaryAttractor = false;
     public bool showSecondaryAttractor
     {
         get => _showSecondaryAttractor;
@@ -136,73 +160,12 @@ public class RuntimeSceneSettings
         OnAnyDebuggingSettingChanged?.Invoke();
     }
 
+    [System.Obsolete("CopyFromScriptableObject is deprecated. Use SceneController.CopyInspectorToRuntime instead.")]
     public void CopyFromScriptableObject(SceneSettingsSO so)
     {
-        g = so.g;
-        maxTowardsForce = so.maxTowardsForce;
-        maxAwayFromForce = so.maxAwayFromForce;
-        gravityForceDamper = so.gravityForceDamper;
-        stopGravityDistance = so.stopGravityDistance;
-        stopMovingDistance = so.stopMovingDistance;
-        stopVelocity = so.stopVelocity;
-        attractionRadiusMultiplier = so.attractionRadiusMultiplier;
-        forceToMiddle = new AnimationCurve(so.forceToMiddle.keys);
-        singleHandOpenForceDamper = so.singleHandOpenForceDamper;
-        pushForce = so.pushForce;
-        minDrag = so.minDrag;
-        maxDrag = so.maxDrag;
-        alignmentVectorStrength = new AnimationCurve(so.alignmentVectorStrength.keys);
-        alignmentVectorStrengthScaler = so.alignmentVectorStrengthScaler;
-        handPushScaler = so.handPushScaler;
-        pulseAmount = so.pulseAmount;
-        pulseSpeed = so.pulseSpeed;
-        graphLimit = so.graphLimit;
-        pulseFreqs = (float[])so.pulseFreqs.Clone();
-        singleHandScaling = so.singleHandScaling;
-        minimumUnscaledSize = so.minimumUnscaledSize;
-        minHandDisplacementPerFrame = so.minHandDisplacementPerFrame;
-        distanceDamper = new AnimationCurve(so.distanceDamper.keys);
-        pulseScaleDamper = so.pulseScaleDamper;
-        mergeSizeScalerDamper = so.mergeSizeScalerDamper;
-        maxDistanceBetweenHands = so.maxDistanceBetweenHands;
-        baseZDepth = so.baseZDepth;
-        defaultUnscaledSize = so.defaultUnscaledSize;
-        bodyScale = so.bodyScale;
-        maxDistanceFromCamera = so.maxDistanceFromCamera;
-        particleInitializationDelay = so.particleInitializationDelay;
-        // Post-processing defaults (since SO doesn't have these)
-        bloomThreshold = 1.0f;
-        bloomIntensity = 0.5f;
-        bloomScatter = 0.7f;
-        // Lens Flare defaults
-        lensFlareIntensity = 1.0f;
-        lensFlareRegularMultiplier = 1.0f;
-        lensFlareReversedMultiplier = 1.0f;
-        lensFlareStreaksMultiplier = 1.0f;
-        lensFlareStreaksLength = 0.5f;
-        lensFlareStreaksOrientation = 0.0f;
-        lensFlareStreaksThreshold = 0.3f;
-        lensFlareChromaticIntensity = 1.0f;
-        // Lens Distortion defaults
-        lensDistortionIntensity = 0.0f;
-        lensDistortionXMultiplier = 1.0f;
-        lensDistortionYMultiplier = 1.0f;
-        lensDistortionScale = 1.0f;
-        lensDistortionCenterX = 0.5f;
-        lensDistortionCenterY = 0.5f;
-        // Color Adjustments defaults
-        colorAdjustmentsPostExposure = 0.0f;
-        colorAdjustmentsContrast = 0.0f;
-        colorAdjustmentsHueShift = 0.0f;
-        colorAdjustmentsSaturation = 0.0f;
-        // White Balance defaults
-        whiteBalanceTemperature = 0.0f;
-        whiteBalanceTint = 0.0f;
-        dummyOnlyMode = so.dummyOnlyMode;
-        showSphereMeshOnHandCollision = so.showSphereMeshOnHandCollision;
-        _showAttractionRadius = so.showAttractionRadius;
-        _showHandTrailDistorters = so.showHandTrailDistorters;
-        _showSecondaryAttractor = so.showSecondaryAttractor;
+        // This method is kept for backward compatibility but should not be used
+        // Settings are now managed directly in SceneController inspector
+        Debug.LogWarning("CopyFromScriptableObject is deprecated. Settings are now managed in SceneController inspector.");
     }
 
     public RuntimeSceneSettings DeepCopy()
@@ -224,6 +187,8 @@ public class RuntimeSceneSettings
         copy.alignmentVectorStrength = new AnimationCurve(alignmentVectorStrength.keys);
         copy.alignmentVectorStrengthScaler = alignmentVectorStrengthScaler;
         copy.handPushScaler = handPushScaler;
+        copy.prayToActivate = prayToActivate;
+        copy.prayToActivateDistance = prayToActivateDistance;
         copy.pulseAmount = pulseAmount;
         copy.pulseSpeed = pulseSpeed;
         copy.graphLimit = graphLimit;
@@ -264,10 +229,21 @@ public class RuntimeSceneSettings
         copy.whiteBalanceTemperature = whiteBalanceTemperature;
         copy.whiteBalanceTint = whiteBalanceTint;
         copy.dummyOnlyMode = dummyOnlyMode;
+        copy.drawSkeleton = drawSkeleton;
+        copy._customColors = _customColors;
+        copy.useTrackingStateColors = useTrackingStateColors;
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         copy._showAttractionRadius = _showAttractionRadius;
         copy._showHandTrailDistorters = _showHandTrailDistorters;
         copy._showSecondaryAttractor = _showSecondaryAttractor;
         return copy;
+    }
+
+    [System.Obsolete("ApplyCurveSettings is deprecated. Curves are now managed directly in SceneController inspector.")]
+    public void ApplyCurveSettings(CurveSettingsSO curveSettings)
+    {
+        // This method is kept for backward compatibility but should not be used
+        // Curves are now managed directly in SceneController inspector
+        Debug.LogWarning("ApplyCurveSettings is deprecated. Curves are now managed in SceneController inspector.");
     }
 }

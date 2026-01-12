@@ -66,7 +66,7 @@ public class GravityForce
     )
     {
         var runtimeSettings = controller.GetRuntimeSettings();
-        
+
         // F = G * ((m1*m2)/r^2)
         float massProduct = attractor.sphere.mass * player.sphere.mass;
         float unscaledForceMagnitude = massProduct / (distance * distance);

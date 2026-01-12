@@ -8,9 +8,9 @@ namespace Windows.Kinect
     //
     public enum TrackingState : int
     {
-        NotTracked                               =0,
-        Inferred                                 =1,
-        Tracked                                  =2,
+        NotTracked = 0,
+        Inferred = 1,
+        Tracked = 2,
     }
 
 }

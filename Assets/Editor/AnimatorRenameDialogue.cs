@@ -84,7 +84,7 @@ public class AnimatorRenameDialogue : EditorWindow
         }
 
         var selectedObjects = Selection.GetFiltered<GameObject>(SelectionMode.Editable | SelectionMode.ExcludePrefab);
-        
+
         if (selectedObjects == null || selectedObjects.Length != 1)
         {
             return false;
@@ -113,7 +113,7 @@ public class AnimatorRenameDialogue : EditorWindow
         }
 
         var selectedObjects = Selection.GetFiltered<GameObject>(SelectionMode.Editable | SelectionMode.ExcludePrefab);
-        
+
         if (selectedObjects == null || selectedObjects.Length != 1)
         {
             return;
@@ -167,7 +167,7 @@ public class AnimatorRenameDialogue : EditorWindow
         }
 
         m_NewName = EditorGUILayout.TextField(k_NewNameLabel, m_NewName);
-        
+
         if (m_First)
         {
             EditorGUI.FocusTextInControl(k_NameinputID);
@@ -184,18 +184,18 @@ public class AnimatorRenameDialogue : EditorWindow
         using (new EditorGUILayout.HorizontalScope())
         {
             GUILayout.FlexibleSpace();
-            
+
             using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(m_NewName) || m_NewName == m_SelectedObject.name))
             {
                 var color = GUI.color;
                 GUI.color = Color.green;
-                
+
                 if (GUILayout.Button(k_ApplyButtonLabel, k_ButtonHeightOption) || currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Return)
                 {
                     RenameObjectSafe(m_SelectedObject, m_ParentAnimator, m_NewName);
                     m_ShouldClose = true;
                 }
-                
+
                 GUI.color = color;
             }
 

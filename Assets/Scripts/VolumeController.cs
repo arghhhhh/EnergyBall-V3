@@ -15,7 +15,7 @@ public class VolumeController : MonoBehaviour
     private LensDistortion lensDistortion;
     private ColorAdjustments colorAdjustments;
     private WhiteBalance whiteBalance;
-    
+
     // Keys for SessionState persistence
     private const string VOLUME_PATH_KEY = "VolumeController_ProfilePath";
     private const string ORIGINAL_PROFILE_JSON_KEY = "VolumeController_OriginalProfile";
@@ -45,7 +45,7 @@ public class VolumeController : MonoBehaviour
                 }
             }
 #endif
-            
+
             volume.profile.TryGet(out bloom);
             volume.profile.TryGet(out vignette);
             volume.profile.TryGet(out screenSpaceLensFlare);
@@ -58,9 +58,10 @@ public class VolumeController : MonoBehaviour
 #if UNITY_EDITOR
         // Subscribe to play mode state changes to capture settings before exit
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-        
+
         // Delay the original profile capture to ensure InGameSettingsMenu is initialized
-        EditorApplication.delayCall += () => {
+        EditorApplication.delayCall += () =>
+        {
             // First, double-check the asset path
             if (string.IsNullOrEmpty(SessionState.GetString(VOLUME_PATH_KEY, "")))
             {
@@ -73,9 +74,10 @@ public class VolumeController : MonoBehaviour
                     }
                 }
             }
-            
+
             // Then capture the original profile values after everything is initialized
-            EditorApplication.delayCall += () => {
+            EditorApplication.delayCall += () =>
+            {
                 CaptureOriginalProfileValues();
             };
         };
@@ -95,9 +97,12 @@ public class VolumeController : MonoBehaviour
         if (settingsMenu == null)
         {
             // Retry after another delay if the settings menu isn't ready yet
-            EditorApplication.delayCall += () => {
-                EditorApplication.delayCall += () => {
-                    EditorApplication.delayCall += () => {
+            EditorApplication.delayCall += () =>
+            {
+                EditorApplication.delayCall += () =>
+                {
+                    EditorApplication.delayCall += () =>
+                    {
                         CaptureOriginalProfileValues();
                     };
                 };
@@ -121,7 +126,7 @@ public class VolumeController : MonoBehaviour
         {
             return field.GetValue(settingsMenu) as RuntimeSceneSettings;
         }
-        
+
         return null;
     }
 
@@ -132,12 +137,14 @@ public class VolumeController : MonoBehaviour
             // Check if the active profile has been modified and apply changes to Volume Profile
             string volumePath = SessionState.GetString(VOLUME_PATH_KEY, "");
             string originalJson = SessionState.GetString(ORIGINAL_PROFILE_JSON_KEY, "");
-            
+
             if (!string.IsNullOrEmpty(volumePath) && !string.IsNullOrEmpty(originalJson))
             {
                 // Use multiple delay calls to ensure we apply after Unity's restoration
-                EditorApplication.delayCall += () => {
-                    EditorApplication.delayCall += () => {
+                EditorApplication.delayCall += () =>
+                {
+                    EditorApplication.delayCall += () =>
+                    {
                         EditorApplication.delayCall += () => CheckAndApplyProfileChanges();
                     };
                 };
@@ -154,12 +161,12 @@ public class VolumeController : MonoBehaviour
         string volumePath = SessionState.GetString(VOLUME_PATH_KEY, "");
         string originalJson = SessionState.GetString(ORIGINAL_PROFILE_JSON_KEY, "");
         string currentJson = SessionState.GetString(CURRENT_PROFILE_JSON_KEY, "");
-        
+
         if (string.IsNullOrEmpty(volumePath) || string.IsNullOrEmpty(originalJson))
         {
             return;
         }
-        
+
         if (string.IsNullOrEmpty(currentJson))
         {
             return;
@@ -167,7 +174,7 @@ public class VolumeController : MonoBehaviour
 
         var originalSettings = JsonUtility.FromJson<RuntimeSceneSettings>(originalJson);
         var currentSettings = JsonUtility.FromJson<RuntimeSceneSettings>(currentJson);
-        
+
         if (originalSettings == null || currentSettings == null)
         {
             return;
@@ -175,7 +182,7 @@ public class VolumeController : MonoBehaviour
 
         // Check if the profile has been modified (focusing on post-processing values)
         bool hasProfileChanged = HasPostProcessingSettingsChanged(currentSettings, originalSettings);
-        
+
         if (hasProfileChanged)
         {
             ApplySettingsToVolumeProfile(volumePath, currentSettings);
@@ -319,7 +326,7 @@ public class VolumeController : MonoBehaviour
             screenSpaceLensFlare.streaksOrientation.value = settings.lensFlareStreaksOrientation;
             screenSpaceLensFlare.streaksThreshold.value = settings.lensFlareStreaksThreshold;
         }
-        
+
         if (chromaticAberration != null)
         {
             chromaticAberration.intensity.value = settings.lensFlareChromaticIntensity;
@@ -365,7 +372,7 @@ public class VolumeController : MonoBehaviour
         UpdateLensDistortionSettings(settings);
         UpdateColorAdjustmentsSettings(settings);
         UpdateWhiteBalanceSettings(settings);
-        
+
         // Mark the volume profile as dirty so changes persist in the inspector
         MarkVolumeProfileDirty();
     }
@@ -378,7 +385,7 @@ public class VolumeController : MonoBehaviour
         SessionState.SetString(CURRENT_PROFILE_JSON_KEY, currentJson);
     }
 #endif
-    
+
     private void MarkVolumeProfileDirty()
     {
 #if UNITY_EDITOR

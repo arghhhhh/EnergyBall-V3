@@ -8,9 +8,9 @@ namespace Windows.Kinect
     //
     public enum KinectAudioCalibrationState : int
     {
-        Unknown                                  =0,
-        CalibrationRequired                      =1,
-        Calibrated                               =2,
+        Unknown = 0,
+        CalibrationRequired = 1,
+        Calibrated = 2,
     }
 
 }

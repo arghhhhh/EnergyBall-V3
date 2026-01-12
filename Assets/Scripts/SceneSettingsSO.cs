@@ -33,9 +33,7 @@ public class SceneSettingsSO : ScriptableObject
     public float attractionRadiusMultiplier;
 
     [BoxGroup("Hands Attraction")]
-    public AnimationCurve forceToMiddle;
-
-    [BoxGroup("Hands Attraction")]
+    [InfoBox("Curve settings (forceToMiddle, alignmentVectorStrength) are now managed by CurveSettingsSO", EInfoBoxType.Normal)]
     public float singleHandOpenForceDamper;
 
     [BoxGroup("Hands Attraction")]
@@ -48,13 +46,18 @@ public class SceneSettingsSO : ScriptableObject
     public float maxDrag;
 
     [BoxGroup("Hands Attraction")]
-    public AnimationCurve alignmentVectorStrength;
-
-    [BoxGroup("Hands Attraction")]
     public float alignmentVectorStrengthScaler;
 
     [BoxGroup("Hands Attraction")]
     public float handPushScaler;
+
+    [BoxGroup("Hands Attraction")]
+    [Tooltip("When enabled, players must bring their hands together to initialize. When disabled, players start initialized.")]
+    public bool prayToActivate;
+
+    [BoxGroup("Hands Attraction")]
+    [Tooltip("The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled.")]
+    public float prayToActivateDistance = 0.65f;
 
     [BoxGroup("Intrinsic Pulsation")]
     [Range(0, 10f)]
@@ -85,12 +88,7 @@ public class SceneSettingsSO : ScriptableObject
     public float minHandDisplacementPerFrame;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip(
-        "Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands."
-    )]
-    public AnimationCurve distanceDamper;
-
-    [BoxGroup("Movement-Based Pulsation")]
+    [InfoBox("distanceDamper curve is now managed by CurveSettingsSO", EInfoBoxType.Normal)]
     [Tooltip("An overall damper for the movement-based pulsation scaling.")]
     public float pulseScaleDamper;
 
@@ -120,6 +118,12 @@ public class SceneSettingsSO : ScriptableObject
 
     [BoxGroup("Debugging")]
     public bool dummyOnlyMode;
+
+    [BoxGroup("Debugging")]
+    public bool drawSkeleton;
+
+    [BoxGroup("Debugging")]
+    public bool customColors;
 
     [BoxGroup("Debugging")]
     public bool showSphereMeshOnHandCollision;

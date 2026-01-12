@@ -9,6 +9,9 @@ public class DummySceneControl : MonoBehaviour
     public string bothClosedKey = "I";
     public string leftOpenKey = "O";
     public string rightOpenKey = "P";
+    public bool toggleSprites = false;
+    public GameObject leftHandSprite;
+    public GameObject rightHandSprite;
 
     KeyCode bothOpen;
     KeyCode bothClosed;
@@ -27,23 +30,44 @@ public class DummySceneControl : MonoBehaviour
         {
             player.leftHandState = Windows.Kinect.HandState.Open;
             player.rightHandState = Windows.Kinect.HandState.Open;
+            if (toggleSprites)
+            {
+                leftHandSprite.SetActive(true);
+                rightHandSprite.SetActive(true);
+            }
             Debug.Log("Both open");
         }
         if (Input.GetKeyDown(bothClosed))
         {
             player.leftHandState = Windows.Kinect.HandState.Closed;
             player.rightHandState = Windows.Kinect.HandState.Closed;
+            if (toggleSprites)
+            {
+                leftHandSprite.SetActive(false);
+                rightHandSprite.SetActive(false);
+            }
             Debug.Log("Both closed");
         }
         if (Input.GetKeyDown(leftOpen))
         {
             player.leftHandState = Windows.Kinect.HandState.Open;
             player.rightHandState = Windows.Kinect.HandState.Closed;
+            if (toggleSprites)
+            {
+                leftHandSprite.SetActive(true);
+                rightHandSprite.SetActive(false);
+            }
+            rightHandSprite.SetActive(false);
         }
         if (Input.GetKeyDown(rightOpen))
         {
             player.leftHandState = Windows.Kinect.HandState.Closed;
             player.rightHandState = Windows.Kinect.HandState.Open;
+            if (toggleSprites)
+            {
+                leftHandSprite.SetActive(false);
+                rightHandSprite.SetActive(true);
+            }
         }
     }
 

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2234651539841191416}
   - component: {fileID: 6419029310184551883}
   - component: {fileID: 4869669479648392768}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TD1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -125,7 +125,7 @@ GameObject:
   - component: {fileID: 2439710091199555092}
   - component: {fileID: 1630764143817457304}
   - component: {fileID: 4409922664561963768}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: SA
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -286,7 +286,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5284280322123679586}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Trail Distorters
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -323,7 +323,7 @@ GameObject:
   - component: {fileID: 5093652640199930057}
   - component: {fileID: 8294397710766692862}
   - component: {fileID: 52759813028051009}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: TD2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -440,7 +440,7 @@ GameObject:
   - component: {fileID: 4756465954479378574}
   - component: {fileID: 7737343466376449187}
   - component: {fileID: 5806786496177266487}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: VFX
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -651,7 +651,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1218137234878091871}
   - component: {fileID: 2329737165215984701}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Hand_L
   m_TagString: Untagged
   m_Icon: {fileID: 0}

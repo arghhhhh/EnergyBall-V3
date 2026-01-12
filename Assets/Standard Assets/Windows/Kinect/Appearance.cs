@@ -8,7 +8,7 @@ namespace Windows.Kinect
     //
     public enum Appearance : int
     {
-        WearingGlasses                           =0,
+        WearingGlasses = 0,
     }
 
 }

@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.VFX;
 using Windows.Kinect;
 
+[DefaultExecutionOrder(100)]
 public class PlayerConstructor : MonoBehaviour
 {
     [HideInInspector]
@@ -245,6 +246,11 @@ public class PlayerConstructor : MonoBehaviour
         );
         pulseOffset = Random.Range(0, 10) / 10f + Random.Range(0, 10);
         radiusSprite.enabled = false;
+
+        // Set initialized based on prayToActivate setting
+        // If prayToActivate is true, player starts uninitialized and must bring hands together
+        // If prayToActivate is false, player starts initialized
+        initialized = !runtimeSettings.prayToActivate;
 
         if (isDummy)
         {

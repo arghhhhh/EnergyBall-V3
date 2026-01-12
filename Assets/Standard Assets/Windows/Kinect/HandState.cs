@@ -8,11 +8,11 @@ namespace Windows.Kinect
     //
     public enum HandState : int
     {
-        Unknown                                  =0,
-        NotTracked                               =1,
-        Open                                     =2,
-        Closed                                   =3,
-        Lasso                                    =4,
+        Unknown = 0,
+        NotTracked = 1,
+        Open = 2,
+        Closed = 3,
+        Lasso = 4,
     }
 
 }

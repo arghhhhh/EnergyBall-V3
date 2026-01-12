@@ -3,9 +3,20 @@ using Windows.Kinect;
 
 public class HandEffects
 {
-    public void ManageHandEffects(PlayerConstructor player)
+    public void ManageHandEffects(PlayerConstructor player, RuntimeSceneSettings settings)
     {
-        if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open)
+        // Check if hands are brought together to initialize the player
+        if (!player.initialized)
+        {
+            float activationDistance = settings?.prayToActivateDistance ?? 0.7f;
+
+            float handDistance = Vector3.Distance(player.HandLeft.transform.position, player.HandRight.transform.position);
+            if (handDistance < activationDistance)
+            {
+                player.initialized = true;
+            }
+        }
+        if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
             if (timeSinceStateChange > 2.0f)
@@ -15,7 +26,9 @@ public class HandEffects
                     player.StopCoroutine(player.leftHandOpenCoroutine);
                 }
                 player.leftHandOpenCoroutine = player.StartCoroutine(player.PlayLeftHandOpenAnimationDelayed());
-            } else {
+            }
+            else
+            {
                 player.leftHandAnimator.CrossFade(player.openClip.name, 1f);
             }
             player.leftHandVfx.SendEvent("handOpen");
@@ -24,7 +37,7 @@ public class HandEffects
         }
         else if (
             player.leftHandState == HandState.Closed
-            && player.leftHandStateClamped != HandState.Closed
+            && player.leftHandStateClamped != HandState.Closed && (player.isDummy || player.initialized)
         )
         {
             if (player.leftHandOpenCoroutine != null)
@@ -37,7 +50,7 @@ public class HandEffects
             player.leftHandStateClamped = HandState.Closed;
             player.leftHandStateChangeTime = Time.time;
         }
-        if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open)
+        if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.rightHandStateChangeTime;
             if (timeSinceStateChange > 2.0f)
@@ -47,7 +60,9 @@ public class HandEffects
                     player.StopCoroutine(player.rightHandOpenCoroutine);
                 }
                 player.rightHandOpenCoroutine = player.StartCoroutine(player.PlayRightHandOpenAnimationDelayed());
-            } else {
+            }
+            else
+            {
                 player.rightHandAnimator.CrossFade(player.openClip.name, 1f);
             }
             player.rightHandVfx.SendEvent("handOpen");
@@ -56,7 +71,7 @@ public class HandEffects
         }
         else if (
             player.rightHandState == HandState.Closed
-            && player.rightHandStateClamped != HandState.Closed
+            && player.rightHandStateClamped != HandState.Closed && player.initialized
         )
         {
             if (player.rightHandOpenCoroutine != null)
@@ -73,23 +88,30 @@ public class HandEffects
         if (player.leftHandStateClamped == HandState.Closed)
         {
             player.leftHandSecondaryAttractor.position = player.HandLeft.transform.position;
-        } else {
+        }
+        else
+        {
             player.leftHandSecondaryAttractor.position = player.sphere.position;
         }
 
         if (player.rightHandStateClamped == HandState.Closed)
         {
             player.rightHandSecondaryAttractor.position = player.HandRight.transform.position;
-        } else {
+        }
+        else
+        {
             player.rightHandSecondaryAttractor.position = player.sphere.position;
         }
     }
 
     public void ManageHandTrailDistorters(PlayerConstructor player)
     {
+        float sphereRadius = player.sphere.transform.localScale.x / 4f;
+
         // LEFT HAND
         Vector3 leftStart = player.leftHandCollider.position;
-        Vector3 leftEnd = player.sphere.position - player.sphere.transform.forward * player.sphere.transform.localScale.x / 2f;
+        Vector3 directionToLeftHand = (leftStart - player.sphere.position).normalized;
+        Vector3 leftEnd = player.sphere.position + directionToLeftHand * sphereRadius;
         int numDistortersLeft = player.leftHandTrailDistorters.Length;
         for (int i = 0; i < numDistortersLeft; i++)
         {
@@ -113,7 +135,8 @@ public class HandEffects
 
         // RIGHT HAND
         Vector3 rightStart = player.rightHandCollider.position;
-        Vector3 rightEnd = player.sphere.position - player.sphere.transform.forward * player.sphere.transform.localScale.x / 2f;
+        Vector3 directionToRightHand = (rightStart - player.sphere.position).normalized;
+        Vector3 rightEnd = player.sphere.position + directionToRightHand * sphereRadius;
         int numDistortersRight = player.rightHandTrailDistorters.Length;
         for (int i = 0; i < numDistortersRight; i++)
         {

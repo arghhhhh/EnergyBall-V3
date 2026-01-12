@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using Windows.Kinect;
 
+[RequireComponent(typeof(SceneController))]
 public class BodySourceManager : MonoBehaviour
 {
     SceneController controller;
@@ -161,12 +162,7 @@ public class BodySourceManager : MonoBehaviour
 
                 if (ColorTexture != null)
                 {
-                    Graphics.Blit(
-                        _colorTexture2D,
-                        ColorTexture,
-                        new Vector2(1, -1),
-                        new Vector2(0, 0)
-                    );
+                    Graphics.Blit(_colorTexture2D, ColorTexture);
                 }
             }
         }

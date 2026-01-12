@@ -8,7 +8,7 @@ namespace Helper
         private const int E_NOTIMPL = unchecked((int)0x80004001);
         private const int E_OUTOFMEMORY = unchecked((int)0x8007000E);
         private const int E_INVALIDARG = unchecked((int)0x80070057);
-        private const int E_POINTER = unchecked((int) 0x80004003);
+        private const int E_POINTER = unchecked((int)0x80004003);
         private const int E_PENDING = unchecked((int)0x8000000A);
         private const int E_FAIL = unchecked((int)0x80004005);
 

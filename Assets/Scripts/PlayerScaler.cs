@@ -39,7 +39,7 @@ public class PlayerScaler
         )
         {
             var runtimeSettings = controller.GetRuntimeSettings();
-            
+
             // we may want to scale player by each hand independently
             // for example, if left hand is stationary and right hand moves toward left
             // we want to negatively scale the sphere based on the movement of the right hand
@@ -198,7 +198,7 @@ public class PlayerScaler
             Utils.GetVector3Avg(player.unscaledSize) / normal.magnitude
         );
         var runtimeSettings = controller.GetRuntimeSettings();
-        
+
         // larger distance between hands means less scaling
         float relativeHandDistance = Mathf.InverseLerp(
             runtimeSettings.maxDistanceBetweenHands,

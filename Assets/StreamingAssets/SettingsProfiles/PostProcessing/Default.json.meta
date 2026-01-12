@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/StreamingAssets/SettingsProfiles/PostProcessing/Default.json.meta
+guid: 98f1e1c0ae968864abcf92f06a3ab7f1
+========
+guid: f0880a79e85df1b46b1743628d65cb04
+>>>>>>>> master:Assets/StreamingAssets/SettingsProfiles/Dummy Only.json.meta
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
