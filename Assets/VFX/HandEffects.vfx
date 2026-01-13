@@ -116,7 +116,7 @@ MonoBehaviour:
     - model: {fileID: 8926484042661615167}
       id: 0
       isStickyNote: 0
-  - title: Initial Velocity From Hand
+  - title: Spread Direction From Hand
     position:
       serializedVersion: 2
       x: -912
@@ -463,9 +463,9 @@ MonoBehaviour:
   uiBounds:
     serializedVersion: 2
     x: -4032
-    y: -492
-    width: 6426
-    height: 4171
+    y: -493
+    width: 6429
+    height: 4206
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -6059,7 +6059,7 @@ MonoBehaviour:
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
   m_Direction: 0
   m_LinkedSlots:
-  - {fileID: 8926484042661614790}
+  - {fileID: 8926484042661614714}
 --- !u!114 &8926484042661614687
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6811,7 +6811,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":1.0,"y":0.0,"z":0.0}'
+      m_SerializableObject: '{"x":0.0,"y":0.0,"z":0.0}'
     m_Space: -1
   m_Property:
     name: 
@@ -6960,6 +6960,7 @@ MonoBehaviour:
   m_LinkedSlots:
   - {fileID: 8926484042661614748}
   - {fileID: 8926484042661614778}
+  - {fileID: 8926484042661614686}
 --- !u!114 &8926484042661614715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8100,8 +8101,7 @@ MonoBehaviour:
       m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
   m_Direction: 1
-  m_LinkedSlots:
-  - {fileID: 8926484042661614686}
+  m_LinkedSlots: []
 --- !u!114 &8926484042661614791
 MonoBehaviour:
   m_ObjectHideFlags: 0

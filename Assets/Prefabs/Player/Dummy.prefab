@@ -52,6 +52,8 @@ SpriteRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -73,6 +75,7 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -139,6 +142,8 @@ SpriteRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -160,6 +165,7 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -292,6 +298,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4994579744909225158, guid: 0fc75339efa2573449288aa1d5103dca,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.z
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994579744909225158, guid: 0fc75339efa2573449288aa1d5103dca,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
+      value: -2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994579744909225158, guid: 0fc75339efa2573449288aa1d5103dca,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.z
+      value: 19
+      objectReference: {fileID: 0}
     - target: {fileID: 5747487426580385323, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.size
@@ -330,6 +351,21 @@ PrefabInstance:
     - target: {fileID: 7357197439812592060, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_LocalPosition.z
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 7710126860832210582, guid: 0fc75339efa2573449288aa1d5103dca,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.z
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 7710126860832210582, guid: 0fc75339efa2573449288aa1d5103dca,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7710126860832210582, guid: 0fc75339efa2573449288aa1d5103dca,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.z
       value: 19
       objectReference: {fileID: 0}
     - target: {fileID: 8045977362264920212, guid: 0fc75339efa2573449288aa1d5103dca,
@@ -424,6 +460,9 @@ MonoBehaviour:
   bothClosedKey: I
   leftOpenKey: O
   rightOpenKey: P
+  toggleSprites: 0
+  leftHandSprite: {fileID: 5256863669820484436}
+  rightHandSprite: {fileID: 4131855537418956349}
 --- !u!114 &7904353339162769027
 MonoBehaviour:
   m_ObjectHideFlags: 0

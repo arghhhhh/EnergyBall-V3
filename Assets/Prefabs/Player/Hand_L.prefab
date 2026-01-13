@@ -521,11 +521,11 @@ VFXRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3345979663395997395}
   m_Enabled: 1
-  m_CastShadows: 0
+  m_CastShadows: 1
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
-  m_MotionVectors: 0
+  m_MotionVectors: 1
   m_LightProbeUsage: 0
   m_ReflectionProbeUsage: 0
   m_RayTracingMode: 0
@@ -608,7 +608,7 @@ MonoBehaviour:
   Space: 0
   m_Property:
     m_Name: TD1
-  Target: {fileID: 7445762037446178430}
+  Target: {fileID: 6658030362988920851}
 --- !u!114 &7737343466376449187
 MonoBehaviour:
   m_ObjectHideFlags: 0

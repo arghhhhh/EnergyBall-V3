@@ -214,6 +214,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -255,6 +256,12 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 21438987}
   m_CullTransparentMesh: 1
+--- !u!1 &29984536 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 866041019225589245, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+    type: 3}
+  m_PrefabInstance: {fileID: 1799726306}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &118562677
 GameObject:
   m_ObjectHideFlags: 0
@@ -601,6 +608,12 @@ LightingSettings:
   m_PVRFilteringAtrousPositionSigmaIndirect: 2
   m_PVRFilteringAtrousPositionSigmaAO: 1
   m_RespectSceneVisibilityWhenBakingGI: 0
+--- !u!1 &1771398220 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5922806509525901044, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+    type: 3}
+  m_PrefabInstance: {fileID: 1799726306}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1790478698
 GameObject:
   m_ObjectHideFlags: 0
@@ -671,6 +684,8 @@ MonoBehaviour:
   maxDrag: 5
   alignmentVectorStrengthScaler: 1
   handPushScaler: 1
+  prayToActivate: 0
+  prayToActivateDistance: 0.65
   pulseAmount: 1
   pulseSpeed: 1
   graphLimit: 10
@@ -1024,7 +1039,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  dummyOnlyMode: 0
+  dummyOnlyMode: 1
   drawSkeleton: 1
   showSphereMeshOnHandCollision: 0
   showAttractionRadius: 0
@@ -1193,6 +1208,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Overridden
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 112230002000421963, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: Space
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 866041019225627101, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -1759,6 +1779,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Collider
       objectReference: {fileID: 0}
+    - target: {fileID: 6669253669967695172, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: toggleSprites
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6820096119654865522, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Name
@@ -1771,6 +1796,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
       value: 2.5
       objectReference: {fileID: 0}
@@ -1778,6 +1808,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.y
       value: -3.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -1801,13 +1836,43 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
+      propertyPath: hand
+      value: 
+      objectReference: {fileID: 1771398220}
+    - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: upKey
+      value: Keypad5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: downKey
+      value: Keypad2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: leftKey
+      value: Keypad1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: rightKey
+      value: Keypad3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.y
       value: -3.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -1818,6 +1883,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.y
       value: -3.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8364963012721092218, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -1951,8 +2021,33 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
+      propertyPath: hand
+      value: 
+      objectReference: {fileID: 29984536}
+    - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: upKey
+      value: G
+      objectReference: {fileID: 0}
+    - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: downKey
+      value: B
+      objectReference: {fileID: 0}
+    - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: leftKey
+      value: V
+      objectReference: {fileID: 0}
+    - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: rightKey
+      value: N
+      objectReference: {fileID: 0}
+    - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2257,8 +2352,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
       value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834162626181111294, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2277,8 +2382,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[3].m_Value.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.x
       value: -2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8176358672498397102, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[5].m_Value.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8520687989672682953, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
