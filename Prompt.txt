@@ -1,8 +1,11 @@
 Prompt:
-
+great. However, I need to also add guardrails to the metaball corresponding to the player position when the player position leaves the bounds. It's imperitive that SetMetaballPosition in MetaballsToSDF never sets the metaball to a position outside that's completely out of bounds because that would cause the metaball to stop being included as part of the generated SDF. It's critical the metaball stays included in the SDF becausse the particles in the VFX graph are attracted to the metaball, and when it disappears entirely chaos ensues. So here's what I'm thinking. Can we freeze the metaball position on the edge of the grid boundaries when the player its position corresponds to exits the grid entirely? I'm thinking we do something analogous to shooting a ray from the center of the player’s hands to the position of the player sphere, and position the metaball based on where that ray intersects the grid. This will ensure the metaball always partially stays in bounds so long as a player is active in the scene. The goal is to freeze the metaball on the grid boundary, not outside the grid boundary. Using our current IsInbounds logic will probably suffice for determining the moment we first reposition the metaball. 
 
 Files:
-
+@Assets\Scripts\PlayerConstructor.cs
+@Assets\Scripts\HandEffects.cs
+@Assets\Scripts\Metaballs\MetaballsToSDF.cs
+@SceneController.UpdateOtherPlayerData
 
 Log:
 ```
