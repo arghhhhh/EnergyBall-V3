@@ -1,7 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts;
-using Klak.Motion;
 using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.VFX;
@@ -203,6 +203,9 @@ public class PlayerConstructor : MonoBehaviour
     public Color skeletonColor;
     public bool isDummy = false;
 
+    [HideInInspector]
+    public bool wasInBounds = true;
+
     private void Awake()
     {
         jointMap = new Dictionary<JointType, GameObject>()
@@ -244,7 +247,7 @@ public class PlayerConstructor : MonoBehaviour
             runtimeSettings.defaultUnscaledSize,
             runtimeSettings.defaultUnscaledSize
         );
-        pulseOffset = Random.Range(0, 10) / 10f + Random.Range(0, 10);
+        pulseOffset = UnityEngine.Random.Range(0, 10) / 10f + UnityEngine.Random.Range(0, 10);
         radiusSprite.enabled = false;
 
         // Set initialized based on prayToActivate setting
@@ -283,23 +286,6 @@ public class PlayerConstructor : MonoBehaviour
 
         rightHandOpenCoroutine = null;
     }
-
-    // public void InitializeParticles()
-    // {
-    //     StartCoroutine(DelayInitialization(controller.so.particleInitializationDelay));
-    // }
-
-    // private IEnumerator DelayInitialization(float delay)
-    // {
-    //     yield return new WaitForSeconds(delay);
-
-    //     vfxAnimator.Play(initializeClip.name, -1, 0f);
-
-    //     yield return new WaitForSeconds(initializeClip.length);
-
-    //     initialized = true;
-    //     turnOnParticles = true;
-    // }
 
     public void SetAttractionRadius()
     {
@@ -400,6 +386,26 @@ public class PlayerConstructor : MonoBehaviour
         {
             sphere.transform.localScale = unscaledSize + intrinsicPulseSize;
         }
+    }
+
+    public bool IsInbounds()
+    {
+        Vector3 bounds = leftHandVfx.GetVector3("sdfScale") / 2f;
+        Vector3 pos = sphere.transform.position;
+        var runtimeSettings = controller.GetRuntimeSettings();
+        Debug.Log(bounds);
+        if (
+            pos.x < -bounds.x
+            || pos.x > bounds.x
+            || pos.y < -bounds.y
+            || pos.y > bounds.y
+            || pos.z - runtimeSettings.baseZDepth < -bounds.z
+            || pos.z - runtimeSettings.baseZDepth > bounds.z
+        )
+        {
+            return false;
+        }
+        return true;
     }
 
     private void OnDisable()

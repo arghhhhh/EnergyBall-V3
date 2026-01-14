@@ -16,6 +16,58 @@ public class HandEffects
                 player.initialized = true;
             }
         }
+
+        // // Check if player is in bounds and handle out-of-bounds override
+        bool isInBounds = player.IsInbounds();
+        bool justWentOutOfBounds = player.wasInBounds && !isInBounds;
+        player.wasInBounds = isInBounds;
+
+        player.leftHandVfx.SetBool("isInBounds", isInBounds);
+        player.rightHandVfx.SetBool("isInBounds", isInBounds);
+
+        // If player just went out of bounds, force hands to close
+        if (justWentOutOfBounds)
+        {
+            // Force left hand to closed state
+            if (player.leftHandStateClamped != HandState.Closed)
+            {
+                if (player.leftHandOpenCoroutine != null)
+                {
+                    player.StopCoroutine(player.leftHandOpenCoroutine);
+                    player.leftHandOpenCoroutine = null;
+                }
+                player.leftHandAnimator.CrossFade(player.closedClip.name, 1f);
+                player.leftHandVfx.SendEvent("handClose");
+                player.leftHandStateClamped = HandState.Closed;
+                player.leftHandStateChangeTime = Time.time;
+            }
+
+            // Force right hand to closed state
+            if (player.rightHandStateClamped != HandState.Closed)
+            {
+                if (player.rightHandOpenCoroutine != null)
+                {
+                    player.StopCoroutine(player.rightHandOpenCoroutine);
+                    player.rightHandOpenCoroutine = null;
+                }
+                player.rightHandAnimator.CrossFade(player.closedClip.name, 1f);
+                player.rightHandVfx.SendEvent("handClose");
+                player.rightHandStateClamped = HandState.Closed;
+                player.rightHandStateChangeTime = Time.time;
+            }
+        }
+
+        // If player is out of bounds, keep hands closed regardless of actual hand state
+        if (!isInBounds)
+        {
+            // Keep hands closed - don't process normal hand state logic below
+            // Update secondary attractors for closed state
+            player.leftHandSecondaryAttractor.position = player.HandLeft.transform.position;
+            player.rightHandSecondaryAttractor.position = player.HandRight.transform.position;
+            return;
+        }
+
+        // Normal hand state processing (only when in bounds)
         if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
