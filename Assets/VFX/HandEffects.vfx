@@ -477,6 +477,17 @@ MonoBehaviour:
     contents: Hide particles outside the bounds of the Metaball box
     theme: Classic
     textSize: Small
+  - title: For now
+    position:
+      serializedVersion: 2
+      x: 2442
+      y: 1505
+      width: 178
+      height: 100
+    contents: this should prevent the particles from having nowhere to go when the
+      body exits the sdf bounds
+    theme: Classic
+    textSize: Small
   categories: []
   uiBounds:
     serializedVersion: 2
@@ -18588,7 +18599,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 2282, y: 1681}
+  m_UIPosition: {x: 2282, y: 1671}
   m_UICollapsed: 0
   m_UISuperCollapsed: 1
   m_InputSlots:
@@ -18637,7 +18648,7 @@ MonoBehaviour:
         PublicKeyToken=b77a5c561934e089
   m_Direction: 0
   m_LinkedSlots:
-  - {fileID: 8926484042661615408}
+  - {fileID: 8926484042661616334}
 --- !u!114 &8926484042661615402
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18835,11 +18846,6 @@ MonoBehaviour:
   m_Direction: 1
   m_LinkedSlots:
   - {fileID: 8926484042661616332}
-  - {fileID: 8926484042661615462}
-  - {fileID: 8926484042661615410}
-  - {fileID: 8926484042661615436}
-  - {fileID: 8926484042661615381}
-  - {fileID: 8926484042661616361}
 --- !u!114 &8926484042661615409
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18855,7 +18861,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 2282, y: 1592}
+  m_UIPosition: {x: 2282, y: 1575}
   m_UICollapsed: 0
   m_UISuperCollapsed: 1
   m_InputSlots:
@@ -18904,7 +18910,7 @@ MonoBehaviour:
         PublicKeyToken=b77a5c561934e089
   m_Direction: 0
   m_LinkedSlots:
-  - {fileID: 8926484042661615408}
+  - {fileID: 8926484042661616334}
 --- !u!114 &8926484042661615431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19107,7 +19113,7 @@ MonoBehaviour:
         PublicKeyToken=b77a5c561934e089
   m_Direction: 0
   m_LinkedSlots:
-  - {fileID: 8926484042661615408}
+  - {fileID: 8926484042661616334}
 --- !u!114 &8926484042661615457
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19310,7 +19316,7 @@ MonoBehaviour:
         PublicKeyToken=b77a5c561934e089
   m_Direction: 0
   m_LinkedSlots:
-  - {fileID: 8926484042661615408}
+  - {fileID: 8926484042661616334}
 --- !u!114 &8926484042661615483
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34710,7 +34716,12 @@ MonoBehaviour:
       m_SerializableType: System.UInt32, mscorlib, Version=4.0.0.0, Culture=neutral,
         PublicKeyToken=b77a5c561934e089
   m_Direction: 1
-  m_LinkedSlots: []
+  m_LinkedSlots:
+  - {fileID: 8926484042661616361}
+  - {fileID: 8926484042661615462}
+  - {fileID: 8926484042661615436}
+  - {fileID: 8926484042661615410}
+  - {fileID: 8926484042661615381}
 --- !u!114 &8926484042661616350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34901,7 +34912,7 @@ MonoBehaviour:
         PublicKeyToken=b77a5c561934e089
   m_Direction: 0
   m_LinkedSlots:
-  - {fileID: 8926484042661615408}
+  - {fileID: 8926484042661616334}
 --- !u!114 &8926484042661616365
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -390,22 +390,91 @@ public class PlayerConstructor : MonoBehaviour
 
     public bool IsInbounds()
     {
+        return IsInbounds(sphere.transform.position);
+    }
+
+    public bool IsInbounds(Vector3 position)
+    {
         Vector3 bounds = leftHandVfx.GetVector3("sdfScale") / 2f;
-        Vector3 pos = sphere.transform.position;
         var runtimeSettings = controller.GetRuntimeSettings();
-        Debug.Log(bounds);
-        if (
-            pos.x < -bounds.x
-            || pos.x > bounds.x
-            || pos.y < -bounds.y
-            || pos.y > bounds.y
-            || pos.z - runtimeSettings.baseZDepth < -bounds.z
-            || pos.z - runtimeSettings.baseZDepth > bounds.z
-        )
+
+        Vector3 gridMin = new(-bounds.x, -bounds.y, -bounds.z + runtimeSettings.baseZDepth);
+        Vector3 gridMax = new(bounds.x, bounds.y, bounds.z + runtimeSettings.baseZDepth);
+
+        return position.x >= gridMin.x && position.x <= gridMax.x &&
+               position.y >= gridMin.y && position.y <= gridMax.y &&
+               position.z >= gridMin.z && position.z <= gridMax.z;
+    }
+
+    public Vector3 GetClampedMetaballPosition()
+    {
+        Vector3 spherePos = sphere.transform.position;
+
+        // If in bounds, return the actual sphere position
+        if (IsInbounds())
         {
-            return false;
+            return spherePos;
         }
-        return true;
+
+        // Calculate the midpoint between the two hands as the ray origin
+        Vector3 handMidpoint = (HandLeft.transform.position + HandRight.transform.position) / 2f;
+
+        // Direction from hand midpoint to sphere
+        Vector3 direction = (spherePos - handMidpoint).normalized;
+
+        // Get grid boundaries
+        Vector3 bounds = leftHandVfx.GetVector3("sdfScale") / 2f;
+        var runtimeSettings = controller.GetRuntimeSettings();
+
+        // Adjust bounds for Z-depth offset
+        Vector3 gridMin = new(-bounds.x, -bounds.y, -bounds.z + runtimeSettings.baseZDepth);
+        Vector3 gridMax = new(bounds.x, bounds.y, bounds.z + runtimeSettings.baseZDepth);
+
+        // Perform ray-box intersection to find where the ray intersects the grid boundary
+        // We'll find the furthest point along the ray from handMidpoint that stays within bounds
+        float tMax = float.MaxValue;
+
+        // Check intersection with each axis-aligned plane
+        for (int axis = 0; axis < 3; axis++)
+        {
+            if (Mathf.Abs(direction[axis]) > 0.0001f)
+            {
+                // Check intersection with min plane
+                float tMin = (gridMin[axis] - handMidpoint[axis]) / direction[axis];
+                if (tMin > 0 && tMin < tMax)
+                {
+                    Vector3 intersectionPoint = handMidpoint + direction * tMin;
+                    if (IsInbounds(intersectionPoint))
+                    {
+                        tMax = tMin;
+                    }
+                }
+
+                // Check intersection with max plane
+                float tMaxPlane = (gridMax[axis] - handMidpoint[axis]) / direction[axis];
+                if (tMaxPlane > 0 && tMaxPlane < tMax)
+                {
+                    Vector3 intersectionPoint = handMidpoint + direction * tMaxPlane;
+                    if (IsInbounds(intersectionPoint))
+                    {
+                        tMax = tMaxPlane;
+                    }
+                }
+            }
+        }
+
+        // If we found an intersection, return that point
+        if (tMax < float.MaxValue)
+        {
+            return handMidpoint + direction * tMax;
+        }
+
+        // Fallback: clamp the sphere position to the grid boundaries
+        return new Vector3(
+            Mathf.Clamp(spherePos.x, gridMin.x, gridMax.x),
+            Mathf.Clamp(spherePos.y, gridMin.y, gridMax.y),
+            Mathf.Clamp(spherePos.z, gridMin.z, gridMax.z)
+        );
     }
 
     private void OnDisable()

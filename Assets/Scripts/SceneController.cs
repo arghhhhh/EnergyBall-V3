@@ -445,7 +445,7 @@ public class SceneController : MonoBehaviour
         {
             metaballsToSDF.SetMetaballPosition(
                 playerConstructor.metaballIndex,
-                playerConstructor.sphere.transform.position
+                playerConstructor.GetClampedMetaballPosition()
             );
             metaballsToSDF.SetMetaballRadius(
                 playerConstructor.metaballIndex,
