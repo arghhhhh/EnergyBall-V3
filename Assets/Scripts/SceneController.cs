@@ -12,51 +12,68 @@ using Joint = Windows.Kinect.Joint;
 public class SceneController : MonoBehaviour
 {
     public static SceneController Instance { get; private set; } // singleton pattern
-
     #region Inspector Settings
     [BoxGroup("Gravity Attraction")]
     public float g = 9.81f;
+
     [BoxGroup("Gravity Attraction")]
     public float maxTowardsForce = 10f;
+
     [BoxGroup("Gravity Attraction")]
     public float maxAwayFromForce = 10f;
+
     [BoxGroup("Gravity Attraction")]
     public float gravityForceDamper = 1f;
+
     [BoxGroup("Gravity Attraction")]
     public float stopGravityDistance = 0.1f;
+
     [BoxGroup("Gravity Attraction")]
     public float stopMovingDistance = 0.05f;
+
     [BoxGroup("Gravity Attraction")]
     public float stopVelocity = 0.1f;
+
     [BoxGroup("Gravity Attraction")]
     public float attractionRadiusMultiplier = 1f;
 
     [BoxGroup("Hands Attraction")]
-    [InfoBox("Curve settings (forceToMiddle, alignmentVectorStrength) are managed separately below", EInfoBoxType.Normal)]
+    [InfoBox(
+        "Curve settings (forceToMiddle, alignmentVectorStrength) are managed separately below",
+        EInfoBoxType.Normal
+    )]
     public float singleHandOpenForceDamper = 1f;
 
-    [BoxGroup("Boundary Force")]
-    [Tooltip("Multiplier for the soft spring force that pushes the sphere back when it exceeds max distance from hands. Set to 0 to disable.")]
-    public float boundaryForceMultiplier = 50f;
-    [BoxGroup("Boundary Force")]
-    [Tooltip("Multiplier for max distance calculation. Max distance = this * (longest grid side / 2).")]
+    [BoxGroup("Boundary Drag")]
+    [Tooltip(
+        "Multiplier for max distance calculation. Max distance = this * (longest grid side / 2)."
+    )]
     public float boundaryDistanceMultiplier = 1.5f;
-    [BoxGroup("Boundary Force")]
-    [Tooltip("Extra drag applied when sphere is moving away from hands while past the boundary. Helps slow down rapid escape.")]
-    public float boundaryOutwardDrag = 10f;
+
+    [BoxGroup("Boundary Drag")]
+    [Tooltip(
+        "Drag applied to stop the sphere when moving away from hands while past the boundary. Set to 0 to disable."
+    )]
+    public float boundaryOutwardDrag = 50f;
 
     [BoxGroup("Hands Attraction")]
     public float pushForce = 5f;
+
     [BoxGroup("Hands Attraction")]
     public float minDrag = 0.1f;
+
     [BoxGroup("Hands Attraction")]
     public float maxDrag = 5f;
+
     [BoxGroup("Hands Attraction")]
     public float alignmentVectorStrengthScaler = 1f;
+
     [BoxGroup("Hands Attraction")]
     public float handPushScaler = 1f;
+
     [BoxGroup("Hands Attraction")]
     public bool prayToActivate = false;
+
     [BoxGroup("Hands Attraction")]
     [ShowIf("prayToActivate")]
     public float prayToActivateDistance = 0.65f;
@@ -64,23 +81,31 @@ public class SceneController : MonoBehaviour
     [BoxGroup("Intrinsic Pulsation")]
     [Range(0, 10f)]
     public float pulseAmount = 1f;
+
     [BoxGroup("Intrinsic Pulsation")]
     public float pulseSpeed = 1f;
+
     [BoxGroup("Intrinsic Pulsation")]
     public float graphLimit = 10f;
+
     [BoxGroup("Intrinsic Pulsation")]
     public float[] pulseFreqs = new float[] { 1f, 2f, 3f };
 
     [BoxGroup("Movement-Based Pulsation")]
     [Tooltip("Allow scaling to occur with only one hand's velocity.")]
     public bool singleHandScaling = true;
+
     [BoxGroup("Movement-Based Pulsation")]
     [Tooltip("The minimum size that the body can scale down to.")]
     public float minimumUnscaledSize = 0.5f;
+
     [BoxGroup("Movement-Based Pulsation")]
     [Range(0.0001f, 5f)]
-    [Tooltip("Used to mask false velocity readings due to position jitter from inaccurate sensor readings.")]
+    [Tooltip(
+        "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
+    )]
     public float minHandDisplacementPerFrame = 0.01f;
+
     [BoxGroup("Movement-Based Pulsation")]
     [InfoBox("distanceDamper curve is managed separately below", EInfoBoxType.Normal)]
     [Tooltip("An overall damper for the movement-based pulsation scaling.")]
@@ -89,46 +114,61 @@ public class SceneController : MonoBehaviour
     [BoxGroup("Miscellaneous")]
     [Tooltip("A damper for the scaling that occurs when multiple bodies merge together.")]
     public float mergeSizeScalerDamper = 1f;
+
     [BoxGroup("Miscellaneous")]
     public float maxDistanceBetweenHands = 2f;
+
     [BoxGroup("Miscellaneous")]
     public float baseZDepth = 5f;
+
     [BoxGroup("Miscellaneous")]
     public float defaultUnscaledSize = 1f;
+
     [BoxGroup("Miscellaneous")]
     public float bodyScale = 1f;
+
     [BoxGroup("Miscellaneous")]
     public float maxDistanceFromCamera = 10f;
 
     [BoxGroup("Animation")]
-    [Tooltip("The amount of time it takes for the particle initialization animation to play once a new player is added to the scene.")]
+    [Tooltip(
+        "The amount of time it takes for the particle initialization animation to play once a new player is added to the scene."
+    )]
     public float particleInitializationDelay = 1f;
 
     [Header("Curve Settings")]
     [BoxGroup("Hands Attraction Curves")]
     [Tooltip("Force curve that controls attraction to the middle point between hands")]
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
+
     [BoxGroup("Hands Attraction Curves")]
     [Tooltip("Alignment vector strength curve based on hand distance")]
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
+
     [BoxGroup("Movement-Based Pulsation Curves")]
-    [Tooltip("Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands")]
+    [Tooltip(
+        "Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands"
+    )]
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
 
     [BoxGroup("Style Settings")]
     public bool customColors = false;
+
     [BoxGroup("Style Settings")]
     [HideIf("customColors")]
     [Tooltip("Use tracking state colors for the skeleton")]
     public bool useTrackingStateColors = true;
+
     [BoxGroup("Style Settings")]
     [HideIf(EConditionOperator.Or, "customColors", "useTrackingStateColors")]
     public Color skeletonColor = Color.magenta;
+
     [BoxGroup("Style Settings")]
     [HideIf("customColors")]
     [GradientUsage(true)]
     public Gradient particleColor = new();
     private int lastColorIndex;
+
     [ShowIf("customColors")]
     [BoxGroup("Style Settings")]
     public Color[] skeletonColors = new Color[]
@@ -138,9 +178,10 @@ public class SceneController : MonoBehaviour
         Color.green,
         Color.magenta,
         Color.red,
-        new (1, 0.5f, 0),
+        new(1, 0.5f, 0),
         Color.yellow
     };
+
     [ShowIf("customColors")]
     [BoxGroup("Style Settings")]
     [GradientUsage(true)]
@@ -158,14 +199,19 @@ public class SceneController : MonoBehaviour
     [Header("Debugging")]
     [BoxGroup("Debugging")]
     public bool dummyOnlyMode = false;
+
     [BoxGroup("Debugging")]
     public bool drawSkeleton = false;
+
     [BoxGroup("Debugging")]
     public bool showSphereMeshOnHandCollision = false;
+
     [BoxGroup("Debugging")]
     public bool showAttractionRadius = false;
+
     [BoxGroup("Debugging")]
     public bool showHandTrailDistorters = false;
+
     [BoxGroup("Debugging")]
     public bool showSecondaryAttractor = false;
     #endregion
@@ -315,7 +361,6 @@ public class SceneController : MonoBehaviour
     {
         // Perform full sync after all components are initialized
         SyncInspectorToRuntime();
-
     }
 
     /// <summary>
@@ -422,7 +467,6 @@ public class SceneController : MonoBehaviour
             player.leftHandVfx.SetGradient("playerAuraBase", particleColor);
             player.rightHandVfx.SetGradient("playerAuraBase", particleColor);
         }
-
     }
 
     void SetPlayerHandStates(Body body, PlayerConstructor player)
@@ -464,7 +508,7 @@ public class SceneController : MonoBehaviour
                 playerConstructor.metaballIndex,
                 playerConstructor.sphere.transform.localScale.x / 2f
             );
-            // TEMPLATE: Add metaballs for each hand 
+            // TEMPLATE: Add metaballs for each hand
             //
             // metaballsToSDF.SetMetaballPosition(
             //     playerConstructor.metaballIndex + 1,
@@ -659,7 +703,8 @@ public class SceneController : MonoBehaviour
     /// <summary>
     /// Gets the current cached settings. Use this instead of GetCurrentSettings() for performance.
     /// </summary>
-    public RuntimeSceneSettings CurrentSettings => cachedCurrentSettings ?? (cachedCurrentSettings = GetCurrentSettings());
+    public RuntimeSceneSettings CurrentSettings =>
+        cachedCurrentSettings ?? (cachedCurrentSettings = GetCurrentSettings());
 
     private RuntimeSceneSettings CreateFallbackSettings()
     {
@@ -687,8 +732,7 @@ public class SceneController : MonoBehaviour
         target.forceToMiddle = new AnimationCurve(forceToMiddle.keys);
         target.singleHandOpenForceDamper = singleHandOpenForceDamper;
 
-        // Boundary Force
-        target.boundaryForceMultiplier = boundaryForceMultiplier;
+        // Boundary Drag
         target.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
         target.boundaryOutwardDrag = boundaryOutwardDrag;
 
@@ -752,8 +796,7 @@ public class SceneController : MonoBehaviour
         forceToMiddle = new AnimationCurve(source.forceToMiddle.keys);
         singleHandOpenForceDamper = source.singleHandOpenForceDamper;
 
-        // Boundary Force
-        boundaryForceMultiplier = source.boundaryForceMultiplier;
+        // Boundary Drag
         boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
         boundaryOutwardDrag = source.boundaryOutwardDrag;
 
@@ -841,17 +884,16 @@ public class SceneController : MonoBehaviour
         {
             volumeController.ApplyCurrentSettings(newSettings);
         }
-
     }
 
     private void OnCustomColorsChanged(bool enabled)
     {
         foreach (var player in players.Values)
         {
-            if (player == null) continue;
+            if (player == null)
+                continue;
             var pc = player.GetComponent<PlayerConstructor>();
             ChoosePlayerColor(pc);
-
         }
     }
 
@@ -966,4 +1008,3 @@ public class SceneController : MonoBehaviour
     }
     #endregion
 }
-

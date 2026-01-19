@@ -234,9 +234,19 @@ namespace MarchingCubes
 
         /// <summary>
         /// Returns the size of the marching cubes grid in world units.
+        /// At runtime, returns the cached sizeBox. In edit mode, calculates from serialized fields.
         /// </summary>
         public Vector3 GetGridSize()
         {
+            // If sizeBox hasn't been initialized (edit mode), calculate from serialized fields
+            if (sizeBox == Vector3.zero)
+            {
+                return new Vector3(
+                    _dimensions.x * _gridScale,
+                    _dimensions.y * _gridScale,
+                    _dimensions.z * _gridScale
+                );
+            }
             return sizeBox;
         }
 

@@ -21,16 +21,20 @@ public class RuntimeSceneSettings
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
     public float singleHandOpenForceDamper = 1f;
 
-    [Header("Boundary Force")]
-    [Tooltip("Multiplier for the soft spring force that pushes the sphere back when it exceeds max distance from hands. Set to 0 to disable.")]
-    public float boundaryForceMultiplier = 50f;
-    [Tooltip("Multiplier for max distance calculation. Max distance = this * (longest grid side / 2).")]
+    [Header("Boundary Drag")]
+    [Tooltip(
+        "Multiplier for max distance calculation. Max distance = this * (longest grid side / 2)."
+    )]
     public float boundaryDistanceMultiplier = 1.5f;
-    [Tooltip("Extra drag applied when sphere is moving away from hands while past the boundary. Helps slow down rapid escape.")]
-    public float boundaryOutwardDrag = 10f;
+
+    [Tooltip(
+        "Drag applied to stop the sphere when moving away from hands while past the boundary. Set to 0 to disable."
+    )]
+    public float boundaryOutwardDrag = 50f;
     public float pushForce = 5f;
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
+
     [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
     public float alignmentVectorStrengthScaler = 1f;
@@ -48,8 +52,10 @@ public class RuntimeSceneSettings
     [Header("Movement-Based Pulsation")]
     public bool singleHandScaling = true;
     public float minimumUnscaledSize = 0.5f;
+
     [Range(0.0001f, 5f)]
     public float minHandDisplacementPerFrame = 0.01f;
+
     [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
     public float pulseScaleDamper = 1f;
@@ -66,7 +72,8 @@ public class RuntimeSceneSettings
     public float particleInitializationDelay = 1f;
 
     [Header("Style")]
-    [SerializeField] private bool _customColors = false;
+    [SerializeField]
+    private bool _customColors = false;
     public bool customColors
     {
         get => _customColors;
@@ -121,7 +128,8 @@ public class RuntimeSceneSettings
     public bool dummyOnlyMode = false;
     public bool showSphereMeshOnHandCollision = false;
 
-    [SerializeField] private bool _showAttractionRadius = false;
+    [SerializeField]
+    private bool _showAttractionRadius = false;
     public bool showAttractionRadius
     {
         get => _showAttractionRadius;
@@ -135,7 +143,8 @@ public class RuntimeSceneSettings
         }
     }
 
-    [SerializeField] private bool _showHandTrailDistorters = false;
+    [SerializeField]
+    private bool _showHandTrailDistorters = false;
     public bool showHandTrailDistorters
     {
         get => _showHandTrailDistorters;
@@ -149,7 +158,8 @@ public class RuntimeSceneSettings
         }
     }
 
-    [SerializeField] private bool _showSecondaryAttractor = false;
+    [SerializeField]
+    private bool _showSecondaryAttractor = false;
     public bool showSecondaryAttractor
     {
         get => _showSecondaryAttractor;
@@ -168,12 +178,16 @@ public class RuntimeSceneSettings
         OnAnyDebuggingSettingChanged?.Invoke();
     }
 
-    [System.Obsolete("CopyFromScriptableObject is deprecated. Use SceneController.CopyInspectorToRuntime instead.")]
+    [System.Obsolete(
+        "CopyFromScriptableObject is deprecated. Use SceneController.CopyInspectorToRuntime instead."
+    )]
     public void CopyFromScriptableObject(SceneSettingsSO so)
     {
         // This method is kept for backward compatibility but should not be used
         // Settings are now managed directly in SceneController inspector
-        Debug.LogWarning("CopyFromScriptableObject is deprecated. Settings are now managed in SceneController inspector.");
+        Debug.LogWarning(
+            "CopyFromScriptableObject is deprecated. Settings are now managed in SceneController inspector."
+        );
     }
 
     public RuntimeSceneSettings DeepCopy()
@@ -189,7 +203,6 @@ public class RuntimeSceneSettings
         copy.attractionRadiusMultiplier = attractionRadiusMultiplier;
         copy.forceToMiddle = new AnimationCurve(forceToMiddle.keys);
         copy.singleHandOpenForceDamper = singleHandOpenForceDamper;
-        copy.boundaryForceMultiplier = boundaryForceMultiplier;
         copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
         copy.boundaryOutwardDrag = boundaryOutwardDrag;
         copy.pushForce = pushForce;
@@ -250,11 +263,15 @@ public class RuntimeSceneSettings
         return copy;
     }
 
-    [System.Obsolete("ApplyCurveSettings is deprecated. Curves are now managed directly in SceneController inspector.")]
+    [System.Obsolete(
+        "ApplyCurveSettings is deprecated. Curves are now managed directly in SceneController inspector."
+    )]
     public void ApplyCurveSettings(CurveSettingsSO curveSettings)
     {
         // This method is kept for backward compatibility but should not be used
         // Curves are now managed directly in SceneController inspector
-        Debug.LogWarning("ApplyCurveSettings is deprecated. Curves are now managed in SceneController inspector.");
+        Debug.LogWarning(
+            "ApplyCurveSettings is deprecated. Curves are now managed in SceneController inspector."
+        );
     }
 }

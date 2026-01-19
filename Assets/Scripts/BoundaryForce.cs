@@ -1,4 +1,3 @@
-using Assets.Scripts;
 using UnityEngine;
 
 public class BoundaryForce
@@ -6,70 +5,86 @@ public class BoundaryForce
     readonly SceneController controller = SceneController.Instance;
 
     /// <summary>
-    /// Applies a soft spring force to keep the sphere within a maximum distance from the hand midpoint.
-    /// This prevents the sphere from traveling too far when hands are closed, making it faster to return.
+    /// Applies drag to stop the sphere when it exceeds the scaled grid boundary (AABB).
+    /// This prevents the sphere from traveling too far outside the grid, making it faster to return.
+    /// Unlike a spring approach, this doesn't bounce the sphere back - it just stops it in place.
+    /// Drag is applied per-axis only when outside the boundary and moving outward on that axis.
     /// </summary>
     public void ManageBoundaryForce(PlayerConstructor player)
     {
         var runtimeSettings = controller.GetRuntimeSettings();
 
-        // Skip if boundary force is disabled
-        if (runtimeSettings.boundaryForceMultiplier <= 0)
+        // Skip if boundary drag is disabled
+        if (runtimeSettings.boundaryOutwardDrag <= 0)
         {
             return;
         }
 
-        // Calculate hand midpoint (same logic as HandForce.CalculateMidpoint)
-        Vector3 handMidpoint = (player.HandLeft.transform.position + player.HandRight.transform.position) * 0.5f;
+        // Get scaled boundary extents
+        Vector3 boundaryExtents = GetScaledBoundaryExtents(runtimeSettings);
 
-        // Get max allowed distance based on grid size
-        float maxDistance = GetMaxDistanceFromHands(runtimeSettings);
+        // Grid center (offset by baseZDepth on Z axis)
+        Vector3 gridCenter = new Vector3(0f, 0f, runtimeSettings.baseZDepth);
 
-        // Calculate current distance from hands to sphere
-        Vector3 toSphere = player.sphere.position - handMidpoint;
-        float distance = toSphere.magnitude;
+        // Sphere position relative to grid center
+        Vector3 spherePos = player.sphere.position;
+        Vector3 relativePos = spherePos - gridCenter;
 
-        // Only apply force if beyond the boundary
-        if (distance > maxDistance)
+        // Current velocity
+        Vector3 velocity = player.sphere.linearVelocity;
+
+        // Calculate drag force per axis
+        Vector3 dragForce = Vector3.zero;
+
+        // X axis
+        if (relativePos.x > boundaryExtents.x && velocity.x > 0)
         {
-            // How far past the boundary
-            float overshoot = distance - maxDistance;
+            // Outside positive X boundary and moving further out
+            dragForce.x = -velocity.x * runtimeSettings.boundaryOutwardDrag;
+        }
+        else if (relativePos.x < -boundaryExtents.x && velocity.x < 0)
+        {
+            // Outside negative X boundary and moving further out
+            dragForce.x = -velocity.x * runtimeSettings.boundaryOutwardDrag;
+        }
 
-            // Push back toward hand midpoint, force scales with overshoot (spring behavior)
-            Vector3 pushBackDirection = -toSphere.normalized;
-            float pushBackForce = overshoot * runtimeSettings.boundaryForceMultiplier;
+        // Y axis
+        if (relativePos.y > boundaryExtents.y && velocity.y > 0)
+        {
+            dragForce.y = -velocity.y * runtimeSettings.boundaryOutwardDrag;
+        }
+        else if (relativePos.y < -boundaryExtents.y && velocity.y < 0)
+        {
+            dragForce.y = -velocity.y * runtimeSettings.boundaryOutwardDrag;
+        }
 
-            player.sphere.AddForce(pushBackDirection * pushBackForce);
+        // Z axis
+        if (relativePos.z > boundaryExtents.z && velocity.z > 0)
+        {
+            dragForce.z = -velocity.z * runtimeSettings.boundaryOutwardDrag;
+        }
+        else if (relativePos.z < -boundaryExtents.z && velocity.z < 0)
+        {
+            dragForce.z = -velocity.z * runtimeSettings.boundaryOutwardDrag;
+        }
 
-            // Apply extra drag when moving away from hands (not when returning)
-            Vector3 velocity = player.sphere.linearVelocity;
-            float outwardSpeed = Vector3.Dot(velocity, toSphere.normalized);
-
-            if (outwardSpeed > 0 && runtimeSettings.boundaryOutwardDrag > 0)
-            {
-                // Moving away from center - apply directional drag
-                // We do this by applying an opposing force proportional to outward velocity
-                Vector3 outwardVelocity = toSphere.normalized * outwardSpeed;
-                Vector3 dragForce = -outwardVelocity * runtimeSettings.boundaryOutwardDrag;
-                player.sphere.AddForce(dragForce);
-            }
+        // Apply combined drag force
+        if (dragForce != Vector3.zero)
+        {
+            player.sphere.AddForce(dragForce);
         }
     }
 
     /// <summary>
-    /// Calculates the maximum allowed distance from hand midpoint based on grid size.
-    /// Default is 1.5x the longest side of the grid / 2 (half since we measure from center).
+    /// Calculates the scaled boundary extents (half-sizes) based on grid size and multiplier.
     /// </summary>
-    private float GetMaxDistanceFromHands(RuntimeSceneSettings runtimeSettings)
+    private Vector3 GetScaledBoundaryExtents(RuntimeSceneSettings runtimeSettings)
     {
         // Get grid size from MetaballsToSDF
         Vector3 gridSize = controller.GetGridSize();
 
-        // Find the longest side
-        float longestSide = Mathf.Max(gridSize.x, Mathf.Max(gridSize.y, gridSize.z));
-
-        // Max distance is multiplier * (longest side / 2)
-        // The /2 is because the grid is centered, so max travel from center is half the side
-        return runtimeSettings.boundaryDistanceMultiplier * (longestSide / 2f);
+        // Scale the grid extents by the multiplier
+        // Grid extents are half the grid size (distance from center to edge)
+        return (gridSize / 2f) * runtimeSettings.boundaryDistanceMultiplier;
     }
 }
