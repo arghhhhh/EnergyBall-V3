@@ -395,7 +395,7 @@ public class PlayerConstructor : MonoBehaviour
 
     public bool IsInbounds(Vector3 position)
     {
-        Vector3 bounds = leftHandVfx.GetVector3("sdfScale") / 2f;
+        Vector3 bounds = controller.GetGridSize() / 2f;
         var runtimeSettings = controller.GetRuntimeSettings();
 
         Vector3 gridMin = new(-bounds.x, -bounds.y, -bounds.z + runtimeSettings.baseZDepth);
@@ -423,7 +423,7 @@ public class PlayerConstructor : MonoBehaviour
         Vector3 direction = (spherePos - handMidpoint).normalized;
 
         // Get grid boundaries
-        Vector3 bounds = leftHandVfx.GetVector3("sdfScale") / 2f;
+        Vector3 bounds = controller.GetGridSize() / 2f;
         var runtimeSettings = controller.GetRuntimeSettings();
 
         // Adjust bounds for Z-depth offset

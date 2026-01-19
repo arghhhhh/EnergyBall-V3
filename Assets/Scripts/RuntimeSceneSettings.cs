@@ -20,6 +20,14 @@ public class RuntimeSceneSettings
     [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
     public float singleHandOpenForceDamper = 1f;
+
+    [Header("Boundary Force")]
+    [Tooltip("Multiplier for the soft spring force that pushes the sphere back when it exceeds max distance from hands. Set to 0 to disable.")]
+    public float boundaryForceMultiplier = 50f;
+    [Tooltip("Multiplier for max distance calculation. Max distance = this * (longest grid side / 2).")]
+    public float boundaryDistanceMultiplier = 1.5f;
+    [Tooltip("Extra drag applied when sphere is moving away from hands while past the boundary. Helps slow down rapid escape.")]
+    public float boundaryOutwardDrag = 10f;
     public float pushForce = 5f;
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
@@ -181,6 +189,9 @@ public class RuntimeSceneSettings
         copy.attractionRadiusMultiplier = attractionRadiusMultiplier;
         copy.forceToMiddle = new AnimationCurve(forceToMiddle.keys);
         copy.singleHandOpenForceDamper = singleHandOpenForceDamper;
+        copy.boundaryForceMultiplier = boundaryForceMultiplier;
+        copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+        copy.boundaryOutwardDrag = boundaryOutwardDrag;
         copy.pushForce = pushForce;
         copy.minDrag = minDrag;
         copy.maxDrag = maxDrag;

@@ -34,6 +34,17 @@ public class SceneController : MonoBehaviour
     [BoxGroup("Hands Attraction")]
     [InfoBox("Curve settings (forceToMiddle, alignmentVectorStrength) are managed separately below", EInfoBoxType.Normal)]
     public float singleHandOpenForceDamper = 1f;
+
+    [BoxGroup("Boundary Force")]
+    [Tooltip("Multiplier for the soft spring force that pushes the sphere back when it exceeds max distance from hands. Set to 0 to disable.")]
+    public float boundaryForceMultiplier = 50f;
+    [BoxGroup("Boundary Force")]
+    [Tooltip("Multiplier for max distance calculation. Max distance = this * (longest grid side / 2).")]
+    public float boundaryDistanceMultiplier = 1.5f;
+    [BoxGroup("Boundary Force")]
+    [Tooltip("Extra drag applied when sphere is moving away from hands while past the boundary. Helps slow down rapid escape.")]
+    public float boundaryOutwardDrag = 10f;
+
     [BoxGroup("Hands Attraction")]
     public float pushForce = 5f;
     [BoxGroup("Hands Attraction")]
@@ -167,6 +178,7 @@ public class SceneController : MonoBehaviour
     GravityForce gravityForceController;
     HandForce handForceController;
     HandEffects handEffectsController;
+    BoundaryForce boundaryForceController;
     PlayerScaler playerScaleController;
     MetaballsToSDF metaballsToSDF = null;
     BodySourceManager bodySourceManager = null;
@@ -270,6 +282,7 @@ public class SceneController : MonoBehaviour
         gravityForceController = new();
         handForceController = new();
         handEffectsController = new();
+        boundaryForceController = new();
         playerScaleController = new();
         metaballsToSDF = GetComponent<MetaballsToSDF>();
         bodySourceManager = GetComponent<BodySourceManager>();
@@ -466,6 +479,7 @@ public class SceneController : MonoBehaviour
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);
+            boundaryForceController.ManageBoundaryForce(playerConstructor);
             handEffectsController.ManageHandEffects(playerConstructor, cachedCurrentSettings);
             handEffectsController.ManageHandTrailDistorters(playerConstructor);
             playerScaleController.ScaleSetup(playerConstructor);
@@ -672,6 +686,12 @@ public class SceneController : MonoBehaviour
         // Hands Attraction (curves and other settings)
         target.forceToMiddle = new AnimationCurve(forceToMiddle.keys);
         target.singleHandOpenForceDamper = singleHandOpenForceDamper;
+
+        // Boundary Force
+        target.boundaryForceMultiplier = boundaryForceMultiplier;
+        target.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+        target.boundaryOutwardDrag = boundaryOutwardDrag;
+
         target.pushForce = pushForce;
         target.minDrag = minDrag;
         target.maxDrag = maxDrag;
@@ -731,6 +751,12 @@ public class SceneController : MonoBehaviour
         // Hands Attraction
         forceToMiddle = new AnimationCurve(source.forceToMiddle.keys);
         singleHandOpenForceDamper = source.singleHandOpenForceDamper;
+
+        // Boundary Force
+        boundaryForceMultiplier = source.boundaryForceMultiplier;
+        boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+        boundaryOutwardDrag = source.boundaryOutwardDrag;
+
         pushForce = source.pushForce;
         minDrag = source.minDrag;
         maxDrag = source.maxDrag;
@@ -846,6 +872,14 @@ public class SceneController : MonoBehaviour
     public RuntimeSceneSettings GetRuntimeSettings()
     {
         return CurrentSettings;
+    }
+
+    /// <summary>
+    /// Returns the size of the marching cubes grid in world units.
+    /// </summary>
+    public Vector3 GetGridSize()
+    {
+        return metaballsToSDF.GetGridSize();
     }
     #endregion
 

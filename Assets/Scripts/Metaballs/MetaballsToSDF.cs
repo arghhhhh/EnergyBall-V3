@@ -232,6 +232,14 @@ namespace MarchingCubes
             metaballs[index].Radius = radius;
         }
 
+        /// <summary>
+        /// Returns the size of the marching cubes grid in world units.
+        /// </summary>
+        public Vector3 GetGridSize()
+        {
+            return sizeBox;
+        }
+
         #endregion
     }
 }
