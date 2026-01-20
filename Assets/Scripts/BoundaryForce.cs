@@ -8,7 +8,8 @@ public class BoundaryForce
     /// Applies drag to stop the sphere when it exceeds the scaled grid boundary (AABB).
     /// This prevents the sphere from traveling too far outside the grid, making it faster to return.
     /// Unlike a spring approach, this doesn't bounce the sphere back - it just stops it in place.
-    /// Drag is applied per-axis only when outside the boundary and moving outward on that axis.
+    /// When outside the boundary on any axis, drag is applied to ALL velocity components to prevent
+    /// the sphere from "sliding along the wall" when exiting at an angle.
     /// </summary>
     public void ManageBoundaryForce(PlayerConstructor player)
     {
@@ -30,47 +31,35 @@ public class BoundaryForce
         Vector3 spherePos = player.sphere.position;
         Vector3 relativePos = spherePos - gridCenter;
 
-        // Current velocity
+        // Check if outside boundary on any axis AND moving outward on that axis
+        bool isOutsideAndMovingOut = false;
         Vector3 velocity = player.sphere.linearVelocity;
 
-        // Calculate drag force per axis
-        Vector3 dragForce = Vector3.zero;
-
-        // X axis
-        if (relativePos.x > boundaryExtents.x && velocity.x > 0)
+        // X axis: outside and moving outward
+        if ((relativePos.x > boundaryExtents.x && velocity.x > 0) ||
+            (relativePos.x < -boundaryExtents.x && velocity.x < 0))
         {
-            // Outside positive X boundary and moving further out
-            dragForce.x = -velocity.x * runtimeSettings.boundaryOutwardDrag;
-        }
-        else if (relativePos.x < -boundaryExtents.x && velocity.x < 0)
-        {
-            // Outside negative X boundary and moving further out
-            dragForce.x = -velocity.x * runtimeSettings.boundaryOutwardDrag;
+            isOutsideAndMovingOut = true;
         }
 
-        // Y axis
-        if (relativePos.y > boundaryExtents.y && velocity.y > 0)
+        // Y axis: outside and moving outward
+        if ((relativePos.y > boundaryExtents.y && velocity.y > 0) ||
+            (relativePos.y < -boundaryExtents.y && velocity.y < 0))
         {
-            dragForce.y = -velocity.y * runtimeSettings.boundaryOutwardDrag;
-        }
-        else if (relativePos.y < -boundaryExtents.y && velocity.y < 0)
-        {
-            dragForce.y = -velocity.y * runtimeSettings.boundaryOutwardDrag;
+            isOutsideAndMovingOut = true;
         }
 
-        // Z axis
-        if (relativePos.z > boundaryExtents.z && velocity.z > 0)
+        // Z axis: outside and moving outward
+        if ((relativePos.z > boundaryExtents.z && velocity.z > 0) ||
+            (relativePos.z < -boundaryExtents.z && velocity.z < 0))
         {
-            dragForce.z = -velocity.z * runtimeSettings.boundaryOutwardDrag;
-        }
-        else if (relativePos.z < -boundaryExtents.z && velocity.z < 0)
-        {
-            dragForce.z = -velocity.z * runtimeSettings.boundaryOutwardDrag;
+            isOutsideAndMovingOut = true;
         }
 
-        // Apply combined drag force
-        if (dragForce != Vector3.zero)
+        // If outside on any axis and moving outward, apply drag to ALL velocity components
+        if (isOutsideAndMovingOut)
         {
+            Vector3 dragForce = -velocity * runtimeSettings.boundaryOutwardDrag;
             player.sphere.AddForce(dragForce);
         }
     }
