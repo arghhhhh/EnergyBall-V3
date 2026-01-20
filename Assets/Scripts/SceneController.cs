@@ -210,6 +210,10 @@ public class SceneController : MonoBehaviour
     public bool alwaysShowSphereMesh = false;
 
     [BoxGroup("Debugging")]
+    [Tooltip("When enabled, the metaball mesh renderer is visible for debugging.")]
+    public bool showMetaballMesh = false;
+
+    [BoxGroup("Debugging")]
     public bool showAttractionRadius = false;
 
     [BoxGroup("Debugging")]
@@ -776,6 +780,7 @@ public class SceneController : MonoBehaviour
         target.customColors = customColors;
         target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         target.alwaysShowSphereMesh = alwaysShowSphereMesh;
+        target.showMetaballMesh = showMetaballMesh;
         target.showAttractionRadius = showAttractionRadius;
         target.showHandTrailDistorters = showHandTrailDistorters;
         target.showSecondaryAttractor = showSecondaryAttractor;
@@ -841,6 +846,7 @@ public class SceneController : MonoBehaviour
         customColors = source.customColors;
         showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         alwaysShowSphereMesh = source.alwaysShowSphereMesh;
+        showMetaballMesh = source.showMetaballMesh;
         showAttractionRadius = source.showAttractionRadius;
         showHandTrailDistorters = source.showHandTrailDistorters;
         showSecondaryAttractor = source.showSecondaryAttractor;

@@ -119,6 +119,7 @@ MonoBehaviour:
   midpoint: {x: 0, y: 0, z: 0}
   skeletonColor: {r: 0, g: 0, b: 0, a: 0}
   isDummy: 0
+  wasInBounds: 1
 --- !u!95 &5089622476140790720
 Animator:
   serializedVersion: 7
@@ -346,7 +347,7 @@ MeshRenderer:
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 44b06b33c9b1d9f4385ee7ecb7b47db9, type: 2}
+  - {fileID: 2100000, guid: 17e0390ffdc4be847aa1dda278663ea1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2158,6 +2159,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2203611193912234477, guid: 7f8acf1838716f946a08727097394d2e,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2203611193912234477, guid: 7f8acf1838716f946a08727097394d2e,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7e8c148ae7f0801468461de9e73321ea, type: 2}
     - target: {fileID: 2906594256143899559, guid: 7f8acf1838716f946a08727097394d2e,
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.size
@@ -2433,7 +2444,18 @@ PrefabInstance:
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[6].m_Overridden
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 8863726367719940598, guid: 7f8acf1838716f946a08727097394d2e,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 3.42
+      objectReference: {fileID: 0}
+    - target: {fileID: 8863726367719940598, guid: 7f8acf1838716f946a08727097394d2e,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 3820845381880683917, guid: 7f8acf1838716f946a08727097394d2e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -3236,6 +3258,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1630764143817457304, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1876921769914141044, guid: f497d5d0d40136d46b5b968a0cd1cb19,
         type: 3}
       propertyPath: m_CastShadows
@@ -3491,6 +3518,16 @@ PrefabInstance:
       propertyPath: 'm_Bindings.Array.data[3]'
       value: 
       objectReference: {fileID: 3865977042461722403}
+    - target: {fileID: 8302148172569742979, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 3.42
+      objectReference: {fileID: 0}
+    - target: {fileID: 8302148172569742979, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 9079971133008726007, guid: f497d5d0d40136d46b5b968a0cd1cb19,
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.size
@@ -3549,6 +3586,7 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 6959817418123056066, guid: f497d5d0d40136d46b5b968a0cd1cb19, type: 3}
     - {fileID: 2237228380046157193, guid: f497d5d0d40136d46b5b968a0cd1cb19, type: 3}
+    - {fileID: 4409922664561963768, guid: f497d5d0d40136d46b5b968a0cd1cb19, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

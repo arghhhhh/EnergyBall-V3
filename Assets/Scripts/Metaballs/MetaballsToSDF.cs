@@ -12,6 +12,8 @@ namespace MarchingCubes
         public float Radius;
     }
 
+    [RequireComponent(typeof(MeshFilter))]
+    [RequireComponent(typeof(MeshRenderer))]
     public class MetaballsToSDF : MonoBehaviour
     {
         SceneController controller = null;
@@ -55,6 +57,7 @@ namespace MarchingCubes
         ComputeBuffer _positionsBuffer;
         ComputeBuffer _radiiBuffer;
         MeshBuilder _builder;
+        MeshRenderer _meshRenderer;
 
         #endregion
 
@@ -73,6 +76,7 @@ namespace MarchingCubes
             InitializeMetaballBuffers();
             _builder = new MeshBuilder(_dimensions, _triangleBudget, _builderCompute);
             controller = GetComponent<SceneController>();
+            _meshRenderer = GetComponent<MeshRenderer>();
             sizeBox = new Vector3(
                 _dimensions.x * _gridScale,
                 _dimensions.y * _gridScale,
@@ -96,6 +100,10 @@ namespace MarchingCubes
 
         void Update()
         {
+            // Update mesh renderer visibility based on debug setting
+            var runtimeSettings = controller.GetRuntimeSettings();
+            _meshRenderer.enabled = runtimeSettings.showMetaballMesh;
+
             UpdateMetaballBuffers();
 
             _volumeCompute.SetInts("Dims", _dimensions);
@@ -135,14 +143,12 @@ namespace MarchingCubes
                 VisualEffect _vfxRight = player.GetComponent<PlayerConstructor>().rightHandVfx;
                 if (_vfxLeft != null)
                 {
-                    var runtimeSettings = controller.GetRuntimeSettings();
                     _vfxLeft.SetTexture("sdfTexture", sdfBaker.SdfTexture);
                     _vfxLeft.SetVector3("sdfScale", sizeBox);
                     _vfxLeft.SetFloat("zDepth", runtimeSettings.baseZDepth);
                 }
                 if (_vfxRight != null)
                 {
-                    var runtimeSettings = controller.GetRuntimeSettings();
                     _vfxRight.SetTexture("sdfTexture", sdfBaker.SdfTexture);
                     _vfxRight.SetVector3("sdfScale", sizeBox);
                     _vfxRight.SetFloat("zDepth", runtimeSettings.baseZDepth);

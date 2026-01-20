@@ -133,6 +133,10 @@ public class SceneSettingsSO : ScriptableObject
     public bool alwaysShowSphereMesh;
 
     [BoxGroup("Debugging")]
+    [Tooltip("When enabled, the metaball mesh renderer is visible for debugging.")]
+    public bool showMetaballMesh;
+
+    [BoxGroup("Debugging")]
     [SerializeField]
     private bool _showAttractionRadius;
     public bool showAttractionRadius

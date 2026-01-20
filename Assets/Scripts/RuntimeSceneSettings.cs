@@ -128,6 +128,7 @@ public class RuntimeSceneSettings
     public bool dummyOnlyMode = false;
     public bool showSphereMeshOnHandCollision = false;
     public bool alwaysShowSphereMesh = false;
+    public bool showMetaballMesh = false;
 
     [SerializeField]
     private bool _showAttractionRadius = false;
@@ -259,6 +260,7 @@ public class RuntimeSceneSettings
         copy.useTrackingStateColors = useTrackingStateColors;
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         copy.alwaysShowSphereMesh = alwaysShowSphereMesh;
+        copy.showMetaballMesh = showMetaballMesh;
         copy._showAttractionRadius = _showAttractionRadius;
         copy._showHandTrailDistorters = _showHandTrailDistorters;
         copy._showSecondaryAttractor = _showSecondaryAttractor;
