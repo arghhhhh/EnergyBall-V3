@@ -461,8 +461,8 @@ MonoBehaviour:
   leftOpenKey: O
   rightOpenKey: P
   toggleSprites: 0
-  leftHandSprite: {fileID: 5256863669820484436}
-  rightHandSprite: {fileID: 4131855537418956349}
+  leftHandSprite: {fileID: 757726471744402169}
+  rightHandSprite: {fileID: 2159546587976938488}
 --- !u!114 &7904353339162769027
 MonoBehaviour:
   m_ObjectHideFlags: 0

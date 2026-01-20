@@ -473,6 +473,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1868631291}
   m_PrefabAsset: {fileID: 0}
+--- !u!212 &875845079 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 2159546587976938488, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+    type: 3}
+  m_PrefabInstance: {fileID: 1799726306}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1259578152
 GameObject:
   m_ObjectHideFlags: 0
@@ -839,6 +845,7 @@ GameObject:
   - component: {fileID: 1790478702}
   - component: {fileID: 1790478706}
   - component: {fileID: 1790478707}
+  - component: {fileID: 1790478708}
   m_Layer: 0
   m_Name: Scene Controller
   m_TagString: Untagged
@@ -890,8 +897,8 @@ MonoBehaviour:
   stopVelocity: 0.1
   attractionRadiusMultiplier: 1
   singleHandOpenForceDamper: 1
-  boundaryDistanceMultiplier: 0.6
-  boundaryOutwardDrag: 1.1
+  boundaryDistanceMultiplier: 1.1
+  boundaryOutwardDrag: 10
   pushForce: 5
   minDrag: 0.1
   maxDrag: 5
@@ -1359,6 +1366,24 @@ MonoBehaviour:
   _volumeCompute: {fileID: 7200000, guid: 03edc4ed12cb87d489b67fc0356e33e8, type: 3}
   _builderCompute: {fileID: 7200000, guid: 9f19ed91e8aa34430ac0ea80fb20eead, type: 3}
   resolution: 64
+--- !u!114 &1790478708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790478698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa1ceb2b55b20cd4e86d95eb08e70f44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoundaryGizmos
+  showGridBoundary: 1
+  showForceBoundary: 1
+  gridBoundaryColor: {r: 0, g: 1, b: 0, a: 0.5}
+  forceBoundaryColor: {r: 1, g: 0.5, b: 0, a: 0.5}
+  sceneController: {fileID: 1790478704}
+  metaballsToSDF: {fileID: 1790478707}
 --- !u!1001 &1799726306
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1995,8 +2020,18 @@ PrefabInstance:
     - target: {fileID: 6669253669967695172, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: toggleSprites
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6669253669967695172, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: leftHandSprite
+      value: 
+      objectReference: {fileID: 1936040745}
+    - target: {fileID: 6669253669967695172, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: rightHandSprite
+      value: 
+      objectReference: {fileID: 875845079}
     - target: {fileID: 6820096119654865522, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Name
@@ -2775,6 +2810,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1871388776}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!212 &1936040745 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 757726471744402169, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+    type: 3}
+  m_PrefabInstance: {fileID: 1799726306}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8687229120756728244
 PrefabInstance:
   m_ObjectHideFlags: 0

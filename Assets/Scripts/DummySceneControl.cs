@@ -10,18 +10,25 @@ public class DummySceneControl : MonoBehaviour
     public string leftOpenKey = "O";
     public string rightOpenKey = "P";
     public bool toggleSprites = false;
-    public GameObject leftHandSprite;
-    public GameObject rightHandSprite;
+    public SpriteRenderer leftHandSprite;
+    public SpriteRenderer rightHandSprite;
 
     KeyCode bothOpen;
     KeyCode bothClosed;
     KeyCode leftOpen;
     KeyCode rightOpen;
 
+    private float closedOpacity = 0.35f;
+
     void Start()
     {
         player = GetComponent<PlayerConstructor>();
         SetKeys();
+        if (toggleSprites)
+        {
+            SetSpriteAlpha(leftHandSprite, player.leftHandState == Windows.Kinect.HandState.Open ? 1f : 0.5f);
+            SetSpriteAlpha(rightHandSprite, player.rightHandState == Windows.Kinect.HandState.Open ? 1f : 0.5f);
+        }
     }
 
     void Update()
@@ -32,8 +39,8 @@ public class DummySceneControl : MonoBehaviour
             player.rightHandState = Windows.Kinect.HandState.Open;
             if (toggleSprites)
             {
-                leftHandSprite.SetActive(true);
-                rightHandSprite.SetActive(true);
+                SetSpriteAlpha(leftHandSprite, 1f);
+                SetSpriteAlpha(rightHandSprite, 1f);
             }
             Debug.Log("Both open");
         }
@@ -43,8 +50,8 @@ public class DummySceneControl : MonoBehaviour
             player.rightHandState = Windows.Kinect.HandState.Closed;
             if (toggleSprites)
             {
-                leftHandSprite.SetActive(false);
-                rightHandSprite.SetActive(false);
+                SetSpriteAlpha(leftHandSprite, closedOpacity);
+                SetSpriteAlpha(rightHandSprite, closedOpacity);
             }
             Debug.Log("Both closed");
         }
@@ -54,10 +61,9 @@ public class DummySceneControl : MonoBehaviour
             player.rightHandState = Windows.Kinect.HandState.Closed;
             if (toggleSprites)
             {
-                leftHandSprite.SetActive(true);
-                rightHandSprite.SetActive(false);
+                SetSpriteAlpha(leftHandSprite, 1f);
+                SetSpriteAlpha(rightHandSprite, closedOpacity);
             }
-            rightHandSprite.SetActive(false);
         }
         if (Input.GetKeyDown(rightOpen))
         {
@@ -65,8 +71,8 @@ public class DummySceneControl : MonoBehaviour
             player.rightHandState = Windows.Kinect.HandState.Open;
             if (toggleSprites)
             {
-                leftHandSprite.SetActive(false);
-                rightHandSprite.SetActive(true);
+                SetSpriteAlpha(leftHandSprite, closedOpacity);
+                SetSpriteAlpha(rightHandSprite, 1f);
             }
         }
     }
@@ -77,5 +83,13 @@ public class DummySceneControl : MonoBehaviour
         bothClosed = (KeyCode)Enum.Parse(typeof(KeyCode), bothClosedKey);
         leftOpen = (KeyCode)Enum.Parse(typeof(KeyCode), leftOpenKey);
         rightOpen = (KeyCode)Enum.Parse(typeof(KeyCode), rightOpenKey);
+    }
+
+    void SetSpriteAlpha(SpriteRenderer sprite, float alpha)
+    {
+        if (sprite == null) return;
+        Color color = sprite.color;
+        color.a = alpha;
+        sprite.color = color;
     }
 }
