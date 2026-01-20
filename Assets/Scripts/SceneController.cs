@@ -196,7 +196,6 @@ public class SceneController : MonoBehaviour
         new()
     };
 
-    [Header("Debugging")]
     [BoxGroup("Debugging")]
     public bool dummyOnlyMode = false;
 
@@ -205,6 +204,10 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Debugging")]
     public bool showSphereMeshOnHandCollision = false;
+
+    [BoxGroup("Debugging")]
+    [Tooltip("When enabled, the sphere mesh is always visible regardless of hand collision state.")]
+    public bool alwaysShowSphereMesh = false;
 
     [BoxGroup("Debugging")]
     public bool showAttractionRadius = false;
@@ -772,6 +775,7 @@ public class SceneController : MonoBehaviour
         target.drawSkeleton = drawSkeleton;
         target.customColors = customColors;
         target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
+        target.alwaysShowSphereMesh = alwaysShowSphereMesh;
         target.showAttractionRadius = showAttractionRadius;
         target.showHandTrailDistorters = showHandTrailDistorters;
         target.showSecondaryAttractor = showSecondaryAttractor;
@@ -836,6 +840,7 @@ public class SceneController : MonoBehaviour
         drawSkeleton = source.drawSkeleton;
         customColors = source.customColors;
         showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
+        alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         showAttractionRadius = source.showAttractionRadius;
         showHandTrailDistorters = source.showHandTrailDistorters;
         showSecondaryAttractor = source.showSecondaryAttractor;

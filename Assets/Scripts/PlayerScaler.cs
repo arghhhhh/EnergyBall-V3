@@ -28,7 +28,8 @@ public class PlayerScaler
             player.sphere.position - player.HandRight.transform.position
         ).magnitude;
 
-        player.sphere.gameObject.GetComponent<MeshRenderer>().enabled = false;
+        var runtimeSettings = controller.GetRuntimeSettings();
+        player.sphere.gameObject.GetComponent<MeshRenderer>().enabled = runtimeSettings.alwaysShowSphereMesh;
 
         // only scale sphere when it's between the hands
         if (
@@ -38,8 +39,6 @@ public class PlayerScaler
         // don't do any scaling in the first frame of the game
         )
         {
-            var runtimeSettings = controller.GetRuntimeSettings();
-
             // we may want to scale player by each hand independently
             // for example, if left hand is stationary and right hand moves toward left
             // we want to negatively scale the sphere based on the movement of the right hand

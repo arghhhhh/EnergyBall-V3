@@ -127,6 +127,7 @@ public class RuntimeSceneSettings
     [Header("Debugging")]
     public bool dummyOnlyMode = false;
     public bool showSphereMeshOnHandCollision = false;
+    public bool alwaysShowSphereMesh = false;
 
     [SerializeField]
     private bool _showAttractionRadius = false;
@@ -257,6 +258,7 @@ public class RuntimeSceneSettings
         copy._customColors = _customColors;
         copy.useTrackingStateColors = useTrackingStateColors;
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
+        copy.alwaysShowSphereMesh = alwaysShowSphereMesh;
         copy._showAttractionRadius = _showAttractionRadius;
         copy._showHandTrailDistorters = _showHandTrailDistorters;
         copy._showSecondaryAttractor = _showSecondaryAttractor;

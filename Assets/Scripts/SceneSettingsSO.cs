@@ -129,6 +129,10 @@ public class SceneSettingsSO : ScriptableObject
     public bool showSphereMeshOnHandCollision;
 
     [BoxGroup("Debugging")]
+    [Tooltip("When enabled, the sphere mesh is always visible regardless of hand collision state.")]
+    public bool alwaysShowSphereMesh;
+
+    [BoxGroup("Debugging")]
     [SerializeField]
     private bool _showAttractionRadius;
     public bool showAttractionRadius

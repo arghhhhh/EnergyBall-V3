@@ -8,13 +8,16 @@ The settings menu system uses `RuntimeSceneSettings` as the central data class. 
 
 ## Quick Reference
 
-| Step | File | Action |
-|------|------|--------|
-| 1 | `RuntimeSceneSettings.cs` | Add the property |
-| 2 | `RuntimeSceneSettings.cs` | Update `DeepCopy()` method |
-| 3 | `InGameSettingsMenu.cs` | Add UI field in appropriate group method |
-| 4 | `InGameSettingsMenu.cs` | Update `MergeSceneSettings()` or `MergePostProcessingSettings()` |
-| 5 | `InGameSettingsMenu.cs` | Update `CopySceneSettings()` or `CopyPostProcessingSettings()` |
+| Step | File                      | Action                                                           |
+| ---- | ------------------------- | ---------------------------------------------------------------- |
+| 1    | `RuntimeSceneSettings.cs` | Add the property                                                 |
+| 2    | `RuntimeSceneSettings.cs` | Update `DeepCopy()` method                                       |
+| 3    | `SceneController.cs`      | Add inspector field in appropriate BoxGroup                      |
+| 4    | `SceneController.cs`      | Update `CopyInspectorToRuntime()` method                         |
+| 5    | `SceneController.cs`      | Update `CopyRuntimeToInspector()` method                         |
+| 6    | `InGameSettingsMenu.cs`   | Add UI field in appropriate group method                         |
+| 7    | `InGameSettingsMenu.cs`   | Update `MergeSceneSettings()` or `MergePostProcessingSettings()` |
+| 8    | `InGameSettingsMenu.cs`   | Update `CopySceneSettings()` or `CopyPostProcessingSettings()`   |
 
 ## Step-by-Step Guide
 
@@ -31,12 +34,14 @@ public float boundaryOutwardDrag = 50f;
 ```
 
 **Property Types Supported:**
+
 - `float` - Use `CreateFloatField()` or `CreateSliderField()`
 - `bool` - Use `CreateToggleField()`
 - `float[]` - Use `CreateFloatArrayField()`
 - `AnimationCurve` - Use `CreateCurveField()` (limited support)
 
 **For properties with change notifications:**
+
 ```csharp
 [SerializeField]
 private bool _myNewSetting = false;
@@ -74,7 +79,51 @@ public RuntimeSceneSettings DeepCopy()
 }
 ```
 
-### 3. Add UI Field to InGameSettingsMenu
+### 3. Add Inspector Field to SceneController
+
+**File:** `Assets/Scripts/SceneController.cs`
+
+Add your new property in the appropriate `[BoxGroup]` section in the inspector region:
+
+```csharp
+[BoxGroup("Debugging")]
+[Tooltip("Description of what this setting does.")]
+public bool myNewSetting = false;
+```
+
+### 4. Update CopyInspectorToRuntime() Method
+
+**File:** `Assets/Scripts/SceneController.cs`
+
+Add your property to the `CopyInspectorToRuntime()` method:
+
+```csharp
+public void CopyInspectorToRuntime(RuntimeSceneSettings target)
+{
+    // ... existing properties ...
+
+    // Add your new property
+    target.myNewSetting = myNewSetting;
+}
+```
+
+### 5. Update CopyRuntimeToInspector() Method
+
+**File:** `Assets/Scripts/SceneController.cs`
+
+Add your property to the `CopyRuntimeToInspector()` method:
+
+```csharp
+private void CopyRuntimeToInspector(RuntimeSceneSettings source)
+{
+    // ... existing properties ...
+
+    // Add your new property
+    myNewSetting = source.myNewSetting;
+}
+```
+
+### 6. Add UI Field to InGameSettingsMenu
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
@@ -126,13 +175,14 @@ private void CreateSceneSettingsContent()
 }
 ```
 
-### 4. Update Merge Method for Loading
+### 7. Update Merge Method for Loading
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
 Add your property to the appropriate merge method so it loads from profiles:
 
 **For Scene settings** - Update `MergeSceneSettings()`:
+
 ```csharp
 private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
 {
@@ -145,6 +195,7 @@ private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
 ```
 
 **For Post-Processing settings** - Update `MergePostProcessingSettings()`:
+
 ```csharp
 private void MergePostProcessingSettings(RuntimeSceneSettings loadedSettings)
 {
@@ -154,13 +205,14 @@ private void MergePostProcessingSettings(RuntimeSceneSettings loadedSettings)
 }
 ```
 
-### 5. Update Copy Method for Saving
+### 8. Update Copy Method for Saving
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
 
 Add your property to the appropriate copy method so it saves to profiles:
 
 **For Scene settings** - Update `CopySceneSettings()`:
+
 ```csharp
 private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
 {
@@ -175,6 +227,7 @@ private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings
 ```
 
 **For Post-Processing settings** - Update `CopyPostProcessingSettings()`:
+
 ```csharp
 private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
 {
@@ -186,7 +239,7 @@ private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeScen
 }
 ```
 
-**Important:** Also add the zero/default value for your property in the *opposite* copy method to prevent cross-contamination:
+**Important:** Also add the zero/default value for your property in the _opposite_ copy method to prevent cross-contamination:
 
 ```csharp
 // In CopyPostProcessingSettings(), zero out scene settings:
@@ -200,21 +253,25 @@ destination.myNewPostProcessingSetting = 0.0f;
 ## Available UI Field Types
 
 ### Float Field
+
 ```csharp
 CreateFloatField(group, "Label", () => runtimeSettings.property, v => runtimeSettings.property = v);
 ```
 
 ### Slider Field (with min/max range)
+
 ```csharp
 CreateSliderField(group, "Label", () => runtimeSettings.property, v => runtimeSettings.property = v, minValue, maxValue);
 ```
 
 ### Toggle Field (boolean)
+
 ```csharp
 CreateToggleField(group, "Label", () => runtimeSettings.property, v => runtimeSettings.property = v);
 ```
 
 ### Float Array Field
+
 ```csharp
 CreateFloatArrayField(group, "Label", () => runtimeSettings.arrayProperty, v => runtimeSettings.arrayProperty = v);
 ```
@@ -224,6 +281,7 @@ CreateFloatArrayField(group, "Label", () => runtimeSettings.arrayProperty, v => 
 The settings menu follows this group structure to match the SceneController inspector:
 
 **Scene Tab:**
+
 - Gravity Attraction
 - Hands Attraction
 - Boundary Drag
@@ -235,6 +293,7 @@ The settings menu follows this group structure to match the SceneController insp
 - Debugging
 
 **Post-Processing Tab:**
+
 - Bloom
 - Screen Space Lens Flare
 - Lens Distortion
@@ -245,20 +304,24 @@ The settings menu follows this group structure to match the SceneController insp
 
 1. **Forgetting DeepCopy()**: Your setting won't be properly copied when backing up/restoring settings.
 
-2. **Missing Merge method update**: Your setting won't load from saved profiles.
+2. **Missing SceneController updates**: Forgetting to add the inspector field or update `CopyInspectorToRuntime()`/`CopyRuntimeToInspector()` means the setting won't sync between inspector and runtime.
 
-3. **Missing Copy method update**: Your setting won't save to profiles.
+3. **Missing Merge method update**: Your setting won't load from saved profiles.
 
-4. **Cross-contamination**: Forgetting to zero out your setting in the opposite Copy method causes scene settings to appear in post-processing profiles and vice versa.
+4. **Missing Copy method update**: Your setting won't save to profiles.
 
-5. **Wrong tab**: Adding a scene setting to post-processing methods or vice versa.
+5. **Cross-contamination**: Forgetting to zero out your setting in the opposite Copy method causes scene settings to appear in post-processing profiles and vice versa.
+
+6. **Wrong tab**: Adding a scene setting to post-processing methods or vice versa.
 
 ## Testing Checklist
 
 After adding your new setting:
 
-- [ ] Setting appears in the correct group in the UI
-- [ ] Changing the value updates in real-time
+- [ ] Setting appears in the SceneController inspector in the correct BoxGroup
+- [ ] Setting appears in the correct group in the in-game settings UI
+- [ ] Changing the value in inspector updates runtime (in play mode)
+- [ ] Changing the value in in-game menu updates inspector
 - [ ] Saving a profile includes the new setting
 - [ ] Loading a profile restores the setting value
 - [ ] Profile JSON files only contain relevant settings (no cross-contamination)
@@ -269,6 +332,7 @@ After adding your new setting:
 Here's a complete example of adding `boundaryDistanceMultiplier` and `boundaryOutwardDrag`:
 
 ### RuntimeSceneSettings.cs
+
 ```csharp
 [Header("Boundary Drag")]
 [Tooltip("Multiplier for max distance calculation.")]
@@ -279,12 +343,42 @@ public float boundaryOutwardDrag = 50f;
 ```
 
 ### RuntimeSceneSettings.cs - DeepCopy()
+
 ```csharp
 copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
 copy.boundaryOutwardDrag = boundaryOutwardDrag;
 ```
 
+### SceneController.cs - Inspector Fields
+
+```csharp
+[BoxGroup("Boundary Drag")]
+[Tooltip("Multiplier for max distance calculation.")]
+public float boundaryDistanceMultiplier = 1.5f;
+
+[BoxGroup("Boundary Drag")]
+[Tooltip("Drag applied when moving away from hands while past the boundary.")]
+public float boundaryOutwardDrag = 50f;
+```
+
+### SceneController.cs - CopyInspectorToRuntime()
+
+```csharp
+// Boundary Drag
+target.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+target.boundaryOutwardDrag = boundaryOutwardDrag;
+```
+
+### SceneController.cs - CopyRuntimeToInspector()
+
+```csharp
+// Boundary Drag
+boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+boundaryOutwardDrag = source.boundaryOutwardDrag;
+```
+
 ### InGameSettingsMenu.cs - New Group Method
+
 ```csharp
 private void CreateBoundaryDragGroup(ScrollView parentContainer)
 {
@@ -300,6 +394,7 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
 ```
 
 ### InGameSettingsMenu.cs - CreateSceneSettingsContent()
+
 ```csharp
 private void CreateSceneSettingsContent()
 {
@@ -311,6 +406,7 @@ private void CreateSceneSettingsContent()
 ```
 
 ### InGameSettingsMenu.cs - MergeSceneSettings()
+
 ```csharp
 // Boundary Drag settings
 runtimeSettings.boundaryDistanceMultiplier = loadedSettings.boundaryDistanceMultiplier;
@@ -318,6 +414,7 @@ runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 ```
 
 ### InGameSettingsMenu.cs - CopySceneSettings()
+
 ```csharp
 // Boundary Drag settings
 destination.boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
@@ -325,6 +422,7 @@ destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
 ```
 
 ### InGameSettingsMenu.cs - CopyPostProcessingSettings()
+
 ```csharp
 // Zero out boundary drag settings
 destination.boundaryDistanceMultiplier = 0.0f;
