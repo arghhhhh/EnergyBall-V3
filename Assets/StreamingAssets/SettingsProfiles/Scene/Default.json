@@ -8,6 +8,8 @@
     "stopVelocity": 0.5,
     "attractionRadiusMultiplier": 3.5,
     "singleHandOpenForceDamper": 0.75,
+    "boundaryDistanceMultiplier": 1.2999999523162842,
+    "boundaryOutwardDrag": 20.0,
     "pushForce": 70.0,
     "minDrag": 0.25,
     "maxDrag": 1.0,

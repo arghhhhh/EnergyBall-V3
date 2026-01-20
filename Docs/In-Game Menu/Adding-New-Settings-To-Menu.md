@@ -1,0 +1,332 @@
+# Adding New Settings to the In-Game Settings Menu
+
+This guide explains how to add new settings fields to an existing tab in the in-game settings menu. For adding entirely new tabs with independent profile management, see [Adding-New-Settings-Menu-Tabs.md](Adding-New-Settings-Menu-Tabs.md).
+
+## Overview
+
+The settings menu system uses `RuntimeSceneSettings` as the central data class. Settings are organized into groups within tabs, and changes are persisted through JSON profile files.
+
+## Quick Reference
+
+| Step | File | Action |
+|------|------|--------|
+| 1 | `RuntimeSceneSettings.cs` | Add the property |
+| 2 | `RuntimeSceneSettings.cs` | Update `DeepCopy()` method |
+| 3 | `InGameSettingsMenu.cs` | Add UI field in appropriate group method |
+| 4 | `InGameSettingsMenu.cs` | Update `MergeSceneSettings()` or `MergePostProcessingSettings()` |
+| 5 | `InGameSettingsMenu.cs` | Update `CopySceneSettings()` or `CopyPostProcessingSettings()` |
+
+## Step-by-Step Guide
+
+### 1. Add the Property to RuntimeSceneSettings
+
+**File:** `Assets/Scripts/RuntimeSceneSettings.cs`
+
+Add your new property under the appropriate `[Header]` section:
+
+```csharp
+[Header("Boundary Drag")]
+public float boundaryDistanceMultiplier = 1.5f;
+public float boundaryOutwardDrag = 50f;
+```
+
+**Property Types Supported:**
+- `float` - Use `CreateFloatField()` or `CreateSliderField()`
+- `bool` - Use `CreateToggleField()`
+- `float[]` - Use `CreateFloatArrayField()`
+- `AnimationCurve` - Use `CreateCurveField()` (limited support)
+
+**For properties with change notifications:**
+```csharp
+[SerializeField]
+private bool _myNewSetting = false;
+public bool myNewSetting
+{
+    get => _myNewSetting;
+    set
+    {
+        if (_myNewSetting != value)
+        {
+            _myNewSetting = value;
+            OnAnyDebuggingSettingChanged?.Invoke();
+        }
+    }
+}
+```
+
+### 2. Update DeepCopy() Method
+
+**File:** `Assets/Scripts/RuntimeSceneSettings.cs`
+
+Add your new property to the `DeepCopy()` method to ensure it's properly copied:
+
+```csharp
+public RuntimeSceneSettings DeepCopy()
+{
+    var copy = new RuntimeSceneSettings();
+    // ... existing properties ...
+
+    // Add your new property
+    copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+    copy.boundaryOutwardDrag = boundaryOutwardDrag;
+
+    return copy;
+}
+```
+
+### 3. Add UI Field to InGameSettingsMenu
+
+**File:** `Assets/Scripts/InGameSettingsMenu.cs`
+
+#### Option A: Add to an Existing Group
+
+Find the appropriate `Create*Group()` method and add your field:
+
+```csharp
+private void CreateHandsAttractionGroup(ScrollView parentContainer)
+{
+    var group = CreateGroup("Hands Attraction", parentContainer);
+
+    // ... existing fields ...
+
+    // Add your new field
+    CreateFloatField(group, "My New Setting",
+        () => runtimeSettings.myNewSetting,
+        v => runtimeSettings.myNewSetting = v);
+}
+```
+
+#### Option B: Create a New Group
+
+If your settings deserve their own category, create a new group method:
+
+```csharp
+private void CreateBoundaryDragGroup(ScrollView parentContainer)
+{
+    var group = CreateGroup("Boundary Drag", parentContainer);
+
+    CreateFloatField(group, "Boundary Distance Multiplier",
+        () => runtimeSettings.boundaryDistanceMultiplier,
+        v => runtimeSettings.boundaryDistanceMultiplier = v);
+    CreateFloatField(group, "Boundary Outward Drag",
+        () => runtimeSettings.boundaryOutwardDrag,
+        v => runtimeSettings.boundaryOutwardDrag = v);
+}
+```
+
+Then add it to `CreateSceneSettingsContent()` or `CreatePostProcessingContent()`:
+
+```csharp
+private void CreateSceneSettingsContent()
+{
+    CreateGravityAttractionGroup(sceneSettingsPanel);
+    CreateHandsAttractionGroup(sceneSettingsPanel);
+    CreateBoundaryDragGroup(sceneSettingsPanel);  // Add your new group
+    // ... rest of groups ...
+}
+```
+
+### 4. Update Merge Method for Loading
+
+**File:** `Assets/Scripts/InGameSettingsMenu.cs`
+
+Add your property to the appropriate merge method so it loads from profiles:
+
+**For Scene settings** - Update `MergeSceneSettings()`:
+```csharp
+private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
+{
+    // ... existing properties ...
+
+    // Boundary Drag settings
+    runtimeSettings.boundaryDistanceMultiplier = loadedSettings.boundaryDistanceMultiplier;
+    runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
+}
+```
+
+**For Post-Processing settings** - Update `MergePostProcessingSettings()`:
+```csharp
+private void MergePostProcessingSettings(RuntimeSceneSettings loadedSettings)
+{
+    // ... existing properties ...
+
+    runtimeSettings.myNewPostProcessingSetting = loadedSettings.myNewPostProcessingSetting;
+}
+```
+
+### 5. Update Copy Method for Saving
+
+**File:** `Assets/Scripts/InGameSettingsMenu.cs`
+
+Add your property to the appropriate copy method so it saves to profiles:
+
+**For Scene settings** - Update `CopySceneSettings()`:
+```csharp
+private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
+{
+    // ... existing properties ...
+
+    // Boundary Drag settings
+    destination.boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+    destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
+
+    // ... zeroing out post-processing values ...
+}
+```
+
+**For Post-Processing settings** - Update `CopyPostProcessingSettings()`:
+```csharp
+private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
+{
+    // ... existing properties ...
+
+    destination.myNewPostProcessingSetting = source.myNewPostProcessingSetting;
+
+    // ... zeroing out scene values ...
+}
+```
+
+**Important:** Also add the zero/default value for your property in the *opposite* copy method to prevent cross-contamination:
+
+```csharp
+// In CopyPostProcessingSettings(), zero out scene settings:
+destination.boundaryDistanceMultiplier = 0.0f;
+destination.boundaryOutwardDrag = 0.0f;
+
+// In CopySceneSettings(), zero out post-processing settings:
+destination.myNewPostProcessingSetting = 0.0f;
+```
+
+## Available UI Field Types
+
+### Float Field
+```csharp
+CreateFloatField(group, "Label", () => runtimeSettings.property, v => runtimeSettings.property = v);
+```
+
+### Slider Field (with min/max range)
+```csharp
+CreateSliderField(group, "Label", () => runtimeSettings.property, v => runtimeSettings.property = v, minValue, maxValue);
+```
+
+### Toggle Field (boolean)
+```csharp
+CreateToggleField(group, "Label", () => runtimeSettings.property, v => runtimeSettings.property = v);
+```
+
+### Float Array Field
+```csharp
+CreateFloatArrayField(group, "Label", () => runtimeSettings.arrayProperty, v => runtimeSettings.arrayProperty = v);
+```
+
+## Group Organization
+
+The settings menu follows this group structure to match the SceneController inspector:
+
+**Scene Tab:**
+- Gravity Attraction
+- Hands Attraction
+- Boundary Drag
+- Intrinsic Pulsation
+- Movement-Based Pulsation
+- Miscellaneous
+- Animation
+- Style
+- Debugging
+
+**Post-Processing Tab:**
+- Bloom
+- Screen Space Lens Flare
+- Lens Distortion
+- Color Adjustments
+- White Balance
+
+## Common Pitfalls
+
+1. **Forgetting DeepCopy()**: Your setting won't be properly copied when backing up/restoring settings.
+
+2. **Missing Merge method update**: Your setting won't load from saved profiles.
+
+3. **Missing Copy method update**: Your setting won't save to profiles.
+
+4. **Cross-contamination**: Forgetting to zero out your setting in the opposite Copy method causes scene settings to appear in post-processing profiles and vice versa.
+
+5. **Wrong tab**: Adding a scene setting to post-processing methods or vice versa.
+
+## Testing Checklist
+
+After adding your new setting:
+
+- [ ] Setting appears in the correct group in the UI
+- [ ] Changing the value updates in real-time
+- [ ] Saving a profile includes the new setting
+- [ ] Loading a profile restores the setting value
+- [ ] Profile JSON files only contain relevant settings (no cross-contamination)
+- [ ] DeepCopy works correctly (test by opening/closing menu)
+
+## Example: Complete Addition
+
+Here's a complete example of adding `boundaryDistanceMultiplier` and `boundaryOutwardDrag`:
+
+### RuntimeSceneSettings.cs
+```csharp
+[Header("Boundary Drag")]
+[Tooltip("Multiplier for max distance calculation.")]
+public float boundaryDistanceMultiplier = 1.5f;
+
+[Tooltip("Drag applied when moving away from hands while past the boundary.")]
+public float boundaryOutwardDrag = 50f;
+```
+
+### RuntimeSceneSettings.cs - DeepCopy()
+```csharp
+copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+copy.boundaryOutwardDrag = boundaryOutwardDrag;
+```
+
+### InGameSettingsMenu.cs - New Group Method
+```csharp
+private void CreateBoundaryDragGroup(ScrollView parentContainer)
+{
+    var group = CreateGroup("Boundary Drag", parentContainer);
+
+    CreateFloatField(group, "Boundary Distance Multiplier",
+        () => runtimeSettings.boundaryDistanceMultiplier,
+        v => runtimeSettings.boundaryDistanceMultiplier = v);
+    CreateFloatField(group, "Boundary Outward Drag",
+        () => runtimeSettings.boundaryOutwardDrag,
+        v => runtimeSettings.boundaryOutwardDrag = v);
+}
+```
+
+### InGameSettingsMenu.cs - CreateSceneSettingsContent()
+```csharp
+private void CreateSceneSettingsContent()
+{
+    CreateGravityAttractionGroup(sceneSettingsPanel);
+    CreateHandsAttractionGroup(sceneSettingsPanel);
+    CreateBoundaryDragGroup(sceneSettingsPanel);  // Added
+    // ... rest ...
+}
+```
+
+### InGameSettingsMenu.cs - MergeSceneSettings()
+```csharp
+// Boundary Drag settings
+runtimeSettings.boundaryDistanceMultiplier = loadedSettings.boundaryDistanceMultiplier;
+runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
+```
+
+### InGameSettingsMenu.cs - CopySceneSettings()
+```csharp
+// Boundary Drag settings
+destination.boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
+```
+
+### InGameSettingsMenu.cs - CopyPostProcessingSettings()
+```csharp
+// Zero out boundary drag settings
+destination.boundaryDistanceMultiplier = 0.0f;
+destination.boundaryOutwardDrag = 0.0f;
+```
