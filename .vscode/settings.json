@@ -51,13 +51,14 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "EnergyBall-V3.slnx",
-    "dotnet.preferCSharpExtension": true,
+    "dotnet.defaultSolution": "EnergyBall-V3.sln",
+    "dotnet.server.useOmnisharp": true,
+    "dotnet.preferCSharpExtension": false,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
     "[csharp]": {
-        "editor.defaultFormatter": "ms-dotnettools.csharp",
+        "editor.defaultFormatter": "anysphere.csharp",
         "editor.formatOnSave": true,
         "editor.formatOnPaste": true,
         "editor.formatOnType": true,
@@ -67,6 +68,7 @@
     "csharp.format.enable": true,
     "csharp.semanticHighlighting.enabled": true,
     "omnisharp.enableEditorConfigSupport": true,
+    "omnisharp.useModernNet": true,
     "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
