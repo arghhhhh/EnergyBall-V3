@@ -206,6 +206,12 @@ public class PlayerConstructor : MonoBehaviour
     [HideInInspector]
     public bool wasInBounds = true;
 
+    [HideInInspector]
+    public float outOfBoundsWithClosedHandsTimer = 0f;
+
+    [HideInInspector]
+    public bool pendingSphereReset = false;
+
     private void Awake()
     {
         jointMap = new Dictionary<JointType, GameObject>()
@@ -475,6 +481,14 @@ public class PlayerConstructor : MonoBehaviour
             Mathf.Clamp(spherePos.y, gridMin.y, gridMax.y),
             Mathf.Clamp(spherePos.z, gridMin.z, gridMax.z)
         );
+    }
+
+    public void ResetSphereToHandMidpoint()
+    {
+        Vector3 handMidpoint = (HandLeft.transform.position + HandRight.transform.position) / 2f;
+        sphere.transform.position = handMidpoint;
+        sphere.linearVelocity = Vector3.zero;
+        sphere.angularVelocity = Vector3.zero;
     }
 
     private void OnDisable()

@@ -60,12 +60,45 @@ public class HandEffects
         // If player is out of bounds, keep hands closed regardless of actual hand state
         if (!isInBounds)
         {
+            // Check if both actual hand states are closed (not the clamped states)
+            bool bothHandsClosed = player.leftHandState == HandState.Closed && player.rightHandState == HandState.Closed;
+            bool eitherHandOpen = player.leftHandState == HandState.Open || player.rightHandState == HandState.Open;
+
+            if (bothHandsClosed)
+            {
+                // Increment the timer
+                player.outOfBoundsWithClosedHandsTimer += Time.deltaTime;
+
+                // If out of bounds with closed hands for more than 3 seconds, mark sphere for reset
+                if (player.outOfBoundsWithClosedHandsTimer >= 3f)
+                {
+                    player.pendingSphereReset = true;
+                    player.outOfBoundsWithClosedHandsTimer = 0f;
+                }
+            }
+            else
+            {
+                // Reset timer if hands are not both closed
+                player.outOfBoundsWithClosedHandsTimer = 0f;
+            }
+
+            // If pending reset and either hand is open, keep sphere centered between hands
+            // This runs every frame to track hand movement until the sphere is back in bounds
+            if (player.pendingSphereReset && eitherHandOpen)
+            {
+                player.ResetSphereToHandMidpoint();
+            }
+
             // Keep hands closed - don't process normal hand state logic below
             // Update secondary attractors for closed state
             player.leftHandSecondaryAttractor.position = player.HandLeft.transform.position;
             player.rightHandSecondaryAttractor.position = player.HandRight.transform.position;
             return;
         }
+
+        // Reset the out-of-bounds timer and pending reset flag when back in bounds
+        player.outOfBoundsWithClosedHandsTimer = 0f;
+        player.pendingSphereReset = false;
 
         // Normal hand state processing (only when in bounds)
         if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
