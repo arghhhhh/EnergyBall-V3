@@ -319,8 +319,9 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = CreateGroup("Boundary Drag", parentContainer);
 
-        CreateFloatField(group, "Boundary Distance Multiplier", () => runtimeSettings.boundaryDistanceMultiplier, v => runtimeSettings.boundaryDistanceMultiplier = v);
+        CreateFloatField(group, "Boundary Distance Multiplier", () => runtimeSettings.addedBoundaryDistance, v => runtimeSettings.addedBoundaryDistance = v);
         CreateFloatField(group, "Boundary Outward Drag", () => runtimeSettings.boundaryOutwardDrag, v => runtimeSettings.boundaryOutwardDrag = v);
+        CreateFloatField(group, "Out Of Bounds Reset Delay", () => runtimeSettings.outOfBoundsResetDelay, v => runtimeSettings.outOfBoundsResetDelay = v);
     }
 
     private void CreateIntrinsicPulsationGroup(ScrollView parentContainer)
@@ -875,8 +876,9 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.pushForce = loadedSettings.pushForce;
         runtimeSettings.minDrag = loadedSettings.minDrag;
         runtimeSettings.maxDrag = loadedSettings.maxDrag;
-        runtimeSettings.boundaryDistanceMultiplier = loadedSettings.boundaryDistanceMultiplier;
+        runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
         runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
+        runtimeSettings.outOfBoundsResetDelay = loadedSettings.outOfBoundsResetDelay;
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO, not loaded from profiles
         runtimeSettings.alignmentVectorStrengthScaler = loadedSettings.alignmentVectorStrengthScaler;
         runtimeSettings.handPushScaler = loadedSettings.handPushScaler;
@@ -977,8 +979,9 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.pushForce = source.pushForce;
         destination.minDrag = source.minDrag;
         destination.maxDrag = source.maxDrag;
-        destination.boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+        destination.addedBoundaryDistance = source.addedBoundaryDistance;
         destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
+        destination.outOfBoundsResetDelay = source.outOfBoundsResetDelay;
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO and excluded from profiles
         destination.alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
         destination.handPushScaler = source.handPushScaler;
@@ -1097,8 +1100,9 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.pushForce = 0.0f;
         destination.minDrag = 0.0f;
         destination.maxDrag = 0.0f;
-        destination.boundaryDistanceMultiplier = 0.0f;
+        destination.addedBoundaryDistance = 0.0f;
         destination.boundaryOutwardDrag = 0.0f;
+        destination.outOfBoundsResetDelay = 0.0f;
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO (set to default empty curve)
         destination.alignmentVectorStrength = new AnimationCurve();
         destination.alignmentVectorStrengthScaler = 0.0f;

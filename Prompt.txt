@@ -1,82 +1,8 @@
 Prompt:
 
-Problem:
-
-When a player closes their hands, the sphere travels based on physics forces. If it travels too far from the grid, it takes too long to return when hands open again. The metaball position is already clamped to the grid edge via GetClampedMetaballPosition(), but the underlying player.sphere could drift very far away.
-
-
-Solution:
- that applies drag to stop the sphere when it exits a scaled version of the marching cubes grid boundary. The drag only applies when the sphere is:
-
-Created a BoundaryForce system
-1. Outside the boundary on a given axis
-2. Moving outward on that axis (not fighting the return)
-
-This stops the sphere in place rather than bouncing it back, avoiding issues with gravitational forces and SDF rendering from a bouncing sphere.
-
-
-Files Created:
-
-@Assets\Scripts\BoundaryForce.cs
-Applies per-axis drag when sphere exceeds scaled grid boundary (AABB)
-Uses boundaryDistanceMultiplier to scale the grid size
-Uses boundaryOutwardDrag as the drag strength
-Called from SceneController.UpdateOtherPlayerData() after HandForce
-
-@Assets\Scripts\BoundaryGizmos.cs
-Draws wireframe cubes for both the marching cubes grid and the force boundary
-Works in both edit mode and play mode
-Auto-finds SceneController and MetaballsToSDF references
-
-
-Files Modified:
-
-@Assets\Scripts\RuntimeSceneSettings.cs
-Added boundaryDistanceMultiplier (default: 1.5) - scales grid size for boundary
-Added boundaryOutwardDrag (default: 50) - drag strength
-
-@Assets\Scripts\SceneController.cs
-Added inspector fields for boundary settings under "Boundary Drag" group
-Added boundaryForceController instantiation and call in update loop
-Added GetGridSize() method to expose grid dimensions from MetaballsToSDF
-
-@Assets\Scripts\MetaballsToSDF.cs
-Added GetGridSize() method that works in both edit mode (calculates from _dimensions * _gridScale) and play mode (returns cached sizeBox)
-@Assets\Scripts\PlayerConstructor.cs
-Updated IsInbounds() and GetClampedMetaballPosition() to use controller.GetGridSize() instead of reading sdfScale from VFX graphtion the metaball. 
-
-
-Now:
-
-Great progress has been made! However, I'm a bit bothered by the fact that when the sphere exits the force boundary at an angle, it only seems to experience drag perpendicular to the rectangular shape of the boundary, causing it to slow down in the outward direction but still move too far in directions parallel to the boundary line before it finally stops. It's as if it's meeting a sloped wall when outside the boundary that still allows it to roll as long as it's not moving away. Do you understand what I mean?
-
-
-Yes, I understand exactly what you mean. The current implementation applies drag only on the axis where the sphere is outside the boundary AND moving outward. So if the sphere exits at a corner moving diagonally outward, it gets drag on both axes. But if it exits through an edge (say, the +X boundary) while also having velocity in Y or Z, only the X velocity gets dampened - the Y and Z velocities continue unimpeded, causing the sphere to "slide along the wall" until it eventually drifts back in bounds or exits on another axis.
-
-The behavior you're describing is like hitting a frictionless angled surface - the perpendicular component of velocity is absorbed, but the parallel components continue.
-
-There are a few ways to address this:
-
-AskUserQuestion
-OUT
-User has answered your questions: "How would you like the boundary drag to behave when the sphere is outside?"="Full drag on all axes (Recommended)". You can now continue with the user's answers in mind.
-I'll update BoundaryForce.cs to apply drag to all velocity components when the sphere is outside the boundary on any axis.
-
-Edit c:\Users\Joss\Desktop\Projects\Mine\EnergyBall-V3\Assets\Scripts\BoundaryForce.cs
-Removed 11 lines
-Done. The change simplifies the logic: now when the sphere is outside the boundary on any axis and moving outward on that axis, drag is applied to all velocity components (-velocity * drag). This will stop the sphere completely rather than letting it slide along the boundary surface.
-
-The key difference:
-
-Before: Only the velocity component perpendicular to the exceeded boundary face was dampened
-After: All velocity components are dampened, bringing the sphere to a full stop
-This should eliminate the "sliding along the wall" behavior you were experiencing.
 
 Files:
-@Assets\Scripts\PlayerConstructor.cs
-@Assets\Scripts\HandEffects.cs
-@Assets\Scripts\Metaballs\MetaballsToSDF.cs
-@SceneController.UpdateOtherPlayerData
+
 
 Log:
 ```

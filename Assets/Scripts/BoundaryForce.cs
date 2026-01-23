@@ -22,7 +22,7 @@ public class BoundaryForce
         }
 
         // Get scaled boundary extents
-        Vector3 boundaryExtents = GetScaledBoundaryExtents(runtimeSettings);
+        Vector3 boundaryExtents = GetScaledBoundaryExtents(runtimeSettings.addedBoundaryDistance);
 
         // Grid center (offset by baseZDepth on Z axis)
         Vector3 gridCenter = new Vector3(0f, 0f, runtimeSettings.baseZDepth);
@@ -67,13 +67,14 @@ public class BoundaryForce
     /// <summary>
     /// Calculates the scaled boundary extents (half-sizes) based on grid size and multiplier.
     /// </summary>
-    private Vector3 GetScaledBoundaryExtents(RuntimeSceneSettings runtimeSettings)
+    private Vector3 GetScaledBoundaryExtents(float addedBoundaryDistance)
     {
         // Get grid size from MetaballsToSDF
         Vector3 gridSize = controller.GetGridSize();
+        float additionalSize = addedBoundaryDistance * 2f;
+        Vector3 scaledSize = gridSize + new Vector3(additionalSize, additionalSize, additionalSize);
 
-        // Scale the grid extents by the multiplier
         // Grid extents are half the grid size (distance from center to edge)
-        return (gridSize / 2f) * runtimeSettings.boundaryDistanceMultiplier;
+        return scaledSize / 2f;
     }
 }

@@ -36,8 +36,8 @@ public class BoundaryGizmos : MonoBehaviour
 
         // Get baseZDepth - use inspector value in edit mode, runtime settings in play mode
         float baseZDepth = sceneController != null ? sceneController.baseZDepth : 5f;
-        float boundaryDistanceMultiplier =
-            sceneController != null ? sceneController.boundaryDistanceMultiplier : 1.5f;
+        float addedBoundaryDistance =
+            sceneController != null ? sceneController.addedBoundaryDistance : 1.5f;
 
         // Grid boundary (marching cubes)
         if (showGridBoundary)
@@ -48,7 +48,7 @@ public class BoundaryGizmos : MonoBehaviour
         // Force boundary (scaled grid box) - stationary, works in both modes
         if (showForceBoundary)
         {
-            DrawForceBoundary(gridSize, baseZDepth, boundaryDistanceMultiplier);
+            DrawForceBoundary(gridSize, baseZDepth, addedBoundaryDistance);
         }
     }
 
@@ -62,12 +62,12 @@ public class BoundaryGizmos : MonoBehaviour
         Gizmos.DrawWireCube(center, gridSize);
     }
 
-    void DrawForceBoundary(Vector3 gridSize, float baseZDepth, float boundaryDistanceMultiplier)
+    void DrawForceBoundary(Vector3 gridSize, float baseZDepth, float addedBoundaryDistance)
     {
         Gizmos.color = forceBoundaryColor;
 
-        // Scale the grid size by the multiplier (same as BoundaryForce)
-        Vector3 scaledSize = gridSize * boundaryDistanceMultiplier;
+        float doubledSize = addedBoundaryDistance * 2f;
+        Vector3 scaledSize = gridSize + new Vector3(doubledSize, doubledSize, doubledSize);
 
         // Draw at grid center - boundary is stationary relative to the grid
         Vector3 center = new Vector3(0f, 0f, baseZDepth);

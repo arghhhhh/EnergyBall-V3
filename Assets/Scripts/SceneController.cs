@@ -48,13 +48,19 @@ public class SceneController : MonoBehaviour
     [Tooltip(
         "Multiplier for max distance calculation. Max distance = this * (longest grid side / 2)."
     )]
-    public float boundaryDistanceMultiplier = 1.5f;
+    public float addedBoundaryDistance = 1.5f;
 
     [BoxGroup("Boundary Drag")]
     [Tooltip(
         "Drag applied to stop the sphere when moving away from hands while past the boundary. Set to 0 to disable."
     )]
     public float boundaryOutwardDrag = 50f;
+
+    [BoxGroup("Boundary Drag")]
+    [Tooltip(
+        "Time in seconds the sphere must be out of bounds before it can be reset to hand midpoint when both hands open."
+    )]
+    public float outOfBoundsResetDelay = 3f;
 
     [BoxGroup("Hands Attraction")]
     public float pushForce = 5f;
@@ -513,7 +519,7 @@ public class SceneController : MonoBehaviour
             );
             metaballsToSDF.SetMetaballRadius(
                 playerConstructor.metaballIndex,
-                playerConstructor.sphere.transform.localScale.x / 2f
+                playerConstructor.sphere.transform.localScale.x
             );
             // TEMPLATE: Add metaballs for each hand
             //
@@ -740,8 +746,9 @@ public class SceneController : MonoBehaviour
         target.singleHandOpenForceDamper = singleHandOpenForceDamper;
 
         // Boundary Drag
-        target.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+        target.addedBoundaryDistance = addedBoundaryDistance;
         target.boundaryOutwardDrag = boundaryOutwardDrag;
+        target.outOfBoundsResetDelay = outOfBoundsResetDelay;
 
         target.pushForce = pushForce;
         target.minDrag = minDrag;
@@ -806,8 +813,9 @@ public class SceneController : MonoBehaviour
         singleHandOpenForceDamper = source.singleHandOpenForceDamper;
 
         // Boundary Drag
-        boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+        addedBoundaryDistance = source.addedBoundaryDistance;
         boundaryOutwardDrag = source.boundaryOutwardDrag;
+        outOfBoundsResetDelay = source.outOfBoundsResetDelay;
 
         pushForce = source.pushForce;
         minDrag = source.minDrag;

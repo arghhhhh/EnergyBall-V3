@@ -25,12 +25,17 @@ public class RuntimeSceneSettings
     [Tooltip(
         "Multiplier for max distance calculation. Max distance = this * (longest grid side / 2)."
     )]
-    public float boundaryDistanceMultiplier = 1.5f;
+    public float addedBoundaryDistance = 1.5f;
 
     [Tooltip(
         "Drag applied to stop the sphere when moving away from hands while past the boundary. Set to 0 to disable."
     )]
     public float boundaryOutwardDrag = 50f;
+
+    [Tooltip(
+        "Time in seconds the sphere must be out of bounds before it can be reset to hand midpoint when both hands open."
+    )]
+    public float outOfBoundsResetDelay = 3f;
     public float pushForce = 5f;
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
@@ -205,8 +210,9 @@ public class RuntimeSceneSettings
         copy.attractionRadiusMultiplier = attractionRadiusMultiplier;
         copy.forceToMiddle = new AnimationCurve(forceToMiddle.keys);
         copy.singleHandOpenForceDamper = singleHandOpenForceDamper;
-        copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+        copy.addedBoundaryDistance = addedBoundaryDistance;
         copy.boundaryOutwardDrag = boundaryOutwardDrag;
+        copy.outOfBoundsResetDelay = outOfBoundsResetDelay;
         copy.pushForce = pushForce;
         copy.minDrag = minDrag;
         copy.maxDrag = maxDrag;

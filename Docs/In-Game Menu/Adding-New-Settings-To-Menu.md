@@ -29,7 +29,7 @@ Add your new property under the appropriate `[Header]` section:
 
 ```csharp
 [Header("Boundary Drag")]
-public float boundaryDistanceMultiplier = 1.5f;
+public float addedBoundaryDistance = 1.5f;
 public float boundaryOutwardDrag = 50f;
 ```
 
@@ -72,7 +72,7 @@ public RuntimeSceneSettings DeepCopy()
     // ... existing properties ...
 
     // Add your new property
-    copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+    copy.addedBoundaryDistance = addedBoundaryDistance;
     copy.boundaryOutwardDrag = boundaryOutwardDrag;
 
     return copy;
@@ -155,8 +155,8 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
     var group = CreateGroup("Boundary Drag", parentContainer);
 
     CreateFloatField(group, "Boundary Distance Multiplier",
-        () => runtimeSettings.boundaryDistanceMultiplier,
-        v => runtimeSettings.boundaryDistanceMultiplier = v);
+        () => runtimeSettings.addedBoundaryDistance,
+        v => runtimeSettings.addedBoundaryDistance = v);
     CreateFloatField(group, "Boundary Outward Drag",
         () => runtimeSettings.boundaryOutwardDrag,
         v => runtimeSettings.boundaryOutwardDrag = v);
@@ -189,7 +189,7 @@ private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
     // ... existing properties ...
 
     // Boundary Drag settings
-    runtimeSettings.boundaryDistanceMultiplier = loadedSettings.boundaryDistanceMultiplier;
+    runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
     runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 }
 ```
@@ -219,7 +219,7 @@ private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings
     // ... existing properties ...
 
     // Boundary Drag settings
-    destination.boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+    destination.addedBoundaryDistance = source.addedBoundaryDistance;
     destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
 
     // ... zeroing out post-processing values ...
@@ -243,7 +243,7 @@ private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeScen
 
 ```csharp
 // In CopyPostProcessingSettings(), zero out scene settings:
-destination.boundaryDistanceMultiplier = 0.0f;
+destination.addedBoundaryDistance = 0.0f;
 destination.boundaryOutwardDrag = 0.0f;
 
 // In CopySceneSettings(), zero out post-processing settings:
@@ -329,14 +329,14 @@ After adding your new setting:
 
 ## Example: Complete Addition
 
-Here's a complete example of adding `boundaryDistanceMultiplier` and `boundaryOutwardDrag`:
+Here's a complete example of adding `addedBoundaryDistance` and `boundaryOutwardDrag`:
 
 ### RuntimeSceneSettings.cs
 
 ```csharp
 [Header("Boundary Drag")]
 [Tooltip("Multiplier for max distance calculation.")]
-public float boundaryDistanceMultiplier = 1.5f;
+public float addedBoundaryDistance = 1.5f;
 
 [Tooltip("Drag applied when moving away from hands while past the boundary.")]
 public float boundaryOutwardDrag = 50f;
@@ -345,7 +345,7 @@ public float boundaryOutwardDrag = 50f;
 ### RuntimeSceneSettings.cs - DeepCopy()
 
 ```csharp
-copy.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+copy.addedBoundaryDistance = addedBoundaryDistance;
 copy.boundaryOutwardDrag = boundaryOutwardDrag;
 ```
 
@@ -354,7 +354,7 @@ copy.boundaryOutwardDrag = boundaryOutwardDrag;
 ```csharp
 [BoxGroup("Boundary Drag")]
 [Tooltip("Multiplier for max distance calculation.")]
-public float boundaryDistanceMultiplier = 1.5f;
+public float addedBoundaryDistance = 1.5f;
 
 [BoxGroup("Boundary Drag")]
 [Tooltip("Drag applied when moving away from hands while past the boundary.")]
@@ -365,7 +365,7 @@ public float boundaryOutwardDrag = 50f;
 
 ```csharp
 // Boundary Drag
-target.boundaryDistanceMultiplier = boundaryDistanceMultiplier;
+target.addedBoundaryDistance = addedBoundaryDistance;
 target.boundaryOutwardDrag = boundaryOutwardDrag;
 ```
 
@@ -373,7 +373,7 @@ target.boundaryOutwardDrag = boundaryOutwardDrag;
 
 ```csharp
 // Boundary Drag
-boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+addedBoundaryDistance = source.addedBoundaryDistance;
 boundaryOutwardDrag = source.boundaryOutwardDrag;
 ```
 
@@ -385,8 +385,8 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
     var group = CreateGroup("Boundary Drag", parentContainer);
 
     CreateFloatField(group, "Boundary Distance Multiplier",
-        () => runtimeSettings.boundaryDistanceMultiplier,
-        v => runtimeSettings.boundaryDistanceMultiplier = v);
+        () => runtimeSettings.addedBoundaryDistance,
+        v => runtimeSettings.addedBoundaryDistance = v);
     CreateFloatField(group, "Boundary Outward Drag",
         () => runtimeSettings.boundaryOutwardDrag,
         v => runtimeSettings.boundaryOutwardDrag = v);
@@ -409,7 +409,7 @@ private void CreateSceneSettingsContent()
 
 ```csharp
 // Boundary Drag settings
-runtimeSettings.boundaryDistanceMultiplier = loadedSettings.boundaryDistanceMultiplier;
+runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
 runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 ```
 
@@ -417,7 +417,7 @@ runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 
 ```csharp
 // Boundary Drag settings
-destination.boundaryDistanceMultiplier = source.boundaryDistanceMultiplier;
+destination.addedBoundaryDistance = source.addedBoundaryDistance;
 destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
 ```
 
@@ -425,6 +425,6 @@ destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
 
 ```csharp
 // Zero out boundary drag settings
-destination.boundaryDistanceMultiplier = 0.0f;
+destination.addedBoundaryDistance = 0.0f;
 destination.boundaryOutwardDrag = 0.0f;
 ```

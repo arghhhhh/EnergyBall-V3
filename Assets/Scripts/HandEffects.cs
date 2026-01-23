@@ -60,31 +60,28 @@ public class HandEffects
         // If player is out of bounds, keep hands closed regardless of actual hand state
         if (!isInBounds)
         {
-            // Check if both actual hand states are closed (not the clamped states)
+            // Check actual hand states (not the clamped states)
             bool bothHandsClosed = player.leftHandState == HandState.Closed && player.rightHandState == HandState.Closed;
-            bool eitherHandOpen = player.leftHandState == HandState.Open || player.rightHandState == HandState.Open;
+            bool bothHandsOpen = player.leftHandState == HandState.Open && player.rightHandState == HandState.Open;
 
             if (bothHandsClosed)
             {
-                // Increment the timer
+                // Increment the timer only when both hands are closed
                 player.outOfBoundsWithClosedHandsTimer += Time.deltaTime;
 
-                // If out of bounds with closed hands for more than 3 seconds, mark sphere for reset
-                if (player.outOfBoundsWithClosedHandsTimer >= 3f)
+                // If out of bounds with closed hands for more than the configured delay, mark sphere for reset
+                if (player.outOfBoundsWithClosedHandsTimer >= settings.outOfBoundsResetDelay)
                 {
                     player.pendingSphereReset = true;
                     player.outOfBoundsWithClosedHandsTimer = 0f;
                 }
             }
-            else
-            {
-                // Reset timer if hands are not both closed
-                player.outOfBoundsWithClosedHandsTimer = 0f;
-            }
+            // When one hand is open, timer pauses (doesn't increment or reset)
+            // This allows single open hand to draw sphere in naturally
 
-            // If pending reset and either hand is open, keep sphere centered between hands
+            // If pending reset and both hands are open, keep sphere centered between hands
             // This runs every frame to track hand movement until the sphere is back in bounds
-            if (player.pendingSphereReset && eitherHandOpen)
+            if (player.pendingSphereReset && bothHandsOpen)
             {
                 player.ResetSphereToHandMidpoint();
             }

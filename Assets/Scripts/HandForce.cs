@@ -106,7 +106,7 @@ public class HandForce
             0,
             distance
         );
-        float forceDamper = runtimeSettings.forceToMiddle.Evaluate(relativeDistance) * (isSingleHandOpen(player) ? runtimeSettings.singleHandOpenForceDamper : 1f);
+        float forceDamper = runtimeSettings.forceToMiddle.Evaluate(relativeDistance) * ((isSingleHandOpen(player) && player.IsInbounds()) ? runtimeSettings.singleHandOpenForceDamper : 1f);
 
         Vector3 forceDirection = direction.normalized;
         Vector3 forceVector = runtimeSettings.pushForce * forceDamper * forceDirection;
