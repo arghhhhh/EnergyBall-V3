@@ -364,6 +364,8 @@ public class InGameSettingsMenu : MonoBehaviour
         var group = CreateGroup("Animation", parentContainer);
 
         CreateFloatField(group, "Particle Initialization Delay", () => runtimeSettings.particleInitializationDelay, v => runtimeSettings.particleInitializationDelay = v);
+        CreateFloatField(group, "Initialization Reset Delay", () => runtimeSettings.initializationResetDelay, v => runtimeSettings.initializationResetDelay = v);
+        CreateSliderField(group, "Initialization Speed", () => runtimeSettings.initializationSpeed, v => runtimeSettings.initializationSpeed = v, 0f, 1f);
     }
 
     private void CreatePostProcessingGroup(ScrollView parentContainer)
@@ -903,7 +905,11 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.defaultUnscaledSize = loadedSettings.defaultUnscaledSize;
         runtimeSettings.bodyScale = loadedSettings.bodyScale;
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
+
+        // Animation
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
+        runtimeSettings.initializationResetDelay = loadedSettings.initializationResetDelay;
+        runtimeSettings.initializationSpeed = loadedSettings.initializationSpeed;
 
         // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
@@ -1006,7 +1012,11 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.defaultUnscaledSize = source.defaultUnscaledSize;
         destination.bodyScale = source.bodyScale;
         destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
+
+        // Animation
         destination.particleInitializationDelay = source.particleInitializationDelay;
+        destination.initializationResetDelay = source.initializationResetDelay;
+        destination.initializationSpeed = source.initializationSpeed;
 
         // Style settings
         destination.customColors = source.customColors;
@@ -1126,6 +1136,8 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.bodyScale = 0.0f;
         destination.maxDistanceFromCamera = 0.0f;
         destination.particleInitializationDelay = 0.0f;
+        destination.initializationResetDelay = 0.0f;
+        destination.initializationSpeed = 0.0f;
         destination.dummyOnlyMode = false;
         destination.drawSkeleton = false;
         destination.customColors = false;

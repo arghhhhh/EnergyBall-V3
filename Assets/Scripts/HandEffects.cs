@@ -5,6 +5,9 @@ public class HandEffects
 {
     public void ManageHandEffects(PlayerConstructor player, RuntimeSceneSettings settings)
     {
+        // Capture initialization state before checking
+        bool wasInitialized = player.initialized;
+
         // Check if hands are brought together to initialize the player
         if (!player.initialized)
         {
@@ -16,6 +19,9 @@ public class HandEffects
                 player.initialized = true;
             }
         }
+
+        // Detect if player just initialized this frame
+        bool justInitialized = !wasInitialized && player.initialized;
 
         // // Check if player is in bounds and handle out-of-bounds override
         bool isInBounds = player.IsInbounds();
@@ -101,7 +107,8 @@ public class HandEffects
         if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
-            if (timeSinceStateChange > 2.0f)
+
+            if (timeSinceStateChange > settings.initializationResetDelay || justInitialized)
             {
                 if (player.leftHandOpenCoroutine != null)
                 {
@@ -135,7 +142,8 @@ public class HandEffects
         if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.rightHandStateChangeTime;
-            if (timeSinceStateChange > 2.0f)
+
+            if (timeSinceStateChange > settings.initializationResetDelay || justInitialized)
             {
                 if (player.rightHandOpenCoroutine != null)
                 {

@@ -75,6 +75,10 @@ public class RuntimeSceneSettings
 
     [Header("Animation")]
     public float particleInitializationDelay = 1f;
+    public float initializationResetDelay = 3f;
+    [Range(0f, 1f)]
+    [Tooltip("Speed of the hand opening animation during initialization. Lower values = slower animation.")]
+    public float initializationSpeed = 0.05f;
 
     [Header("Style")]
     [SerializeField]
@@ -237,6 +241,8 @@ public class RuntimeSceneSettings
         copy.bodyScale = bodyScale;
         copy.maxDistanceFromCamera = maxDistanceFromCamera;
         copy.particleInitializationDelay = particleInitializationDelay;
+        copy.initializationResetDelay = initializationResetDelay;
+        copy.initializationSpeed = initializationSpeed;
         copy.bloomThreshold = bloomThreshold;
         copy.bloomIntensity = bloomIntensity;
         copy.bloomScatter = bloomScatter;

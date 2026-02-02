@@ -25,9 +25,6 @@ public class PlayerConstructor : MonoBehaviour
     public AnimationClip emptyClip;
 
     [Foldout("Animations")]
-    public AnimationClip initializeClip;
-
-    [Foldout("Animations")]
     public AnimationClip openClip;
 
     [Foldout("Animations")]
@@ -269,8 +266,14 @@ public class PlayerConstructor : MonoBehaviour
 
     public IEnumerator PlayLeftHandOpenAnimationDelayed()
     {
-        leftHandAnimator.CrossFade(initializeClip.name, 1f);
-        yield return new WaitForSeconds(1.0f);
+        var runtimeSettings = controller.GetRuntimeSettings();
+        // Play open animation at specified speed to simulate initialization
+        leftHandAnimator.SetFloat("OpenSpeed", runtimeSettings.initializationSpeed);
+        leftHandAnimator.CrossFade(openClip.name, 1f);
+        yield return new WaitForSeconds(openClip.length / runtimeSettings.initializationSpeed);
+
+        // Return to normal speed
+        leftHandAnimator.SetFloat("OpenSpeed", 1f);
 
         if (leftHandState == HandState.Open)
         {
@@ -282,8 +285,14 @@ public class PlayerConstructor : MonoBehaviour
 
     public IEnumerator PlayRightHandOpenAnimationDelayed()
     {
-        rightHandAnimator.CrossFade(initializeClip.name, 1f);
-        yield return new WaitForSeconds(1.0f);
+        var runtimeSettings = controller.GetRuntimeSettings();
+        // Play open animation at specified speed to simulate initialization
+        rightHandAnimator.SetFloat("OpenSpeed", runtimeSettings.initializationSpeed);
+        rightHandAnimator.CrossFade(openClip.name, 1f);
+        yield return new WaitForSeconds(openClip.length / runtimeSettings.initializationSpeed);
+
+        // Return to normal speed
+        rightHandAnimator.SetFloat("OpenSpeed", 1f);
 
         if (rightHandState == HandState.Open)
         {

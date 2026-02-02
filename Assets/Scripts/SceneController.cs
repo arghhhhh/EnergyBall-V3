@@ -142,6 +142,17 @@ public class SceneController : MonoBehaviour
     )]
     public float particleInitializationDelay = 1f;
 
+    [BoxGroup("Animation")]
+    [Tooltip(
+        "Time in seconds the hands must be closed before the initialization animation plays once both hands are opened."
+    )]
+    public float initializationResetDelay = 3f;
+
+    [BoxGroup("Animation")]
+    [Range(0f, 1f)]
+    [Tooltip("Speed of the hand opening animation during initialization. Lower values = slower animation.")]
+    public float initializationSpeed = 0.05f;
+
     [Header("Curve Settings")]
     [BoxGroup("Hands Attraction Curves")]
     [Tooltip("Force curve that controls attraction to the middle point between hands")]
@@ -779,7 +790,11 @@ public class SceneController : MonoBehaviour
         target.defaultUnscaledSize = defaultUnscaledSize;
         target.bodyScale = bodyScale;
         target.maxDistanceFromCamera = maxDistanceFromCamera;
+
+        // Animation
         target.particleInitializationDelay = particleInitializationDelay;
+        target.initializationResetDelay = initializationResetDelay;
+        target.initializationSpeed = initializationSpeed;
 
         // Debugging
         target.dummyOnlyMode = dummyOnlyMode;
@@ -846,7 +861,11 @@ public class SceneController : MonoBehaviour
         defaultUnscaledSize = source.defaultUnscaledSize;
         bodyScale = source.bodyScale;
         maxDistanceFromCamera = source.maxDistanceFromCamera;
+
+        // Animation
         particleInitializationDelay = source.particleInitializationDelay;
+        initializationResetDelay = source.initializationResetDelay;
+        initializationSpeed = source.initializationSpeed;
 
         // Debugging
         dummyOnlyMode = source.dummyOnlyMode;
