@@ -824,7 +824,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  customColors: 0
+  customColors: 1
   useTrackingStateColors: 1
   skeletonColor: {r: 1, g: 0, b: 1, a: 1}
   particleColor:
@@ -984,8 +984,8 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   - serializedVersion: 2
     key0: {r: 7.856836, g: 6.011182, b: 0.12340557, a: 1}
-    key1: {r: 11.493665, g: 8.7649555, b: 0.060176373, a: 1}
-    key2: {r: 6.7611556, g: 4.4594226, b: 0.07079758, a: 0}
+    key1: {r: 5.7468324, g: 4.3824778, b: 0.030088186, a: 1}
+    key2: {r: 3.3805778, g: 2.2297113, b: 0.03539879, a: 0}
     key3: {r: 4.544387, g: 6.9085293, b: 0.07234076, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
@@ -993,7 +993,7 @@ MonoBehaviour:
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 0
     ctime1: 21203
-    ctime2: 45104
+    ctime2: 44847
     ctime3: 65535
     ctime4: 0
     ctime5: 0
@@ -1782,12 +1782,12 @@ PrefabInstance:
     - target: {fileID: 4427120889900656642, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -1877,7 +1877,7 @@ PrefabInstance:
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7257791774202339416, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2072,7 +2072,7 @@ PrefabInstance:
     - target: {fileID: 8991758020013612787, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8991758020013612787, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
