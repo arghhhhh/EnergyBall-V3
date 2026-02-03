@@ -495,7 +495,7 @@ public class PlayerConstructor : MonoBehaviour
     public void ResetSphereToHandMidpoint()
     {
         Vector3 handMidpoint = (HandLeft.transform.position + HandRight.transform.position) / 2f;
-        sphere.transform.position = handMidpoint;
+        sphere.transform.position = handMidpoint + new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f));
         sphere.linearVelocity = Vector3.zero;
         sphere.angularVelocity = Vector3.zero;
     }

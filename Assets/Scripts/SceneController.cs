@@ -475,11 +475,43 @@ public class SceneController : MonoBehaviour
     {
         if (CurrentSettings.customColors)
         {
-            int colorIndex = Random.Range(0, skeletonColors.Length);
-            while (colorIndex == lastColorIndex)
+            // Collect all currently used color indices
+            HashSet<int> usedIndices = new();
+            foreach (var existingPlayer in players.Values)
             {
-                colorIndex = Random.Range(0, skeletonColors.Length);
+                if (existingPlayer != null && existingPlayer != player.gameObject)
+                {
+                    var pc = existingPlayer.GetComponent<PlayerConstructor>();
+                    for (int i = 0; i < skeletonColors.Length; i++)
+                    {
+                        if (pc.skeletonColor == skeletonColors[i])
+                        {
+                            usedIndices.Add(i);
+                            break;
+                        }
+                    }
+                }
             }
+
+            int colorIndex;
+            // If there are unused colors, pick from those
+            if (usedIndices.Count < skeletonColors.Length)
+            {
+                do
+                {
+                    colorIndex = Random.Range(0, skeletonColors.Length);
+                } while (usedIndices.Contains(colorIndex));
+            }
+            else
+            {
+                // All colors in use, pick randomly (avoid last used for variety)
+                colorIndex = Random.Range(0, skeletonColors.Length);
+                while (colorIndex == lastColorIndex && skeletonColors.Length > 1)
+                {
+                    colorIndex = Random.Range(0, skeletonColors.Length);
+                }
+            }
+
             lastColorIndex = colorIndex;
             player.skeletonColor = skeletonColors[colorIndex];
             player.leftHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
@@ -562,6 +594,11 @@ public class SceneController : MonoBehaviour
         {
             playerConstructor.beginInitialization = true;
             // playerConstructor.InitializeParticles();
+        }
+
+        else if (!playerConstructor.beginInitialization)
+        {
+            playerConstructor.ResetSphereToHandMidpoint();
         }
     }
 
