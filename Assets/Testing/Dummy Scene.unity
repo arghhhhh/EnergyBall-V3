@@ -734,6 +734,32 @@ MonoBehaviour:
   particleInitializationDelay: 1
   initializationResetDelay: 3
   initializationSpeed: 0.05
+  metaballRadiusAnimationDuration: 2
+  metaballRadiusAnimationStartSize: 0.1
+  metaballRadiusAnimationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0.7532465
+      outSlope: 0.7532465
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.12222223
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0.4455206
+      outSlope: 0.4455206
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.16388887
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   forceToMiddle:
     serializedVersion: 2
     m_Curve:

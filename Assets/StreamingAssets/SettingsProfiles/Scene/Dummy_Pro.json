@@ -40,6 +40,8 @@
     "particleInitializationDelay": 1.75,
     "initializationResetDelay": 3.0,
     "initializationSpeed": 0.03700000047683716,
+    "metaballRadiusAnimationDuration": 2.0,
+    "metaballRadiusAnimationStartSize": 0.0,
     "_customColors": true,
     "drawSkeleton": false,
     "useTrackingStateColors": true,
@@ -69,7 +71,7 @@
     "dummyOnlyMode": true,
     "showSphereMeshOnHandCollision": false,
     "alwaysShowSphereMesh": false,
-    "showMetaballMesh": false,
+    "showMetaballMesh": true,
     "_showAttractionRadius": false,
     "_showHandTrailDistorters": false,
     "_showSecondaryAttractor": false

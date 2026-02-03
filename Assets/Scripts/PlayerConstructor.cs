@@ -209,6 +209,20 @@ public class PlayerConstructor : MonoBehaviour
     [HideInInspector]
     public bool pendingSphereReset = false;
 
+    // Metaball radius animation - NonSerialized to prevent Unity from persisting stale animation state
+    [System.NonSerialized]
+    public bool metaballRadiusAnimating = false;
+    [System.NonSerialized]
+    public float metaballRadiusAnimationStartTime = 0f;
+    // Tracks the radius at the moment animation was interrupted, for smooth transitions
+    [System.NonSerialized]
+    public float metaballRadiusAtAnimationStart = 0f;
+    // Tracks when both hands became closed - used to determine if animation should play
+    // Animation only plays if BOTH hands have been closed for initializationResetDelay
+    // (not just one hand). This prevents animation when quickly switching which hand is open.
+    [System.NonSerialized]
+    public float bothHandsClosedSinceTime = 0f;
+
     private void Awake()
     {
         jointMap = new Dictionary<JointType, GameObject>()
@@ -499,6 +513,93 @@ public class PlayerConstructor : MonoBehaviour
         sphere.linearVelocity = Vector3.zero;
         sphere.angularVelocity = Vector3.zero;
     }
+
+    #region Metaball Radius Animation
+    /// <summary>
+    /// Starts the metaball radius animation from a small size to the current sphere scale.
+    /// If an animation is already in progress, this restarts it from the current animated radius
+    /// for a smooth transition.
+    /// </summary>
+    public void StartMetaballRadiusAnimation(RuntimeSceneSettings settings)
+    {
+        // If already animating, capture current animated radius for smooth transition
+        if (metaballRadiusAnimating)
+        {
+            metaballRadiusAtAnimationStart = GetCurrentAnimatedRadius(settings);
+        }
+        else
+        {
+            metaballRadiusAtAnimationStart = settings.metaballRadiusAnimationStartSize;
+        }
+
+        metaballRadiusAnimating = true;
+        metaballRadiusAnimationStartTime = Time.time;
+    }
+
+    /// <summary>
+    /// Stops the metaball radius animation. Call this when hands close or player goes out of bounds.
+    /// </summary>
+    public void StopMetaballRadiusAnimation()
+    {
+        metaballRadiusAnimating = false;
+    }
+
+    /// <summary>
+    /// Gets the current animated radius value without modifying state.
+    /// Used internally when restarting an animation mid-progress for smooth transitions.
+    /// </summary>
+    private float GetCurrentAnimatedRadius(RuntimeSceneSettings settings)
+    {
+        if (!metaballRadiusAnimating)
+        {
+            return sphere.transform.localScale.x;
+        }
+
+        float elapsed = Time.time - metaballRadiusAnimationStartTime;
+        float t = Mathf.Clamp01(elapsed / settings.metaballRadiusAnimationDuration);
+        // Apply animation curve to remap linear t to curved progression
+        float curvedT = settings.metaballRadiusAnimationCurve.Evaluate(t);
+
+        return Mathf.Lerp(
+            metaballRadiusAtAnimationStart,
+            sphere.transform.localScale.x,
+            curvedT
+        );
+    }
+
+    /// <summary>
+    /// Calculates and returns the metaball radius, applying animation if active.
+    /// This handles the full animation lifecycle including ending the animation when complete.
+    /// </summary>
+    /// <param name="settings">The runtime settings containing animation parameters.</param>
+    /// <returns>The radius to use for the metaball.</returns>
+    public float GetMetaballRadius(RuntimeSceneSettings settings)
+    {
+        if (!metaballRadiusAnimating)
+        {
+            return sphere.transform.localScale.x;
+        }
+
+        float elapsed = Time.time - metaballRadiusAnimationStartTime;
+        float t = Mathf.Clamp01(elapsed / settings.metaballRadiusAnimationDuration);
+        // Apply animation curve to remap linear t to curved progression
+        float curvedT = settings.metaballRadiusAnimationCurve.Evaluate(t);
+
+        float radius = Mathf.Lerp(
+            metaballRadiusAtAnimationStart,
+            sphere.transform.localScale.x,
+            curvedT
+        );
+
+        // End animation when complete (use linear t for timing, not curved)
+        if (t >= 1f)
+        {
+            metaballRadiusAnimating = false;
+        }
+
+        return radius;
+    }
+    #endregion
 
     private void OnDisable()
     {

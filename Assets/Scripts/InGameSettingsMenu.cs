@@ -366,6 +366,8 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(group, "Particle Initialization Delay", () => runtimeSettings.particleInitializationDelay, v => runtimeSettings.particleInitializationDelay = v);
         CreateFloatField(group, "Initialization Reset Delay", () => runtimeSettings.initializationResetDelay, v => runtimeSettings.initializationResetDelay = v);
         CreateSliderField(group, "Initialization Speed", () => runtimeSettings.initializationSpeed, v => runtimeSettings.initializationSpeed = v, 0f, 1f);
+        CreateFloatField(group, "Metaball Radius Animation Duration", () => runtimeSettings.metaballRadiusAnimationDuration, v => runtimeSettings.metaballRadiusAnimationDuration = v);
+        CreateFloatField(group, "Metaball Radius Animation Start Size", () => runtimeSettings.metaballRadiusAnimationStartSize, v => runtimeSettings.metaballRadiusAnimationStartSize = v);
     }
 
     private void CreatePostProcessingGroup(ScrollView parentContainer)
@@ -910,6 +912,8 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
         runtimeSettings.initializationResetDelay = loadedSettings.initializationResetDelay;
         runtimeSettings.initializationSpeed = loadedSettings.initializationSpeed;
+        runtimeSettings.metaballRadiusAnimationDuration = loadedSettings.metaballRadiusAnimationDuration;
+        runtimeSettings.metaballRadiusAnimationStartSize = loadedSettings.metaballRadiusAnimationStartSize;
 
         // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
@@ -1017,6 +1021,8 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.particleInitializationDelay = source.particleInitializationDelay;
         destination.initializationResetDelay = source.initializationResetDelay;
         destination.initializationSpeed = source.initializationSpeed;
+        destination.metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
+        destination.metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
 
         // Style settings
         destination.customColors = source.customColors;
@@ -1138,6 +1144,10 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.particleInitializationDelay = 0.0f;
         destination.initializationResetDelay = 0.0f;
         destination.initializationSpeed = 0.0f;
+        destination.metaballRadiusAnimationDuration = 0.0f;
+        destination.metaballRadiusAnimationStartSize = 0.0f;
+        // Note: metaballRadiusAnimationCurve is managed by SceneController inspector (set to default curve)
+        destination.metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
         destination.dummyOnlyMode = false;
         destination.drawSkeleton = false;
         destination.customColors = false;

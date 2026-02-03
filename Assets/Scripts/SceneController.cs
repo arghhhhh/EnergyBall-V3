@@ -153,6 +153,18 @@ public class SceneController : MonoBehaviour
     [Tooltip("Speed of the hand opening animation during initialization. Lower values = slower animation.")]
     public float initializationSpeed = 0.05f;
 
+    [BoxGroup("Animation")]
+    [Tooltip("Duration in seconds for the metaball radius to animate from minimum to full size during initialization.")]
+    public float metaballRadiusAnimationDuration = 2f;
+
+    [BoxGroup("Animation")]
+    [Tooltip("The starting radius for the metaball animation during initialization.")]
+    public float metaballRadiusAnimationStartSize = 2f;
+
+    [BoxGroup("Animation")]
+    [Tooltip("Animation curve for the metaball radius transition (0-1 input maps to animation progress).")]
+    public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
     [Header("Curve Settings")]
     [BoxGroup("Hands Attraction Curves")]
     [Tooltip("Force curve that controls attraction to the middle point between hands")]
@@ -562,7 +574,7 @@ public class SceneController : MonoBehaviour
             );
             metaballsToSDF.SetMetaballRadius(
                 playerConstructor.metaballIndex,
-                playerConstructor.sphere.transform.localScale.x
+                playerConstructor.GetMetaballRadius(cachedCurrentSettings)
             );
             // TEMPLATE: Add metaballs for each hand
             //
@@ -832,6 +844,9 @@ public class SceneController : MonoBehaviour
         target.particleInitializationDelay = particleInitializationDelay;
         target.initializationResetDelay = initializationResetDelay;
         target.initializationSpeed = initializationSpeed;
+        target.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
+        target.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;
+        target.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
 
         // Debugging
         target.dummyOnlyMode = dummyOnlyMode;
@@ -903,6 +918,9 @@ public class SceneController : MonoBehaviour
         particleInitializationDelay = source.particleInitializationDelay;
         initializationResetDelay = source.initializationResetDelay;
         initializationSpeed = source.initializationSpeed;
+        metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
+        metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
+        metaballRadiusAnimationCurve = new AnimationCurve(source.metaballRadiusAnimationCurve.keys);
 
         // Debugging
         dummyOnlyMode = source.dummyOnlyMode;

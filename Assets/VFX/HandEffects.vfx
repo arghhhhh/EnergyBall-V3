@@ -38184,8 +38184,7 @@ MonoBehaviour:
       m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
         PublicKeyToken=b77a5c561934e089
   m_Direction: 0
-  m_LinkedSlots:
-  - {fileID: 8926484042661616689}
+  m_LinkedSlots: []
 --- !u!114 &8926484042661616655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38947,5 +38946,4 @@ MonoBehaviour:
       m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
         PublicKeyToken=b77a5c561934e089
   m_Direction: 1
-  m_LinkedSlots:
-  - {fileID: 8926484042661616654}
+  m_LinkedSlots: []

@@ -61,6 +61,11 @@ public class HandEffects
                 player.rightHandStateClamped = HandState.Closed;
                 player.rightHandStateChangeTime = Time.time;
             }
+
+            // Stop metaball radius animation when going out of bounds
+            player.StopMetaballRadiusAnimation();
+            // Track when both hands became closed (forced by going out of bounds)
+            player.bothHandsClosedSinceTime = Time.time;
         }
 
         // If player is out of bounds, keep hands closed regardless of actual hand state
@@ -104,6 +109,69 @@ public class HandEffects
         player.pendingSphereReset = false;
 
         // Normal hand state processing (only when in bounds)
+        // IMPORTANT: Process hand CLOSINGS before OPENINGS so that bothHandsClosedSinceTime
+        // is updated before we check if animation should play. This handles the case where
+        // one hand closes and another opens in the same frame (e.g., switching hands).
+
+        // --- PHASE 1: Process hand closings first ---
+        bool leftHandClosing = player.leftHandState == HandState.Closed
+            && player.leftHandStateClamped != HandState.Closed
+            && (player.isDummy || player.initialized);
+
+        bool rightHandClosing = player.rightHandState == HandState.Closed
+            && player.rightHandStateClamped != HandState.Closed
+            && player.initialized;
+
+        if (leftHandClosing)
+        {
+            if (player.leftHandOpenCoroutine != null)
+            {
+                player.StopCoroutine(player.leftHandOpenCoroutine);
+                player.leftHandOpenCoroutine = null;
+            }
+            player.leftHandAnimator.CrossFade(player.closedClip.name, 1f);
+            player.leftHandVfx.SendEvent("handClose");
+            player.leftHandStateClamped = HandState.Closed;
+            player.leftHandStateChangeTime = Time.time;
+
+            // Check if both hands are now closed (including if right hand is also closing this frame)
+            bool rightHandClosed = player.rightHandStateClamped == HandState.Closed
+                || player.rightHandState == HandState.Closed;
+            if (rightHandClosed)
+            {
+                player.StopMetaballRadiusAnimation();
+                player.bothHandsClosedSinceTime = Time.time;
+            }
+        }
+
+        if (rightHandClosing)
+        {
+            if (player.rightHandOpenCoroutine != null)
+            {
+                player.StopCoroutine(player.rightHandOpenCoroutine);
+                player.rightHandOpenCoroutine = null;
+            }
+            player.rightHandAnimator.CrossFade(player.closedClip.name, 1f);
+            player.rightHandVfx.SendEvent("handClose");
+            player.rightHandStateClamped = HandState.Closed;
+            player.rightHandStateChangeTime = Time.time;
+
+            // Check if both hands are now closed (left hand was already processed above if closing)
+            bool leftHandClosed = player.leftHandStateClamped == HandState.Closed
+                || player.leftHandState == HandState.Closed;
+            if (leftHandClosed)
+            {
+                player.StopMetaballRadiusAnimation();
+                player.bothHandsClosedSinceTime = Time.time;
+            }
+        }
+
+        // --- PHASE 2: Process hand openings (after closings have updated bothHandsClosedSinceTime) ---
+        // Calculate if both hands have been closed long enough to trigger animation
+        // This check happens AFTER processing closings, so bothHandsClosedSinceTime is current
+        float timeSinceBothHandsClosed = Time.time - player.bothHandsClosedSinceTime;
+        bool bothHandsClosedLongEnough = timeSinceBothHandsClosed > settings.initializationResetDelay || justInitialized;
+
         if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
@@ -115,6 +183,17 @@ public class HandEffects
                     player.StopCoroutine(player.leftHandOpenCoroutine);
                 }
                 player.leftHandOpenCoroutine = player.StartCoroutine(player.PlayLeftHandOpenAnimationDelayed());
+
+                // Start metaball radius animation only if:
+                // 1. Both hands have been closed for the delay, AND
+                // 2. The OTHER hand is currently closed/not open (we're transitioning FROM both-closed state)
+                // This prevents animation when going from one-hand-open to both-open (e.g., O→U or P→U)
+                // Note: NotTracked is treated as "not open" for initial player state
+                bool rightHandNotOpen = player.rightHandStateClamped != HandState.Open;
+                if (bothHandsClosedLongEnough && rightHandNotOpen)
+                {
+                    player.StartMetaballRadiusAnimation(settings);
+                }
             }
             else
             {
@@ -124,21 +203,7 @@ public class HandEffects
             player.leftHandStateClamped = HandState.Open;
             player.leftHandStateChangeTime = Time.time;
         }
-        else if (
-            player.leftHandState == HandState.Closed
-            && player.leftHandStateClamped != HandState.Closed && (player.isDummy || player.initialized)
-        )
-        {
-            if (player.leftHandOpenCoroutine != null)
-            {
-                player.StopCoroutine(player.leftHandOpenCoroutine);
-                player.leftHandOpenCoroutine = null;
-            }
-            player.leftHandAnimator.CrossFade(player.closedClip.name, 1f);
-            player.leftHandVfx.SendEvent("handClose");
-            player.leftHandStateClamped = HandState.Closed;
-            player.leftHandStateChangeTime = Time.time;
-        }
+
         if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
         {
             float timeSinceStateChange = Time.time - player.rightHandStateChangeTime;
@@ -150,6 +215,17 @@ public class HandEffects
                     player.StopCoroutine(player.rightHandOpenCoroutine);
                 }
                 player.rightHandOpenCoroutine = player.StartCoroutine(player.PlayRightHandOpenAnimationDelayed());
+
+                // Start metaball radius animation only if:
+                // 1. Both hands have been closed for the delay, AND
+                // 2. The OTHER hand is currently closed/not open (we're transitioning FROM both-closed state)
+                // This prevents animation when going from one-hand-open to both-open (e.g., O→U or P→U)
+                // Note: NotTracked is treated as "not open" for initial player state
+                bool leftHandNotOpen = player.leftHandStateClamped != HandState.Open;
+                if (bothHandsClosedLongEnough && leftHandNotOpen)
+                {
+                    player.StartMetaballRadiusAnimation(settings);
+                }
             }
             else
             {
@@ -157,21 +233,6 @@ public class HandEffects
             }
             player.rightHandVfx.SendEvent("handOpen");
             player.rightHandStateClamped = HandState.Open;
-            player.rightHandStateChangeTime = Time.time;
-        }
-        else if (
-            player.rightHandState == HandState.Closed
-            && player.rightHandStateClamped != HandState.Closed && player.initialized
-        )
-        {
-            if (player.rightHandOpenCoroutine != null)
-            {
-                player.StopCoroutine(player.rightHandOpenCoroutine);
-                player.rightHandOpenCoroutine = null;
-            }
-            player.rightHandAnimator.CrossFade(player.closedClip.name, 1f);
-            player.rightHandVfx.SendEvent("handClose");
-            player.rightHandStateClamped = HandState.Closed;
             player.rightHandStateChangeTime = Time.time;
         }
 
