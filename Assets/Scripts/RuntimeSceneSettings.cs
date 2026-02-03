@@ -82,7 +82,7 @@ public class RuntimeSceneSettings
     [Tooltip("Duration in seconds for the metaball radius to animate from minimum to full size during initialization.")]
     public float metaballRadiusAnimationDuration = 2f;
     [Tooltip("The starting radius for the metaball animation during initialization.")]
-    public float metaballRadiusAnimationStartSize = 2f;
+    public float metaballRadiusAnimationStartSize = 0.1f;
     [System.NonSerialized] // Excluded from JSON serialization - controlled by SceneController inspector
     [Tooltip("Animation curve for the metaball radius transition (0-1 input maps to animation progress).")]
     public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);

@@ -159,7 +159,7 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Animation")]
     [Tooltip("The starting radius for the metaball animation during initialization.")]
-    public float metaballRadiusAnimationStartSize = 2f;
+    public float metaballRadiusAnimationStartSize = 0.1f;
 
     [BoxGroup("Animation")]
     [Tooltip("Animation curve for the metaball radius transition (0-1 input maps to animation progress).")]

@@ -41,7 +41,7 @@
     "initializationResetDelay": 3.0,
     "initializationSpeed": 0.03700000047683716,
     "metaballRadiusAnimationDuration": 2.0,
-    "metaballRadiusAnimationStartSize": 0.0,
+    "metaballRadiusAnimationStartSize": 0.10000000149011612,
     "_customColors": true,
     "drawSkeleton": false,
     "useTrackingStateColors": true,
