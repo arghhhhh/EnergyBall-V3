@@ -733,6 +733,8 @@ MonoBehaviour:
   maxDistanceFromCamera: 10
   particleInitializationDelay: 1
   initializationResetDelay: 3
+  singleHandOpenThreshold: 0.1
+  singleHandForceLerpDuration: 0.35
   initializationSpeed: 0.05
   metaballRadiusAnimationDuration: 2
   metaballRadiusAnimationStartSize: 0.1
@@ -2341,6 +2343,11 @@ PrefabInstance:
       propertyPath: positionOffset.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2063848010266205000, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2462421008446109183, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_ConstrainProportionsScale
@@ -2449,6 +2456,11 @@ PrefabInstance:
     - target: {fileID: 5410876478283854344, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_MotionVectors
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5826461147252748287, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5922806509526188756, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
@@ -2594,6 +2606,11 @@ PrefabInstance:
     - target: {fileID: 8991758020013612787, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9184018163181321647, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
+        type: 3}
+      propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
