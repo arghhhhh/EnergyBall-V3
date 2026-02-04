@@ -10,6 +10,10 @@ public class HandForce
     {
         // controller.debugText.text =
         //     $"leftHandState: {player.leftHandState}\nrightHandState: {player.rightHandState}";
+
+        // Track single-hand-open state for momentum-preserving final push
+        UpdateSingleHandOpenTracking(player);
+
         if (
             (player.leftHandState == HandState.Closed || player.leftHandState == HandState.Unknown)
             && (
@@ -19,12 +23,13 @@ public class HandForce
         )
         {
             player.pushParticles = true;
-            // Don't apply any force when both hands are closed.
-            // Previously, we called AlignAndCalculateVectors one final time when transitioning
-            // to both-hands-closed (when turnOnParticles was still true from having a hand open).
-            // This caused the sphere's momentum to skew toward the hand midpoint instead of
-            // continuing on its natural trajectory. Now we just let the sphere coast with
-            // its existing momentum when both hands close.
+            // Apply one final push when transitioning to both-hands-closed.
+            // The "midpoint" will be the last single open hand's position (if we were in that
+            // state long enough), preserving the sphere's momentum direction.
+            if (player.initialized && player.turnOnParticles)
+            {
+                AlignAndCalculateVectors(player);
+            }
             player.turnOnParticles = false;
         }
         else
@@ -33,6 +38,41 @@ public class HandForce
             player.turnOnParticles = true;
             AlignAndCalculateVectors(player);
         }
+    }
+
+    void UpdateSingleHandOpenTracking(PlayerConstructor player)
+    {
+        bool leftOpen =
+            player.leftHandState == HandState.Open || player.leftHandStateClamped == HandState.Open;
+        bool rightOpen =
+            player.rightHandState == HandState.Open
+            || player.rightHandStateClamped == HandState.Open;
+
+        // Determine current single-hand state
+        PlayerConstructor.SingleOpenHand currentSingleHand = PlayerConstructor.SingleOpenHand.None;
+        if (leftOpen && !rightOpen)
+        {
+            currentSingleHand = PlayerConstructor.SingleOpenHand.Left;
+        }
+        else if (rightOpen && !leftOpen)
+        {
+            currentSingleHand = PlayerConstructor.SingleOpenHand.Right;
+        }
+
+        // Update tracking based on state changes
+        if (currentSingleHand != PlayerConstructor.SingleOpenHand.None)
+        {
+            // We're in single-hand-open state
+            if (player.lastSingleOpenHand != currentSingleHand)
+            {
+                // Just entered this single-hand state (or switched hands)
+                player.lastSingleOpenHand = currentSingleHand;
+                player.singleHandOpenStartTime = Time.time;
+            }
+            // If same hand, keep the existing start time
+        }
+        // When both hands are open or both closed, we preserve lastSingleOpenHand
+        // so CalculateMidpoint can use it when transitioning to both-closed
     }
 
     bool isSingleHandOpen(PlayerConstructor player)
@@ -49,6 +89,8 @@ public class HandForce
 
     Vector3 CalculateMidpoint(PlayerConstructor player)
     {
+        var runtimeSettings = controller.GetRuntimeSettings();
+
         // Giving myself an extra frame of leeway in case hand tracking returns unknown
         if (
             player.leftHandState == HandState.Open
@@ -68,6 +110,23 @@ public class HandForce
         }
         else
         {
+            // Both hands are closed (or both open) - check if we were recently in single-hand-open
+            // If so, use that hand's position to preserve momentum direction during final push
+            float timeSinceSingleHandOpen = Time.time - player.singleHandOpenStartTime;
+            bool wasSingleHandOpenLongEnough =
+                player.lastSingleOpenHand != PlayerConstructor.SingleOpenHand.None
+                && timeSinceSingleHandOpen >= runtimeSettings.singleHandOpenThreshold;
+
+            if (wasSingleHandOpenLongEnough)
+            {
+                // Use the last single open hand's position as the "midpoint"
+                // This preserves momentum direction when closing the last open hand
+                return player.lastSingleOpenHand == PlayerConstructor.SingleOpenHand.Left
+                    ? player.HandLeft.transform.position
+                    : player.HandRight.transform.position;
+            }
+
+            // Default: true midpoint between both hands
             return (player.HandLeft.transform.position + player.HandRight.transform.position)
                 * 0.5f;
         }

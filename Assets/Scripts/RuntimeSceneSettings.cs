@@ -77,6 +77,12 @@ public class RuntimeSceneSettings
     public float particleInitializationDelay = 1f;
     public float initializationResetDelay = 3f;
 
+    [Tooltip(
+        "Minimum time in single-hand-open state before the final push uses that hand's position. "
+            + "Accounts for slight timing discrepancies with real Kinect users."
+    )]
+    public float singleHandOpenThreshold = 0.1f;
+
     [Range(0f, 1f)]
     [Tooltip(
         "Speed of the hand opening animation during initialization. Lower values = slower animation."
@@ -259,6 +265,7 @@ public class RuntimeSceneSettings
         copy.maxDistanceFromCamera = maxDistanceFromCamera;
         copy.particleInitializationDelay = particleInitializationDelay;
         copy.initializationResetDelay = initializationResetDelay;
+        copy.singleHandOpenThreshold = singleHandOpenThreshold;
         copy.initializationSpeed = initializationSpeed;
         copy.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
         copy.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;

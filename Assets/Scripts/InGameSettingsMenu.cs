@@ -576,6 +576,12 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.initializationResetDelay,
             v => runtimeSettings.initializationResetDelay = v
         );
+        CreateFloatField(
+            group,
+            "Single Hand Open Threshold",
+            () => runtimeSettings.singleHandOpenThreshold,
+            v => runtimeSettings.singleHandOpenThreshold = v
+        );
         CreateSliderField(
             group,
             "Initialization Speed",
@@ -1418,6 +1424,7 @@ public class InGameSettingsMenu : MonoBehaviour
         // Animation
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
         runtimeSettings.initializationResetDelay = loadedSettings.initializationResetDelay;
+        runtimeSettings.singleHandOpenThreshold = loadedSettings.singleHandOpenThreshold;
         runtimeSettings.initializationSpeed = loadedSettings.initializationSpeed;
         runtimeSettings.metaballRadiusAnimationDuration =
             loadedSettings.metaballRadiusAnimationDuration;
@@ -1530,6 +1537,7 @@ public class InGameSettingsMenu : MonoBehaviour
         // Animation
         destination.particleInitializationDelay = source.particleInitializationDelay;
         destination.initializationResetDelay = source.initializationResetDelay;
+        destination.singleHandOpenThreshold = source.singleHandOpenThreshold;
         destination.initializationSpeed = source.initializationSpeed;
         destination.metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         destination.metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
@@ -1656,6 +1664,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.maxDistanceFromCamera = 0.0f;
         destination.particleInitializationDelay = 0.0f;
         destination.initializationResetDelay = 0.0f;
+        destination.singleHandOpenThreshold = 0.0f;
         destination.initializationSpeed = 0.0f;
         destination.metaballRadiusAnimationDuration = 0.0f;
         destination.metaballRadiusAnimationStartSize = 0.0f;

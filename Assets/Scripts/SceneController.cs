@@ -149,6 +149,13 @@ public class SceneController : MonoBehaviour
     public float initializationResetDelay = 3f;
 
     [BoxGroup("Animation")]
+    [Tooltip(
+        "Minimum time in single-hand-open state before the final push uses that hand's position. "
+            + "Accounts for slight timing discrepancies with real Kinect users."
+    )]
+    public float singleHandOpenThreshold = 0.1f;
+
+    [BoxGroup("Animation")]
     [Range(0f, 1f)]
     [Tooltip(
         "Speed of the hand opening animation during initialization. Lower values = slower animation."
@@ -848,6 +855,7 @@ public class SceneController : MonoBehaviour
         // Animation
         target.particleInitializationDelay = particleInitializationDelay;
         target.initializationResetDelay = initializationResetDelay;
+        target.singleHandOpenThreshold = singleHandOpenThreshold;
         target.initializationSpeed = initializationSpeed;
         target.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
         target.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;
@@ -922,6 +930,7 @@ public class SceneController : MonoBehaviour
         // Animation
         particleInitializationDelay = source.particleInitializationDelay;
         initializationResetDelay = source.initializationResetDelay;
+        singleHandOpenThreshold = source.singleHandOpenThreshold;
         initializationSpeed = source.initializationSpeed;
         metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;

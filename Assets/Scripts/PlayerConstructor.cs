@@ -242,6 +242,22 @@ public class PlayerConstructor : MonoBehaviour
     [System.NonSerialized]
     public float bothHandsClosedSinceTime = 0f;
 
+    // Tracks single-hand-open state for momentum-preserving final push when both hands close.
+    // When transitioning from single-hand-open to both-hands-closed, the "push target" should
+    // be the last single open hand's position (not the midpoint) to preserve momentum direction.
+    public enum SingleOpenHand
+    {
+        None,
+        Left,
+        Right
+    }
+
+    [System.NonSerialized]
+    public SingleOpenHand lastSingleOpenHand = SingleOpenHand.None;
+
+    [System.NonSerialized]
+    public float singleHandOpenStartTime = 0f;
+
     private void Awake()
     {
         jointMap = new Dictionary<JointType, GameObject>()
