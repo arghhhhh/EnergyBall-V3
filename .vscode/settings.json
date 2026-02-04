@@ -1,121 +1,121 @@
 {
-    "files.exclude": {
-        "**/.DS_Store": true,
-        "**/.git": true,
-        "**/.gitmodules": true,
-        "**/*.booproj": true,
-        "**/*.pidb": true,
-        "**/*.suo": true,
-        "**/*.user": true,
-        "**/*.userprefs": true,
-        "**/*.unityproj": true,
-        "**/*.dll": true,
-        "**/*.exe": true,
-        "**/*.pdf": true,
-        "**/*.mid": true,
-        "**/*.midi": true,
-        "**/*.wav": true,
-        "**/*.gif": true,
-        "**/*.ico": true,
-        "**/*.jpg": true,
-        "**/*.jpeg": true,
-        "**/*.png": true,
-        "**/*.psd": true,
-        "**/*.tga": true,
-        "**/*.tif": true,
-        "**/*.tiff": true,
-        "**/*.3ds": true,
-        "**/*.3DS": true,
-        "**/*.fbx": true,
-        "**/*.FBX": true,
-        "**/*.lxo": true,
-        "**/*.LXO": true,
-        "**/*.ma": true,
-        "**/*.MA": true,
-        "**/*.obj": true,
-        "**/*.OBJ": true,
-        "**/*.asset": true,
-        "**/*.cubemap": true,
-        "**/*.flare": true,
-        "**/*.mat": true,
-        "**/*.meta": true,
-        "**/*.prefab": true,
-        "**/*.unity": true,
-        "build/": true,
-        "Build/": true,
-        "Library/": true,
-        "library/": true,
-        "obj/": true,
-        "Obj/": true,
-        "ProjectSettings/": true,
-        "temp/": true,
-        "Temp/": true
-    },
-    "dotnet.defaultSolution": "EnergyBall-V3.sln",
-    "dotnet.server.useOmnisharp": true,
-    "dotnet.preferCSharpExtension": false,
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/.git": true,
+    "**/.gitmodules": true,
+    "**/*.booproj": true,
+    "**/*.pidb": true,
+    "**/*.suo": true,
+    "**/*.user": true,
+    "**/*.userprefs": true,
+    "**/*.unityproj": true,
+    "**/*.dll": true,
+    "**/*.exe": true,
+    "**/*.pdf": true,
+    "**/*.mid": true,
+    "**/*.midi": true,
+    "**/*.wav": true,
+    "**/*.gif": true,
+    "**/*.ico": true,
+    "**/*.jpg": true,
+    "**/*.jpeg": true,
+    "**/*.png": true,
+    "**/*.psd": true,
+    "**/*.tga": true,
+    "**/*.tif": true,
+    "**/*.tiff": true,
+    "**/*.3ds": true,
+    "**/*.3DS": true,
+    "**/*.fbx": true,
+    "**/*.FBX": true,
+    "**/*.lxo": true,
+    "**/*.LXO": true,
+    "**/*.ma": true,
+    "**/*.MA": true,
+    "**/*.obj": true,
+    "**/*.OBJ": true,
+    "**/*.asset": true,
+    "**/*.cubemap": true,
+    "**/*.flare": true,
+    "**/*.mat": true,
+    "**/*.meta": true,
+    "**/*.prefab": true,
+    "**/*.unity": true,
+    "build/": true,
+    "Build/": true,
+    "Library/": true,
+    "library/": true,
+    "obj/": true,
+    "Obj/": true,
+    "ProjectSettings/": true,
+    "temp/": true,
+    "Temp/": true
+  },
+  "dotnet.defaultSolution": "EnergyBall-V3.sln",
+  "dotnet.server.useOmnisharp": true,
+  "dotnet.preferCSharpExtension": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "[csharp]": {
+    "editor.defaultFormatter": "csharpier.csharpier-vscode",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-    "[csharp]": {
-        "editor.defaultFormatter": "anysphere.csharp",
-        "editor.formatOnSave": true,
-        "editor.formatOnPaste": true,
-        "editor.formatOnType": true,
-        "editor.tabSize": 4,
-        "editor.insertSpaces": true
-    },
-    "csharp.format.enable": true,
-    "csharp.semanticHighlighting.enabled": true,
-    "omnisharp.enableEditorConfigSupport": true,
-    "omnisharp.useModernNet": true,
-    "[javascript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[json]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[jsonc]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[html]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[css]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[markdown]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[yaml]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "[yml]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.formatOnSave": true
-    },
-    "prettier.tabWidth": 4,
-    "prettier.useTabs": false,
-    "prettier.semi": true,
-    "prettier.singleQuote": false,
-    "prettier.trailingComma": "es5",
-    "prettier.bracketSpacing": true,
-    "prettier.bracketSameLine": false,
-    "prettier.arrowParens": "avoid",
-    "prettier.endOfLine": "lf",
-    "dotrush.roslyn.projectOrSolutionFiles": [
-        "c:\\Users\\Joss\\Desktop\\Projects\\Mine\\EnergyBall-V3\\EnergyBall-V3.sln",
-        "c:\\Users\\Joss\\Desktop\\Projects\\Mine\\EnergyBall-V3\\EnergyBall-V3.slnx"
-    ]
+    "editor.formatOnType": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "csharp.format.enable": true,
+  "csharp.semanticHighlighting.enabled": true,
+  "omnisharp.enableEditorConfigSupport": true,
+  "omnisharp.useModernNet": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[yml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "prettier.tabWidth": 4,
+  "prettier.useTabs": false,
+  "prettier.semi": true,
+  "prettier.singleQuote": false,
+  "prettier.trailingComma": "es5",
+  "prettier.bracketSpacing": true,
+  "prettier.bracketSameLine": false,
+  "prettier.arrowParens": "avoid",
+  "prettier.endOfLine": "lf",
+  "dotrush.roslyn.projectOrSolutionFiles": [
+    "c:\\Users\\Joss\\Desktop\\Projects\\Mine\\EnergyBall-V3\\EnergyBall-V3.sln",
+    "c:\\Users\\Joss\\Desktop\\Projects\\Mine\\EnergyBall-V3\\EnergyBall-V3.slnx"
+  ]
 }

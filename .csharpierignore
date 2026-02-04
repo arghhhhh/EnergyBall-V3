@@ -1,0 +1,20 @@
+# Unity generated – avoid CSharpier parsing these (extension can throw on Unity .csproj format)
+*.csproj
+*.sln
+*.slnx
+
+# Unity build/output
+Library/
+Temp/
+obj/
+Build/
+Logs/
+UserSettings/
+
+# Non-C# files
+*.json
+*.md
+*.txt
+*.xml
+*.yaml
+*.yml
