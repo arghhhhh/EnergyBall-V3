@@ -194,9 +194,6 @@ public class PlayerConstructor : MonoBehaviour
     public Dictionary<JointType, GameObject> jointMap;
 
     [HideInInspector]
-    public Vector3 midpoint;
-
-    [HideInInspector]
     public Color skeletonColor;
     public bool isDummy = false;
 

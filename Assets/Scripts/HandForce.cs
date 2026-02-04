@@ -90,9 +90,9 @@ public class HandForce
 
         Vector3 handMidpoint = CalculateMidpoint(player);
 
-        player.midpoint = handMidpoint + alignmentVector * alignmentVectorScaler;
-        float distance = Vector3.Distance(player.midpoint, player.sphere.transform.position);
-        Vector3 direction = player.midpoint - player.sphere.position;
+        Vector3 offsetMidpoint = handMidpoint + alignmentVector * alignmentVectorScaler;
+        float distance = Vector3.Distance(offsetMidpoint, player.sphere.transform.position);
+        Vector3 direction = offsetMidpoint - player.sphere.position;
 
         PushToTarget(player, distance, direction);
     }

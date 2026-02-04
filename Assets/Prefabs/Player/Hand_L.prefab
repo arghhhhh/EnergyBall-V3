@@ -483,6 +483,15 @@ VisualEffect:
       - m_Value: 0
         m_Name: closeProgress
         m_Overridden: 1
+      - m_Value: 0.5
+        m_Name: noiseRoughness
+        m_Overridden: 1
+      - m_Value: 0.9
+        m_Name: noiseFrequency
+        m_Overridden: 1
+      - m_Value: 0.1
+        m_Name: noiseScale
+        m_Overridden: 1
     m_Vector2f:
       m_Array: []
     m_Vector3f:
@@ -501,7 +510,10 @@ VisualEffect:
     m_Uint:
       m_Array: []
     m_Int:
-      m_Array: []
+      m_Array:
+      - m_Value: 1
+        m_Name: noiseOctaves
+        m_Overridden: 1
     m_Matrix4x4f:
       m_Array: []
     m_AnimationCurve:
