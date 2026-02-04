@@ -19,10 +19,12 @@ public class HandForce
         )
         {
             player.pushParticles = true;
-            if (player.initialized && player.turnOnParticles)
-            {
-                AlignAndCalculateVectors(player);
-            }
+            // Don't apply any force when both hands are closed.
+            // Previously, we called AlignAndCalculateVectors one final time when transitioning
+            // to both-hands-closed (when turnOnParticles was still true from having a hand open).
+            // This caused the sphere's momentum to skew toward the hand midpoint instead of
+            // continuing on its natural trajectory. Now we just let the sphere coast with
+            // its existing momentum when both hands close.
             player.turnOnParticles = false;
         }
         else

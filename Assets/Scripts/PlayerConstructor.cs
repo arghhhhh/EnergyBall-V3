@@ -467,12 +467,6 @@ public class PlayerConstructor : MonoBehaviour
             return spherePos;
         }
 
-        // Calculate the midpoint between the two hands as the ray origin
-        Vector3 handMidpoint = (HandLeft.transform.position + HandRight.transform.position) / 2f;
-
-        // Direction from hand midpoint to sphere
-        Vector3 direction = (spherePos - handMidpoint).normalized;
-
         // Get grid boundaries
         Vector3 bounds = controller.GetGridSize() / 2f;
         var runtimeSettings = controller.GetRuntimeSettings();
@@ -481,46 +475,10 @@ public class PlayerConstructor : MonoBehaviour
         Vector3 gridMin = new(-bounds.x, -bounds.y, -bounds.z + runtimeSettings.baseZDepth);
         Vector3 gridMax = new(bounds.x, bounds.y, bounds.z + runtimeSettings.baseZDepth);
 
-        // Perform ray-box intersection to find where the ray intersects the grid boundary
-        // We'll find the furthest point along the ray from handMidpoint that stays within bounds
-        float tMax = float.MaxValue;
-
-        // Check intersection with each axis-aligned plane
-        for (int axis = 0; axis < 3; axis++)
-        {
-            if (Mathf.Abs(direction[axis]) > 0.0001f)
-            {
-                // Check intersection with min plane
-                float tMin = (gridMin[axis] - handMidpoint[axis]) / direction[axis];
-                if (tMin > 0 && tMin < tMax)
-                {
-                    Vector3 intersectionPoint = handMidpoint + direction * tMin;
-                    if (IsInbounds(intersectionPoint))
-                    {
-                        tMax = tMin;
-                    }
-                }
-
-                // Check intersection with max plane
-                float tMaxPlane = (gridMax[axis] - handMidpoint[axis]) / direction[axis];
-                if (tMaxPlane > 0 && tMaxPlane < tMax)
-                {
-                    Vector3 intersectionPoint = handMidpoint + direction * tMaxPlane;
-                    if (IsInbounds(intersectionPoint))
-                    {
-                        tMax = tMaxPlane;
-                    }
-                }
-            }
-        }
-
-        // If we found an intersection, return that point
-        if (tMax < float.MaxValue)
-        {
-            return handMidpoint + direction * tMax;
-        }
-
-        // Fallback: clamp the sphere position to the grid boundaries
+        // Simple axis-aligned clamping: clamp each axis independently to the boundary.
+        // This preserves the sphere's position on axes that are in bounds while clamping
+        // only the out-of-bounds axes. BoundaryForce handles slowing the sphere when it
+        // exceeds the boundary, so complex ray-intersection logic is no longer needed.
         return new Vector3(
             Mathf.Clamp(spherePos.x, gridMin.x, gridMax.x),
             Mathf.Clamp(spherePos.y, gridMin.y, gridMax.y),
