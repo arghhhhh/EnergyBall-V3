@@ -83,6 +83,12 @@ public class RuntimeSceneSettings
     )]
     public float singleHandOpenThreshold = 0.1f;
 
+    [Tooltip(
+        "Duration in seconds to lerp the force damper from single-hand to both-hands strength "
+            + "when transitioning from single-hand-open to both-hands-open."
+    )]
+    public float singleHandForceLerpDuration = 0.35f;
+
     [Range(0f, 1f)]
     [Tooltip(
         "Speed of the hand opening animation during initialization. Lower values = slower animation."
@@ -266,6 +272,7 @@ public class RuntimeSceneSettings
         copy.particleInitializationDelay = particleInitializationDelay;
         copy.initializationResetDelay = initializationResetDelay;
         copy.singleHandOpenThreshold = singleHandOpenThreshold;
+        copy.singleHandForceLerpDuration = singleHandForceLerpDuration;
         copy.initializationSpeed = initializationSpeed;
         copy.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
         copy.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;

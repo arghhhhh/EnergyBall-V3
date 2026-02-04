@@ -156,6 +156,13 @@ public class SceneController : MonoBehaviour
     public float singleHandOpenThreshold = 0.1f;
 
     [BoxGroup("Animation")]
+    [Tooltip(
+        "Duration in seconds to lerp the force damper from single-hand to both-hands strength "
+            + "when transitioning from single-hand-open to both-hands-open."
+    )]
+    public float singleHandForceLerpDuration = 0.35f;
+
+    [BoxGroup("Animation")]
     [Range(0f, 1f)]
     [Tooltip(
         "Speed of the hand opening animation during initialization. Lower values = slower animation."
@@ -579,6 +586,9 @@ public class SceneController : MonoBehaviour
     {
         PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
 
+        // Update hand state tracking before processing hand forces
+        playerConstructor.UpdateSingleHandOpenTracking();
+
         if (playerConstructor.beginInitialization)
         {
             metaballsToSDF.SetMetaballPosition(
@@ -856,6 +866,7 @@ public class SceneController : MonoBehaviour
         target.particleInitializationDelay = particleInitializationDelay;
         target.initializationResetDelay = initializationResetDelay;
         target.singleHandOpenThreshold = singleHandOpenThreshold;
+        target.singleHandForceLerpDuration = singleHandForceLerpDuration;
         target.initializationSpeed = initializationSpeed;
         target.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
         target.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;
@@ -931,6 +942,7 @@ public class SceneController : MonoBehaviour
         particleInitializationDelay = source.particleInitializationDelay;
         initializationResetDelay = source.initializationResetDelay;
         singleHandOpenThreshold = source.singleHandOpenThreshold;
+        singleHandForceLerpDuration = source.singleHandForceLerpDuration;
         initializationSpeed = source.initializationSpeed;
         metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;

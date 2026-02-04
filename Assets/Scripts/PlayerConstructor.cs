@@ -258,6 +258,69 @@ public class PlayerConstructor : MonoBehaviour
     [System.NonSerialized]
     public float singleHandOpenStartTime = 0f;
 
+    // Tracks when we exited single-hand-open state, used for smooth force damper transition
+    [System.NonSerialized]
+    public float singleHandOpenEndTime = 0f;
+
+    /// <summary>
+    /// Returns true if exactly one hand is open (using clamped states).
+    /// </summary>
+    public bool IsSingleHandOpen =>
+        (leftHandStateClamped == HandState.Open && rightHandStateClamped == HandState.Closed)
+        || (leftHandStateClamped == HandState.Closed && rightHandStateClamped == HandState.Open);
+
+    /// <summary>
+    /// Updates the tracking of which single hand is open and when it started.
+    /// Should be called every frame from SceneController.UpdateOtherPlayerData.
+    /// </summary>
+    public void UpdateSingleHandOpenTracking()
+    {
+        bool leftOpen = leftHandState == HandState.Open || leftHandStateClamped == HandState.Open;
+        bool rightOpen =
+            rightHandState == HandState.Open || rightHandStateClamped == HandState.Open;
+
+        // Determine current single-hand state
+        SingleOpenHand currentSingleHand = SingleOpenHand.None;
+        if (leftOpen && !rightOpen)
+        {
+            currentSingleHand = SingleOpenHand.Left;
+        }
+        else if (rightOpen && !leftOpen)
+        {
+            currentSingleHand = SingleOpenHand.Right;
+        }
+
+        // Track if we were in single-hand-open state last frame
+        bool wasInSingleHandOpen = lastSingleOpenHand != SingleOpenHand.None;
+
+        // Update tracking based on state changes
+        if (currentSingleHand != SingleOpenHand.None)
+        {
+            // We're in single-hand-open state
+            if (lastSingleOpenHand != currentSingleHand)
+            {
+                // Just entered this single-hand state (or switched hands)
+                lastSingleOpenHand = currentSingleHand;
+                singleHandOpenStartTime = Time.time;
+            }
+            // If same hand, keep the existing start time
+        }
+        else if (leftOpen && rightOpen)
+        {
+            // Both hands are open - record when we left single-hand-open state
+            // for smooth force damper transition
+            if (wasInSingleHandOpen)
+            {
+                singleHandOpenEndTime = Time.time;
+            }
+            // Reset tracking so that closing both hands from this state
+            // uses the midpoint, not a stale single-hand position
+            lastSingleOpenHand = SingleOpenHand.None;
+        }
+        // When both hands are closed, we preserve lastSingleOpenHand
+        // so CalculatePushTarget can use it for the final momentum-preserving push
+    }
+
     private void Awake()
     {
         jointMap = new Dictionary<JointType, GameObject>()

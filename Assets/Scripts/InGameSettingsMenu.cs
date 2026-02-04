@@ -582,6 +582,12 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.singleHandOpenThreshold,
             v => runtimeSettings.singleHandOpenThreshold = v
         );
+        CreateFloatField(
+            group,
+            "Single Hand Force Lerp Duration",
+            () => runtimeSettings.singleHandForceLerpDuration,
+            v => runtimeSettings.singleHandForceLerpDuration = v
+        );
         CreateSliderField(
             group,
             "Initialization Speed",
@@ -1425,6 +1431,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
         runtimeSettings.initializationResetDelay = loadedSettings.initializationResetDelay;
         runtimeSettings.singleHandOpenThreshold = loadedSettings.singleHandOpenThreshold;
+        runtimeSettings.singleHandForceLerpDuration = loadedSettings.singleHandForceLerpDuration;
         runtimeSettings.initializationSpeed = loadedSettings.initializationSpeed;
         runtimeSettings.metaballRadiusAnimationDuration =
             loadedSettings.metaballRadiusAnimationDuration;
@@ -1538,6 +1545,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.particleInitializationDelay = source.particleInitializationDelay;
         destination.initializationResetDelay = source.initializationResetDelay;
         destination.singleHandOpenThreshold = source.singleHandOpenThreshold;
+        destination.singleHandForceLerpDuration = source.singleHandForceLerpDuration;
         destination.initializationSpeed = source.initializationSpeed;
         destination.metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         destination.metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
@@ -1665,6 +1673,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.particleInitializationDelay = 0.0f;
         destination.initializationResetDelay = 0.0f;
         destination.singleHandOpenThreshold = 0.0f;
+        destination.singleHandForceLerpDuration = 0.0f;
         destination.initializationSpeed = 0.0f;
         destination.metaballRadiusAnimationDuration = 0.0f;
         destination.metaballRadiusAnimationStartSize = 0.0f;
