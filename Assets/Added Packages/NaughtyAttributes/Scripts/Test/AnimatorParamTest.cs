@@ -42,6 +42,7 @@ namespace NaughtyAttributes.Test
     public class AnimatorParamNest2
     {
         public Animator animator2;
+
         private Animator GetAnimator2() => animator2;
 
         [AnimatorParam("GetAnimator2", AnimatorControllerParameterType.Int)]

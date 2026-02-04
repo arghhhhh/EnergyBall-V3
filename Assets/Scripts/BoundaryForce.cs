@@ -36,22 +36,28 @@ public class BoundaryForce
         Vector3 velocity = player.sphere.linearVelocity;
 
         // X axis: outside and moving outward
-        if ((relativePos.x > boundaryExtents.x && velocity.x > 0) ||
-            (relativePos.x < -boundaryExtents.x && velocity.x < 0))
+        if (
+            (relativePos.x > boundaryExtents.x && velocity.x > 0)
+            || (relativePos.x < -boundaryExtents.x && velocity.x < 0)
+        )
         {
             isOutsideAndMovingOut = true;
         }
 
         // Y axis: outside and moving outward
-        if ((relativePos.y > boundaryExtents.y && velocity.y > 0) ||
-            (relativePos.y < -boundaryExtents.y && velocity.y < 0))
+        if (
+            (relativePos.y > boundaryExtents.y && velocity.y > 0)
+            || (relativePos.y < -boundaryExtents.y && velocity.y < 0)
+        )
         {
             isOutsideAndMovingOut = true;
         }
 
         // Z axis: outside and moving outward
-        if ((relativePos.z > boundaryExtents.z && velocity.z > 0) ||
-            (relativePos.z < -boundaryExtents.z && velocity.z < 0))
+        if (
+            (relativePos.z > boundaryExtents.z && velocity.z > 0)
+            || (relativePos.z < -boundaryExtents.z && velocity.z < 0)
+        )
         {
             isOutsideAndMovingOut = true;
         }

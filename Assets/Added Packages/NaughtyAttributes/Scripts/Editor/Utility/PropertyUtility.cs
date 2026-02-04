@@ -1,23 +1,28 @@
-﻿using UnityEditor;
-using System.Reflection;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     public static class PropertyUtility
     {
-        public static T GetAttribute<T>(SerializedProperty property) where T : class
+        public static T GetAttribute<T>(SerializedProperty property)
+            where T : class
         {
             T[] attributes = GetAttributes<T>(property);
             return (attributes.Length > 0) ? attributes[0] : null;
         }
 
-        public static T[] GetAttributes<T>(SerializedProperty property) where T : class
+        public static T[] GetAttributes<T>(SerializedProperty property)
+            where T : class
         {
-            FieldInfo fieldInfo = ReflectionUtility.GetField(GetTargetObjectWithProperty(property), property.name);
+            FieldInfo fieldInfo = ReflectionUtility.GetField(
+                GetTargetObjectWithProperty(property),
+                property.name
+            );
             if (fieldInfo == null)
             {
                 return new T[] { };
@@ -29,9 +34,8 @@ namespace NaughtyAttributes.Editor
         public static GUIContent GetLabel(SerializedProperty property)
         {
             LabelAttribute labelAttribute = GetAttribute<LabelAttribute>(property);
-            string labelText = (labelAttribute == null)
-                ? property.displayName
-                : labelAttribute.Label;
+            string labelText =
+                (labelAttribute == null) ? property.displayName : labelAttribute.Label;
 
             GUIContent label = new GUIContent(labelText);
             return label;
@@ -39,7 +43,8 @@ namespace NaughtyAttributes.Editor
 
         public static void CallOnValueChangedCallbacks(SerializedProperty property)
         {
-            OnValueChangedAttribute[] onValueChangedAttributes = GetAttributes<OnValueChangedAttribute>(property);
+            OnValueChangedAttribute[] onValueChangedAttributes =
+                GetAttributes<OnValueChangedAttribute>(property);
             if (onValueChangedAttributes.Length == 0)
             {
                 return;
@@ -50,10 +55,15 @@ namespace NaughtyAttributes.Editor
 
             foreach (var onValueChangedAttribute in onValueChangedAttributes)
             {
-                MethodInfo callbackMethod = ReflectionUtility.GetMethod(target, onValueChangedAttribute.CallbackName);
-                if (callbackMethod != null &&
-                    callbackMethod.ReturnType == typeof(void) &&
-                    callbackMethod.GetParameters().Length == 0)
+                MethodInfo callbackMethod = ReflectionUtility.GetMethod(
+                    target,
+                    onValueChangedAttribute.CallbackName
+                );
+                if (
+                    callbackMethod != null
+                    && callbackMethod.ReturnType == typeof(void)
+                    && callbackMethod.GetParameters().Length == 0
+                )
                 {
                     callbackMethod.Invoke(target, new object[] { });
                 }
@@ -61,7 +71,8 @@ namespace NaughtyAttributes.Editor
                 {
                     string warning = string.Format(
                         "{0} can invoke only methods with 'void' return type and 0 parameters",
-                        onValueChangedAttribute.GetType().Name);
+                        onValueChangedAttribute.GetType().Name
+                    );
 
                     Debug.LogWarning(warning, property.serializedObject.targetObject);
                 }
@@ -90,14 +101,17 @@ namespace NaughtyAttributes.Editor
                 Enum value = GetEnumValue(target, enableIfAttribute.Conditions[0]);
                 if (value != null)
                 {
-                    bool matched = value.GetType().GetCustomAttribute<FlagsAttribute>() == null
-                        ? enableIfAttribute.EnumValue.Equals(value)
-                        : value.HasFlag(enableIfAttribute.EnumValue);
+                    bool matched =
+                        value.GetType().GetCustomAttribute<FlagsAttribute>() == null
+                            ? enableIfAttribute.EnumValue.Equals(value)
+                            : value.HasFlag(enableIfAttribute.EnumValue);
 
                     return matched != enableIfAttribute.Inverted;
                 }
 
-                string message = enableIfAttribute.GetType().Name + " needs a valid enum field, property or method name to work";
+                string message =
+                    enableIfAttribute.GetType().Name
+                    + " needs a valid enum field, property or method name to work";
                 Debug.LogWarning(message, property.serializedObject.targetObject);
 
                 return false;
@@ -107,12 +121,18 @@ namespace NaughtyAttributes.Editor
             List<bool> conditionValues = GetConditionValues(target, enableIfAttribute.Conditions);
             if (conditionValues.Count > 0)
             {
-                bool enabled = GetConditionsFlag(conditionValues, enableIfAttribute.ConditionOperator, enableIfAttribute.Inverted);
+                bool enabled = GetConditionsFlag(
+                    conditionValues,
+                    enableIfAttribute.ConditionOperator,
+                    enableIfAttribute.Inverted
+                );
                 return enabled;
             }
             else
             {
-                string message = enableIfAttribute.GetType().Name + " needs a valid boolean condition field, property or method name to work";
+                string message =
+                    enableIfAttribute.GetType().Name
+                    + " needs a valid boolean condition field, property or method name to work";
                 Debug.LogWarning(message, property.serializedObject.targetObject);
 
                 return false;
@@ -135,14 +155,17 @@ namespace NaughtyAttributes.Editor
                 Enum value = GetEnumValue(target, showIfAttribute.Conditions[0]);
                 if (value != null)
                 {
-                    bool matched = value.GetType().GetCustomAttribute<FlagsAttribute>() == null
-                        ? showIfAttribute.EnumValue.Equals(value)
-                        : value.HasFlag(showIfAttribute.EnumValue);
+                    bool matched =
+                        value.GetType().GetCustomAttribute<FlagsAttribute>() == null
+                            ? showIfAttribute.EnumValue.Equals(value)
+                            : value.HasFlag(showIfAttribute.EnumValue);
 
                     return matched != showIfAttribute.Inverted;
                 }
 
-                string message = showIfAttribute.GetType().Name + " needs a valid enum field, property or method name to work";
+                string message =
+                    showIfAttribute.GetType().Name
+                    + " needs a valid enum field, property or method name to work";
                 Debug.LogWarning(message, property.serializedObject.targetObject);
 
                 return false;
@@ -152,12 +175,18 @@ namespace NaughtyAttributes.Editor
             List<bool> conditionValues = GetConditionValues(target, showIfAttribute.Conditions);
             if (conditionValues.Count > 0)
             {
-                bool enabled = GetConditionsFlag(conditionValues, showIfAttribute.ConditionOperator, showIfAttribute.Inverted);
+                bool enabled = GetConditionsFlag(
+                    conditionValues,
+                    showIfAttribute.ConditionOperator,
+                    showIfAttribute.Inverted
+                );
                 return enabled;
             }
             else
             {
-                string message = showIfAttribute.GetType().Name + " needs a valid boolean condition field, property or method name to work";
+                string message =
+                    showIfAttribute.GetType().Name
+                    + " needs a valid boolean condition field, property or method name to work";
                 Debug.LogWarning(message, property.serializedObject.targetObject);
 
                 return false;
@@ -199,23 +228,23 @@ namespace NaughtyAttributes.Editor
             foreach (var condition in conditions)
             {
                 FieldInfo conditionField = ReflectionUtility.GetField(target, condition);
-                if (conditionField != null &&
-                    conditionField.FieldType == typeof(bool))
+                if (conditionField != null && conditionField.FieldType == typeof(bool))
                 {
                     conditionValues.Add((bool)conditionField.GetValue(target));
                 }
 
                 PropertyInfo conditionProperty = ReflectionUtility.GetProperty(target, condition);
-                if (conditionProperty != null &&
-                    conditionProperty.PropertyType == typeof(bool))
+                if (conditionProperty != null && conditionProperty.PropertyType == typeof(bool))
                 {
                     conditionValues.Add((bool)conditionProperty.GetValue(target));
                 }
 
                 MethodInfo conditionMethod = ReflectionUtility.GetMethod(target, condition);
-                if (conditionMethod != null &&
-                    conditionMethod.ReturnType == typeof(bool) &&
-                    conditionMethod.GetParameters().Length == 0)
+                if (
+                    conditionMethod != null
+                    && conditionMethod.ReturnType == typeof(bool)
+                    && conditionMethod.GetParameters().Length == 0
+                )
                 {
                     conditionValues.Add((bool)conditionMethod.Invoke(target, null));
                 }
@@ -224,7 +253,11 @@ namespace NaughtyAttributes.Editor
             return conditionValues;
         }
 
-        internal static bool GetConditionsFlag(List<bool> conditionValues, EConditionOperator conditionOperator, bool invert)
+        internal static bool GetConditionsFlag(
+            List<bool> conditionValues,
+            EConditionOperator conditionOperator,
+            bool invert
+        )
         {
             bool flag;
             if (conditionOperator == EConditionOperator.And)
@@ -281,7 +314,9 @@ namespace NaughtyAttributes.Editor
                 if (element.Contains("["))
                 {
                     string elementName = element.Substring(0, element.IndexOf("["));
-                    int index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+                    int index = Convert.ToInt32(
+                        element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", "")
+                    );
                     obj = GetValue_Imp(obj, elementName, index);
                 }
                 else
@@ -310,7 +345,9 @@ namespace NaughtyAttributes.Editor
                 if (element.Contains("["))
                 {
                     string elementName = element.Substring(0, element.IndexOf("["));
-                    int index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+                    int index = Convert.ToInt32(
+                        element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", "")
+                    );
                     obj = GetValue_Imp(obj, elementName, index);
                 }
                 else
@@ -333,13 +370,22 @@ namespace NaughtyAttributes.Editor
 
             while (type != null)
             {
-                FieldInfo field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                FieldInfo field = type.GetField(
+                    name,
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance
+                );
                 if (field != null)
                 {
                     return field.GetValue(source);
                 }
 
-                PropertyInfo property = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                PropertyInfo property = type.GetProperty(
+                    name,
+                    BindingFlags.NonPublic
+                        | BindingFlags.Public
+                        | BindingFlags.Instance
+                        | BindingFlags.IgnoreCase
+                );
                 if (property != null)
                 {
                     return property.GetValue(source, null);

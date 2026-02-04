@@ -8,7 +8,9 @@ namespace NaughtyAttributes.Test
         public bool hide1;
         public bool hide2;
         public HideIfEnum enum1;
-        [EnumFlags] public HideIfEnumFlag enum2;
+
+        [EnumFlags]
+        public HideIfEnumFlag enum2;
 
         [HideIf(EConditionOperator.And, "hide1", "hide2")]
         [ReorderableList]
@@ -39,11 +41,25 @@ namespace NaughtyAttributes.Test
         public bool hide1;
         public bool hide2;
         public HideIfEnum enum1;
-        [EnumFlags] public HideIfEnumFlag enum2;
-        public bool Hide1 { get { return hide1; } }
-        public bool Hide2 { get { return hide2; } }
-        public HideIfEnum Enum1 { get { return enum1; } }
-        public HideIfEnumFlag Enum2 { get { return enum2; } }
+
+        [EnumFlags]
+        public HideIfEnumFlag enum2;
+        public bool Hide1
+        {
+            get { return hide1; }
+        }
+        public bool Hide2
+        {
+            get { return hide2; }
+        }
+        public HideIfEnum Enum1
+        {
+            get { return enum1; }
+        }
+        public HideIfEnumFlag Enum2
+        {
+            get { return enum2; }
+        }
 
         [HideIf(EConditionOperator.And, "Hide1", "Hide2")]
         [AllowNesting] // Because it's nested we need to explicitly allow nesting
@@ -74,11 +90,29 @@ namespace NaughtyAttributes.Test
         public bool hide1;
         public bool hide2;
         public HideIfEnum enum1;
-        [EnumFlags] public HideIfEnumFlag enum2;
-        public bool GetHide1() { return hide1; }
-        public bool GetHide2() { return hide2; }
-        public HideIfEnum GetEnum1() { return enum1; }
-        public HideIfEnumFlag GetEnum2() { return enum2; }
+
+        [EnumFlags]
+        public HideIfEnumFlag enum2;
+
+        public bool GetHide1()
+        {
+            return hide1;
+        }
+
+        public bool GetHide2()
+        {
+            return hide2;
+        }
+
+        public HideIfEnum GetEnum1()
+        {
+            return enum1;
+        }
+
+        public HideIfEnumFlag GetEnum2()
+        {
+            return enum2;
+        }
 
         [HideIf(EConditionOperator.And, "GetHide1", "GetHide2")]
         [MinMaxSlider(0.0f, 1.0f)] // AllowNesting attribute is not needed, because the field is already marked with a custom naughty property drawer

@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
 using UnityEditor;
-using System;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
@@ -9,16 +9,25 @@ namespace NaughtyAttributes.Editor
     {
         private const string TypeWarningMessage = "{0} must be an int or a string";
 
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
-            bool validPropertyType = property.propertyType == SerializedPropertyType.String || property.propertyType == SerializedPropertyType.Integer;
+            bool validPropertyType =
+                property.propertyType == SerializedPropertyType.String
+                || property.propertyType == SerializedPropertyType.Integer;
 
             return validPropertyType
                 ? GetPropertyHeight(property)
                 : GetPropertyHeight(property) + GetHelpBoxHeight();
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -44,7 +53,12 @@ namespace NaughtyAttributes.Editor
             return UnityEditorInternal.InternalEditorUtility.layers;
         }
 
-        private static void DrawPropertyForString(Rect rect, SerializedProperty property, GUIContent label, string[] layers)
+        private static void DrawPropertyForString(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            string[] layers
+        )
         {
             int index = IndexOf(layers, property.stringValue);
             int newIndex = EditorGUI.Popup(rect, label.text, index, layers);
@@ -56,7 +70,12 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        private static void DrawPropertyForInt(Rect rect, SerializedProperty property, GUIContent label, string[] layers)
+        private static void DrawPropertyForInt(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            string[] layers
+        )
         {
             int index = 0;
             string layerName = LayerMask.LayerToName(property.intValue);

@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace NaughtyAttributes.Test
 {
@@ -21,7 +21,10 @@ namespace NaughtyAttributes.Test
         [Dropdown("StringValues")]
         public string stringValue;
 
-        private List<string> StringValues { get { return new List<string>() { "A", "B", "C" }; } }
+        private List<string> StringValues
+        {
+            get { return new List<string>() { "A", "B", "C" }; }
+        }
 
         public DropdownNest2 nest2;
     }

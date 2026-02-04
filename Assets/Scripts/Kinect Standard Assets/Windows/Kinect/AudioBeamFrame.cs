@@ -1,16 +1,19 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.AudioBeamFrame
     //
     public sealed partial class AudioBeamFrame : RootSystem.IDisposable, Helper.INativeWrapper
-
     {
         internal RootSystem.IntPtr _pNative;
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal AudioBeamFrame(RootSystem.IntPtr pNative)
@@ -24,14 +27,34 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_AudioBeamFrame_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_AudioBeamFrame_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_AudioBeamFrame_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_AudioBeamFrame_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
 
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern RootSystem.IntPtr Windows_Kinect_AudioBeamFrame_get_AudioBeam(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern RootSystem.IntPtr Windows_Kinect_AudioBeamFrame_get_AudioBeam(
+            RootSystem.IntPtr pNative
+        );
+
         public Windows.Kinect.AudioBeam AudioBeam
         {
             get
@@ -41,19 +64,31 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("AudioBeamFrame");
                 }
 
-                RootSystem.IntPtr objectPointer = Windows_Kinect_AudioBeamFrame_get_AudioBeam(_pNative);
+                RootSystem.IntPtr objectPointer = Windows_Kinect_AudioBeamFrame_get_AudioBeam(
+                    _pNative
+                );
                 Helper.ExceptionHelper.CheckLastError();
                 if (objectPointer == RootSystem.IntPtr.Zero)
                 {
                     return null;
                 }
 
-                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.AudioBeam>(objectPointer, n => new Windows.Kinect.AudioBeam(n));
+                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.AudioBeam>(
+                    objectPointer,
+                    n => new Windows.Kinect.AudioBeam(n)
+                );
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern RootSystem.IntPtr Windows_Kinect_AudioBeamFrame_get_AudioSource(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern RootSystem.IntPtr Windows_Kinect_AudioBeamFrame_get_AudioSource(
+            RootSystem.IntPtr pNative
+        );
+
         public Windows.Kinect.AudioSource AudioSource
         {
             get
@@ -63,19 +98,31 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("AudioBeamFrame");
                 }
 
-                RootSystem.IntPtr objectPointer = Windows_Kinect_AudioBeamFrame_get_AudioSource(_pNative);
+                RootSystem.IntPtr objectPointer = Windows_Kinect_AudioBeamFrame_get_AudioSource(
+                    _pNative
+                );
                 Helper.ExceptionHelper.CheckLastError();
                 if (objectPointer == RootSystem.IntPtr.Zero)
                 {
                     return null;
                 }
 
-                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.AudioSource>(objectPointer, n => new Windows.Kinect.AudioSource(n));
+                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.AudioSource>(
+                    objectPointer,
+                    n => new Windows.Kinect.AudioSource(n)
+                );
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern long Windows_Kinect_AudioBeamFrame_get_Duration(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern long Windows_Kinect_AudioBeamFrame_get_Duration(
+            RootSystem.IntPtr pNative
+        );
+
         public RootSystem.TimeSpan Duration
         {
             get
@@ -85,12 +132,21 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("AudioBeamFrame");
                 }
 
-                return RootSystem.TimeSpan.FromMilliseconds(Windows_Kinect_AudioBeamFrame_get_Duration(_pNative));
+                return RootSystem.TimeSpan.FromMilliseconds(
+                    Windows_Kinect_AudioBeamFrame_get_Duration(_pNative)
+                );
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern long Windows_Kinect_AudioBeamFrame_get_RelativeTimeStart(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern long Windows_Kinect_AudioBeamFrame_get_RelativeTimeStart(
+            RootSystem.IntPtr pNative
+        );
+
         public RootSystem.TimeSpan RelativeTimeStart
         {
             get
@@ -100,15 +156,13 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("AudioBeamFrame");
                 }
 
-                return RootSystem.TimeSpan.FromMilliseconds(Windows_Kinect_AudioBeamFrame_get_RelativeTimeStart(_pNative));
+                return RootSystem.TimeSpan.FromMilliseconds(
+                    Windows_Kinect_AudioBeamFrame_get_RelativeTimeStart(_pNative)
+                );
             }
         }
 
-
         // Public Methods
-        private void __EventCleanup()
-        {
-        }
+        private void __EventCleanup() { }
     }
-
 }

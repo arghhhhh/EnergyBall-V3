@@ -9,10 +9,7 @@ namespace NaughtyAttributes.Editor
 
         public bool Value
         {
-            get
-            {
-                return _value;
-            }
+            get { return _value; }
             set
             {
                 if (_value == value)

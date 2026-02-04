@@ -30,7 +30,10 @@ namespace NaughtyAttributes
         {
             if (enumValue == null)
             {
-                throw new ArgumentNullException(nameof(enumValue), "This parameter must be an enum value.");
+                throw new ArgumentNullException(
+                    nameof(enumValue),
+                    "This parameter must be an enum value."
+                );
             }
 
             EnumValue = enumValue;

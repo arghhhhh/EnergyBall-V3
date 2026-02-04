@@ -2,7 +2,11 @@
 
 namespace NaughtyAttributes
 {
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+    [AttributeUsage(
+        AttributeTargets.Field | AttributeTargets.Method,
+        AllowMultiple = false,
+        Inherited = true
+    )]
     public class HideIfAttribute : ShowIfAttributeBase
     {
         public HideIfAttribute(string condition)

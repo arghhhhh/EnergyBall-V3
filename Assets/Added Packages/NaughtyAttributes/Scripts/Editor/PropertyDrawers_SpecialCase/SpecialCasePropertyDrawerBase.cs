@@ -17,7 +17,8 @@ namespace NaughtyAttributes.Editor
             }
 
             // Validate
-            ValidatorAttribute[] validatorAttributes = PropertyUtility.GetAttributes<ValidatorAttribute>(property);
+            ValidatorAttribute[] validatorAttributes =
+                PropertyUtility.GetAttributes<ValidatorAttribute>(property);
             foreach (var validatorAttribute in validatorAttributes)
             {
                 validatorAttribute.GetValidator().ValidateProperty(property);
@@ -44,7 +45,11 @@ namespace NaughtyAttributes.Editor
             return GetPropertyHeight_Internal(property);
         }
 
-        protected abstract void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label);
+        protected abstract void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        );
         protected abstract float GetPropertyHeight_Internal(SerializedProperty property);
     }
 
@@ -55,7 +60,8 @@ namespace NaughtyAttributes.Editor
         static SpecialCaseDrawerAttributeExtensions()
         {
             _drawersByAttributeType = new Dictionary<Type, SpecialCasePropertyDrawerBase>();
-            _drawersByAttributeType[typeof(ReorderableListAttribute)] = ReorderableListPropertyDrawer.Instance;
+            _drawersByAttributeType[typeof(ReorderableListAttribute)] =
+                ReorderableListPropertyDrawer.Instance;
         }
 
         public static SpecialCasePropertyDrawerBase GetDrawer(this SpecialCaseDrawerAttribute attr)

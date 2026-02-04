@@ -25,7 +25,10 @@ namespace Helper
             if (hr < 0)
             {
                 Exception exception = Marshal.GetExceptionForHR(hr);
-                string message = string.Format("This API has returned an exception from an HRESULT: 0x{0:X}", hr);
+                string message = string.Format(
+                    "This API has returned an exception from an HRESULT: 0x{0:X}",
+                    hr
+                );
 
                 switch (hr)
                 {

@@ -1,12 +1,15 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using UnityEditor;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     [CustomPropertyDrawer(typeof(ShowAssetPreviewAttribute))]
     public class ShowAssetPreviewPropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             if (property.propertyType == SerializedPropertyType.ObjectReference)
             {
@@ -26,7 +29,11 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -71,7 +78,9 @@ namespace NaughtyAttributes.Editor
             {
                 if (property.objectReferenceValue != null)
                 {
-                    Texture2D previewTexture = AssetPreview.GetAssetPreview(property.objectReferenceValue);
+                    Texture2D previewTexture = AssetPreview.GetAssetPreview(
+                        property.objectReferenceValue
+                    );
                     return previewTexture;
                 }
 
@@ -93,7 +102,8 @@ namespace NaughtyAttributes.Editor
                 int targetWidth = ShowAssetPreviewAttribute.DefaultWidth;
                 int targetHeight = ShowAssetPreviewAttribute.DefaultHeight;
 
-                ShowAssetPreviewAttribute showAssetPreviewAttribute = PropertyUtility.GetAttribute<ShowAssetPreviewAttribute>(property);
+                ShowAssetPreviewAttribute showAssetPreviewAttribute =
+                    PropertyUtility.GetAttribute<ShowAssetPreviewAttribute>(property);
                 if (showAssetPreviewAttribute != null)
                 {
                     targetWidth = showAssetPreviewAttribute.Width;

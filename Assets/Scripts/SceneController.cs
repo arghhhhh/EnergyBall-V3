@@ -150,11 +150,15 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Animation")]
     [Range(0f, 1f)]
-    [Tooltip("Speed of the hand opening animation during initialization. Lower values = slower animation.")]
+    [Tooltip(
+        "Speed of the hand opening animation during initialization. Lower values = slower animation."
+    )]
     public float initializationSpeed = 0.05f;
 
     [BoxGroup("Animation")]
-    [Tooltip("Duration in seconds for the metaball radius to animate from minimum to full size during initialization.")]
+    [Tooltip(
+        "Duration in seconds for the metaball radius to animate from minimum to full size during initialization."
+    )]
     public float metaballRadiusAnimationDuration = 2f;
 
     [BoxGroup("Animation")]
@@ -162,7 +166,9 @@ public class SceneController : MonoBehaviour
     public float metaballRadiusAnimationStartSize = 0.1f;
 
     [BoxGroup("Animation")]
-    [Tooltip("Animation curve for the metaball radius transition (0-1 input maps to animation progress).")]
+    [Tooltip(
+        "Animation curve for the metaball radius transition (0-1 input maps to animation progress)."
+    )]
     public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Curve Settings")]
@@ -607,7 +613,6 @@ public class SceneController : MonoBehaviour
             playerConstructor.beginInitialization = true;
             // playerConstructor.InitializeParticles();
         }
-
         else if (!playerConstructor.beginInitialization)
         {
             playerConstructor.ResetSphereToHandMidpoint();

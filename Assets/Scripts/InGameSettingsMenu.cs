@@ -26,11 +26,17 @@ public class InGameSettingsMenu : MonoBehaviour
     private VisualElement settingsPanel;
     private ScrollView sceneSettingsPanel;
     private ScrollView postProcessingPanel;
-    private DropdownField sceneProfileDropdown, postProcessingProfileDropdown;
-    private Button sceneLoadButton, sceneSaveButton, sceneSaveAsButton;
-    private Button postProcessingLoadButton, postProcessingSaveButton, postProcessingSaveAsButton;
+    private DropdownField sceneProfileDropdown,
+        postProcessingProfileDropdown;
+    private Button sceneLoadButton,
+        sceneSaveButton,
+        sceneSaveAsButton;
+    private Button postProcessingLoadButton,
+        postProcessingSaveButton,
+        postProcessingSaveAsButton;
     private Button closeButton;
-    private Button sceneTab, postProcessingTab;
+    private Button sceneTab,
+        postProcessingTab;
 
     private RuntimeSceneSettings runtimeSettings;
     private RuntimeSceneSettings originalSettings; // Backup for canceling changes
@@ -57,8 +63,16 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void Awake()
     {
-        sceneProfilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles", "Scene");
-        postProcessingProfilesDirectory = Path.Combine(Application.streamingAssetsPath, "SettingsProfiles", "PostProcessing");
+        sceneProfilesDirectory = Path.Combine(
+            Application.streamingAssetsPath,
+            "SettingsProfiles",
+            "Scene"
+        );
+        postProcessingProfilesDirectory = Path.Combine(
+            Application.streamingAssetsPath,
+            "SettingsProfiles",
+            "PostProcessing"
+        );
 
         if (!Directory.Exists(sceneProfilesDirectory))
         {
@@ -95,7 +109,8 @@ public class InGameSettingsMenu : MonoBehaviour
         if (Controller != null)
         {
             lastUsedSceneProfileKey = Controller.GetSceneSpecificSceneProfileKey();
-            lastUsedPostProcessingProfileKey = Controller.GetSceneSpecificPostProcessingProfileKey();
+            lastUsedPostProcessingProfileKey =
+                Controller.GetSceneSpecificPostProcessingProfileKey();
         }
     }
 
@@ -104,10 +119,17 @@ public class InGameSettingsMenu : MonoBehaviour
     /// </summary>
     private void EnsureSceneSpecificKeys()
     {
-        if (Controller != null && (lastUsedSceneProfileKey == "LastUsedSceneProfile" || lastUsedPostProcessingProfileKey == "LastUsedPostProcessingProfile"))
+        if (
+            Controller != null
+            && (
+                lastUsedSceneProfileKey == "LastUsedSceneProfile"
+                || lastUsedPostProcessingProfileKey == "LastUsedPostProcessingProfile"
+            )
+        )
         {
             lastUsedSceneProfileKey = Controller.GetSceneSpecificSceneProfileKey();
-            lastUsedPostProcessingProfileKey = Controller.GetSceneSpecificPostProcessingProfileKey();
+            lastUsedPostProcessingProfileKey =
+                Controller.GetSceneSpecificPostProcessingProfileKey();
         }
     }
 
@@ -129,7 +151,8 @@ public class InGameSettingsMenu : MonoBehaviour
             originalSettings = runtimeSettings.DeepCopy();
 
             // Subscribe to runtime settings changes
-            runtimeSettings.OnAnyDebuggingSettingChanged += () => OnSettingsChanged?.Invoke(runtimeSettings);
+            runtimeSettings.OnAnyDebuggingSettingChanged += () =>
+                OnSettingsChanged?.Invoke(runtimeSettings);
         }
         else
         {
@@ -167,10 +190,18 @@ public class InGameSettingsMenu : MonoBehaviour
         var postProcessingTabContent = root.Q<VisualElement>("PostProcessingTabContent");
         if (postProcessingTabContent != null)
         {
-            postProcessingProfileDropdown = postProcessingTabContent.Q<DropdownField>("PostProcessingProfileDropdown");
-            postProcessingLoadButton = postProcessingTabContent.Q<Button>("PostProcessingLoadButton");
-            postProcessingSaveButton = postProcessingTabContent.Q<Button>("PostProcessingSaveButton");
-            postProcessingSaveAsButton = postProcessingTabContent.Q<Button>("PostProcessingSaveAsButton");
+            postProcessingProfileDropdown = postProcessingTabContent.Q<DropdownField>(
+                "PostProcessingProfileDropdown"
+            );
+            postProcessingLoadButton = postProcessingTabContent.Q<Button>(
+                "PostProcessingLoadButton"
+            );
+            postProcessingSaveButton = postProcessingTabContent.Q<Button>(
+                "PostProcessingSaveButton"
+            );
+            postProcessingSaveAsButton = postProcessingTabContent.Q<Button>(
+                "PostProcessingSaveAsButton"
+            );
         }
 
         closeButton = root.Q<Button>("CloseButton");
@@ -181,14 +212,20 @@ public class InGameSettingsMenu : MonoBehaviour
         closeButton.clicked += CloseMenu;
 
         // Scene tab callbacks
-        if (sceneLoadButton != null) sceneLoadButton.clicked += () => LoadSelectedProfile("scene");
-        if (sceneSaveButton != null) sceneSaveButton.clicked += () => SaveCurrentProfile(TabType.Scene);
-        if (sceneSaveAsButton != null) sceneSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.Scene);
+        if (sceneLoadButton != null)
+            sceneLoadButton.clicked += () => LoadSelectedProfile("scene");
+        if (sceneSaveButton != null)
+            sceneSaveButton.clicked += () => SaveCurrentProfile(TabType.Scene);
+        if (sceneSaveAsButton != null)
+            sceneSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.Scene);
 
         // Post-processing tab callbacks
-        if (postProcessingLoadButton != null) postProcessingLoadButton.clicked += () => LoadSelectedProfile("postprocessing");
-        if (postProcessingSaveButton != null) postProcessingSaveButton.clicked += () => SaveCurrentProfile(TabType.PostProcessing);
-        if (postProcessingSaveAsButton != null) postProcessingSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.PostProcessing);
+        if (postProcessingLoadButton != null)
+            postProcessingLoadButton.clicked += () => LoadSelectedProfile("postprocessing");
+        if (postProcessingSaveButton != null)
+            postProcessingSaveButton.clicked += () => SaveCurrentProfile(TabType.PostProcessing);
+        if (postProcessingSaveAsButton != null)
+            postProcessingSaveAsButton.clicked += () => ShowSaveAsDialog(TabType.PostProcessing);
 
         sceneTab.clicked += () => SwitchTab("scene");
         postProcessingTab.clicked += () => SwitchTab("postprocessing");
@@ -287,13 +324,48 @@ public class InGameSettingsMenu : MonoBehaviour
         var group = CreateGroup("Gravity Attraction", parentContainer);
 
         CreateFloatField(group, "G", () => runtimeSettings.g, v => runtimeSettings.g = v);
-        CreateFloatField(group, "Max Towards Force", () => runtimeSettings.maxTowardsForce, v => runtimeSettings.maxTowardsForce = v);
-        CreateFloatField(group, "Max Away Force", () => runtimeSettings.maxAwayFromForce, v => runtimeSettings.maxAwayFromForce = v);
-        CreateFloatField(group, "Gravity Force Damper", () => runtimeSettings.gravityForceDamper, v => runtimeSettings.gravityForceDamper = v);
-        CreateFloatField(group, "Stop Gravity Distance", () => runtimeSettings.stopGravityDistance, v => runtimeSettings.stopGravityDistance = v);
-        CreateFloatField(group, "Stop Moving Distance", () => runtimeSettings.stopMovingDistance, v => runtimeSettings.stopMovingDistance = v);
-        CreateFloatField(group, "Stop Velocity", () => runtimeSettings.stopVelocity, v => runtimeSettings.stopVelocity = v);
-        CreateFloatField(group, "Attraction Radius Multiplier", () => runtimeSettings.attractionRadiusMultiplier, v => runtimeSettings.attractionRadiusMultiplier = v);
+        CreateFloatField(
+            group,
+            "Max Towards Force",
+            () => runtimeSettings.maxTowardsForce,
+            v => runtimeSettings.maxTowardsForce = v
+        );
+        CreateFloatField(
+            group,
+            "Max Away Force",
+            () => runtimeSettings.maxAwayFromForce,
+            v => runtimeSettings.maxAwayFromForce = v
+        );
+        CreateFloatField(
+            group,
+            "Gravity Force Damper",
+            () => runtimeSettings.gravityForceDamper,
+            v => runtimeSettings.gravityForceDamper = v
+        );
+        CreateFloatField(
+            group,
+            "Stop Gravity Distance",
+            () => runtimeSettings.stopGravityDistance,
+            v => runtimeSettings.stopGravityDistance = v
+        );
+        CreateFloatField(
+            group,
+            "Stop Moving Distance",
+            () => runtimeSettings.stopMovingDistance,
+            v => runtimeSettings.stopMovingDistance = v
+        );
+        CreateFloatField(
+            group,
+            "Stop Velocity",
+            () => runtimeSettings.stopVelocity,
+            v => runtimeSettings.stopVelocity = v
+        );
+        CreateFloatField(
+            group,
+            "Attraction Radius Multiplier",
+            () => runtimeSettings.attractionRadiusMultiplier,
+            v => runtimeSettings.attractionRadiusMultiplier = v
+        );
     }
 
     private void CreateHandsAttractionGroup(ScrollView parentContainer)
@@ -303,134 +375,497 @@ public class InGameSettingsMenu : MonoBehaviour
         // Note: forceToMiddle and alignmentVectorStrength curves are now controlled by CurveSettingsSO
         // and are not included in profiles or the settings UI
         // CreateCurveField(group, "Force To Middle", () => runtimeSettings.forceToMiddle, v => runtimeSettings.forceToMiddle = v);
-        CreateFloatField(group, "Single Hand Open Force Damper", () => runtimeSettings.singleHandOpenForceDamper, v => runtimeSettings.singleHandOpenForceDamper = v);
-        CreateFloatField(group, "Push Force", () => runtimeSettings.pushForce, v => runtimeSettings.pushForce = v);
-        CreateFloatField(group, "Min Drag", () => runtimeSettings.minDrag, v => runtimeSettings.minDrag = v);
-        CreateFloatField(group, "Max Drag", () => runtimeSettings.maxDrag, v => runtimeSettings.maxDrag = v);
+        CreateFloatField(
+            group,
+            "Single Hand Open Force Damper",
+            () => runtimeSettings.singleHandOpenForceDamper,
+            v => runtimeSettings.singleHandOpenForceDamper = v
+        );
+        CreateFloatField(
+            group,
+            "Push Force",
+            () => runtimeSettings.pushForce,
+            v => runtimeSettings.pushForce = v
+        );
+        CreateFloatField(
+            group,
+            "Min Drag",
+            () => runtimeSettings.minDrag,
+            v => runtimeSettings.minDrag = v
+        );
+        CreateFloatField(
+            group,
+            "Max Drag",
+            () => runtimeSettings.maxDrag,
+            v => runtimeSettings.maxDrag = v
+        );
 
         // CreateCurveField(group, "Alignment Vector Strength", () => runtimeSettings.alignmentVectorStrength, v => runtimeSettings.alignmentVectorStrength = v);
-        CreateFloatField(group, "Alignment Vector Strength Scaler", () => runtimeSettings.alignmentVectorStrengthScaler, v => runtimeSettings.alignmentVectorStrengthScaler = v);
-        CreateFloatField(group, "Hand Push Scaler", () => runtimeSettings.handPushScaler, v => runtimeSettings.handPushScaler = v);
-        CreateToggleField(group, "Pray To Activate", () => runtimeSettings.prayToActivate, v => runtimeSettings.prayToActivate = v);
-        CreateFloatField(group, "Pray To Activate Distance", () => runtimeSettings.prayToActivateDistance, v => runtimeSettings.prayToActivateDistance = v);
+        CreateFloatField(
+            group,
+            "Alignment Vector Strength Scaler",
+            () => runtimeSettings.alignmentVectorStrengthScaler,
+            v => runtimeSettings.alignmentVectorStrengthScaler = v
+        );
+        CreateFloatField(
+            group,
+            "Hand Push Scaler",
+            () => runtimeSettings.handPushScaler,
+            v => runtimeSettings.handPushScaler = v
+        );
+        CreateToggleField(
+            group,
+            "Pray To Activate",
+            () => runtimeSettings.prayToActivate,
+            v => runtimeSettings.prayToActivate = v
+        );
+        CreateFloatField(
+            group,
+            "Pray To Activate Distance",
+            () => runtimeSettings.prayToActivateDistance,
+            v => runtimeSettings.prayToActivateDistance = v
+        );
     }
 
     private void CreateBoundaryDragGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Boundary Drag", parentContainer);
 
-        CreateFloatField(group, "Boundary Distance Multiplier", () => runtimeSettings.addedBoundaryDistance, v => runtimeSettings.addedBoundaryDistance = v);
-        CreateFloatField(group, "Boundary Outward Drag", () => runtimeSettings.boundaryOutwardDrag, v => runtimeSettings.boundaryOutwardDrag = v);
-        CreateFloatField(group, "Out Of Bounds Reset Delay", () => runtimeSettings.outOfBoundsResetDelay, v => runtimeSettings.outOfBoundsResetDelay = v);
+        CreateFloatField(
+            group,
+            "Boundary Distance Multiplier",
+            () => runtimeSettings.addedBoundaryDistance,
+            v => runtimeSettings.addedBoundaryDistance = v
+        );
+        CreateFloatField(
+            group,
+            "Boundary Outward Drag",
+            () => runtimeSettings.boundaryOutwardDrag,
+            v => runtimeSettings.boundaryOutwardDrag = v
+        );
+        CreateFloatField(
+            group,
+            "Out Of Bounds Reset Delay",
+            () => runtimeSettings.outOfBoundsResetDelay,
+            v => runtimeSettings.outOfBoundsResetDelay = v
+        );
     }
 
     private void CreateIntrinsicPulsationGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Intrinsic Pulsation", parentContainer);
 
-        CreateSliderField(group, "Pulse Amount", () => runtimeSettings.pulseAmount, v => runtimeSettings.pulseAmount = v, 0f, 10f);
-        CreateFloatField(group, "Pulse Speed", () => runtimeSettings.pulseSpeed, v => runtimeSettings.pulseSpeed = v);
-        CreateFloatField(group, "Graph Limit", () => runtimeSettings.graphLimit, v => runtimeSettings.graphLimit = v);
-        CreateFloatArrayField(group, "Pulse Frequencies", () => runtimeSettings.pulseFreqs, v => runtimeSettings.pulseFreqs = v);
+        CreateSliderField(
+            group,
+            "Pulse Amount",
+            () => runtimeSettings.pulseAmount,
+            v => runtimeSettings.pulseAmount = v,
+            0f,
+            10f
+        );
+        CreateFloatField(
+            group,
+            "Pulse Speed",
+            () => runtimeSettings.pulseSpeed,
+            v => runtimeSettings.pulseSpeed = v
+        );
+        CreateFloatField(
+            group,
+            "Graph Limit",
+            () => runtimeSettings.graphLimit,
+            v => runtimeSettings.graphLimit = v
+        );
+        CreateFloatArrayField(
+            group,
+            "Pulse Frequencies",
+            () => runtimeSettings.pulseFreqs,
+            v => runtimeSettings.pulseFreqs = v
+        );
     }
 
     private void CreateMovementPulsationGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Movement-Based Pulsation", parentContainer);
 
-        CreateToggleField(group, "Single Hand Scaling", () => runtimeSettings.singleHandScaling, v => runtimeSettings.singleHandScaling = v);
-        CreateFloatField(group, "Minimum Unscaled Size", () => runtimeSettings.minimumUnscaledSize, v => runtimeSettings.minimumUnscaledSize = v);
-        CreateSliderField(group, "Min Hand Displacement Per Frame", () => runtimeSettings.minHandDisplacementPerFrame, v => runtimeSettings.minHandDisplacementPerFrame = v, 0.0001f, 5f);
+        CreateToggleField(
+            group,
+            "Single Hand Scaling",
+            () => runtimeSettings.singleHandScaling,
+            v => runtimeSettings.singleHandScaling = v
+        );
+        CreateFloatField(
+            group,
+            "Minimum Unscaled Size",
+            () => runtimeSettings.minimumUnscaledSize,
+            v => runtimeSettings.minimumUnscaledSize = v
+        );
+        CreateSliderField(
+            group,
+            "Min Hand Displacement Per Frame",
+            () => runtimeSettings.minHandDisplacementPerFrame,
+            v => runtimeSettings.minHandDisplacementPerFrame = v,
+            0.0001f,
+            5f
+        );
         // Note: distanceDamper curve is now controlled by CurveSettingsSO
         // and is not included in profiles or the settings UI
         // CreateCurveField(group, "Distance Damper", () => runtimeSettings.distanceDamper, v => runtimeSettings.distanceDamper = v);
-        CreateFloatField(group, "Pulse Scale Damper", () => runtimeSettings.pulseScaleDamper, v => runtimeSettings.pulseScaleDamper = v);
+        CreateFloatField(
+            group,
+            "Pulse Scale Damper",
+            () => runtimeSettings.pulseScaleDamper,
+            v => runtimeSettings.pulseScaleDamper = v
+        );
     }
 
     private void CreateMiscellaneousGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Miscellaneous", parentContainer);
 
-        CreateFloatField(group, "Merge Size Scaler Damper", () => runtimeSettings.mergeSizeScalerDamper, v => runtimeSettings.mergeSizeScalerDamper = v);
-        CreateFloatField(group, "Max Distance Between Hands", () => runtimeSettings.maxDistanceBetweenHands, v => runtimeSettings.maxDistanceBetweenHands = v);
-        CreateFloatField(group, "Base Z Depth", () => runtimeSettings.baseZDepth, v => runtimeSettings.baseZDepth = v);
-        CreateFloatField(group, "Default Unscaled Size", () => runtimeSettings.defaultUnscaledSize, v => runtimeSettings.defaultUnscaledSize = v);
-        CreateFloatField(group, "Body Scale", () => runtimeSettings.bodyScale, v => runtimeSettings.bodyScale = v);
-        CreateFloatField(group, "Max Distance From Camera", () => runtimeSettings.maxDistanceFromCamera, v => runtimeSettings.maxDistanceFromCamera = v);
+        CreateFloatField(
+            group,
+            "Merge Size Scaler Damper",
+            () => runtimeSettings.mergeSizeScalerDamper,
+            v => runtimeSettings.mergeSizeScalerDamper = v
+        );
+        CreateFloatField(
+            group,
+            "Max Distance Between Hands",
+            () => runtimeSettings.maxDistanceBetweenHands,
+            v => runtimeSettings.maxDistanceBetweenHands = v
+        );
+        CreateFloatField(
+            group,
+            "Base Z Depth",
+            () => runtimeSettings.baseZDepth,
+            v => runtimeSettings.baseZDepth = v
+        );
+        CreateFloatField(
+            group,
+            "Default Unscaled Size",
+            () => runtimeSettings.defaultUnscaledSize,
+            v => runtimeSettings.defaultUnscaledSize = v
+        );
+        CreateFloatField(
+            group,
+            "Body Scale",
+            () => runtimeSettings.bodyScale,
+            v => runtimeSettings.bodyScale = v
+        );
+        CreateFloatField(
+            group,
+            "Max Distance From Camera",
+            () => runtimeSettings.maxDistanceFromCamera,
+            v => runtimeSettings.maxDistanceFromCamera = v
+        );
     }
 
     private void CreateAnimationGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Animation", parentContainer);
 
-        CreateFloatField(group, "Particle Initialization Delay", () => runtimeSettings.particleInitializationDelay, v => runtimeSettings.particleInitializationDelay = v);
-        CreateFloatField(group, "Initialization Reset Delay", () => runtimeSettings.initializationResetDelay, v => runtimeSettings.initializationResetDelay = v);
-        CreateSliderField(group, "Initialization Speed", () => runtimeSettings.initializationSpeed, v => runtimeSettings.initializationSpeed = v, 0f, 1f);
-        CreateFloatField(group, "Metaball Radius Animation Duration", () => runtimeSettings.metaballRadiusAnimationDuration, v => runtimeSettings.metaballRadiusAnimationDuration = v);
-        CreateFloatField(group, "Metaball Radius Animation Start Size", () => runtimeSettings.metaballRadiusAnimationStartSize, v => runtimeSettings.metaballRadiusAnimationStartSize = v);
+        CreateFloatField(
+            group,
+            "Particle Initialization Delay",
+            () => runtimeSettings.particleInitializationDelay,
+            v => runtimeSettings.particleInitializationDelay = v
+        );
+        CreateFloatField(
+            group,
+            "Initialization Reset Delay",
+            () => runtimeSettings.initializationResetDelay,
+            v => runtimeSettings.initializationResetDelay = v
+        );
+        CreateSliderField(
+            group,
+            "Initialization Speed",
+            () => runtimeSettings.initializationSpeed,
+            v => runtimeSettings.initializationSpeed = v,
+            0f,
+            1f
+        );
+        CreateFloatField(
+            group,
+            "Metaball Radius Animation Duration",
+            () => runtimeSettings.metaballRadiusAnimationDuration,
+            v => runtimeSettings.metaballRadiusAnimationDuration = v
+        );
+        CreateFloatField(
+            group,
+            "Metaball Radius Animation Start Size",
+            () => runtimeSettings.metaballRadiusAnimationStartSize,
+            v => runtimeSettings.metaballRadiusAnimationStartSize = v
+        );
     }
 
     private void CreatePostProcessingGroup(ScrollView parentContainer)
     {
         var bloomGroup = CreateGroup("Bloom", parentContainer);
 
-        CreateFloatField(bloomGroup, "Bloom Threshold", () => runtimeSettings.bloomThreshold, v => runtimeSettings.bloomThreshold = v);
-        CreateSliderField(bloomGroup, "Bloom Intensity", () => runtimeSettings.bloomIntensity, v => runtimeSettings.bloomIntensity = v, 0f, 3f);
-        CreateSliderField(bloomGroup, "Bloom Scatter", () => runtimeSettings.bloomScatter, v => runtimeSettings.bloomScatter = v, 0f, 1f);
+        CreateFloatField(
+            bloomGroup,
+            "Bloom Threshold",
+            () => runtimeSettings.bloomThreshold,
+            v => runtimeSettings.bloomThreshold = v
+        );
+        CreateSliderField(
+            bloomGroup,
+            "Bloom Intensity",
+            () => runtimeSettings.bloomIntensity,
+            v => runtimeSettings.bloomIntensity = v,
+            0f,
+            3f
+        );
+        CreateSliderField(
+            bloomGroup,
+            "Bloom Scatter",
+            () => runtimeSettings.bloomScatter,
+            v => runtimeSettings.bloomScatter = v,
+            0f,
+            1f
+        );
 
         var lensFlareGroup = CreateGroup("Screen Space Lens Flare", parentContainer);
 
-        CreateSliderField(lensFlareGroup, "Intensity", () => runtimeSettings.lensFlareIntensity, v => runtimeSettings.lensFlareIntensity = v, 0f, 3f);
-        CreateSliderField(lensFlareGroup, "Regular Multiplier (Flares)", () => runtimeSettings.lensFlareRegularMultiplier, v => runtimeSettings.lensFlareRegularMultiplier = v, 0f, 3f);
-        CreateSliderField(lensFlareGroup, "Reversed Multiplier (Flares)", () => runtimeSettings.lensFlareReversedMultiplier, v => runtimeSettings.lensFlareReversedMultiplier = v, 0f, 3f);
-        CreateSliderField(lensFlareGroup, "Multiplier (Streaks)", () => runtimeSettings.lensFlareStreaksMultiplier, v => runtimeSettings.lensFlareStreaksMultiplier = v, 0f, 3f);
-        CreateSliderField(lensFlareGroup, "Length (Streaks)", () => runtimeSettings.lensFlareStreaksLength, v => runtimeSettings.lensFlareStreaksLength = v, 0f, 1f);
-        CreateSliderField(lensFlareGroup, "Orientation (Streaks)", () => runtimeSettings.lensFlareStreaksOrientation, v => runtimeSettings.lensFlareStreaksOrientation = v, -180f, 180f);
-        CreateSliderField(lensFlareGroup, "Threshold (Streaks)", () => runtimeSettings.lensFlareStreaksThreshold, v => runtimeSettings.lensFlareStreaksThreshold = v, 0f, 1f);
-        CreateSliderField(lensFlareGroup, "Chromatic Aberration Intensity", () => runtimeSettings.lensFlareChromaticIntensity, v => runtimeSettings.lensFlareChromaticIntensity = v, 0f, 1f);
+        CreateSliderField(
+            lensFlareGroup,
+            "Intensity",
+            () => runtimeSettings.lensFlareIntensity,
+            v => runtimeSettings.lensFlareIntensity = v,
+            0f,
+            3f
+        );
+        CreateSliderField(
+            lensFlareGroup,
+            "Regular Multiplier (Flares)",
+            () => runtimeSettings.lensFlareRegularMultiplier,
+            v => runtimeSettings.lensFlareRegularMultiplier = v,
+            0f,
+            3f
+        );
+        CreateSliderField(
+            lensFlareGroup,
+            "Reversed Multiplier (Flares)",
+            () => runtimeSettings.lensFlareReversedMultiplier,
+            v => runtimeSettings.lensFlareReversedMultiplier = v,
+            0f,
+            3f
+        );
+        CreateSliderField(
+            lensFlareGroup,
+            "Multiplier (Streaks)",
+            () => runtimeSettings.lensFlareStreaksMultiplier,
+            v => runtimeSettings.lensFlareStreaksMultiplier = v,
+            0f,
+            3f
+        );
+        CreateSliderField(
+            lensFlareGroup,
+            "Length (Streaks)",
+            () => runtimeSettings.lensFlareStreaksLength,
+            v => runtimeSettings.lensFlareStreaksLength = v,
+            0f,
+            1f
+        );
+        CreateSliderField(
+            lensFlareGroup,
+            "Orientation (Streaks)",
+            () => runtimeSettings.lensFlareStreaksOrientation,
+            v => runtimeSettings.lensFlareStreaksOrientation = v,
+            -180f,
+            180f
+        );
+        CreateSliderField(
+            lensFlareGroup,
+            "Threshold (Streaks)",
+            () => runtimeSettings.lensFlareStreaksThreshold,
+            v => runtimeSettings.lensFlareStreaksThreshold = v,
+            0f,
+            1f
+        );
+        CreateSliderField(
+            lensFlareGroup,
+            "Chromatic Aberration Intensity",
+            () => runtimeSettings.lensFlareChromaticIntensity,
+            v => runtimeSettings.lensFlareChromaticIntensity = v,
+            0f,
+            1f
+        );
 
         var lensDistortionGroup = CreateGroup("Lens Distortion", parentContainer);
 
-        CreateSliderField(lensDistortionGroup, "Intensity", () => runtimeSettings.lensDistortionIntensity, v => runtimeSettings.lensDistortionIntensity = v, -1f, 1f);
-        CreateSliderField(lensDistortionGroup, "X Multiplier", () => runtimeSettings.lensDistortionXMultiplier, v => runtimeSettings.lensDistortionXMultiplier = v, 0f, 2f);
-        CreateSliderField(lensDistortionGroup, "Y Multiplier", () => runtimeSettings.lensDistortionYMultiplier, v => runtimeSettings.lensDistortionYMultiplier = v, 0f, 2f);
-        CreateSliderField(lensDistortionGroup, "Scale", () => runtimeSettings.lensDistortionScale, v => runtimeSettings.lensDistortionScale = v, 0.01f, 3f);
-        CreateSliderField(lensDistortionGroup, "Center X", () => runtimeSettings.lensDistortionCenterX, v => runtimeSettings.lensDistortionCenterX = v, 0f, 1f);
-        CreateSliderField(lensDistortionGroup, "Center Y", () => runtimeSettings.lensDistortionCenterY, v => runtimeSettings.lensDistortionCenterY = v, 0f, 1f);
+        CreateSliderField(
+            lensDistortionGroup,
+            "Intensity",
+            () => runtimeSettings.lensDistortionIntensity,
+            v => runtimeSettings.lensDistortionIntensity = v,
+            -1f,
+            1f
+        );
+        CreateSliderField(
+            lensDistortionGroup,
+            "X Multiplier",
+            () => runtimeSettings.lensDistortionXMultiplier,
+            v => runtimeSettings.lensDistortionXMultiplier = v,
+            0f,
+            2f
+        );
+        CreateSliderField(
+            lensDistortionGroup,
+            "Y Multiplier",
+            () => runtimeSettings.lensDistortionYMultiplier,
+            v => runtimeSettings.lensDistortionYMultiplier = v,
+            0f,
+            2f
+        );
+        CreateSliderField(
+            lensDistortionGroup,
+            "Scale",
+            () => runtimeSettings.lensDistortionScale,
+            v => runtimeSettings.lensDistortionScale = v,
+            0.01f,
+            3f
+        );
+        CreateSliderField(
+            lensDistortionGroup,
+            "Center X",
+            () => runtimeSettings.lensDistortionCenterX,
+            v => runtimeSettings.lensDistortionCenterX = v,
+            0f,
+            1f
+        );
+        CreateSliderField(
+            lensDistortionGroup,
+            "Center Y",
+            () => runtimeSettings.lensDistortionCenterY,
+            v => runtimeSettings.lensDistortionCenterY = v,
+            0f,
+            1f
+        );
 
         var colorAdjustmentsGroup = CreateGroup("Color Adjustments", parentContainer);
 
-        CreateFloatField(colorAdjustmentsGroup, "Post Exposure", () => runtimeSettings.colorAdjustmentsPostExposure, v => runtimeSettings.colorAdjustmentsPostExposure = v);
-        CreateSliderField(colorAdjustmentsGroup, "Contrast", () => runtimeSettings.colorAdjustmentsContrast, v => runtimeSettings.colorAdjustmentsContrast = v, -100f, 100f);
-        CreateSliderField(colorAdjustmentsGroup, "Hue Shift", () => runtimeSettings.colorAdjustmentsHueShift, v => runtimeSettings.colorAdjustmentsHueShift = v, -180f, 180f);
-        CreateSliderField(colorAdjustmentsGroup, "Saturation", () => runtimeSettings.colorAdjustmentsSaturation, v => runtimeSettings.colorAdjustmentsSaturation = v, -100f, 100f);
+        CreateFloatField(
+            colorAdjustmentsGroup,
+            "Post Exposure",
+            () => runtimeSettings.colorAdjustmentsPostExposure,
+            v => runtimeSettings.colorAdjustmentsPostExposure = v
+        );
+        CreateSliderField(
+            colorAdjustmentsGroup,
+            "Contrast",
+            () => runtimeSettings.colorAdjustmentsContrast,
+            v => runtimeSettings.colorAdjustmentsContrast = v,
+            -100f,
+            100f
+        );
+        CreateSliderField(
+            colorAdjustmentsGroup,
+            "Hue Shift",
+            () => runtimeSettings.colorAdjustmentsHueShift,
+            v => runtimeSettings.colorAdjustmentsHueShift = v,
+            -180f,
+            180f
+        );
+        CreateSliderField(
+            colorAdjustmentsGroup,
+            "Saturation",
+            () => runtimeSettings.colorAdjustmentsSaturation,
+            v => runtimeSettings.colorAdjustmentsSaturation = v,
+            -100f,
+            100f
+        );
 
         var whiteBalanceGroup = CreateGroup("White Balance", parentContainer);
 
-        CreateSliderField(whiteBalanceGroup, "Temperature", () => runtimeSettings.whiteBalanceTemperature, v => runtimeSettings.whiteBalanceTemperature = v, -100f, 100f);
-        CreateSliderField(whiteBalanceGroup, "Tint", () => runtimeSettings.whiteBalanceTint, v => runtimeSettings.whiteBalanceTint = v, -100f, 100f);
+        CreateSliderField(
+            whiteBalanceGroup,
+            "Temperature",
+            () => runtimeSettings.whiteBalanceTemperature,
+            v => runtimeSettings.whiteBalanceTemperature = v,
+            -100f,
+            100f
+        );
+        CreateSliderField(
+            whiteBalanceGroup,
+            "Tint",
+            () => runtimeSettings.whiteBalanceTint,
+            v => runtimeSettings.whiteBalanceTint = v,
+            -100f,
+            100f
+        );
     }
 
     private void CreateStyleGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Style", parentContainer);
 
-        CreateToggleField(group, "Custom Colors", () => runtimeSettings.customColors, v => runtimeSettings.customColors = v);
-        CreateToggleField(group, "Draw Skeleton", () => runtimeSettings.drawSkeleton, v => runtimeSettings.drawSkeleton = v);
-        CreateToggleField(group, "Use Tracking State Colors", () => runtimeSettings.useTrackingStateColors, v => runtimeSettings.useTrackingStateColors = v);
+        CreateToggleField(
+            group,
+            "Custom Colors",
+            () => runtimeSettings.customColors,
+            v => runtimeSettings.customColors = v
+        );
+        CreateToggleField(
+            group,
+            "Draw Skeleton",
+            () => runtimeSettings.drawSkeleton,
+            v => runtimeSettings.drawSkeleton = v
+        );
+        CreateToggleField(
+            group,
+            "Use Tracking State Colors",
+            () => runtimeSettings.useTrackingStateColors,
+            v => runtimeSettings.useTrackingStateColors = v
+        );
     }
 
     private void CreateDebuggingGroup(ScrollView parentContainer)
     {
         var group = CreateGroup("Debugging", parentContainer);
 
-        CreateToggleField(group, "Dummy Only Mode", () => runtimeSettings.dummyOnlyMode, v => runtimeSettings.dummyOnlyMode = v);
-        CreateToggleField(group, "Show Sphere Mesh On Hand Collision", () => runtimeSettings.showSphereMeshOnHandCollision, v => runtimeSettings.showSphereMeshOnHandCollision = v);
-        CreateToggleField(group, "Always Show Sphere Mesh", () => runtimeSettings.alwaysShowSphereMesh, v => runtimeSettings.alwaysShowSphereMesh = v);
-        CreateToggleField(group, "Show Metaball Mesh", () => runtimeSettings.showMetaballMesh, v => runtimeSettings.showMetaballMesh = v);
-        CreateToggleField(group, "Show Attraction Radius", () => runtimeSettings.showAttractionRadius, v => runtimeSettings.showAttractionRadius = v);
-        CreateToggleField(group, "Show Hand Trail Distorters", () => runtimeSettings.showHandTrailDistorters, v => runtimeSettings.showHandTrailDistorters = v);
-        CreateToggleField(group, "Show Secondary Attractor", () => runtimeSettings.showSecondaryAttractor, v => runtimeSettings.showSecondaryAttractor = v);
+        CreateToggleField(
+            group,
+            "Dummy Only Mode",
+            () => runtimeSettings.dummyOnlyMode,
+            v => runtimeSettings.dummyOnlyMode = v
+        );
+        CreateToggleField(
+            group,
+            "Show Sphere Mesh On Hand Collision",
+            () => runtimeSettings.showSphereMeshOnHandCollision,
+            v => runtimeSettings.showSphereMeshOnHandCollision = v
+        );
+        CreateToggleField(
+            group,
+            "Always Show Sphere Mesh",
+            () => runtimeSettings.alwaysShowSphereMesh,
+            v => runtimeSettings.alwaysShowSphereMesh = v
+        );
+        CreateToggleField(
+            group,
+            "Show Metaball Mesh",
+            () => runtimeSettings.showMetaballMesh,
+            v => runtimeSettings.showMetaballMesh = v
+        );
+        CreateToggleField(
+            group,
+            "Show Attraction Radius",
+            () => runtimeSettings.showAttractionRadius,
+            v => runtimeSettings.showAttractionRadius = v
+        );
+        CreateToggleField(
+            group,
+            "Show Hand Trail Distorters",
+            () => runtimeSettings.showHandTrailDistorters,
+            v => runtimeSettings.showHandTrailDistorters = v
+        );
+        CreateToggleField(
+            group,
+            "Show Secondary Attractor",
+            () => runtimeSettings.showSecondaryAttractor,
+            v => runtimeSettings.showSecondaryAttractor = v
+        );
     }
 
     private VisualElement CreateGroup(string title, ScrollView parentContainer)
@@ -448,7 +883,12 @@ public class InGameSettingsMenu : MonoBehaviour
         return group;
     }
 
-    private void CreateFloatField(VisualElement parent, string label, Func<float> getter, Action<float> setter)
+    private void CreateFloatField(
+        VisualElement parent,
+        string label,
+        Func<float> getter,
+        Action<float> setter
+    )
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
@@ -472,7 +912,14 @@ public class InGameSettingsMenu : MonoBehaviour
         settingElements[label] = field;
     }
 
-    private void CreateSliderField(VisualElement parent, string label, Func<float> getter, Action<float> setter, float min, float max)
+    private void CreateSliderField(
+        VisualElement parent,
+        string label,
+        Func<float> getter,
+        Action<float> setter,
+        float min,
+        float max
+    )
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
@@ -513,7 +960,12 @@ public class InGameSettingsMenu : MonoBehaviour
         settingElements[label + "_ValueLabel"] = valueLabel;
     }
 
-    private void CreateToggleField(VisualElement parent, string label, Func<bool> getter, Action<bool> setter)
+    private void CreateToggleField(
+        VisualElement parent,
+        string label,
+        Func<bool> getter,
+        Action<bool> setter
+    )
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
@@ -537,7 +989,12 @@ public class InGameSettingsMenu : MonoBehaviour
         settingElements[label] = toggle;
     }
 
-    private void CreateCurveField(VisualElement parent, string label, Func<AnimationCurve> getter, Action<AnimationCurve> setter)
+    private void CreateCurveField(
+        VisualElement parent,
+        string label,
+        Func<AnimationCurve> getter,
+        Action<AnimationCurve> setter
+    )
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
@@ -557,7 +1014,12 @@ public class InGameSettingsMenu : MonoBehaviour
         settingElements[label] = curveNote;
     }
 
-    private void CreateFloatArrayField(VisualElement parent, string label, Func<float[]> getter, Action<float[]> setter)
+    private void CreateFloatArrayField(
+        VisualElement parent,
+        string label,
+        Func<float[]> getter,
+        Action<float[]> setter
+    )
     {
         var row = new VisualElement();
         row.AddToClassList("setting-row");
@@ -579,7 +1041,9 @@ public class InGameSettingsMenu : MonoBehaviour
         var countLabel = new Label();
         countLabel.AddToClassList("array-count-label");
 
-        var addButton = new Button(() => AddArrayElement(arrayContainer, getter, setter, collapseButton, countLabel));
+        var addButton = new Button(
+            () => AddArrayElement(arrayContainer, getter, setter, collapseButton, countLabel)
+        );
         addButton.text = "Add Element";
         addButton.AddToClassList("array-button");
         addButton.AddToClassList("hidden"); // Start hidden since we start collapsed
@@ -627,7 +1091,13 @@ public class InGameSettingsMenu : MonoBehaviour
         settingElements[label] = arrayContainer;
     }
 
-    private void AddArrayElement(VisualElement container, Func<float[]> getter, Action<float[]> setter, Button collapseButton, Label countLabel)
+    private void AddArrayElement(
+        VisualElement container,
+        Func<float[]> getter,
+        Action<float[]> setter,
+        Button collapseButton,
+        Label countLabel
+    )
     {
         var currentArray = getter();
         var newArray = new float[currentArray.Length + 1];
@@ -638,7 +1108,13 @@ public class InGameSettingsMenu : MonoBehaviour
         OnSettingsChanged?.Invoke(runtimeSettings);
     }
 
-    private void RefreshFloatArray(VisualElement container, float[] array, Action<float[]> setter, Button collapseButton, Label countLabel)
+    private void RefreshFloatArray(
+        VisualElement container,
+        float[] array,
+        Action<float[]> setter,
+        Button collapseButton,
+        Label countLabel
+    )
     {
         // Update count label
         countLabel.text = $"({array.Length} items)";
@@ -718,7 +1194,8 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void RefreshUI()
     {
-        if (runtimeSettings == null) return;
+        if (runtimeSettings == null)
+            return;
 
         // Recreate the entire UI to ensure all values are current
         CreateSettingsUI();
@@ -726,19 +1203,22 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void RefreshSceneProfiles()
     {
-        if (sceneProfileDropdown == null) return;
+        if (sceneProfileDropdown == null)
+            return;
 
         // Ensure we're using scene-specific keys
         EnsureSceneSpecificKeys();
 
-        var profileFiles = Directory.GetFiles(sceneProfilesDirectory, "*.json")
+        var profileFiles = Directory
+            .GetFiles(sceneProfilesDirectory, "*.json")
             .Select(Path.GetFileNameWithoutExtension)
             .ToList();
 
         sceneProfileDropdown.choices = profileFiles;
 
         // Skip loading profile if refresh is suppressed (during save operations)
-        if (isRefreshingSuppressed) return;
+        if (isRefreshingSuppressed)
+            return;
 
         // Try to restore last used scene profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedSceneProfileKey, "");
@@ -746,24 +1226,32 @@ public class InGameSettingsMenu : MonoBehaviour
         if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
         {
             sceneProfileDropdown.SetValueWithoutNotify(lastUsedProfile);
-            LoadProfile(Path.Combine(sceneProfilesDirectory, lastUsedProfile + ".json"), ProfileType.Scene);
+            LoadProfile(
+                Path.Combine(sceneProfilesDirectory, lastUsedProfile + ".json"),
+                ProfileType.Scene
+            );
         }
         else if (profileFiles.Count > 0)
         {
             // If no scene-specific profile exists, use the first available but don't save it as preference yet
             sceneProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
-            LoadProfile(Path.Combine(sceneProfilesDirectory, profileFiles[0] + ".json"), ProfileType.Scene);
+            LoadProfile(
+                Path.Combine(sceneProfilesDirectory, profileFiles[0] + ".json"),
+                ProfileType.Scene
+            );
         }
     }
 
     private void RefreshPostProcessingProfiles()
     {
-        if (postProcessingProfileDropdown == null) return;
+        if (postProcessingProfileDropdown == null)
+            return;
 
         // Ensure we're using scene-specific keys
         EnsureSceneSpecificKeys();
 
-        var profileFiles = Directory.GetFiles(postProcessingProfilesDirectory, "*.json")
+        var profileFiles = Directory
+            .GetFiles(postProcessingProfilesDirectory, "*.json")
             .Select(Path.GetFileNameWithoutExtension)
             .ToList();
 
@@ -774,13 +1262,19 @@ public class InGameSettingsMenu : MonoBehaviour
         if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
         {
             postProcessingProfileDropdown.SetValueWithoutNotify(lastUsedProfile);
-            LoadProfile(Path.Combine(postProcessingProfilesDirectory, lastUsedProfile + ".json"), ProfileType.PostProcessing);
+            LoadProfile(
+                Path.Combine(postProcessingProfilesDirectory, lastUsedProfile + ".json"),
+                ProfileType.PostProcessing
+            );
         }
         else if (profileFiles.Count > 0)
         {
             // If no scene-specific profile exists, use the first available but don't save it as preference yet
             postProcessingProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
-            LoadProfile(Path.Combine(postProcessingProfilesDirectory, profileFiles[0] + ".json"), ProfileType.PostProcessing);
+            LoadProfile(
+                Path.Combine(postProcessingProfilesDirectory, profileFiles[0] + ".json"),
+                ProfileType.PostProcessing
+            );
         }
     }
 
@@ -794,21 +1288,33 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         if (tabType == "scene")
         {
-            if (sceneProfileDropdown == null || string.IsNullOrEmpty(sceneProfileDropdown.value)) return;
-            var profilePath = Path.Combine(sceneProfilesDirectory, sceneProfileDropdown.value + ".json");
+            if (sceneProfileDropdown == null || string.IsNullOrEmpty(sceneProfileDropdown.value))
+                return;
+            var profilePath = Path.Combine(
+                sceneProfilesDirectory,
+                sceneProfileDropdown.value + ".json"
+            );
             LoadProfile(profilePath, ProfileType.Scene);
         }
         else if (tabType == "postprocessing")
         {
-            if (postProcessingProfileDropdown == null || string.IsNullOrEmpty(postProcessingProfileDropdown.value)) return;
-            var profilePath = Path.Combine(postProcessingProfilesDirectory, postProcessingProfileDropdown.value + ".json");
+            if (
+                postProcessingProfileDropdown == null
+                || string.IsNullOrEmpty(postProcessingProfileDropdown.value)
+            )
+                return;
+            var profilePath = Path.Combine(
+                postProcessingProfilesDirectory,
+                postProcessingProfileDropdown.value + ".json"
+            );
             LoadProfile(profilePath, ProfileType.PostProcessing);
         }
     }
 
     private void LoadProfile(string path, ProfileType profileType)
     {
-        if (!File.Exists(path)) return;
+        if (!File.Exists(path))
+            return;
 
         try
         {
@@ -884,7 +1390,8 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
         runtimeSettings.outOfBoundsResetDelay = loadedSettings.outOfBoundsResetDelay;
         // Note: alignmentVectorStrength curve is managed by CurveSettingsSO, not loaded from profiles
-        runtimeSettings.alignmentVectorStrengthScaler = loadedSettings.alignmentVectorStrengthScaler;
+        runtimeSettings.alignmentVectorStrengthScaler =
+            loadedSettings.alignmentVectorStrengthScaler;
         runtimeSettings.handPushScaler = loadedSettings.handPushScaler;
         runtimeSettings.prayToActivate = loadedSettings.prayToActivate;
         runtimeSettings.prayToActivateDistance = loadedSettings.prayToActivateDistance;
@@ -912,8 +1419,10 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
         runtimeSettings.initializationResetDelay = loadedSettings.initializationResetDelay;
         runtimeSettings.initializationSpeed = loadedSettings.initializationSpeed;
-        runtimeSettings.metaballRadiusAnimationDuration = loadedSettings.metaballRadiusAnimationDuration;
-        runtimeSettings.metaballRadiusAnimationStartSize = loadedSettings.metaballRadiusAnimationStartSize;
+        runtimeSettings.metaballRadiusAnimationDuration =
+            loadedSettings.metaballRadiusAnimationDuration;
+        runtimeSettings.metaballRadiusAnimationStartSize =
+            loadedSettings.metaballRadiusAnimationStartSize;
 
         // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
@@ -922,7 +1431,8 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Debug settings
         runtimeSettings.dummyOnlyMode = loadedSettings.dummyOnlyMode;
-        runtimeSettings.showSphereMeshOnHandCollision = loadedSettings.showSphereMeshOnHandCollision;
+        runtimeSettings.showSphereMeshOnHandCollision =
+            loadedSettings.showSphereMeshOnHandCollision;
         runtimeSettings.alwaysShowSphereMesh = loadedSettings.alwaysShowSphereMesh;
         runtimeSettings.showMetaballMesh = loadedSettings.showMetaballMesh;
         runtimeSettings.showAttractionRadius = loadedSettings.showAttractionRadius;
@@ -1064,7 +1574,10 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.whiteBalanceTint = 0.0f;
     }
 
-    private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
+    private void CopyPostProcessingSettings(
+        RuntimeSceneSettings source,
+        RuntimeSceneSettings destination
+    )
     {
         // Copy only post-processing settings to destination
 
@@ -1398,5 +1911,4 @@ public class InGameSettingsMenu : MonoBehaviour
             }
         }
     }
-
 }

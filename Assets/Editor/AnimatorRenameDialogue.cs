@@ -46,7 +46,8 @@ public class AnimatorRenameDialogue : EditorWindow
     {
         public AnimationCurve Curve;
 
-        public AnimationFloatBindingInfo(EditorCurveBinding binding, AnimationCurve curve) : base(binding)
+        public AnimationFloatBindingInfo(EditorCurveBinding binding, AnimationCurve curve)
+            : base(binding)
         {
             Curve = curve;
         }
@@ -59,7 +60,11 @@ public class AnimatorRenameDialogue : EditorWindow
     {
         public ObjectReferenceKeyframe[] Curve;
 
-        public AnimationObjectBindingInfo(EditorCurveBinding binding, ObjectReferenceKeyframe[] curve) : base(binding)
+        public AnimationObjectBindingInfo(
+            EditorCurveBinding binding,
+            ObjectReferenceKeyframe[] curve
+        )
+            : base(binding)
         {
             Curve = curve;
         }
@@ -83,7 +88,9 @@ public class AnimatorRenameDialogue : EditorWindow
             return false;
         }
 
-        var selectedObjects = Selection.GetFiltered<GameObject>(SelectionMode.Editable | SelectionMode.ExcludePrefab);
+        var selectedObjects = Selection.GetFiltered<GameObject>(
+            SelectionMode.Editable | SelectionMode.ExcludePrefab
+        );
 
         if (selectedObjects == null || selectedObjects.Length != 1)
         {
@@ -112,7 +119,9 @@ public class AnimatorRenameDialogue : EditorWindow
             return;
         }
 
-        var selectedObjects = Selection.GetFiltered<GameObject>(SelectionMode.Editable | SelectionMode.ExcludePrefab);
+        var selectedObjects = Selection.GetFiltered<GameObject>(
+            SelectionMode.Editable | SelectionMode.ExcludePrefab
+        );
 
         if (selectedObjects == null || selectedObjects.Length != 1)
         {
@@ -176,7 +185,7 @@ public class AnimatorRenameDialogue : EditorWindow
 
         EditorGUILayout.Space();
 
-        // also handle Escape and Enter keys 
+        // also handle Escape and Enter keys
         var currentEvent = Event.current;
 
         GUILayout.FlexibleSpace();
@@ -185,12 +194,20 @@ public class AnimatorRenameDialogue : EditorWindow
         {
             GUILayout.FlexibleSpace();
 
-            using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(m_NewName) || m_NewName == m_SelectedObject.name))
+            using (
+                new EditorGUI.DisabledScope(
+                    string.IsNullOrWhiteSpace(m_NewName) || m_NewName == m_SelectedObject.name
+                )
+            )
             {
                 var color = GUI.color;
                 GUI.color = Color.green;
 
-                if (GUILayout.Button(k_ApplyButtonLabel, k_ButtonHeightOption) || currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Return)
+                if (
+                    GUILayout.Button(k_ApplyButtonLabel, k_ButtonHeightOption)
+                    || currentEvent.type == EventType.KeyDown
+                        && currentEvent.keyCode == KeyCode.Return
+                )
                 {
                     RenameObjectSafe(m_SelectedObject, m_ParentAnimator, m_NewName);
                     m_ShouldClose = true;
@@ -201,7 +218,10 @@ public class AnimatorRenameDialogue : EditorWindow
 
             EditorGUILayout.Space();
 
-            if (GUILayout.Button(k_CancelButtonLabel, k_ButtonHeightOption) || currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
+            if (
+                GUILayout.Button(k_CancelButtonLabel, k_ButtonHeightOption)
+                || currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape
+            )
             {
                 m_ShouldClose = true;
             }
@@ -216,7 +236,12 @@ public class AnimatorRenameDialogue : EditorWindow
     /// Replace the old path by the new path within the <see cref="EditorCurveBinding"/>.<see cref="EditorCurveBinding.path"/>
     /// </summary>
     /// <returns><see langword="true"/> if this binding was affected by change</returns>
-    private static bool ReplaceBindingPath(EditorCurveBinding originalBinding, string oldPath, string newPath, out EditorCurveBinding changedBinding)
+    private static bool ReplaceBindingPath(
+        EditorCurveBinding originalBinding,
+        string oldPath,
+        string newPath,
+        out EditorCurveBinding changedBinding
+    )
     {
         var oldBindingPath = originalBinding.path;
         changedBinding = originalBinding;
@@ -260,16 +285,25 @@ public class AnimatorRenameDialogue : EditorWindow
 
         if (!animator)
         {
-            throw new ArgumentException($"Selected object {gameObject} is not a child of an {nameof(Animator)}!", nameof(gameObject));
+            throw new ArgumentException(
+                $"Selected object {gameObject} is not a child of an {nameof(Animator)}!",
+                nameof(gameObject)
+            );
         }
 
         if (gameObject.transform == animator.transform)
         {
-            throw new ArgumentException($"Not applicable to the {nameof(Animator)} root object itself! In that case simply rename it the normal way.", nameof(newName));
+            throw new ArgumentException(
+                $"Not applicable to the {nameof(Animator)} root object itself! In that case simply rename it the normal way.",
+                nameof(newName)
+            );
         }
 
         // get the relative path from the animator root to this object's parent
-        var path = AnimationUtility.CalculateTransformPath(gameObject.transform.parent, animator.transform);
+        var path = AnimationUtility.CalculateTransformPath(
+            gameObject.transform.parent,
+            animator.transform
+        );
 
         // In case the parent is the animator itself the path will be empty and we don't want to append the trailing "/"
         if (gameObject.transform.parent != animator.transform)
@@ -288,7 +322,10 @@ public class AnimatorRenameDialogue : EditorWindow
         // Record all possibly affected assets -> The clips and the gameObject
         var changeableObjects = new List<Object>(clips.Length + 1) { gameObject };
         changeableObjects.AddRange(clips);
-        Undo.RecordObjects(changeableObjects.ToArray(), $"Change animated object name from \"{gameObject.name}\" to \"{newName}\"");
+        Undo.RecordObjects(
+            changeableObjects.ToArray(),
+            $"Change animated object name from \"{gameObject.name}\" to \"{newName}\""
+        );
 
         foreach (var clip in clips)
         {
@@ -314,7 +351,7 @@ public class AnimatorRenameDialogue : EditorWindow
 
             var objectBindingChanges = new List<AnimationObjectBindingInfo>();
 
-            // Get and store ALL OBJECT reference keyframe bindings 
+            // Get and store ALL OBJECT reference keyframe bindings
             foreach (var binding in AnimationUtility.GetObjectReferenceCurveBindings(clip))
             {
                 var curve = AnimationUtility.GetObjectReferenceCurve(clip, binding);
@@ -335,12 +372,20 @@ public class AnimatorRenameDialogue : EditorWindow
             // a little check to avoid unnecessary work -> are there any affected bindings at all?
             if (floatBindingChanges.Count + objectBindingChanges.Count > 0)
             {
-                // Now erase all curves 
+                // Now erase all curves
                 clip.ClearCurves();
 
                 // and assign back ALL the stored ones
-                AnimationUtility.SetEditorCurves(clip, floatBindingChanges.Select(info => info.Binding).ToArray(), floatBindingChanges.Select(info => info.Curve).ToArray());
-                AnimationUtility.SetObjectReferenceCurves(clip, objectBindingChanges.Select(info => info.Binding).ToArray(), objectBindingChanges.Select(info => info.Curve).ToArray());
+                AnimationUtility.SetEditorCurves(
+                    clip,
+                    floatBindingChanges.Select(info => info.Binding).ToArray(),
+                    floatBindingChanges.Select(info => info.Curve).ToArray()
+                );
+                AnimationUtility.SetObjectReferenceCurves(
+                    clip,
+                    objectBindingChanges.Select(info => info.Binding).ToArray(),
+                    objectBindingChanges.Select(info => info.Curve).ToArray()
+                );
                 EditorUtility.SetDirty(clip);
             }
 

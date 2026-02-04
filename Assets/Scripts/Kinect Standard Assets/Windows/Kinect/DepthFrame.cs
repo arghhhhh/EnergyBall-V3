@@ -1,16 +1,19 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.DepthFrame
     //
     public sealed partial class DepthFrame : RootSystem.IDisposable, Helper.INativeWrapper
-
     {
         internal RootSystem.IntPtr _pNative;
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal DepthFrame(RootSystem.IntPtr pNative)
@@ -24,10 +27,24 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_DepthFrame_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_DepthFrame_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_DepthFrame_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_DepthFrame_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
+
         private void Dispose(bool disposing)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -48,10 +65,16 @@ namespace Windows.Kinect
             _pNative = RootSystem.IntPtr.Zero;
         }
 
-
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern RootSystem.IntPtr Windows_Kinect_DepthFrame_get_DepthFrameSource(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern RootSystem.IntPtr Windows_Kinect_DepthFrame_get_DepthFrameSource(
+            RootSystem.IntPtr pNative
+        );
+
         public Windows.Kinect.DepthFrameSource DepthFrameSource
         {
             get
@@ -61,19 +84,31 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("DepthFrame");
                 }
 
-                RootSystem.IntPtr objectPointer = Windows_Kinect_DepthFrame_get_DepthFrameSource(_pNative);
+                RootSystem.IntPtr objectPointer = Windows_Kinect_DepthFrame_get_DepthFrameSource(
+                    _pNative
+                );
                 Helper.ExceptionHelper.CheckLastError();
                 if (objectPointer == RootSystem.IntPtr.Zero)
                 {
                     return null;
                 }
 
-                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.DepthFrameSource>(objectPointer, n => new Windows.Kinect.DepthFrameSource(n));
+                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.DepthFrameSource>(
+                    objectPointer,
+                    n => new Windows.Kinect.DepthFrameSource(n)
+                );
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern ushort Windows_Kinect_DepthFrame_get_DepthMaxReliableDistance(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern ushort Windows_Kinect_DepthFrame_get_DepthMaxReliableDistance(
+            RootSystem.IntPtr pNative
+        );
+
         public ushort DepthMaxReliableDistance
         {
             get
@@ -87,8 +122,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern ushort Windows_Kinect_DepthFrame_get_DepthMinReliableDistance(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern ushort Windows_Kinect_DepthFrame_get_DepthMinReliableDistance(
+            RootSystem.IntPtr pNative
+        );
+
         public ushort DepthMinReliableDistance
         {
             get
@@ -102,8 +144,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern RootSystem.IntPtr Windows_Kinect_DepthFrame_get_FrameDescription(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern RootSystem.IntPtr Windows_Kinect_DepthFrame_get_FrameDescription(
+            RootSystem.IntPtr pNative
+        );
+
         public Windows.Kinect.FrameDescription FrameDescription
         {
             get
@@ -113,19 +162,31 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("DepthFrame");
                 }
 
-                RootSystem.IntPtr objectPointer = Windows_Kinect_DepthFrame_get_FrameDescription(_pNative);
+                RootSystem.IntPtr objectPointer = Windows_Kinect_DepthFrame_get_FrameDescription(
+                    _pNative
+                );
                 Helper.ExceptionHelper.CheckLastError();
                 if (objectPointer == RootSystem.IntPtr.Zero)
                 {
                     return null;
                 }
 
-                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.FrameDescription>(objectPointer, n => new Windows.Kinect.FrameDescription(n));
+                return Helper.NativeObjectCache.CreateOrGetObject<Windows.Kinect.FrameDescription>(
+                    objectPointer,
+                    n => new Windows.Kinect.FrameDescription(n)
+                );
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern long Windows_Kinect_DepthFrame_get_RelativeTime(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern long Windows_Kinect_DepthFrame_get_RelativeTime(
+            RootSystem.IntPtr pNative
+        );
+
         public RootSystem.TimeSpan RelativeTime
         {
             get
@@ -135,14 +196,24 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("DepthFrame");
                 }
 
-                return RootSystem.TimeSpan.FromMilliseconds(Windows_Kinect_DepthFrame_get_RelativeTime(_pNative));
+                return RootSystem.TimeSpan.FromMilliseconds(
+                    Windows_Kinect_DepthFrame_get_RelativeTime(_pNative)
+                );
             }
         }
 
-
         // Public Methods
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_DepthFrame_CopyFrameDataToArray(RootSystem.IntPtr pNative, RootSystem.IntPtr frameData, int frameDataSize);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_DepthFrame_CopyFrameDataToArray(
+            RootSystem.IntPtr pNative,
+            RootSystem.IntPtr frameData,
+            int frameDataSize
+        );
+
         public void CopyFrameDataToArray(ushort[] frameData)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -150,14 +221,24 @@ namespace Windows.Kinect
                 throw new RootSystem.ObjectDisposedException("DepthFrame");
             }
 
-            var frameDataSmartGCHandle = new Helper.SmartGCHandle(RootSystem.Runtime.InteropServices.GCHandle.Alloc(frameData, RootSystem.Runtime.InteropServices.GCHandleType.Pinned));
+            var frameDataSmartGCHandle = new Helper.SmartGCHandle(
+                RootSystem.Runtime.InteropServices.GCHandle.Alloc(
+                    frameData,
+                    RootSystem.Runtime.InteropServices.GCHandleType.Pinned
+                )
+            );
             var _frameData = frameDataSmartGCHandle.AddrOfPinnedObject();
             Windows_Kinect_DepthFrame_CopyFrameDataToArray(_pNative, _frameData, frameData.Length);
             Helper.ExceptionHelper.CheckLastError();
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
         private static extern void Windows_Kinect_DepthFrame_Dispose(RootSystem.IntPtr pNative);
+
         public void Dispose()
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -169,9 +250,6 @@ namespace Windows.Kinect
             RootSystem.GC.SuppressFinalize(this);
         }
 
-        private void __EventCleanup()
-        {
-        }
+        private void __EventCleanup() { }
     }
-
 }

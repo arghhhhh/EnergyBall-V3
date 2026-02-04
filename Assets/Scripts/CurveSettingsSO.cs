@@ -13,6 +13,8 @@ public class CurveSettingsSO : ScriptableObject
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
 
     [BoxGroup("Movement-Based Pulsation Curves")]
-    [Tooltip("Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands")]
+    [Tooltip(
+        "Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands"
+    )]
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
 }

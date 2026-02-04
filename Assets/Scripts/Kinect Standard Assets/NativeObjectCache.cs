@@ -1,15 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Helper
 {
     public static class NativeObjectCache
     {
         private static object _lock = new object();
-        private static Dictionary<Type, Dictionary<IntPtr, WeakReference>> _objectCache = new Dictionary<Type, Dictionary<IntPtr, WeakReference>>();
-        public static void AddObject<T>(IntPtr nativePtr, T obj) where T : class
+        private static Dictionary<Type, Dictionary<IntPtr, WeakReference>> _objectCache =
+            new Dictionary<Type, Dictionary<IntPtr, WeakReference>>();
+
+        public static void AddObject<T>(IntPtr nativePtr, T obj)
+            where T : class
         {
             lock (_lock)
             {
@@ -38,7 +41,6 @@ namespace Helper
                         {
                             disp.Dispose();
                         }
-
                     }
                 }
             }
@@ -63,7 +65,8 @@ namespace Helper
             }
         }
 
-        public static T GetObject<T>(IntPtr nativePtr) where T : class
+        public static T GetObject<T>(IntPtr nativePtr)
+            where T : class
         {
             lock (_lock)
             {
@@ -92,7 +95,8 @@ namespace Helper
             }
         }
 
-        public static T CreateOrGetObject<T>(IntPtr nativePtr, Func<System.IntPtr, T> create) where T : class
+        public static T CreateOrGetObject<T>(IntPtr nativePtr, Func<System.IntPtr, T> create)
+            where T : class
         {
             T outputValue = null;
 

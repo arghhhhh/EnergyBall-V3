@@ -3,17 +3,11 @@ using UnityEngine;
 
 namespace NaughtyAttributes.Test
 {
-    public class _NaughtyComponent : MonoBehaviour
-    {
-    }
+    public class _NaughtyComponent : MonoBehaviour { }
 
     [System.Serializable]
-    public class MyClass
-    {
-    }
+    public class MyClass { }
 
     [System.Serializable]
-    public struct MyStruct
-    {
-    }
+    public struct MyStruct { }
 }

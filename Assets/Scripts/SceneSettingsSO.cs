@@ -1,6 +1,6 @@
+using System;
 using NaughtyAttributes;
 using UnityEngine;
-using System;
 
 [CreateAssetMenu]
 public class SceneSettingsSO : ScriptableObject
@@ -33,7 +33,10 @@ public class SceneSettingsSO : ScriptableObject
     public float attractionRadiusMultiplier;
 
     [BoxGroup("Hands Attraction")]
-    [InfoBox("Curve settings (forceToMiddle, alignmentVectorStrength) are now managed by CurveSettingsSO", EInfoBoxType.Normal)]
+    [InfoBox(
+        "Curve settings (forceToMiddle, alignmentVectorStrength) are now managed by CurveSettingsSO",
+        EInfoBoxType.Normal
+    )]
     public float singleHandOpenForceDamper;
 
     [BoxGroup("Hands Attraction")]
@@ -52,11 +55,15 @@ public class SceneSettingsSO : ScriptableObject
     public float handPushScaler;
 
     [BoxGroup("Hands Attraction")]
-    [Tooltip("When enabled, players must bring their hands together to initialize. When disabled, players start initialized.")]
+    [Tooltip(
+        "When enabled, players must bring their hands together to initialize. When disabled, players start initialized."
+    )]
     public bool prayToActivate;
 
     [BoxGroup("Hands Attraction")]
-    [Tooltip("The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled.")]
+    [Tooltip(
+        "The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled."
+    )]
     public float prayToActivateDistance = 0.65f;
 
     [BoxGroup("Intrinsic Pulsation")]
@@ -98,6 +105,7 @@ public class SceneSettingsSO : ScriptableObject
 
     [BoxGroup("Miscellaneous")]
     public float maxDistanceBetweenHands;
+
     [BoxGroup("Miscellaneous")]
     public float baseZDepth;
 

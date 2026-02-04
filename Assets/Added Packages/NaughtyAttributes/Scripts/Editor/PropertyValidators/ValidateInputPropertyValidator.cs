@@ -1,6 +1,6 @@
-using UnityEditor;
-using System.Reflection;
 using System;
+using System.Reflection;
+using UnityEditor;
 
 namespace NaughtyAttributes.Editor
 {
@@ -8,13 +8,16 @@ namespace NaughtyAttributes.Editor
     {
         public override void ValidateProperty(SerializedProperty property)
         {
-            ValidateInputAttribute validateInputAttribute = PropertyUtility.GetAttribute<ValidateInputAttribute>(property);
+            ValidateInputAttribute validateInputAttribute =
+                PropertyUtility.GetAttribute<ValidateInputAttribute>(property);
             object target = PropertyUtility.GetTargetObjectWithProperty(property);
 
-            MethodInfo validationCallback = ReflectionUtility.GetMethod(target, validateInputAttribute.CallbackName);
+            MethodInfo validationCallback = ReflectionUtility.GetMethod(
+                target,
+                validateInputAttribute.CallbackName
+            );
 
-            if (validationCallback != null &&
-                validationCallback.ReturnType == typeof(bool))
+            if (validationCallback != null && validationCallback.ReturnType == typeof(bool))
             {
                 ParameterInfo[] callbackParameters = validationCallback.GetParameters();
 
@@ -25,12 +28,18 @@ namespace NaughtyAttributes.Editor
                         if (string.IsNullOrEmpty(validateInputAttribute.Message))
                         {
                             NaughtyEditorGUI.HelpBox_Layout(
-                                property.name + " is not valid", MessageType.Error, context: property.serializedObject.targetObject);
+                                property.name + " is not valid",
+                                MessageType.Error,
+                                context: property.serializedObject.targetObject
+                            );
                         }
                         else
                         {
                             NaughtyEditorGUI.HelpBox_Layout(
-                                validateInputAttribute.Message, MessageType.Error, context: property.serializedObject.targetObject);
+                                validateInputAttribute.Message,
+                                MessageType.Error,
+                                context: property.serializedObject.targetObject
+                            );
                         }
                     }
                 }
@@ -42,33 +51,54 @@ namespace NaughtyAttributes.Editor
 
                     if (fieldType == parameterType)
                     {
-                        if (!(bool)validationCallback.Invoke(target, new object[] { fieldInfo.GetValue(target) }))
+                        if (
+                            !(bool)
+                                validationCallback.Invoke(
+                                    target,
+                                    new object[] { fieldInfo.GetValue(target) }
+                                )
+                        )
                         {
                             if (string.IsNullOrEmpty(validateInputAttribute.Message))
                             {
                                 NaughtyEditorGUI.HelpBox_Layout(
-                                    property.name + " is not valid", MessageType.Error, context: property.serializedObject.targetObject);
+                                    property.name + " is not valid",
+                                    MessageType.Error,
+                                    context: property.serializedObject.targetObject
+                                );
                             }
                             else
                             {
                                 NaughtyEditorGUI.HelpBox_Layout(
-                                    validateInputAttribute.Message, MessageType.Error, context: property.serializedObject.targetObject);
+                                    validateInputAttribute.Message,
+                                    MessageType.Error,
+                                    context: property.serializedObject.targetObject
+                                );
                             }
                         }
                     }
                     else
                     {
-                        string warning = "The field type is not the same as the callback's parameter type";
-                        NaughtyEditorGUI.HelpBox_Layout(warning, MessageType.Warning, context: property.serializedObject.targetObject);
+                        string warning =
+                            "The field type is not the same as the callback's parameter type";
+                        NaughtyEditorGUI.HelpBox_Layout(
+                            warning,
+                            MessageType.Warning,
+                            context: property.serializedObject.targetObject
+                        );
                     }
                 }
                 else
                 {
                     string warning =
-                        validateInputAttribute.GetType().Name +
-                        " needs a callback with boolean return type and an optional single parameter of the same type as the field";
+                        validateInputAttribute.GetType().Name
+                        + " needs a callback with boolean return type and an optional single parameter of the same type as the field";
 
-                    NaughtyEditorGUI.HelpBox_Layout(warning, MessageType.Warning, context: property.serializedObject.targetObject);
+                    NaughtyEditorGUI.HelpBox_Layout(
+                        warning,
+                        MessageType.Warning,
+                        context: property.serializedObject.targetObject
+                    );
                 }
             }
         }

@@ -13,7 +13,10 @@ public class HandEffects
         {
             float activationDistance = settings?.prayToActivateDistance ?? 0.7f;
 
-            float handDistance = Vector3.Distance(player.HandLeft.transform.position, player.HandRight.transform.position);
+            float handDistance = Vector3.Distance(
+                player.HandLeft.transform.position,
+                player.HandRight.transform.position
+            );
             if (handDistance < activationDistance)
             {
                 player.initialized = true;
@@ -72,8 +75,11 @@ public class HandEffects
         if (!isInBounds)
         {
             // Check actual hand states (not the clamped states)
-            bool bothHandsClosed = player.leftHandState == HandState.Closed && player.rightHandState == HandState.Closed;
-            bool bothHandsOpen = player.leftHandState == HandState.Open && player.rightHandState == HandState.Open;
+            bool bothHandsClosed =
+                player.leftHandState == HandState.Closed
+                && player.rightHandState == HandState.Closed;
+            bool bothHandsOpen =
+                player.leftHandState == HandState.Open && player.rightHandState == HandState.Open;
 
             if (bothHandsClosed)
             {
@@ -114,11 +120,13 @@ public class HandEffects
         // one hand closes and another opens in the same frame (e.g., switching hands).
 
         // --- PHASE 1: Process hand closings first ---
-        bool leftHandClosing = player.leftHandState == HandState.Closed
+        bool leftHandClosing =
+            player.leftHandState == HandState.Closed
             && player.leftHandStateClamped != HandState.Closed
             && (player.isDummy || player.initialized);
 
-        bool rightHandClosing = player.rightHandState == HandState.Closed
+        bool rightHandClosing =
+            player.rightHandState == HandState.Closed
             && player.rightHandStateClamped != HandState.Closed
             && player.initialized;
 
@@ -135,7 +143,8 @@ public class HandEffects
             player.leftHandStateChangeTime = Time.time;
 
             // Check if both hands are now closed (including if right hand is also closing this frame)
-            bool rightHandClosed = player.rightHandStateClamped == HandState.Closed
+            bool rightHandClosed =
+                player.rightHandStateClamped == HandState.Closed
                 || player.rightHandState == HandState.Closed;
             if (rightHandClosed)
             {
@@ -157,7 +166,8 @@ public class HandEffects
             player.rightHandStateChangeTime = Time.time;
 
             // Check if both hands are now closed (left hand was already processed above if closing)
-            bool leftHandClosed = player.leftHandStateClamped == HandState.Closed
+            bool leftHandClosed =
+                player.leftHandStateClamped == HandState.Closed
                 || player.leftHandState == HandState.Closed;
             if (leftHandClosed)
             {
@@ -170,9 +180,14 @@ public class HandEffects
         // Calculate if both hands have been closed long enough to trigger animation
         // This check happens AFTER processing closings, so bothHandsClosedSinceTime is current
         float timeSinceBothHandsClosed = Time.time - player.bothHandsClosedSinceTime;
-        bool bothHandsClosedLongEnough = timeSinceBothHandsClosed > settings.initializationResetDelay || justInitialized;
+        bool bothHandsClosedLongEnough =
+            timeSinceBothHandsClosed > settings.initializationResetDelay || justInitialized;
 
-        if (player.leftHandState == HandState.Open && player.leftHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
+        if (
+            player.leftHandState == HandState.Open
+            && player.leftHandStateClamped != HandState.Open
+            && (player.isDummy || player.initialized)
+        )
         {
             float timeSinceStateChange = Time.time - player.leftHandStateChangeTime;
 
@@ -182,7 +197,9 @@ public class HandEffects
                 {
                     player.StopCoroutine(player.leftHandOpenCoroutine);
                 }
-                player.leftHandOpenCoroutine = player.StartCoroutine(player.PlayLeftHandOpenAnimationDelayed());
+                player.leftHandOpenCoroutine = player.StartCoroutine(
+                    player.PlayLeftHandOpenAnimationDelayed()
+                );
 
                 // Start metaball radius animation only if:
                 // 1. Both hands have been closed for the delay, AND
@@ -204,7 +221,11 @@ public class HandEffects
             player.leftHandStateChangeTime = Time.time;
         }
 
-        if (player.rightHandState == HandState.Open && player.rightHandStateClamped != HandState.Open && (player.isDummy || player.initialized))
+        if (
+            player.rightHandState == HandState.Open
+            && player.rightHandStateClamped != HandState.Open
+            && (player.isDummy || player.initialized)
+        )
         {
             float timeSinceStateChange = Time.time - player.rightHandStateChangeTime;
 
@@ -214,7 +235,9 @@ public class HandEffects
                 {
                     player.StopCoroutine(player.rightHandOpenCoroutine);
                 }
-                player.rightHandOpenCoroutine = player.StartCoroutine(player.PlayRightHandOpenAnimationDelayed());
+                player.rightHandOpenCoroutine = player.StartCoroutine(
+                    player.PlayRightHandOpenAnimationDelayed()
+                );
 
                 // Start metaball radius animation only if:
                 // 1. Both hands have been closed for the delay, AND
@@ -270,7 +293,11 @@ public class HandEffects
             Vector3 pos = Vector3.Lerp(leftStart, leftEnd, t);
 
             // Disable BrownianMotion temporarily to set position
-            if (player.leftHandTrailDistorters[i].TryGetComponent<Klak.Motion.BrownianMotion>(out var brownianMotion))
+            if (
+                player
+                    .leftHandTrailDistorters[i]
+                    .TryGetComponent<Klak.Motion.BrownianMotion>(out var brownianMotion)
+            )
             {
                 brownianMotion.enabled = false;
             }
@@ -295,7 +322,11 @@ public class HandEffects
             Vector3 pos = Vector3.Lerp(rightStart, rightEnd, t);
 
             // Disable BrownianMotion temporarily to set position
-            if (player.rightHandTrailDistorters[i].TryGetComponent<Klak.Motion.BrownianMotion>(out var brownianMotion))
+            if (
+                player
+                    .rightHandTrailDistorters[i]
+                    .TryGetComponent<Klak.Motion.BrownianMotion>(out var brownianMotion)
+            )
             {
                 brownianMotion.enabled = false;
             }
@@ -309,6 +340,4 @@ public class HandEffects
             }
         }
     }
-
-
 }

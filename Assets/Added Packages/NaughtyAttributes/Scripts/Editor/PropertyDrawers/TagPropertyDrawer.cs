@@ -7,14 +7,21 @@ namespace NaughtyAttributes.Editor
     [CustomPropertyDrawer(typeof(TagAttribute))]
     public class TagPropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             return (property.propertyType == SerializedPropertyType.String)
                 ? GetPropertyHeight(property)
                 : GetPropertyHeight(property) + GetHelpBoxHeight();
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -52,7 +59,10 @@ namespace NaughtyAttributes.Editor
             }
             else
             {
-                string message = string.Format("{0} supports only string fields", typeof(TagAttribute).Name);
+                string message = string.Format(
+                    "{0} supports only string fields",
+                    typeof(TagAttribute).Name
+                );
                 DrawDefaultPropertyAndHelpBox(rect, property, message, MessageType.Warning);
             }
 

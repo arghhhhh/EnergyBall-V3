@@ -15,7 +15,10 @@ namespace NaughtyAttributes
             AnimatorParamType = null;
         }
 
-        public AnimatorParamAttribute(string animatorName, AnimatorControllerParameterType animatorParamType)
+        public AnimatorParamAttribute(
+            string animatorName,
+            AnimatorControllerParameterType animatorParamType
+        )
         {
             AnimatorName = animatorName;
             AnimatorParamType = animatorParamType;

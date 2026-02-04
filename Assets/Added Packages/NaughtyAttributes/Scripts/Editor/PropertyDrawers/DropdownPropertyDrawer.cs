@@ -1,20 +1,26 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using System;
 using System.Collections;
-using System.Reflection;
-using System;
 using System.Collections.Generic;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     [CustomPropertyDrawer(typeof(DropdownAttribute))]
     public class DropdownPropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             DropdownAttribute dropdownAttribute = (DropdownAttribute)attribute;
             object values = GetValues(property, dropdownAttribute.ValuesName);
-            FieldInfo fieldInfo = ReflectionUtility.GetField(PropertyUtility.GetTargetObjectWithProperty(property), property.name);
+            FieldInfo fieldInfo = ReflectionUtility.GetField(
+                PropertyUtility.GetTargetObjectWithProperty(property),
+                property.name
+            );
 
             float propertyHeight = AreValuesValid(values, fieldInfo)
                 ? GetPropertyHeight(property)
@@ -23,7 +29,11 @@ namespace NaughtyAttributes.Editor
             return propertyHeight;
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -35,7 +45,10 @@ namespace NaughtyAttributes.Editor
 
             if (AreValuesValid(valuesObject, dropdownField))
             {
-                if (valuesObject is IList && dropdownField.FieldType == GetElementType(valuesObject))
+                if (
+                    valuesObject is IList
+                    && dropdownField.FieldType == GetElementType(valuesObject)
+                )
                 {
                     // Selected value
                     object selectedValue = dropdownField.GetValue(target);
@@ -60,7 +73,15 @@ namespace NaughtyAttributes.Editor
                     }
 
                     NaughtyEditorGUI.Dropdown(
-                        rect, property.serializedObject, target, dropdownField, label.text, selectedValueIndex, values, displayOptions);
+                        rect,
+                        property.serializedObject,
+                        target,
+                        dropdownField,
+                        label.text,
+                        selectedValueIndex,
+                        values,
+                        displayOptions
+                    );
                 }
                 else if (valuesObject is IDropdownList)
                 {
@@ -74,7 +95,10 @@ namespace NaughtyAttributes.Editor
                     List<string> displayOptions = new List<string>();
                     IDropdownList dropdown = (IDropdownList)valuesObject;
 
-                    using (IEnumerator<KeyValuePair<string, object>> dropdownEnumerator = dropdown.GetEnumerator())
+                    using (
+                        IEnumerator<KeyValuePair<string, object>> dropdownEnumerator =
+                            dropdown.GetEnumerator()
+                    )
                     {
                         while (dropdownEnumerator.MoveNext())
                         {
@@ -109,13 +133,24 @@ namespace NaughtyAttributes.Editor
                     }
 
                     NaughtyEditorGUI.Dropdown(
-                        rect, property.serializedObject, target, dropdownField, label.text, selectedValueIndex, values.ToArray(), displayOptions.ToArray());
+                        rect,
+                        property.serializedObject,
+                        target,
+                        dropdownField,
+                        label.text,
+                        selectedValueIndex,
+                        values.ToArray(),
+                        displayOptions.ToArray()
+                    );
                 }
             }
             else
             {
-                string message = string.Format("Invalid values with name '{0}' provided to '{1}'. Either the values name is incorrect or the types of the target field and the values field/property/method don't match",
-                    dropdownAttribute.ValuesName, dropdownAttribute.GetType().Name);
+                string message = string.Format(
+                    "Invalid values with name '{0}' provided to '{1}'. Either the values name is incorrect or the types of the target field and the values field/property/method don't match",
+                    dropdownAttribute.ValuesName,
+                    dropdownAttribute.GetType().Name
+                );
 
                 DrawDefaultPropertyAndHelpBox(rect, property, message, MessageType.Warning);
             }
@@ -140,9 +175,11 @@ namespace NaughtyAttributes.Editor
             }
 
             MethodInfo methodValuesInfo = ReflectionUtility.GetMethod(target, valuesName);
-            if (methodValuesInfo != null &&
-                methodValuesInfo.ReturnType != typeof(void) &&
-                methodValuesInfo.GetParameters().Length == 0)
+            if (
+                methodValuesInfo != null
+                && methodValuesInfo.ReturnType != typeof(void)
+                && methodValuesInfo.GetParameters().Length == 0
+            )
             {
                 return methodValuesInfo.Invoke(target, null);
             }
@@ -157,8 +194,10 @@ namespace NaughtyAttributes.Editor
                 return false;
             }
 
-            if ((values is IList && dropdownField.FieldType == GetElementType(values)) ||
-                (values is IDropdownList))
+            if (
+                (values is IList && dropdownField.FieldType == GetElementType(values))
+                || (values is IDropdownList)
+            )
             {
                 return true;
             }

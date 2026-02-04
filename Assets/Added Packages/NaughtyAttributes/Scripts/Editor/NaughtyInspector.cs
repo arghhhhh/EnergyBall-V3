@@ -19,13 +19,19 @@ namespace NaughtyAttributes.Editor
         protected virtual void OnEnable()
         {
             _nonSerializedFields = ReflectionUtility.GetAllFields(
-                target, f => f.GetCustomAttributes(typeof(ShowNonSerializedFieldAttribute), true).Length > 0);
+                target,
+                f => f.GetCustomAttributes(typeof(ShowNonSerializedFieldAttribute), true).Length > 0
+            );
 
             _nativeProperties = ReflectionUtility.GetAllProperties(
-                target, p => p.GetCustomAttributes(typeof(ShowNativePropertyAttribute), true).Length > 0);
+                target,
+                p => p.GetCustomAttributes(typeof(ShowNativePropertyAttribute), true).Length > 0
+            );
 
             _methods = ReflectionUtility.GetAllMethods(
-                target, m => m.GetCustomAttributes(typeof(ButtonAttribute), true).Length > 0);
+                target,
+                m => m.GetCustomAttributes(typeof(ButtonAttribute), true).Length > 0
+            );
         }
 
         protected virtual void OnDisable()
@@ -37,7 +43,9 @@ namespace NaughtyAttributes.Editor
         {
             GetSerializedProperties(ref _serializedProperties);
 
-            bool anyNaughtyAttribute = _serializedProperties.Any(p => PropertyUtility.GetAttribute<INaughtyAttribute>(p) != null);
+            bool anyNaughtyAttribute = _serializedProperties.Any(p =>
+                PropertyUtility.GetAttribute<INaughtyAttribute>(p) != null
+            );
             if (!anyNaughtyAttribute)
             {
                 DrawDefaultInspector();
@@ -62,8 +70,7 @@ namespace NaughtyAttributes.Editor
                     do
                     {
                         outSerializedProperties.Add(serializedObject.FindProperty(iterator.name));
-                    }
-                    while (iterator.NextVisible(false));
+                    } while (iterator.NextVisible(false));
                 }
             }
         }
@@ -91,7 +98,9 @@ namespace NaughtyAttributes.Editor
             // Draw grouped serialized properties
             foreach (var group in GetGroupedProperties(_serializedProperties))
             {
-                IEnumerable<SerializedProperty> visibleProperties = group.Where(p => PropertyUtility.IsVisible(p));
+                IEnumerable<SerializedProperty> visibleProperties = group.Where(p =>
+                    PropertyUtility.IsVisible(p)
+                );
                 if (!visibleProperties.Any())
                 {
                     continue;
@@ -109,7 +118,9 @@ namespace NaughtyAttributes.Editor
             // Draw foldout serialized properties
             foreach (var group in GetFoldoutProperties(_serializedProperties))
             {
-                IEnumerable<SerializedProperty> visibleProperties = group.Where(p => PropertyUtility.IsVisible(p));
+                IEnumerable<SerializedProperty> visibleProperties = group.Where(p =>
+                    PropertyUtility.IsVisible(p)
+                );
                 if (!visibleProperties.Any())
                 {
                     continue;
@@ -117,10 +128,17 @@ namespace NaughtyAttributes.Editor
 
                 if (!_foldouts.ContainsKey(group.Key))
                 {
-                    _foldouts[group.Key] = new SavedBool($"{target.GetInstanceID()}.{group.Key}", false);
+                    _foldouts[group.Key] = new SavedBool(
+                        $"{target.GetInstanceID()}.{group.Key}",
+                        false
+                    );
                 }
 
-                _foldouts[group.Key].Value = EditorGUILayout.Foldout(_foldouts[group.Key].Value, group.Key, true);
+                _foldouts[group.Key].Value = EditorGUILayout.Foldout(
+                    _foldouts[group.Key].Value,
+                    group.Key,
+                    true
+                );
                 if (_foldouts[group.Key].Value)
                 {
                     foreach (var property in visibleProperties)
@@ -142,12 +160,18 @@ namespace NaughtyAttributes.Editor
                     EditorGUILayout.Space();
                     EditorGUILayout.LabelField("Non-Serialized Fields", GetHeaderGUIStyle());
                     NaughtyEditorGUI.HorizontalLine(
-                        EditorGUILayout.GetControlRect(false), HorizontalLineAttribute.DefaultHeight, HorizontalLineAttribute.DefaultColor.GetColor());
+                        EditorGUILayout.GetControlRect(false),
+                        HorizontalLineAttribute.DefaultHeight,
+                        HorizontalLineAttribute.DefaultColor.GetColor()
+                    );
                 }
 
                 foreach (var field in _nonSerializedFields)
                 {
-                    NaughtyEditorGUI.NonSerializedField_Layout(serializedObject.targetObject, field);
+                    NaughtyEditorGUI.NonSerializedField_Layout(
+                        serializedObject.targetObject,
+                        field
+                    );
                 }
             }
         }
@@ -161,7 +185,10 @@ namespace NaughtyAttributes.Editor
                     EditorGUILayout.Space();
                     EditorGUILayout.LabelField("Native Properties", GetHeaderGUIStyle());
                     NaughtyEditorGUI.HorizontalLine(
-                        EditorGUILayout.GetControlRect(false), HorizontalLineAttribute.DefaultHeight, HorizontalLineAttribute.DefaultColor.GetColor());
+                        EditorGUILayout.GetControlRect(false),
+                        HorizontalLineAttribute.DefaultHeight,
+                        HorizontalLineAttribute.DefaultColor.GetColor()
+                    );
                 }
 
                 foreach (var property in _nativeProperties)
@@ -180,7 +207,10 @@ namespace NaughtyAttributes.Editor
                     EditorGUILayout.Space();
                     EditorGUILayout.LabelField("Buttons", GetHeaderGUIStyle());
                     NaughtyEditorGUI.HorizontalLine(
-                        EditorGUILayout.GetControlRect(false), HorizontalLineAttribute.DefaultHeight, HorizontalLineAttribute.DefaultColor.GetColor());
+                        EditorGUILayout.GetControlRect(false),
+                        HorizontalLineAttribute.DefaultHeight,
+                        HorizontalLineAttribute.DefaultColor.GetColor()
+                    );
                 }
 
                 foreach (var method in _methods)
@@ -190,19 +220,25 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        private static IEnumerable<SerializedProperty> GetNonGroupedProperties(IEnumerable<SerializedProperty> properties)
+        private static IEnumerable<SerializedProperty> GetNonGroupedProperties(
+            IEnumerable<SerializedProperty> properties
+        )
         {
             return properties.Where(p => PropertyUtility.GetAttribute<IGroupAttribute>(p) == null);
         }
 
-        private static IEnumerable<IGrouping<string, SerializedProperty>> GetGroupedProperties(IEnumerable<SerializedProperty> properties)
+        private static IEnumerable<IGrouping<string, SerializedProperty>> GetGroupedProperties(
+            IEnumerable<SerializedProperty> properties
+        )
         {
             return properties
                 .Where(p => PropertyUtility.GetAttribute<BoxGroupAttribute>(p) != null)
                 .GroupBy(p => PropertyUtility.GetAttribute<BoxGroupAttribute>(p).Name);
         }
 
-        private static IEnumerable<IGrouping<string, SerializedProperty>> GetFoldoutProperties(IEnumerable<SerializedProperty> properties)
+        private static IEnumerable<IGrouping<string, SerializedProperty>> GetFoldoutProperties(
+            IEnumerable<SerializedProperty> properties
+        )
         {
             return properties
                 .Where(p => PropertyUtility.GetAttribute<FoldoutAttribute>(p) != null)

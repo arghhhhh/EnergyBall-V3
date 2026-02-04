@@ -35,24 +35,39 @@ public class HandForce
 
     bool isSingleHandOpen(PlayerConstructor player)
     {
-        return (player.leftHandStateClamped == HandState.Open && player.rightHandStateClamped == HandState.Closed)
-            || (player.leftHandStateClamped == HandState.Closed && player.rightHandStateClamped == HandState.Open);
+        return (
+                player.leftHandStateClamped == HandState.Open
+                && player.rightHandStateClamped == HandState.Closed
+            )
+            || (
+                player.leftHandStateClamped == HandState.Closed
+                && player.rightHandStateClamped == HandState.Open
+            );
     }
 
     Vector3 CalculateMidpoint(PlayerConstructor player)
     {
         // Giving myself an extra frame of leeway in case hand tracking returns unknown
-        if (player.leftHandState == HandState.Open && player.rightHandState != HandState.Open && player.rightHandStateClamped != HandState.Open)
+        if (
+            player.leftHandState == HandState.Open
+            && player.rightHandState != HandState.Open
+            && player.rightHandStateClamped != HandState.Open
+        )
         {
             return player.HandLeft.transform.position;
         }
-        else if (player.leftHandState != HandState.Open && player.rightHandState == HandState.Open && player.leftHandStateClamped != HandState.Open)
+        else if (
+            player.leftHandState != HandState.Open
+            && player.rightHandState == HandState.Open
+            && player.leftHandStateClamped != HandState.Open
+        )
         {
             return player.HandRight.transform.position;
         }
         else
         {
-            return (player.HandLeft.transform.position + player.HandRight.transform.position) * 0.5f;
+            return (player.HandLeft.transform.position + player.HandRight.transform.position)
+                * 0.5f;
         }
     }
 
@@ -106,7 +121,13 @@ public class HandForce
             0,
             distance
         );
-        float forceDamper = runtimeSettings.forceToMiddle.Evaluate(relativeDistance) * ((isSingleHandOpen(player) && player.IsInbounds()) ? runtimeSettings.singleHandOpenForceDamper : 1f);
+        float forceDamper =
+            runtimeSettings.forceToMiddle.Evaluate(relativeDistance)
+            * (
+                (isSingleHandOpen(player) && player.IsInbounds())
+                    ? runtimeSettings.singleHandOpenForceDamper
+                    : 1f
+            );
 
         Vector3 forceDirection = direction.normalized;
         Vector3 forceVector = runtimeSettings.pushForce * forceDamper * forceDirection;

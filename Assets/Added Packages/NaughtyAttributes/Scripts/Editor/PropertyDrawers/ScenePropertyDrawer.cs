@@ -1,8 +1,8 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System;
+using UnityEditor;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
@@ -14,9 +14,14 @@ namespace NaughtyAttributes.Editor
         private const string TypeWarningMessage = "{0} must be an int or a string";
         private const string BuildSettingsWarningMessage = "No scenes in the build settings";
 
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
-            bool validPropertyType = property.propertyType == SerializedPropertyType.String || property.propertyType == SerializedPropertyType.Integer;
+            bool validPropertyType =
+                property.propertyType == SerializedPropertyType.String
+                || property.propertyType == SerializedPropertyType.Integer;
             bool anySceneInBuildSettings = GetScenes().Length > 0;
 
             return (validPropertyType && anySceneInBuildSettings)
@@ -24,7 +29,11 @@ namespace NaughtyAttributes.Editor
                 : GetPropertyHeight(property) + GetHelpBoxHeight();
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -32,7 +41,12 @@ namespace NaughtyAttributes.Editor
             bool anySceneInBuildSettings = scenes.Length > 0;
             if (!anySceneInBuildSettings)
             {
-                DrawDefaultPropertyAndHelpBox(rect, property, BuildSettingsWarningMessage, MessageType.Warning);
+                DrawDefaultPropertyAndHelpBox(
+                    rect,
+                    property,
+                    BuildSettingsWarningMessage,
+                    MessageType.Warning
+                );
                 return;
             }
 
@@ -56,8 +70,8 @@ namespace NaughtyAttributes.Editor
 
         private string[] GetScenes()
         {
-            return EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
+            return EditorBuildSettings
+                .scenes.Where(scene => scene.enabled)
                 .Select(scene => Regex.Match(scene.path, ScenePattern).Groups[1].Value)
                 .ToArray();
         }
@@ -67,7 +81,13 @@ namespace NaughtyAttributes.Editor
             return scenes.Select((s, i) => string.Format(SceneListItem, s, i)).ToArray();
         }
 
-        private static void DrawPropertyForString(Rect rect, SerializedProperty property, GUIContent label, string[] scenes, string[] sceneOptions)
+        private static void DrawPropertyForString(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            string[] scenes,
+            string[] sceneOptions
+        )
         {
             int index = IndexOf(scenes, property.stringValue);
             int newIndex = EditorGUI.Popup(rect, label.text, index, sceneOptions);
@@ -79,7 +99,12 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        private static void DrawPropertyForInt(Rect rect, SerializedProperty property, GUIContent label, string[] sceneOptions)
+        private static void DrawPropertyForInt(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            string[] sceneOptions
+        )
         {
             int index = property.intValue;
             int newIndex = EditorGUI.Popup(rect, label.text, index, sceneOptions);

@@ -19,7 +19,10 @@ namespace NaughtyAttributes
             Conditions = new string[1] { condition };
         }
 
-        public EnableIfAttributeBase(EConditionOperator conditionOperator, params string[] conditions)
+        public EnableIfAttributeBase(
+            EConditionOperator conditionOperator,
+            params string[] conditions
+        )
         {
             ConditionOperator = conditionOperator;
             Conditions = conditions;
@@ -30,7 +33,10 @@ namespace NaughtyAttributes
         {
             if (enumValue == null)
             {
-                throw new ArgumentNullException(nameof(enumValue), "This parameter must be an enum value.");
+                throw new ArgumentNullException(
+                    nameof(enumValue),
+                    "This parameter must be an enum value."
+                );
             }
 
             EnumValue = enumValue;

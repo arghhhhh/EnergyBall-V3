@@ -1,12 +1,15 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using UnityEditor;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     [CustomPropertyDrawer(typeof(ExpandableAttribute))]
     public class ExpandablePropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             if (property.objectReferenceValue == null)
             {
@@ -16,7 +19,8 @@ namespace NaughtyAttributes.Editor
             System.Type propertyType = PropertyUtility.GetPropertyType(property);
             if (typeof(ScriptableObject).IsAssignableFrom(propertyType))
             {
-                ScriptableObject scriptableObject = property.objectReferenceValue as ScriptableObject;
+                ScriptableObject scriptableObject =
+                    property.objectReferenceValue as ScriptableObject;
                 if (scriptableObject == null)
                 {
                     return GetPropertyHeight(property);
@@ -24,7 +28,9 @@ namespace NaughtyAttributes.Editor
 
                 if (property.isExpanded)
                 {
-                    using (SerializedObject serializedObject = new SerializedObject(scriptableObject))
+                    using (
+                        SerializedObject serializedObject = new SerializedObject(scriptableObject)
+                    )
                     {
                         float totalHeight = EditorGUIUtility.singleLineHeight;
 
@@ -34,8 +40,14 @@ namespace NaughtyAttributes.Editor
                             {
                                 do
                                 {
-                                    SerializedProperty childProperty = serializedObject.FindProperty(iterator.name);
-                                    if (childProperty.name.Equals("m_Script", System.StringComparison.Ordinal))
+                                    SerializedProperty childProperty =
+                                        serializedObject.FindProperty(iterator.name);
+                                    if (
+                                        childProperty.name.Equals(
+                                            "m_Script",
+                                            System.StringComparison.Ordinal
+                                        )
+                                    )
                                     {
                                         continue;
                                     }
@@ -48,8 +60,7 @@ namespace NaughtyAttributes.Editor
 
                                     float height = GetPropertyHeight(childProperty);
                                     totalHeight += height;
-                                }
-                                while (iterator.NextVisible(false));
+                                } while (iterator.NextVisible(false));
                             }
                         }
 
@@ -68,7 +79,11 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -81,7 +96,8 @@ namespace NaughtyAttributes.Editor
                 System.Type propertyType = PropertyUtility.GetPropertyType(property);
                 if (typeof(ScriptableObject).IsAssignableFrom(propertyType))
                 {
-                    ScriptableObject scriptableObject = property.objectReferenceValue as ScriptableObject;
+                    ScriptableObject scriptableObject =
+                        property.objectReferenceValue as ScriptableObject;
                     if (scriptableObject == null)
                     {
                         EditorGUI.PropertyField(rect, property, label, false);
@@ -97,7 +113,12 @@ namespace NaughtyAttributes.Editor
                             height = EditorGUIUtility.singleLineHeight
                         };
 
-                        property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, label, toggleOnLabelClick: true);
+                        property.isExpanded = EditorGUI.Foldout(
+                            foldoutRect,
+                            property.isExpanded,
+                            label,
+                            toggleOnLabelClick: true
+                        );
 
                         // Draw the scriptable object field
                         Rect propertyRect = new Rect()
@@ -119,7 +140,8 @@ namespace NaughtyAttributes.Editor
                 }
                 else
                 {
-                    string message = $"{typeof(ExpandableAttribute).Name} can only be used on scriptable objects";
+                    string message =
+                        $"{typeof(ExpandableAttribute).Name} can only be used on scriptable objects";
                     DrawDefaultPropertyAndHelpBox(rect, property, message, MessageType.Warning);
                 }
             }
@@ -159,8 +181,15 @@ namespace NaughtyAttributes.Editor
                     {
                         do
                         {
-                            SerializedProperty childProperty = serializedObject.FindProperty(iterator.name);
-                            if (childProperty.name.Equals("m_Script", System.StringComparison.Ordinal))
+                            SerializedProperty childProperty = serializedObject.FindProperty(
+                                iterator.name
+                            );
+                            if (
+                                childProperty.name.Equals(
+                                    "m_Script",
+                                    System.StringComparison.Ordinal
+                                )
+                            )
                             {
                                 continue;
                             }
@@ -183,8 +212,7 @@ namespace NaughtyAttributes.Editor
                             NaughtyEditorGUI.PropertyField(childRect, childProperty, true);
 
                             yOffset += childHeight;
-                        }
-                        while (iterator.NextVisible(false));
+                        } while (iterator.NextVisible(false));
                     }
                 }
 

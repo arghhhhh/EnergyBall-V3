@@ -3,7 +3,7 @@ using UnityEngine.VFX;
 
 public class DynamicVFXAnimTesting1 : MonoBehaviour
 {
-    public VisualEffect vfx;             // Assign in Inspector
+    public VisualEffect vfx; // Assign in Inspector
     public string spawnParameter = "SpawnOn";
     public string spawnAnimStartTimeParameter = "SpawnAnimStartTime";
     public KeyCode spawnToggleKey = KeyCode.S;
