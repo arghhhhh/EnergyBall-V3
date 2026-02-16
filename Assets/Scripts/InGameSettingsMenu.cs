@@ -499,6 +499,12 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.minimumUnscaledSize,
             v => runtimeSettings.minimumUnscaledSize = v
         );
+        CreateFloatField(
+            group,
+            "Maximum Unscaled Size",
+            () => runtimeSettings.maximumUnscaledSize,
+            v => runtimeSettings.maximumUnscaledSize = v
+        );
         CreateSliderField(
             group,
             "Min Hand Displacement Per Frame",
@@ -1417,6 +1423,7 @@ public class InGameSettingsMenu : MonoBehaviour
         // Size and scaling settings
         runtimeSettings.singleHandScaling = loadedSettings.singleHandScaling;
         runtimeSettings.minimumUnscaledSize = loadedSettings.minimumUnscaledSize;
+        runtimeSettings.maximumUnscaledSize = loadedSettings.maximumUnscaledSize;
         runtimeSettings.minHandDisplacementPerFrame = loadedSettings.minHandDisplacementPerFrame;
         // Note: distanceDamper curve is managed by CurveSettingsSO, not loaded from profiles
         runtimeSettings.pulseScaleDamper = loadedSettings.pulseScaleDamper;
@@ -1531,6 +1538,7 @@ public class InGameSettingsMenu : MonoBehaviour
         // Size and scaling settings
         destination.singleHandScaling = source.singleHandScaling;
         destination.minimumUnscaledSize = source.minimumUnscaledSize;
+        destination.maximumUnscaledSize = source.maximumUnscaledSize;
         destination.minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
         // Note: distanceDamper curve is managed by CurveSettingsSO and excluded from profiles
         destination.pulseScaleDamper = source.pulseScaleDamper;
@@ -1660,6 +1668,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.pulseFreqs = new float[0];
         destination.singleHandScaling = false;
         destination.minimumUnscaledSize = 0.0f;
+        destination.maximumUnscaledSize = 0.0f;
         destination.minHandDisplacementPerFrame = 0.0f;
         // Note: distanceDamper curve is managed by CurveSettingsSO (set to default empty curve)
         destination.distanceDamper = new AnimationCurve();

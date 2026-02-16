@@ -57,6 +57,7 @@ public class RuntimeSceneSettings
     [Header("Movement-Based Pulsation")]
     public bool singleHandScaling = true;
     public float minimumUnscaledSize = 0.5f;
+    public float maximumUnscaledSize = 3.0f;
 
     [Range(0.0001f, 5f)]
     public float minHandDisplacementPerFrame = 0.01f;
@@ -260,6 +261,7 @@ public class RuntimeSceneSettings
         copy.pulseFreqs = (float[])pulseFreqs.Clone();
         copy.singleHandScaling = singleHandScaling;
         copy.minimumUnscaledSize = minimumUnscaledSize;
+        copy.maximumUnscaledSize = maximumUnscaledSize;
         copy.minHandDisplacementPerFrame = minHandDisplacementPerFrame;
         copy.distanceDamper = new AnimationCurve(distanceDamper.keys);
         copy.pulseScaleDamper = pulseScaleDamper;

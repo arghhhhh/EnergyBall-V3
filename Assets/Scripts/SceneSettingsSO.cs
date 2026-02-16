@@ -88,6 +88,10 @@ public class SceneSettingsSO : ScriptableObject
     public float minimumUnscaledSize;
 
     [BoxGroup("Movement-Based Pulsation")]
+    [Tooltip("The maximum size that the body can scale up to.")]
+    public float maximumUnscaledSize;
+
+    [BoxGroup("Movement-Based Pulsation")]
     [Range(0.0001f, 5f)]
     [Tooltip(
         "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."

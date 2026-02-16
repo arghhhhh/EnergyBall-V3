@@ -250,6 +250,10 @@ public class PlayerScaler
         {
             player.unscaledSize = Utils.FloatToVector3(runtimeSettings.minimumUnscaledSize);
         }
+        else if (Utils.GetVector3Avg(player.unscaledSize) > runtimeSettings.maximumUnscaledSize)
+        {
+            player.unscaledSize = Utils.FloatToVector3(runtimeSettings.maximumUnscaledSize);
+        }
 
         // Debug.Log(hand.gameObject.name + ", distance: " + normal.magnitude + ", projected velo:" + projVelocity.magnitude + ", disp: " + projVelocity.magnitude*Time.deltaTime);
     }

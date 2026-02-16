@@ -215,6 +215,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -645,7 +646,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!23 &1766269649
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -782,6 +783,9 @@ MonoBehaviour:
   stopVelocity: 0.1
   attractionRadiusMultiplier: 1
   singleHandOpenForceDamper: 1
+  addedBoundaryDistance: 1.5
+  boundaryOutwardDrag: 50
+  outOfBoundsResetDelay: 3
   pushForce: 5
   minDrag: 0.1
   maxDrag: 5
@@ -798,6 +802,7 @@ MonoBehaviour:
   - 3
   singleHandScaling: 1
   minimumUnscaledSize: 0.5
+  maximumUnscaledSize: 3
   minHandDisplacementPerFrame: 0.01
   pulseScaleDamper: 1
   mergeSizeScalerDamper: 1
@@ -807,6 +812,36 @@ MonoBehaviour:
   bodyScale: 1
   maxDistanceFromCamera: 10
   particleInitializationDelay: 1
+  initializationResetDelay: 3
+  singleHandOpenThreshold: 0.1
+  singleHandForceLerpDuration: 0.35
+  initializationSpeed: 0.05
+  metaballRadiusAnimationDuration: 2
+  metaballRadiusAnimationStartSize: 0.1
+  metaballRadiusAnimationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   forceToMiddle:
     serializedVersion: 2
     m_Curve:
@@ -1145,6 +1180,8 @@ MonoBehaviour:
   dummyOnlyMode: 0
   drawSkeleton: 0
   showSphereMeshOnHandCollision: 0
+  alwaysShowSphereMesh: 0
+  showMetaballMesh: 0
   showAttractionRadius: 0
   showHandTrailDistorters: 0
   showSecondaryAttractor: 0
@@ -1531,6 +1568,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7106448520181339632, guid: e06c6850c3d6d484aa1913cbb168a1ed,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7106448520181339632, guid: e06c6850c3d6d484aa1913cbb168a1ed,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7106448520181339632, guid: e06c6850c3d6d484aa1913cbb168a1ed,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7106448520181339632, guid: e06c6850c3d6d484aa1913cbb168a1ed,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -1567,12 +1619,12 @@ PrefabInstance:
     - target: {fileID: 7106448520181339632, guid: e06c6850c3d6d484aa1913cbb168a1ed,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -250
+      value: -64.1
       objectReference: {fileID: 0}
     - target: {fileID: 7106448520181339632, guid: e06c6850c3d6d484aa1913cbb168a1ed,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 100
+      value: 19
       objectReference: {fileID: 0}
     - target: {fileID: 7106448520181339632, guid: e06c6850c3d6d484aa1913cbb168a1ed,
         type: 3}

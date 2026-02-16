@@ -106,6 +106,10 @@ public class SceneController : MonoBehaviour
     public float minimumUnscaledSize = 0.5f;
 
     [BoxGroup("Movement-Based Pulsation")]
+    [Tooltip("The maximum size that the body can scale up to.")]
+    public float maximumUnscaledSize = 3.0f;
+
+    [BoxGroup("Movement-Based Pulsation")]
     [Range(0.0001f, 5f)]
     [Tooltip(
         "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
@@ -228,7 +232,7 @@ public class SceneController : MonoBehaviour
         Color.magenta,
         Color.red,
         new(1, 0.5f, 0),
-        Color.yellow
+        Color.yellow,
     };
 
     [ShowIf("customColors")]
@@ -242,7 +246,7 @@ public class SceneController : MonoBehaviour
         new(),
         new(),
         new(),
-        new()
+        new(),
     };
 
     [BoxGroup("Debugging")]
@@ -297,37 +301,36 @@ public class SceneController : MonoBehaviour
 
     private readonly Dictionary<ulong, GameObject> dummies = new();
 
-    private readonly Dictionary<JointType, JointType> boneMap =
-        new()
-        {
-            // { JointType.FootLeft, JointType.AnkleLeft },
-            // { JointType.AnkleLeft, JointType.KneeLeft },
-            // { JointType.KneeLeft, JointType.HipLeft },
-            // { JointType.HipLeft, JointType.SpineBase },
+    private readonly Dictionary<JointType, JointType> boneMap = new()
+    {
+        // { JointType.FootLeft, JointType.AnkleLeft },
+        // { JointType.AnkleLeft, JointType.KneeLeft },
+        // { JointType.KneeLeft, JointType.HipLeft },
+        // { JointType.HipLeft, JointType.SpineBase },
 
-            // { JointType.FootRight, JointType.AnkleRight },
-            // { JointType.AnkleRight, JointType.KneeRight },
-            // { JointType.KneeRight, JointType.HipRight },
-            // { JointType.HipRight, JointType.SpineBase },
+        // { JointType.FootRight, JointType.AnkleRight },
+        // { JointType.AnkleRight, JointType.KneeRight },
+        // { JointType.KneeRight, JointType.HipRight },
+        // { JointType.HipRight, JointType.SpineBase },
 
-            // { JointType.HandTipLeft, JointType.HandLeft },
-            // { JointType.ThumbLeft, JointType.HandLeft },
-            { JointType.HandLeft, JointType.WristLeft },
-            { JointType.WristLeft, JointType.ElbowLeft },
-            { JointType.ElbowLeft, JointType.ShoulderLeft },
-            { JointType.ShoulderLeft, JointType.SpineShoulder },
-            // { JointType.HandTipRight, JointType.HandRight },
-            // { JointType.ThumbRight, JointType.HandRight },
-            { JointType.HandRight, JointType.WristRight },
-            { JointType.WristRight, JointType.ElbowRight },
-            { JointType.ElbowRight, JointType.ShoulderRight },
-            { JointType.ShoulderRight, JointType.SpineShoulder },
+        // { JointType.HandTipLeft, JointType.HandLeft },
+        // { JointType.ThumbLeft, JointType.HandLeft },
+        { JointType.HandLeft, JointType.WristLeft },
+        { JointType.WristLeft, JointType.ElbowLeft },
+        { JointType.ElbowLeft, JointType.ShoulderLeft },
+        { JointType.ShoulderLeft, JointType.SpineShoulder },
+        // { JointType.HandTipRight, JointType.HandRight },
+        // { JointType.ThumbRight, JointType.HandRight },
+        { JointType.HandRight, JointType.WristRight },
+        { JointType.WristRight, JointType.ElbowRight },
+        { JointType.ElbowRight, JointType.ShoulderRight },
+        { JointType.ShoulderRight, JointType.SpineShoulder },
 
-            // { JointType.SpineBase, JointType.SpineMid },
-            // { JointType.SpineMid, JointType.SpineShoulder },
-            // { JointType.SpineShoulder, JointType.Neck },
-            // { JointType.Neck, JointType.Head },
-        };
+        // { JointType.SpineBase, JointType.SpineMid },
+        // { JointType.SpineMid, JointType.SpineShoulder },
+        // { JointType.SpineShoulder, JointType.Neck },
+        // { JointType.Neck, JointType.Head },
+    };
 
     private void OnEnable()
     {
@@ -850,6 +853,7 @@ public class SceneController : MonoBehaviour
         // Movement-Based Pulsation
         target.singleHandScaling = singleHandScaling;
         target.minimumUnscaledSize = minimumUnscaledSize;
+        target.maximumUnscaledSize = maximumUnscaledSize;
         target.minHandDisplacementPerFrame = minHandDisplacementPerFrame;
         target.distanceDamper = new AnimationCurve(distanceDamper.keys);
         target.pulseScaleDamper = pulseScaleDamper;
@@ -926,6 +930,7 @@ public class SceneController : MonoBehaviour
         // Movement-Based Pulsation
         singleHandScaling = source.singleHandScaling;
         minimumUnscaledSize = source.minimumUnscaledSize;
+        maximumUnscaledSize = source.maximumUnscaledSize;
         minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
         distanceDamper = new AnimationCurve(source.distanceDamper.keys);
         pulseScaleDamper = source.pulseScaleDamper;
