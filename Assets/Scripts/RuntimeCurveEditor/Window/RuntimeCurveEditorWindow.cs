@@ -19,8 +19,11 @@ namespace RuntimeCurveEditor
 
         private const float MIN_WIDTH = 420f;
         private const float MIN_HEIGHT = 340f;
-        private const float PRESET_BAR_HEIGHT = 50f;
-        private const float TITLE_BAR_HEIGHT = 20f;
+
+        // UI dimensions scale with screen height (baseline 1080p)
+        public static float UIScale => Mathf.Max(1f, Screen.height / 1080f);
+        private static float PRESET_BAR_HEIGHT => 50f * UIScale;
+        private static float TITLE_BAR_HEIGHT => 24f * UIScale;
 
         // Manual drag state (replaces GUI.DragWindow)
         private bool isDraggingWindow;
@@ -156,10 +159,12 @@ namespace RuntimeCurveEditor
             GUI.DrawTexture(titleRect, Texture2D.whiteTexture);
             GUI.color = Color.white;
 
-            GUI.Label(new Rect(windowRect.x + 8f, windowRect.y + 1f, windowRect.width - 30f, TITLE_BAR_HEIGHT), "Curve", s_TitleStyle);
+            float scale = UIScale;
+            GUI.Label(new Rect(windowRect.x + 8f * scale, windowRect.y + 1f, windowRect.width - 30f * scale, TITLE_BAR_HEIGHT), "Curve", s_TitleStyle);
 
             // Close button
-            Rect closeRect = new Rect(windowRect.xMax - 22f, windowRect.y + 2f, 18f, 16f);
+            float closeBtnSize = 18f * scale;
+            Rect closeRect = new Rect(windowRect.xMax - closeBtnSize - 4f * scale, windowRect.y + (TITLE_BAR_HEIGHT - closeBtnSize) / 2f, closeBtnSize, closeBtnSize);
             if (GUI.Button(closeRect, "x", s_CloseButtonStyle))
             {
                 Hide();
@@ -202,7 +207,9 @@ namespace RuntimeCurveEditor
         {
             Event e = Event.current;
 
-            Rect closeRect = new Rect(windowRect.xMax - 22f, windowRect.y + 2f, 18f, 16f);
+            float sc = UIScale;
+            float cbSize = 18f * sc;
+            Rect closeRect = new Rect(windowRect.xMax - cbSize - 4f * sc, windowRect.y + (TITLE_BAR_HEIGHT - cbSize) / 2f, cbSize, cbSize);
             if (e.type == EventType.MouseDown && e.button == 0 && titleRect.Contains(e.mousePosition) && !closeRect.Contains(e.mousePosition))
             {
                 isDraggingWindow = true;
@@ -253,22 +260,27 @@ namespace RuntimeCurveEditor
             onCurveChanged?.Invoke(targetCurve);
         }
 
+        private static float s_CachedScale;
+
         private static void EnsureStyles()
         {
-            if (s_TitleStyle != null) return;
+            float scale = UIScale;
+            if (s_TitleStyle != null && Mathf.Approximately(s_CachedScale, scale)) return;
+            s_CachedScale = scale;
 
             s_TitleStyle = new GUIStyle(GUI.skin.label);
-            s_TitleStyle.fontSize = 12;
+            s_TitleStyle.fontSize = Mathf.RoundToInt(12 * scale);
             s_TitleStyle.fontStyle = FontStyle.Bold;
             s_TitleStyle.normal.textColor = new Color(0.8f, 0.8f, 0.8f, 1f);
             s_TitleStyle.alignment = TextAnchor.MiddleLeft;
 
             s_CloseButtonStyle = new GUIStyle(GUI.skin.button);
-            s_CloseButtonStyle.fontSize = 11;
+            s_CloseButtonStyle.fontSize = Mathf.RoundToInt(11 * scale);
             s_CloseButtonStyle.fontStyle = FontStyle.Bold;
             s_CloseButtonStyle.normal.textColor = new Color(0.7f, 0.7f, 0.7f, 1f);
             s_CloseButtonStyle.alignment = TextAnchor.MiddleCenter;
-            s_CloseButtonStyle.padding = new RectOffset(0, 0, 0, 2);
+            int pad = Mathf.RoundToInt(2 * scale);
+            s_CloseButtonStyle.padding = new RectOffset(0, 0, 0, pad);
         }
     }
 }

@@ -17,13 +17,15 @@ namespace RuntimeCurveEditor
         private List<CurvePreset> userPresets;
         private RuntimeCurveEditorSettings settings;
 
-        private const float PRESET_WIDTH = 40f;
-        private const float PRESET_HEIGHT = 25f;
-        private const float PRESET_SPACING = 5f;
-        private const float SEPARATOR_WIDTH = 2f;
-        private const float SEPARATOR_MARGIN = 8f;
-        private const float ADD_BUTTON_WIDTH = 25f;
-        private const float SCROLL_BAR_HEIGHT = 14f;
+        // Dimensions scale with screen via RuntimeCurveEditorWindow.UIScale
+        private static float Scale => RuntimeCurveEditorWindow.UIScale;
+        private static float PRESET_WIDTH => 40f * Scale;
+        private static float PRESET_HEIGHT => 25f * Scale;
+        private static float PRESET_SPACING => 5f * Scale;
+        private static float SEPARATOR_WIDTH => 2f * Scale;
+        private static float SEPARATOR_MARGIN => 8f * Scale;
+        private static float ADD_BUTTON_WIDTH => 25f * Scale;
+        private static float SCROLL_BAR_HEIGHT => 14f * Scale;
 
         private float scrollOffset;
 
@@ -109,7 +111,7 @@ namespace RuntimeCurveEditor
             GUI.color = Color.white;
 
             // Calculate total content width
-            float padding = 10f;
+            float padding = 10f * Scale;
             float contentWidth = padding;
             contentWidth += defaultPresets.Count * (PRESET_WIDTH + PRESET_SPACING);
             contentWidth += SEPARATOR_MARGIN + SEPARATOR_WIDTH + SEPARATOR_MARGIN;
@@ -127,7 +129,7 @@ namespace RuntimeCurveEditor
             // Handle mouse wheel scrolling within the bar area
             if (needsScroll && Event.current.type == EventType.ScrollWheel && barRect.Contains(Event.current.mousePosition))
             {
-                scrollOffset = Mathf.Clamp(scrollOffset + Event.current.delta.y * 20f, 0f, maxScroll);
+                scrollOffset = Mathf.Clamp(scrollOffset + Event.current.delta.y * 20f * Scale, 0f, maxScroll);
                 Event.current.Use();
             }
 
@@ -147,7 +149,7 @@ namespace RuntimeCurveEditor
             float separatorX = currentX + SEPARATOR_MARGIN;
             if (separatorX >= barRect.x && separatorX <= barRect.xMax)
             {
-                Rect vertSepRect = new Rect(separatorX, barRect.y + 8f, SEPARATOR_WIDTH, presetsAreaHeight - 16f);
+                Rect vertSepRect = new Rect(separatorX, barRect.y + 8f * Scale, SEPARATOR_WIDTH, presetsAreaHeight - 16f * Scale);
                 GUI.color = new Color(0.4f, 0.4f, 0.4f, 0.5f);
                 GUI.DrawTexture(vertSepRect, Texture2D.whiteTexture);
                 GUI.color = Color.white;
@@ -218,7 +220,7 @@ namespace RuntimeCurveEditor
             {
                 float tooltipWidth = s_PresetLabelStyle.CalcSize(new GUIContent(preset.name)).x + 4f;
                 float tooltipX = presetRect.x + (presetRect.width - tooltipWidth) / 2f;
-                Rect tooltipRect = new Rect(tooltipX, presetRect.y - 16f, tooltipWidth, 14f);
+                Rect tooltipRect = new Rect(tooltipX, presetRect.y - 16f * Scale, tooltipWidth, 14f * Scale);
                 GUI.Label(tooltipRect, preset.name, s_PresetLabelStyle);
             }
 
@@ -255,7 +257,7 @@ namespace RuntimeCurveEditor
             GUI.Label(addRect, "+", new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,
-                fontSize = 16,
+                fontSize = Mathf.RoundToInt(16 * Scale),
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(0.7f, 0.9f, 0.7f, 1f) }
             });
@@ -264,7 +266,7 @@ namespace RuntimeCurveEditor
             {
                 float tipWidth = s_PresetLabelStyle.CalcSize(new GUIContent("Save Preset")).x + 4f;
                 float tipX = addRect.x + (addRect.width - tipWidth) / 2f;
-                Rect tooltipRect = new Rect(tipX, addRect.y - 16f, tipWidth, 14f);
+                Rect tooltipRect = new Rect(tipX, addRect.y - 16f * Scale, tipWidth, 14f * Scale);
                 GUI.Label(tooltipRect, "Save Preset", s_PresetLabelStyle);
             }
 
@@ -288,11 +290,12 @@ namespace RuntimeCurveEditor
             GUI.DrawTexture(screenRect, Texture2D.whiteTexture);
             GUI.color = Color.white;
 
-            // Dialog panel
-            float dialogWidth = 260f;
-            float dialogHeight = 100f;
+            // Dialog panel (scaled)
+            float s = Scale;
+            float dialogWidth = 260f * s;
+            float dialogHeight = 100f * s;
             float dialogX = barRect.x + (barRect.width - dialogWidth) / 2f;
-            float dialogY = barRect.y - dialogHeight - 10f;
+            float dialogY = barRect.y - dialogHeight - 10f * s;
 
             Rect dialogRect = new Rect(dialogX, dialogY, dialogWidth, dialogHeight);
 
@@ -303,14 +306,15 @@ namespace RuntimeCurveEditor
             DrawRectBorder(dialogRect, new Color(0.5f, 0.5f, 0.5f, 0.8f));
 
             // Title
-            Rect titleRect = new Rect(dialogRect.x + 10f, dialogRect.y + 8f, dialogRect.width - 20f, 20f);
+            float rowH = 20f * s;
+            Rect titleRect = new Rect(dialogRect.x + 10f * s, dialogRect.y + 8f * s, dialogRect.width - 20f * s, rowH);
             GUI.Label(titleRect, "Save Curve Preset", s_SaveDialogLabelStyle);
 
             // Name field
-            Rect fieldLabelRect = new Rect(dialogRect.x + 10f, dialogRect.y + 32f, 40f, 20f);
+            Rect fieldLabelRect = new Rect(dialogRect.x + 10f * s, dialogRect.y + 32f * s, 40f * s, rowH);
             GUI.Label(fieldLabelRect, "Name:", s_PresetLabelStyle);
 
-            Rect fieldRect = new Rect(dialogRect.x + 55f, dialogRect.y + 30f, dialogRect.width - 70f, 20f);
+            Rect fieldRect = new Rect(dialogRect.x + 55f * s, dialogRect.y + 30f * s, dialogRect.width - 70f * s, rowH);
             GUI.SetNextControlName("PresetNameField");
             saveDialogName = GUI.TextField(fieldRect, saveDialogName, s_SaveDialogFieldStyle);
             if (!saveDialogFocusSet)
@@ -320,13 +324,14 @@ namespace RuntimeCurveEditor
             }
 
             // Buttons
-            float buttonWidth = 60f;
-            float buttonSpacing = 10f;
+            float buttonWidth = 60f * s;
+            float buttonSpacing = 10f * s;
+            float buttonH = 22f * s;
             float buttonsStartX = dialogRect.x + (dialogRect.width - (buttonWidth * 2 + buttonSpacing)) / 2f;
-            float buttonsY = dialogRect.y + dialogHeight - 30f;
+            float buttonsY = dialogRect.y + dialogHeight - 30f * s;
 
-            Rect saveRect = new Rect(buttonsStartX, buttonsY, buttonWidth, 22f);
-            Rect cancelRect = new Rect(buttonsStartX + buttonWidth + buttonSpacing, buttonsY, buttonWidth, 22f);
+            Rect saveRect = new Rect(buttonsStartX, buttonsY, buttonWidth, buttonH);
+            Rect cancelRect = new Rect(buttonsStartX + buttonWidth + buttonSpacing, buttonsY, buttonWidth, buttonH);
 
             bool shouldSave = false;
             bool shouldCancel = false;
@@ -385,11 +390,12 @@ namespace RuntimeCurveEditor
             GUI.DrawTexture(screenRect, Texture2D.whiteTexture);
             GUI.color = Color.white;
 
-            // Dialog panel
-            float dialogWidth = 240f;
-            float dialogHeight = 80f;
+            // Dialog panel (scaled)
+            float s = Scale;
+            float dialogWidth = 240f * s;
+            float dialogHeight = 80f * s;
             float dialogX = barRect.x + (barRect.width - dialogWidth) / 2f;
-            float dialogY = barRect.y - dialogHeight - 10f;
+            float dialogY = barRect.y - dialogHeight - 10f * s;
 
             Rect dialogRect = new Rect(dialogX, dialogY, dialogWidth, dialogHeight);
 
@@ -398,16 +404,17 @@ namespace RuntimeCurveEditor
             GUI.color = Color.white;
             DrawRectBorder(dialogRect, new Color(0.5f, 0.5f, 0.5f, 0.8f));
 
-            Rect labelRect = new Rect(dialogRect.x + 10f, dialogRect.y + 10f, dialogRect.width - 20f, 30f);
+            Rect labelRect = new Rect(dialogRect.x + 10f * s, dialogRect.y + 10f * s, dialogRect.width - 20f * s, 30f * s);
             GUI.Label(labelRect, $"Delete \"{presetName}\"?", s_SaveDialogLabelStyle);
 
-            float buttonWidth = 60f;
-            float buttonSpacing = 10f;
+            float buttonWidth = 60f * s;
+            float buttonSpacing = 10f * s;
+            float buttonH = 22f * s;
             float buttonsStartX = dialogRect.x + (dialogRect.width - (buttonWidth * 2 + buttonSpacing)) / 2f;
-            float buttonsY = dialogRect.y + dialogHeight - 30f;
+            float buttonsY = dialogRect.y + dialogHeight - 30f * s;
 
-            Rect deleteRect = new Rect(buttonsStartX, buttonsY, buttonWidth, 22f);
-            Rect cancelRect = new Rect(buttonsStartX + buttonWidth + buttonSpacing, buttonsY, buttonWidth, 22f);
+            Rect deleteRect = new Rect(buttonsStartX, buttonsY, buttonWidth, buttonH);
+            Rect cancelRect = new Rect(buttonsStartX + buttonWidth + buttonSpacing, buttonsY, buttonWidth, buttonH);
 
             bool shouldDelete = false;
             bool shouldCancel = false;
@@ -581,35 +588,44 @@ namespace RuntimeCurveEditor
             }
         }
 
+        private static float s_CachedScale;
+
         private static void EnsureStyles()
         {
-            if (s_PresetLabelStyle != null) return;
+            float scale = Scale;
+            if (s_PresetLabelStyle != null && Mathf.Approximately(s_CachedScale, scale)) return;
+            s_CachedScale = scale;
 
             s_PresetLabelStyle = new GUIStyle(GUI.skin.label);
-            s_PresetLabelStyle.fontSize = 9;
+            s_PresetLabelStyle.fontSize = Mathf.RoundToInt(9 * scale);
             s_PresetLabelStyle.normal.textColor = new Color(0.7f, 0.7f, 0.7f, 0.9f);
             s_PresetLabelStyle.alignment = TextAnchor.LowerCenter;
 
             s_PresetButtonStyle = new GUIStyle(GUI.skin.button);
-            s_PresetButtonStyle.padding = new RectOffset(1, 1, 1, 1);
+            int pad = Mathf.RoundToInt(1 * scale);
+            s_PresetButtonStyle.padding = new RectOffset(pad, pad, pad, pad);
             s_PresetButtonStyle.margin = new RectOffset(0, 0, 0, 0);
+
+            // Reset dialog styles so they get recreated at new scale
+            s_SaveDialogLabelStyle = null;
         }
 
         private static void EnsureDialogStyles()
         {
             if (s_SaveDialogLabelStyle != null) return;
 
+            float scale = Scale;
             s_SaveDialogLabelStyle = new GUIStyle(GUI.skin.label);
-            s_SaveDialogLabelStyle.fontSize = 12;
+            s_SaveDialogLabelStyle.fontSize = Mathf.RoundToInt(12 * scale);
             s_SaveDialogLabelStyle.fontStyle = FontStyle.Bold;
             s_SaveDialogLabelStyle.normal.textColor = new Color(0.85f, 0.85f, 0.85f, 1f);
             s_SaveDialogLabelStyle.alignment = TextAnchor.MiddleLeft;
 
             s_SaveDialogFieldStyle = new GUIStyle(GUI.skin.textField);
-            s_SaveDialogFieldStyle.fontSize = 11;
+            s_SaveDialogFieldStyle.fontSize = Mathf.RoundToInt(11 * scale);
 
             s_SaveDialogButtonStyle = new GUIStyle(GUI.skin.button);
-            s_SaveDialogButtonStyle.fontSize = 11;
+            s_SaveDialogButtonStyle.fontSize = Mathf.RoundToInt(11 * scale);
         }
     }
 }
