@@ -17,8 +17,8 @@ namespace RuntimeCurveEditor
         private bool isVisible;
         private Rect windowRect;
 
-        private const float MIN_WIDTH = 340f;
-        private const float MIN_HEIGHT = 290f;
+        private const float MIN_WIDTH = 420f;
+        private const float MIN_HEIGHT = 340f;
         private const float PRESET_BAR_HEIGHT = 50f;
         private const float TITLE_BAR_HEIGHT = 20f;
 

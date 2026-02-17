@@ -187,10 +187,10 @@ namespace RuntimeCurveEditor
             }
         }
 
-        /// <summary>Returns true if the element rect overlaps the visible bar area horizontally.</summary>
+        /// <summary>Returns true if the element rect is fully within the visible bar area horizontally.</summary>
         private static bool IsRectVisible(Rect elementRect, Rect clipRect)
         {
-            return elementRect.xMax > clipRect.x && elementRect.x < clipRect.xMax;
+            return elementRect.x >= clipRect.x && elementRect.xMax <= clipRect.xMax;
         }
 
         private void DrawPresetButton(Rect presetRect, CurvePreset preset, Action<AnimationCurve> onPresetSelected, int userPresetIndex)
