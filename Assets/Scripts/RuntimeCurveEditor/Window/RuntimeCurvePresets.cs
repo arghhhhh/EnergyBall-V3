@@ -216,7 +216,9 @@ namespace RuntimeCurveEditor
 
             if (hovered)
             {
-                Rect tooltipRect = new Rect(presetRect.x, presetRect.y - 16f, 80f, 14f);
+                float tooltipWidth = s_PresetLabelStyle.CalcSize(new GUIContent(preset.name)).x + 4f;
+                float tooltipX = presetRect.x + (presetRect.width - tooltipWidth) / 2f;
+                Rect tooltipRect = new Rect(tooltipX, presetRect.y - 16f, tooltipWidth, 14f);
                 GUI.Label(tooltipRect, preset.name, s_PresetLabelStyle);
             }
 
@@ -260,7 +262,9 @@ namespace RuntimeCurveEditor
 
             if (hovered)
             {
-                Rect tooltipRect = new Rect(addRect.x - 10f, addRect.y - 16f, 80f, 14f);
+                float tipWidth = s_PresetLabelStyle.CalcSize(new GUIContent("Save Preset")).x + 4f;
+                float tipX = addRect.x + (addRect.width - tipWidth) / 2f;
+                Rect tooltipRect = new Rect(tipX, addRect.y - 16f, tipWidth, 14f);
                 GUI.Label(tooltipRect, "Save Preset", s_PresetLabelStyle);
             }
 
