@@ -1,0 +1,37 @@
+{
+    "name": "Force To Middle (Legacy)",
+    "keys": [
+        {
+            "time": 0.0,
+            "value": 1.0,
+            "inTangent": -0.006802848540246487,
+            "outTangent": -0.006802848540246487,
+            "inWeight": 0.3333333432674408,
+            "outWeight": 0.23333333432674409,
+            "weightedMode": 0,
+            "tangentMode": 0
+        },
+        {
+            "time": 0.7828356623649597,
+            "value": 0.8622234463691711,
+            "inTangent": -0.613844633102417,
+            "outTangent": -0.613844633102417,
+            "inWeight": 0.18742698431015016,
+            "outWeight": 0.6930128335952759,
+            "weightedMode": 0,
+            "tangentMode": 0
+        },
+        {
+            "time": 1.0,
+            "value": 0.0,
+            "inTangent": -7.4285783767700199,
+            "outTangent": -7.4285783767700199,
+            "inWeight": 0.07674671709537506,
+            "outWeight": 0.0,
+            "weightedMode": 0,
+            "tangentMode": 0
+        }
+    ],
+    "preWrapMode": 8,
+    "postWrapMode": 8
+}
