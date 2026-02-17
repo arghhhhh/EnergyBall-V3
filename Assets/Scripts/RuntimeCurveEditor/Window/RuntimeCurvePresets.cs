@@ -37,6 +37,7 @@ namespace RuntimeCurveEditor
 
         // Save dialog state
         private bool showSaveDialog;
+        private bool saveDialogFocusSet;
         private string saveDialogName = "";
         private AnimationCurve saveDialogCurve;
 
@@ -266,6 +267,7 @@ namespace RuntimeCurveEditor
             if (hovered && Event.current.type == EventType.MouseDown && Event.current.button == 0)
             {
                 showSaveDialog = true;
+                saveDialogFocusSet = false;
                 saveDialogName = "";
                 saveDialogCurve = currentCurve;
                 Event.current.Use();
@@ -307,7 +309,11 @@ namespace RuntimeCurveEditor
             Rect fieldRect = new Rect(dialogRect.x + 55f, dialogRect.y + 30f, dialogRect.width - 70f, 20f);
             GUI.SetNextControlName("PresetNameField");
             saveDialogName = GUI.TextField(fieldRect, saveDialogName, s_SaveDialogFieldStyle);
-            GUI.FocusControl("PresetNameField");
+            if (!saveDialogFocusSet)
+            {
+                GUI.FocusControl("PresetNameField");
+                saveDialogFocusSet = true;
+            }
 
             // Buttons
             float buttonWidth = 60f;

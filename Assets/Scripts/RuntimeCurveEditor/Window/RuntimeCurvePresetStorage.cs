@@ -10,6 +10,7 @@ namespace RuntimeCurveEditor
         public float time, value, inTangent, outTangent;
         public float inWeight, outWeight;
         public int weightedMode;
+        public int tangentMode;
     }
 
     [System.Serializable]
@@ -63,34 +64,48 @@ namespace RuntimeCurveEditor
 
         public static void SavePreset(string name, AnimationCurve curve)
         {
-            string dir = PresetsDirectory;
-            if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
+            try
+            {
+                string dir = PresetsDirectory;
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
 
-            var data = SerializeCurve(name, curve);
-            string json = JsonUtility.ToJson(data, true);
+                var data = SerializeCurve(name, curve);
+                string json = JsonUtility.ToJson(data, true);
 
-            string sanitizedName = name;
-            foreach (char c in Path.GetInvalidFileNameChars())
-                sanitizedName = sanitizedName.Replace(c, '_');
+                string sanitizedName = name;
+                foreach (char c in Path.GetInvalidFileNameChars())
+                    sanitizedName = sanitizedName.Replace(c, '_');
 
-            string path = Path.Combine(dir, sanitizedName + ".json");
-            File.WriteAllText(path, json);
+                string path = Path.Combine(dir, sanitizedName + ".json");
+                File.WriteAllText(path, json);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to save curve preset '{name}': {e.Message}");
+            }
         }
 
         public static void DeletePreset(string name)
         {
-            string dir = PresetsDirectory;
-            if (!Directory.Exists(dir))
-                return;
+            try
+            {
+                string dir = PresetsDirectory;
+                if (!Directory.Exists(dir))
+                    return;
 
-            string sanitizedName = name;
-            foreach (char c in Path.GetInvalidFileNameChars())
-                sanitizedName = sanitizedName.Replace(c, '_');
+                string sanitizedName = name;
+                foreach (char c in Path.GetInvalidFileNameChars())
+                    sanitizedName = sanitizedName.Replace(c, '_');
 
-            string path = Path.Combine(dir, sanitizedName + ".json");
-            if (File.Exists(path))
-                File.Delete(path);
+                string path = Path.Combine(dir, sanitizedName + ".json");
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to delete curve preset '{name}': {e.Message}");
+            }
         }
 
         private static SerializableCurvePreset SerializeCurve(string name, AnimationCurve curve)
@@ -106,6 +121,7 @@ namespace RuntimeCurveEditor
             for (int i = 0; i < curve.length; i++)
             {
                 Keyframe kf = curve[i];
+                #pragma warning disable 0618
                 data.keys[i] = new SerializableKeyframe
                 {
                     time = kf.time,
@@ -114,8 +130,10 @@ namespace RuntimeCurveEditor
                     outTangent = kf.outTangent,
                     inWeight = kf.inWeight,
                     outWeight = kf.outWeight,
-                    weightedMode = (int)kf.weightedMode
+                    weightedMode = (int)kf.weightedMode,
+                    tangentMode = kf.tangentMode
                 };
+                #pragma warning restore 0618
             }
 
             return data;
@@ -127,12 +145,15 @@ namespace RuntimeCurveEditor
             for (int i = 0; i < data.keys.Length; i++)
             {
                 var sk = data.keys[i];
+                #pragma warning disable 0618
                 keys[i] = new Keyframe(sk.time, sk.value, sk.inTangent, sk.outTangent)
                 {
                     inWeight = sk.inWeight,
                     outWeight = sk.outWeight,
-                    weightedMode = (WeightedMode)sk.weightedMode
+                    weightedMode = (WeightedMode)sk.weightedMode,
+                    tangentMode = sk.tangentMode
                 };
+                #pragma warning restore 0618
             }
 
             var curve = new AnimationCurve(keys);

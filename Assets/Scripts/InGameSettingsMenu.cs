@@ -44,6 +44,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private readonly List<VisualElement> settingGroups = new();
     private readonly Dictionary<string, VisualElement> settingElements = new();
+    private readonly List<Texture2D> curveTextures = new();
     private bool isModalOpen = false;
 
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
@@ -231,6 +232,11 @@ public class InGameSettingsMenu : MonoBehaviour
             Debug.LogError("UI panels not found, cannot create settings UI");
             return;
         }
+
+        // Destroy tracked curve textures before rebuilding UI
+        foreach (var tex in curveTextures)
+            if (tex != null) Destroy(tex);
+        curveTextures.Clear();
 
         sceneSettingsPanel.Clear();
         postProcessingPanel.Clear();
@@ -567,10 +573,15 @@ public class InGameSettingsMenu : MonoBehaviour
 
             if (curveTex == null || curveTex.width != width || curveTex.height != height)
             {
-                if (curveTex != null) Destroy(curveTex);
+                if (curveTex != null)
+                {
+                    curveTextures.Remove(curveTex);
+                    Destroy(curveTex);
+                }
                 curveTex = new Texture2D(width, height, TextureFormat.RGBA32, false);
                 curveTex.filterMode = FilterMode.Bilinear;
                 curveTex.wrapMode = TextureWrapMode.Clamp;
+                curveTextures.Add(curveTex);
             }
 
             RenderCurveToTexture(curve, curveTex, new Color32(0, 204, 0, 230));

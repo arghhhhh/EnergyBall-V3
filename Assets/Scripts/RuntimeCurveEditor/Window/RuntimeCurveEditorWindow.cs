@@ -229,7 +229,7 @@ namespace RuntimeCurveEditor
 
         private void OnPresetSelected(AnimationCurve presetCurve)
         {
-            if (targetCurve == null) return;
+            if (targetCurve == null || presetCurve == null) return;
 
             // Copy keys from preset to target
             while (targetCurve.length > 0)
