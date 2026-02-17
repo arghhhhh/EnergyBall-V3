@@ -542,28 +542,41 @@ public class InGameSettingsMenu : MonoBehaviour
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
 
-        IMGUIContainer thumbnail = null;
-        thumbnail = new IMGUIContainer(() =>
+        // Use a regular VisualElement with a CPU-rendered Texture2D instead of
+        // IMGUIContainer + GL calls. GL.LoadPixelMatrix() always uses screen coordinates
+        // which don't match the local coordinate space inside UI Toolkit containers.
+        var thumbnail = new VisualElement();
+        thumbnail.AddToClassList("curve-thumbnail");
+
+        Texture2D curveTex = null;
+        bool hasRendered = false;
+
+        // Schedule periodic texture update — renders once initially, then only
+        // re-renders while the curve editor is open (the only time curves change).
+        // Profile loads recreate the entire UI so thumbnails get a fresh initial render.
+        thumbnail.schedule.Execute(() =>
         {
-            if (Event.current.type != EventType.Repaint) return;
+            if (hasRendered && !RuntimeCurveEditorWindow.IsVisible) return;
 
             var curve = getter();
             if (curve == null || curve.length == 0) return;
 
-            // Convert local container coordinates to screen coordinates for GL rendering
-            Vector2 screenPos = GUIUtility.GUIToScreenPoint(Vector2.zero);
-            Rect screenRect = new Rect(
-                screenPos.x + 2f,
-                screenPos.y + 2f,
-                thumbnail.contentRect.width - 4f,
-                thumbnail.contentRect.height - 4f);
+            int width = Mathf.Max(Mathf.RoundToInt(thumbnail.resolvedStyle.width), 4);
+            int height = Mathf.Max(Mathf.RoundToInt(thumbnail.resolvedStyle.height), 4);
+            if (width <= 4 || height <= 4) return;
 
-            RuntimeCurveRenderer.DrawMiniCurve(curve, screenRect, new Color(0f, 0.8f, 0f, 1f));
-        });
-        thumbnail.AddToClassList("curve-thumbnail");
+            if (curveTex == null || curveTex.width != width || curveTex.height != height)
+            {
+                if (curveTex != null) Destroy(curveTex);
+                curveTex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                curveTex.filterMode = FilterMode.Bilinear;
+                curveTex.wrapMode = TextureWrapMode.Clamp;
+            }
 
-        // Schedule periodic repaint so the thumbnail stays up to date after edits
-        thumbnail.schedule.Execute(() => thumbnail.MarkDirtyRepaint()).Every(200);
+            RenderCurveToTexture(curve, curveTex, new Color32(0, 204, 0, 230));
+            thumbnail.style.backgroundImage = curveTex;
+            hasRendered = true;
+        }).Every(200);
 
         // Click to open the curve editor popup
         thumbnail.RegisterCallback<PointerDownEvent>(evt =>
@@ -585,6 +598,68 @@ public class InGameSettingsMenu : MonoBehaviour
         parent.Add(row);
 
         settingElements[label] = thumbnail;
+    }
+
+    private static void RenderCurveToTexture(AnimationCurve curve, Texture2D tex, Color32 curveColor)
+    {
+        int width = tex.width;
+        int height = tex.height;
+        Color32 clear = new Color32(0, 0, 0, 0);
+
+        Color32[] pixels = new Color32[width * height];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = clear;
+
+        // Compute curve value bounds by sampling
+        float minTime = curve[0].time;
+        float maxTime = curve[curve.length - 1].time;
+        float timeRange = maxTime - minTime;
+        if (timeRange < 0.001f) { timeRange = 1f; minTime -= 0.5f; maxTime += 0.5f; }
+
+        float minVal = float.MaxValue, maxVal = float.MinValue;
+        int sampleCount = width * 2;
+        for (int i = 0; i <= sampleCount; i++)
+        {
+            float v = curve.Evaluate(minTime + timeRange * i / sampleCount);
+            if (v < minVal) minVal = v;
+            if (v > maxVal) maxVal = v;
+        }
+        float valRange = maxVal - minVal;
+        if (valRange < 0.001f) { valRange = 1f; minVal -= 0.5f; }
+
+        // Add padding
+        float pad = valRange * 0.1f;
+        minVal -= pad;
+        valRange = (maxVal + pad) - minVal;
+        float padTime = timeRange * 0.05f;
+        minTime -= padTime;
+        timeRange += padTime * 2f;
+
+        // Draw curve line connecting adjacent samples
+        int prevY = -1;
+        for (int x = 0; x < width; x++)
+        {
+            float t = minTime + timeRange * x / (width - 1);
+            float v = curve.Evaluate(t);
+            int y = Mathf.Clamp(Mathf.RoundToInt((v - minVal) / valRange * (height - 1)), 0, height - 1);
+
+            if (prevY >= 0 && Mathf.Abs(y - prevY) > 1)
+            {
+                // Fill vertical gap between consecutive samples
+                int lo = Mathf.Min(prevY, y);
+                int hi = Mathf.Max(prevY, y);
+                for (int fillY = lo; fillY <= hi; fillY++)
+                    pixels[fillY * width + x] = curveColor;
+            }
+            else
+            {
+                pixels[y * width + x] = curveColor;
+            }
+
+            prevY = y;
+        }
+
+        tex.SetPixels32(pixels);
+        tex.Apply();
     }
 
     private void CreateFloatArrayField(VisualElement parent, string label, Func<float[]> getter, Action<float[]> setter)
