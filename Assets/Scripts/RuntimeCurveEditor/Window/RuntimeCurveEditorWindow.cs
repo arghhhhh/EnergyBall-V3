@@ -60,6 +60,10 @@ namespace RuntimeCurveEditor
 
             instance.presets = new RuntimeCurvePresets(instance.settings);
 
+            // Size window responsively based on screen resolution
+            float width = Mathf.Max(MIN_WIDTH, Screen.width * 0.4f);
+            float height = Mathf.Max(MIN_HEIGHT, Screen.height * 0.45f);
+
             // Position window
             if (anchorRect.HasValue)
             {
@@ -67,16 +71,16 @@ namespace RuntimeCurveEditor
                 instance.windowRect = new Rect(
                     anchor.x,
                     anchor.yMax + 2f,
-                    Mathf.Max(MIN_WIDTH, anchor.width),
-                    MIN_HEIGHT);
+                    Mathf.Max(width, anchor.width),
+                    height);
             }
             else
             {
                 instance.windowRect = new Rect(
-                    (Screen.width - MIN_WIDTH) / 2f,
-                    (Screen.height - MIN_HEIGHT) / 2f,
-                    MIN_WIDTH,
-                    MIN_HEIGHT);
+                    (Screen.width - width) / 2f,
+                    (Screen.height - height) / 2f,
+                    width,
+                    height);
             }
 
             // Clamp to screen
