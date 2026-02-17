@@ -328,6 +328,18 @@ namespace RuntimeCurveEditor
             items.Clear();
             openSubmenu = null;
         }
+
+        public static void CleanupStyles()
+        {
+            if (s_MenuBgStyle != null && s_MenuBgStyle.normal.background != null)
+            {
+                UnityEngine.Object.DestroyImmediate(s_MenuBgStyle.normal.background);
+            }
+            s_MenuItemStyle = null;
+            s_MenuItemCheckedStyle = null;
+            s_MenuBgStyle = null;
+            s_SeparatorStyle = null;
+        }
     }
 
     public class RuntimeCurveMenuManager

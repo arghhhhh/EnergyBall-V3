@@ -128,5 +128,14 @@ namespace RuntimeCurveEditor
             float half = DOT_SIZE / 2f + 2f;
             return new Rect(viewPos.x - half, viewPos.y - half, half * 2f, half * 2f);
         }
+
+        public static void Cleanup()
+        {
+            if (s_DiamondUnselected != null) { Object.DestroyImmediate(s_DiamondUnselected); s_DiamondUnselected = null; }
+            if (s_DiamondSelected != null) { Object.DestroyImmediate(s_DiamondSelected); s_DiamondSelected = null; }
+            if (s_DiamondSemiSelected != null) { Object.DestroyImmediate(s_DiamondSemiSelected); s_DiamondSemiSelected = null; }
+            if (s_WeightedDiamond != null) { Object.DestroyImmediate(s_WeightedDiamond); s_WeightedDiamond = null; }
+            if (s_TangentDot != null) { Object.DestroyImmediate(s_TangentDot); s_TangentDot = null; }
+        }
     }
 }

@@ -95,6 +95,9 @@ namespace RuntimeCurveEditor
                 s_Instance.isDraggingWindow = false;
                 s_Instance.curveEditor = null;
                 s_Instance.presets = null;
+
+                RuntimeKeyframeRenderer.Cleanup();
+                RuntimeContextMenu.CleanupStyles();
             }
         }
 
