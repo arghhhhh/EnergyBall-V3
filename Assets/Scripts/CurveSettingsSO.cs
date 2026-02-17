@@ -1,6 +1,7 @@
 using NaughtyAttributes;
 using UnityEngine;
 
+[System.Obsolete("Curves are now managed in SceneController inspector and saved in scene profiles. This SO is kept for reference only.")]
 [CreateAssetMenu(fileName = "CurveSettings", menuName = "Settings/Curve Settings")]
 public class CurveSettingsSO : ScriptableObject
 {

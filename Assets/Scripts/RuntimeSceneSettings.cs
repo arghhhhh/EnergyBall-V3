@@ -17,7 +17,6 @@ public class RuntimeSceneSettings
     public float attractionRadiusMultiplier = 1f;
 
     [Header("Hands Attraction")]
-    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
     public float singleHandOpenForceDamper = 1f;
 
@@ -40,7 +39,6 @@ public class RuntimeSceneSettings
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
 
-    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
     public float alignmentVectorStrengthScaler = 1f;
     public float handPushScaler = 1f;
@@ -61,7 +59,6 @@ public class RuntimeSceneSettings
     [Range(0.0001f, 5f)]
     public float minHandDisplacementPerFrame = 0.01f;
 
-    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
     public float pulseScaleDamper = 1f;
 
