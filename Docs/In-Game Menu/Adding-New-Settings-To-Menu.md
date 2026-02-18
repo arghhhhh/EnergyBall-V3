@@ -38,7 +38,7 @@ public float boundaryOutwardDrag = 50f;
 - `float` - Use `CreateFloatField()` or `CreateSliderField()`
 - `bool` - Use `CreateToggleField()`
 - `float[]` - Use `CreateFloatArrayField()`
-- `AnimationCurve` - Use `CreateCurveField()` (limited support)
+- `AnimationCurve` - Use `CreateCurveField()` (opens the runtime curve editor popup)
 
 **For properties with change notifications:**
 
@@ -275,6 +275,82 @@ CreateToggleField(group, "Label", () => runtimeSettings.property, v => runtimeSe
 ```csharp
 CreateFloatArrayField(group, "Label", () => runtimeSettings.arrayProperty, v => runtimeSettings.arrayProperty = v);
 ```
+
+### Curve Field (AnimationCurve)
+
+```csharp
+CreateCurveField(group, "Label", () => runtimeSettings.curveProperty, v => runtimeSettings.curveProperty = v);
+```
+
+Renders an interactive thumbnail of the curve. Clicking the thumbnail opens the `RuntimeCurveEditorWindow` popup with full keyframe editing, tangent mode controls, and preset support.
+
+## AnimationCurve Settings — Extra Steps
+
+`AnimationCurve` properties require special handling in several places compared to scalar types. The differences are called out below.
+
+### Declaration
+
+Give curves a sensible default shape:
+
+```csharp
+public AnimationCurve myCurve = AnimationCurve.Linear(0, 0, 1, 1);
+```
+
+### DeepCopy()
+
+Curves are reference types, so you must copy the keys into a new instance:
+
+```csharp
+copy.myCurve = new AnimationCurve(myCurve.keys);
+```
+
+A plain `copy.myCurve = myCurve;` would share the same object — edits in the menu would mutate the backup.
+
+### MergeSceneSettings() / MergePostProcessingSettings()
+
+Guard against null or empty curves from older profile JSON files that may not contain the field:
+
+```csharp
+if (loadedSettings.myCurve != null && loadedSettings.myCurve.length > 0)
+    runtimeSettings.myCurve = new AnimationCurve(loadedSettings.myCurve.keys);
+```
+
+### CopySceneSettings() / CopyPostProcessingSettings()
+
+Copy the curve by keys, same as DeepCopy:
+
+```csharp
+destination.myCurve = new AnimationCurve(source.myCurve.keys);
+```
+
+In the **opposite** copy method, zero it out with an empty curve (not `null`):
+
+```csharp
+destination.myCurve = new AnimationCurve();
+```
+
+### CopyInspectorToRuntime() / CopyRuntimeToInspector()
+
+Copy by keys in both directions:
+
+```csharp
+// CopyInspectorToRuntime
+target.myCurve = new AnimationCurve(myCurve.keys);
+
+// CopyRuntimeToInspector
+myCurve = new AnimationCurve(source.myCurve.keys);
+```
+
+### Testing Checklist (curve-specific)
+
+In addition to the general checklist:
+
+- [ ] Curve thumbnail renders in the settings menu and updates when the curve changes
+- [ ] Clicking the thumbnail opens the curve editor popup
+- [ ] Edits in the curve editor reflect back in the settings and take effect in the scene
+- [ ] Saving a profile preserves the curve shape (including tangent modes)
+- [ ] Loading a profile restores the curve correctly
+- [ ] Opening/closing the menu doesn't corrupt curve data (DeepCopy works)
 
 ## Group Organization
 

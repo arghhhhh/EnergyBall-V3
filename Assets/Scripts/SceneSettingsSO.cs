@@ -33,10 +33,6 @@ public class SceneSettingsSO : ScriptableObject
     public float attractionRadiusMultiplier;
 
     [BoxGroup("Hands Attraction")]
-    [InfoBox(
-        "Curve settings (forceToMiddle, alignmentVectorStrength) are now managed by CurveSettingsSO",
-        EInfoBoxType.Normal
-    )]
     public float singleHandOpenForceDamper;
 
     [BoxGroup("Hands Attraction")]
@@ -99,7 +95,10 @@ public class SceneSettingsSO : ScriptableObject
     public float minHandDisplacementPerFrame;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [InfoBox("distanceDamper curve is now managed by CurveSettingsSO", EInfoBoxType.Normal)]
+    [InfoBox(
+        "distanceDamper curve is managed in SceneController inspector and saved in scene profiles",
+        EInfoBoxType.Normal
+    )]
     [Tooltip("An overall damper for the movement-based pulsation scaling.")]
     public float pulseScaleDamper;
 

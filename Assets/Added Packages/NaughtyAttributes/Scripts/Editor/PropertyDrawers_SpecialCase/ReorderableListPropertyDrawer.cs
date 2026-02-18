@@ -104,7 +104,7 @@ namespace NaughtyAttributes.Editor
                             return EditorGUI.GetPropertyHeight(
                                     property.GetArrayElementAtIndex(index)
                                 ) + 4.0f;
-                        }
+                        },
                     };
 
                     _reorderableListsByPropertyName[key] = reorderableList;

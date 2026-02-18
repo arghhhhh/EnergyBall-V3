@@ -6,7 +6,7 @@ namespace NaughtyAttributes
     {
         Normal,
         Warning,
-        Error
+        Error,
     }
 
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true, Inherited = true)]

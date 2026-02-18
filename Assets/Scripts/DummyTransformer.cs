@@ -4,7 +4,7 @@ using UnityEngine;
 public enum Axis
 {
     X,
-    Z
+    Z,
 }
 
 public class DummyTransformer : MonoBehaviour

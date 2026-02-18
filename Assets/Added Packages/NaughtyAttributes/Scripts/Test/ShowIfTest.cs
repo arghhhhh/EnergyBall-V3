@@ -139,7 +139,7 @@ namespace NaughtyAttributes.Test
     {
         Case0,
         Case1,
-        Case2
+        Case2,
     }
 
     [Flags]
@@ -148,6 +148,6 @@ namespace NaughtyAttributes.Test
         Flag0 = 1,
         Flag1 = 2,
         Flag2 = 4,
-        Flag3 = 8
+        Flag3 = 8,
     }
 }

@@ -261,7 +261,7 @@ namespace MarchingCubes
             0xffffffffff819831UL,
             0xfffffffffffff190UL,
             0xfffffffffffff830UL,
-            0xffffffffffffffffUL
+            0xffffffffffffffffUL,
         };
     }
 } // namespace MarchingCubes

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using RuntimeCurveEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,7 +12,7 @@ public class InGameSettingsMenu : MonoBehaviour
     public enum TabType
     {
         Scene,
-        PostProcessing
+        PostProcessing,
     }
 
     private bool isRefreshingSuppressed = false;
@@ -49,7 +50,9 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private readonly List<VisualElement> settingGroups = new();
     private readonly Dictionary<string, VisualElement> settingElements = new();
+    private readonly List<Texture2D> curveTextures = new();
     private bool isModalOpen = false;
+    private VisualElement curveEditorBlocker;
 
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
 
@@ -58,7 +61,7 @@ public class InGameSettingsMenu : MonoBehaviour
     public enum ProfileType
     {
         Scene,
-        PostProcessing
+        PostProcessing,
     }
 
     private void Awake()
@@ -135,9 +138,18 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.M) && !isModalOpen)
+        if (Input.GetKeyDown(KeyCode.M) && !isModalOpen && !RuntimeCurveEditorWindow.IsVisible)
         {
             ToggleMenu();
+        }
+
+        // Toggle the invisible blocker overlay so UI Toolkit elements can't be
+        // interacted with while the IMGUI curve editor is visible.
+        if (curveEditorBlocker != null)
+        {
+            curveEditorBlocker.style.display = RuntimeCurveEditorWindow.IsVisible
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
         }
     }
 
@@ -171,6 +183,18 @@ public class InGameSettingsMenu : MonoBehaviour
         }
 
         var root = uiDocument.rootVisualElement;
+
+        // Invisible overlay that blocks all UI Toolkit interaction when the
+        // IMGUI curve editor is open (the two input systems are independent).
+        curveEditorBlocker = new VisualElement();
+        curveEditorBlocker.style.position = Position.Absolute;
+        curveEditorBlocker.style.left = 0;
+        curveEditorBlocker.style.top = 0;
+        curveEditorBlocker.style.right = 0;
+        curveEditorBlocker.style.bottom = 0;
+        curveEditorBlocker.pickingMode = PickingMode.Position;
+        curveEditorBlocker.style.display = DisplayStyle.None;
+        root.Add(curveEditorBlocker);
 
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         sceneSettingsPanel = root.Q<ScrollView>("SceneSettingsPanel");
@@ -267,6 +291,12 @@ public class InGameSettingsMenu : MonoBehaviour
             Debug.LogError("UI panels not found, cannot create settings UI");
             return;
         }
+
+        // Destroy tracked curve textures before rebuilding UI
+        foreach (var tex in curveTextures)
+            if (tex != null)
+                Destroy(tex);
+        curveTextures.Clear();
 
         sceneSettingsPanel.Clear();
         postProcessingPanel.Clear();
@@ -372,9 +402,12 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = CreateGroup("Hands Attraction", parentContainer);
 
-        // Note: forceToMiddle and alignmentVectorStrength curves are now controlled by CurveSettingsSO
-        // and are not included in profiles or the settings UI
-        // CreateCurveField(group, "Force To Middle", () => runtimeSettings.forceToMiddle, v => runtimeSettings.forceToMiddle = v);
+        CreateCurveField(
+            group,
+            "Force To Middle",
+            () => runtimeSettings.forceToMiddle,
+            v => runtimeSettings.forceToMiddle = v
+        );
         CreateFloatField(
             group,
             "Single Hand Open Force Damper",
@@ -400,7 +433,12 @@ public class InGameSettingsMenu : MonoBehaviour
             v => runtimeSettings.maxDrag = v
         );
 
-        // CreateCurveField(group, "Alignment Vector Strength", () => runtimeSettings.alignmentVectorStrength, v => runtimeSettings.alignmentVectorStrength = v);
+        CreateCurveField(
+            group,
+            "Alignment Vector Strength",
+            () => runtimeSettings.alignmentVectorStrength,
+            v => runtimeSettings.alignmentVectorStrength = v
+        );
         CreateFloatField(
             group,
             "Alignment Vector Strength Scaler",
@@ -499,12 +537,6 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.minimumUnscaledSize,
             v => runtimeSettings.minimumUnscaledSize = v
         );
-        CreateFloatField(
-            group,
-            "Maximum Unscaled Size",
-            () => runtimeSettings.maximumUnscaledSize,
-            v => runtimeSettings.maximumUnscaledSize = v
-        );
         CreateSliderField(
             group,
             "Min Hand Displacement Per Frame",
@@ -513,9 +545,12 @@ public class InGameSettingsMenu : MonoBehaviour
             0.0001f,
             5f
         );
-        // Note: distanceDamper curve is now controlled by CurveSettingsSO
-        // and is not included in profiles or the settings UI
-        // CreateCurveField(group, "Distance Damper", () => runtimeSettings.distanceDamper, v => runtimeSettings.distanceDamper = v);
+        CreateCurveField(
+            group,
+            "Distance Damper",
+            () => runtimeSettings.distanceDamper,
+            v => runtimeSettings.distanceDamper = v
+        );
         CreateFloatField(
             group,
             "Pulse Scale Damper",
@@ -582,6 +617,14 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.initializationResetDelay,
             v => runtimeSettings.initializationResetDelay = v
         );
+        CreateSliderField(
+            group,
+            "Initialization Speed",
+            () => runtimeSettings.initializationSpeed,
+            v => runtimeSettings.initializationSpeed = v,
+            0f,
+            1f
+        );
         CreateFloatField(
             group,
             "Single Hand Open Threshold",
@@ -594,14 +637,6 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.singleHandForceLerpDuration,
             v => runtimeSettings.singleHandForceLerpDuration = v
         );
-        CreateSliderField(
-            group,
-            "Initialization Speed",
-            () => runtimeSettings.initializationSpeed,
-            v => runtimeSettings.initializationSpeed = v,
-            0f,
-            1f
-        );
         CreateFloatField(
             group,
             "Metaball Radius Animation Duration",
@@ -613,6 +648,12 @@ public class InGameSettingsMenu : MonoBehaviour
             "Metaball Radius Animation Start Size",
             () => runtimeSettings.metaballRadiusAnimationStartSize,
             v => runtimeSettings.metaballRadiusAnimationStartSize = v
+        );
+        CreateCurveField(
+            group,
+            "Metaball Radius Animation Curve",
+            () => runtimeSettings.metaballRadiusAnimationCurve,
+            v => runtimeSettings.metaballRadiusAnimationCurve = v
         );
     }
 
@@ -1020,16 +1061,160 @@ public class InGameSettingsMenu : MonoBehaviour
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
 
-        // Create text label with note that curve editing is coming soon
-        var curveNote = new TextElement();
-        curveNote.text = "Curve editing coming soon...";
-        curveNote.AddToClassList("curve-note");
+        // Use a regular VisualElement with a CPU-rendered Texture2D instead of
+        // IMGUIContainer + GL calls. GL.LoadPixelMatrix() always uses screen coordinates
+        // which don't match the local coordinate space inside UI Toolkit containers.
+        var thumbnail = new VisualElement();
+        thumbnail.AddToClassList("curve-thumbnail");
+
+        Texture2D curveTex = null;
+        bool hasRendered = false;
+
+        // Schedule periodic texture update — renders once initially, then only
+        // re-renders while the curve editor is open (the only time curves change).
+        // Profile loads recreate the entire UI so thumbnails get a fresh initial render.
+        thumbnail
+            .schedule.Execute(() =>
+            {
+                if (hasRendered && !RuntimeCurveEditorWindow.IsVisible)
+                    return;
+
+                var curve = getter();
+                if (curve == null || curve.length == 0)
+                    return;
+
+                int width = Mathf.Max(Mathf.RoundToInt(thumbnail.resolvedStyle.width), 4);
+                int height = Mathf.Max(Mathf.RoundToInt(thumbnail.resolvedStyle.height), 4);
+                if (width <= 4 || height <= 4)
+                    return;
+
+                if (curveTex == null || curveTex.width != width || curveTex.height != height)
+                {
+                    if (curveTex != null)
+                    {
+                        curveTextures.Remove(curveTex);
+                        Destroy(curveTex);
+                    }
+                    curveTex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                    curveTex.filterMode = FilterMode.Bilinear;
+                    curveTex.wrapMode = TextureWrapMode.Clamp;
+                    curveTextures.Add(curveTex);
+                }
+
+                RenderCurveToTexture(curve, curveTex, new Color32(0, 204, 0, 230));
+                thumbnail.style.backgroundImage = curveTex;
+                hasRendered = true;
+            })
+            .Every(200);
+
+        // Click to open the curve editor popup
+        thumbnail.RegisterCallback<PointerDownEvent>(evt =>
+        {
+            if (RuntimeCurveEditorWindow.IsVisible)
+                return;
+
+            var curve = getter();
+            if (curve == null)
+                return;
+
+            RuntimeCurveEditorWindow.Show(
+                curve,
+                changedCurve =>
+                {
+                    setter(changedCurve);
+                    OnSettingsChanged?.Invoke(runtimeSettings);
+                }
+            );
+        });
 
         row.Add(labelElement);
-        row.Add(curveNote);
+        row.Add(thumbnail);
         parent.Add(row);
 
-        settingElements[label] = curveNote;
+        settingElements[label] = thumbnail;
+    }
+
+    private static void RenderCurveToTexture(
+        AnimationCurve curve,
+        Texture2D tex,
+        Color32 curveColor
+    )
+    {
+        int width = tex.width;
+        int height = tex.height;
+        Color32 clear = new Color32(0, 0, 0, 0);
+
+        Color32[] pixels = new Color32[width * height];
+        for (int i = 0; i < pixels.Length; i++)
+            pixels[i] = clear;
+
+        // Compute curve value bounds by sampling
+        float minTime = curve[0].time;
+        float maxTime = curve[curve.length - 1].time;
+        float timeRange = maxTime - minTime;
+        if (timeRange < 0.001f)
+        {
+            timeRange = 1f;
+            minTime -= 0.5f;
+            maxTime += 0.5f;
+        }
+
+        float minVal = float.MaxValue,
+            maxVal = float.MinValue;
+        int sampleCount = width * 2;
+        for (int i = 0; i <= sampleCount; i++)
+        {
+            float v = curve.Evaluate(minTime + timeRange * i / sampleCount);
+            if (v < minVal)
+                minVal = v;
+            if (v > maxVal)
+                maxVal = v;
+        }
+        float valRange = maxVal - minVal;
+        if (valRange < 0.001f)
+        {
+            valRange = 1f;
+            minVal -= 0.5f;
+        }
+
+        // Add padding
+        float pad = valRange * 0.1f;
+        minVal -= pad;
+        valRange = (maxVal + pad) - minVal;
+        float padTime = timeRange * 0.05f;
+        minTime -= padTime;
+        timeRange += padTime * 2f;
+
+        // Draw curve line connecting adjacent samples
+        int prevY = -1;
+        for (int x = 0; x < width; x++)
+        {
+            float t = minTime + timeRange * x / (width - 1);
+            float v = curve.Evaluate(t);
+            int y = Mathf.Clamp(
+                Mathf.RoundToInt((v - minVal) / valRange * (height - 1)),
+                0,
+                height - 1
+            );
+
+            if (prevY >= 0 && Mathf.Abs(y - prevY) > 1)
+            {
+                // Fill vertical gap between consecutive samples
+                int lo = Mathf.Min(prevY, y);
+                int hi = Mathf.Max(prevY, y);
+                for (int fillY = lo; fillY <= hi; fillY++)
+                    pixels[fillY * width + x] = curveColor;
+            }
+            else
+            {
+                pixels[y * width + x] = curveColor;
+            }
+
+            prevY = y;
+        }
+
+        tex.SetPixels32(pixels);
+        tex.Apply();
     }
 
     private void CreateFloatArrayField(
@@ -1059,8 +1244,8 @@ public class InGameSettingsMenu : MonoBehaviour
         var countLabel = new Label();
         countLabel.AddToClassList("array-count-label");
 
-        var addButton = new Button(
-            () => AddArrayElement(arrayContainer, getter, setter, collapseButton, countLabel)
+        var addButton = new Button(() =>
+            AddArrayElement(arrayContainer, getter, setter, collapseButton, countLabel)
         );
         addButton.text = "Add Element";
         addButton.AddToClassList("array-button");
@@ -1397,7 +1582,10 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.stopMovingDistance = loadedSettings.stopMovingDistance;
         runtimeSettings.stopVelocity = loadedSettings.stopVelocity;
         runtimeSettings.attractionRadiusMultiplier = loadedSettings.attractionRadiusMultiplier;
-        // Note: forceToMiddle curve is managed by CurveSettingsSO, not loaded from profiles
+
+        // Curves (included in profiles)
+        if (loadedSettings.forceToMiddle != null && loadedSettings.forceToMiddle.length > 0)
+            runtimeSettings.forceToMiddle = new AnimationCurve(loadedSettings.forceToMiddle.keys);
 
         // Hand interaction settings
         runtimeSettings.singleHandOpenForceDamper = loadedSettings.singleHandOpenForceDamper;
@@ -1407,7 +1595,13 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
         runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
         runtimeSettings.outOfBoundsResetDelay = loadedSettings.outOfBoundsResetDelay;
-        // Note: alignmentVectorStrength curve is managed by CurveSettingsSO, not loaded from profiles
+        if (
+            loadedSettings.alignmentVectorStrength != null
+            && loadedSettings.alignmentVectorStrength.length > 0
+        )
+            runtimeSettings.alignmentVectorStrength = new AnimationCurve(
+                loadedSettings.alignmentVectorStrength.keys
+            );
         runtimeSettings.alignmentVectorStrengthScaler =
             loadedSettings.alignmentVectorStrengthScaler;
         runtimeSettings.handPushScaler = loadedSettings.handPushScaler;
@@ -1425,7 +1619,8 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.minimumUnscaledSize = loadedSettings.minimumUnscaledSize;
         runtimeSettings.maximumUnscaledSize = loadedSettings.maximumUnscaledSize;
         runtimeSettings.minHandDisplacementPerFrame = loadedSettings.minHandDisplacementPerFrame;
-        // Note: distanceDamper curve is managed by CurveSettingsSO, not loaded from profiles
+        if (loadedSettings.distanceDamper != null && loadedSettings.distanceDamper.length > 0)
+            runtimeSettings.distanceDamper = new AnimationCurve(loadedSettings.distanceDamper.keys);
         runtimeSettings.pulseScaleDamper = loadedSettings.pulseScaleDamper;
         runtimeSettings.mergeSizeScalerDamper = loadedSettings.mergeSizeScalerDamper;
         runtimeSettings.maxDistanceBetweenHands = loadedSettings.maxDistanceBetweenHands;
@@ -1444,6 +1639,13 @@ public class InGameSettingsMenu : MonoBehaviour
             loadedSettings.metaballRadiusAnimationDuration;
         runtimeSettings.metaballRadiusAnimationStartSize =
             loadedSettings.metaballRadiusAnimationStartSize;
+        if (
+            loadedSettings.metaballRadiusAnimationCurve != null
+            && loadedSettings.metaballRadiusAnimationCurve.length > 0
+        )
+            runtimeSettings.metaballRadiusAnimationCurve = new AnimationCurve(
+                loadedSettings.metaballRadiusAnimationCurve.keys
+            );
 
         // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
@@ -1513,7 +1715,9 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.stopMovingDistance = source.stopMovingDistance;
         destination.stopVelocity = source.stopVelocity;
         destination.attractionRadiusMultiplier = source.attractionRadiusMultiplier;
-        // Note: forceToMiddle curve is managed by CurveSettingsSO and excluded from profiles
+
+        // Curves
+        destination.forceToMiddle = new AnimationCurve(source.forceToMiddle.keys);
 
         // Hand interaction settings
         destination.singleHandOpenForceDamper = source.singleHandOpenForceDamper;
@@ -1523,7 +1727,9 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.addedBoundaryDistance = source.addedBoundaryDistance;
         destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
         destination.outOfBoundsResetDelay = source.outOfBoundsResetDelay;
-        // Note: alignmentVectorStrength curve is managed by CurveSettingsSO and excluded from profiles
+        destination.alignmentVectorStrength = new AnimationCurve(
+            source.alignmentVectorStrength.keys
+        );
         destination.alignmentVectorStrengthScaler = source.alignmentVectorStrengthScaler;
         destination.handPushScaler = source.handPushScaler;
         destination.prayToActivate = source.prayToActivate;
@@ -1540,7 +1746,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.minimumUnscaledSize = source.minimumUnscaledSize;
         destination.maximumUnscaledSize = source.maximumUnscaledSize;
         destination.minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
-        // Note: distanceDamper curve is managed by CurveSettingsSO and excluded from profiles
+        destination.distanceDamper = new AnimationCurve(source.distanceDamper.keys);
         destination.pulseScaleDamper = source.pulseScaleDamper;
         destination.mergeSizeScalerDamper = source.mergeSizeScalerDamper;
         destination.maxDistanceBetweenHands = source.maxDistanceBetweenHands;
@@ -1557,6 +1763,9 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = source.initializationSpeed;
         destination.metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         destination.metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
+        destination.metaballRadiusAnimationCurve = new AnimationCurve(
+            source.metaballRadiusAnimationCurve.keys
+        );
 
         // Style settings
         destination.customColors = source.customColors;
@@ -1647,7 +1856,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.stopMovingDistance = 0.0f;
         destination.stopVelocity = 0.0f;
         destination.attractionRadiusMultiplier = 0.0f;
-        // Note: forceToMiddle curve is managed by CurveSettingsSO (set to default empty curve)
+        // Curves are scene settings, not post-processing
         destination.forceToMiddle = new AnimationCurve();
         destination.singleHandOpenForceDamper = 0.0f;
         destination.pushForce = 0.0f;
@@ -1656,7 +1865,6 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.addedBoundaryDistance = 0.0f;
         destination.boundaryOutwardDrag = 0.0f;
         destination.outOfBoundsResetDelay = 0.0f;
-        // Note: alignmentVectorStrength curve is managed by CurveSettingsSO (set to default empty curve)
         destination.alignmentVectorStrength = new AnimationCurve();
         destination.alignmentVectorStrengthScaler = 0.0f;
         destination.handPushScaler = 0.0f;
@@ -1670,7 +1878,6 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.minimumUnscaledSize = 0.0f;
         destination.maximumUnscaledSize = 0.0f;
         destination.minHandDisplacementPerFrame = 0.0f;
-        // Note: distanceDamper curve is managed by CurveSettingsSO (set to default empty curve)
         destination.distanceDamper = new AnimationCurve();
         destination.pulseScaleDamper = 0.0f;
         destination.mergeSizeScalerDamper = 0.0f;
@@ -1686,8 +1893,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = 0.0f;
         destination.metaballRadiusAnimationDuration = 0.0f;
         destination.metaballRadiusAnimationStartSize = 0.0f;
-        // Note: metaballRadiusAnimationCurve is managed by SceneController inspector (set to default curve)
-        destination.metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        destination.metaballRadiusAnimationCurve = new AnimationCurve();
         destination.dummyOnlyMode = false;
         destination.drawSkeleton = false;
         destination.customColors = false;

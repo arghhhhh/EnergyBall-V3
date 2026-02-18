@@ -110,7 +110,7 @@ namespace NaughtyAttributes.Editor
                             x = rect.x,
                             y = rect.y,
                             width = EditorGUIUtility.labelWidth,
-                            height = EditorGUIUtility.singleLineHeight
+                            height = EditorGUIUtility.singleLineHeight,
                         };
 
                         property.isExpanded = EditorGUI.Foldout(
@@ -126,7 +126,7 @@ namespace NaughtyAttributes.Editor
                             x = rect.x,
                             y = rect.y,
                             width = rect.width,
-                            height = EditorGUIUtility.singleLineHeight
+                            height = EditorGUIUtility.singleLineHeight,
                         };
 
                         EditorGUI.PropertyField(propertyRect, property, label, false);
@@ -163,7 +163,7 @@ namespace NaughtyAttributes.Editor
                 x = 0.0f,
                 y = rect.y + EditorGUIUtility.singleLineHeight,
                 width = rect.width * 2.0f,
-                height = rect.height - EditorGUIUtility.singleLineHeight
+                height = rect.height - EditorGUIUtility.singleLineHeight,
             };
 
             GUI.Box(boxRect, GUIContent.none);
@@ -206,7 +206,7 @@ namespace NaughtyAttributes.Editor
                                 x = rect.x,
                                 y = rect.y + yOffset,
                                 width = rect.width,
-                                height = childHeight
+                                height = childHeight,
                             };
 
                             NaughtyEditorGUI.PropertyField(childRect, childProperty, true);

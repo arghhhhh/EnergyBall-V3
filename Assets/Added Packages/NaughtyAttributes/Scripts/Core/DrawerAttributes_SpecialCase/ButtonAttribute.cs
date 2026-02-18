@@ -17,7 +17,7 @@ namespace NaughtyAttributes
         /// <summary>
         /// Button should be active only in playmode
         /// </summary>
-        Playmode
+        Playmode,
     }
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]

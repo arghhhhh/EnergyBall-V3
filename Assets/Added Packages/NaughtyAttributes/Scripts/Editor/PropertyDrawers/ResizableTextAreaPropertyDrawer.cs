@@ -40,7 +40,7 @@ namespace NaughtyAttributes.Editor
                     x = rect.x,
                     y = rect.y,
                     width = rect.width,
-                    height = EditorGUIUtility.singleLineHeight
+                    height = EditorGUIUtility.singleLineHeight,
                 };
 
                 EditorGUI.LabelField(labelRect, label.text);
@@ -52,7 +52,7 @@ namespace NaughtyAttributes.Editor
                     x = labelRect.x,
                     y = labelRect.y + EditorGUIUtility.singleLineHeight,
                     width = labelRect.width,
-                    height = GetTextAreaHeight(property.stringValue)
+                    height = GetTextAreaHeight(property.stringValue),
                 };
 
                 string textAreaValue = EditorGUI.TextArea(textAreaRect, property.stringValue);

@@ -17,7 +17,6 @@ public class RuntimeSceneSettings
     public float attractionRadiusMultiplier = 1f;
 
     [Header("Hands Attraction")]
-    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
     public float singleHandOpenForceDamper = 1f;
 
@@ -40,7 +39,6 @@ public class RuntimeSceneSettings
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
 
-    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
     public float alignmentVectorStrengthScaler = 1f;
     public float handPushScaler = 1f;
@@ -62,7 +60,6 @@ public class RuntimeSceneSettings
     [Range(0.0001f, 5f)]
     public float minHandDisplacementPerFrame = 0.01f;
 
-    [System.NonSerialized] // Excluded from JSON serialization - controlled by CurveSettingsSO
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
     public float pulseScaleDamper = 1f;
 
@@ -104,7 +101,6 @@ public class RuntimeSceneSettings
     [Tooltip("The starting radius for the metaball animation during initialization.")]
     public float metaballRadiusAnimationStartSize = 0.1f;
 
-    [System.NonSerialized] // Excluded from JSON serialization - controlled by SceneController inspector
     [Tooltip(
         "Animation curve for the metaball radius transition (0-1 input maps to animation progress)."
     )]
@@ -219,18 +215,6 @@ public class RuntimeSceneSettings
         OnAnyDebuggingSettingChanged?.Invoke();
     }
 
-    [System.Obsolete(
-        "CopyFromScriptableObject is deprecated. Use SceneController.CopyInspectorToRuntime instead."
-    )]
-    public void CopyFromScriptableObject(SceneSettingsSO so)
-    {
-        // This method is kept for backward compatibility but should not be used
-        // Settings are now managed directly in SceneController inspector
-        Debug.LogWarning(
-            "CopyFromScriptableObject is deprecated. Settings are now managed in SceneController inspector."
-        );
-    }
-
     public RuntimeSceneSettings DeepCopy()
     {
         var copy = new RuntimeSceneSettings();
@@ -313,17 +297,5 @@ public class RuntimeSceneSettings
         copy._showHandTrailDistorters = _showHandTrailDistorters;
         copy._showSecondaryAttractor = _showSecondaryAttractor;
         return copy;
-    }
-
-    [System.Obsolete(
-        "ApplyCurveSettings is deprecated. Curves are now managed directly in SceneController inspector."
-    )]
-    public void ApplyCurveSettings(CurveSettingsSO curveSettings)
-    {
-        // This method is kept for backward compatibility but should not be used
-        // Curves are now managed directly in SceneController inspector
-        Debug.LogWarning(
-            "ApplyCurveSettings is deprecated. Curves are now managed in SceneController inspector."
-        );
     }
 }

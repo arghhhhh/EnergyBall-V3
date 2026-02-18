@@ -98,11 +98,20 @@
     min-width: 20px;
 }
 
-.curve-note {
-    color: grey;
-    font-size: 14px;
-    -unity-text-align: middle-right;
-    margin-right: 5px;
+.curve-thumbnail {
+    min-width: 200px;
+    max-width: 300px;
+    height: 25px;
+    background-color: rgba(34, 34, 34, 1);
+    border-width: 1px;
+    border-color: rgb(80, 80, 80);
+    border-radius: 3px;
+    cursor: link;
+}
+
+.curve-thumbnail:hover {
+    border-color: rgb(120, 120, 120);
+    background-color: rgba(44, 44, 44, 1);
 }
 
 .close-button {

@@ -10,7 +10,7 @@ namespace NaughtyAttributes.Test
         D = 1 << 2,
         E = 1 << 3,
         F = 1 << 4,
-        All = ~0
+        All = ~0,
     }
 
     public class EnumFlagsTest : MonoBehaviour
