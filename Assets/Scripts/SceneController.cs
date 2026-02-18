@@ -38,10 +38,6 @@ public class SceneController : MonoBehaviour
     public float attractionRadiusMultiplier = 1f;
 
     [BoxGroup("Hands Attraction")]
-    [InfoBox(
-        "Curve settings (forceToMiddle, alignmentVectorStrength) are managed in 'Hands Attraction Curves' below and saved in scene profiles",
-        EInfoBoxType.Normal
-    )]
     public float singleHandOpenForceDamper = 1f;
 
     [BoxGroup("Boundary Drag")]
@@ -117,7 +113,6 @@ public class SceneController : MonoBehaviour
     public float minHandDisplacementPerFrame = 0.01f;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [InfoBox("distanceDamper curve is managed in 'Movement-Based Pulsation Curves' below and saved in scene profiles", EInfoBoxType.Normal)]
     [Tooltip("An overall damper for the movement-based pulsation scaling.")]
     public float pulseScaleDamper = 1f;
 
