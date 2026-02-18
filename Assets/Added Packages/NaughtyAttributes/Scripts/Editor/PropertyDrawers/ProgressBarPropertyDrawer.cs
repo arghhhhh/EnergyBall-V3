@@ -69,7 +69,7 @@ namespace NaughtyAttributes.Editor
                     x = rect.x + indentLength,
                     y = rect.y,
                     width = rect.width - indentLength,
-                    height = EditorGUIUtility.singleLineHeight
+                    height = EditorGUIUtility.singleLineHeight,
                 };
 
                 DrawBar(barRect, Mathf.Clamp01(fillPercentage), barLabel, barColor, labelColor);

@@ -18,9 +18,11 @@ namespace RuntimeCurveEditor
         public Action onCurveChanged;
         public bool isDirty;
 
-        private float m_Margin = 40f;
-
-        public RuntimeCurveEditorCore(AnimationCurve curve, Color color, RuntimeCurveEditorSettings settings = null)
+        public RuntimeCurveEditorCore(
+            AnimationCurve curve,
+            Color color,
+            RuntimeCurveEditorSettings settings = null
+        )
         {
             this.settings = settings ?? RuntimeCurveEditorSettings.DefaultUnbounded();
             curveWrapper = new RuntimeCurveWrapper(curve, color);
@@ -47,8 +49,17 @@ namespace RuntimeCurveEditor
                 return;
             }
 
-            float minTime, maxTime, minVal, maxVal;
-            RuntimeCurveRenderer.GetCurveBounds(curve, out minTime, out maxTime, out minVal, out maxVal);
+            float minTime,
+                maxTime,
+                minVal,
+                maxVal;
+            RuntimeCurveRenderer.GetCurveBounds(
+                curve,
+                out minTime,
+                out maxTime,
+                out minVal,
+                out maxVal
+            );
 
             // Apply settings bounds if set
             if (!settings.hasUnboundedRanges)
@@ -61,12 +72,20 @@ namespace RuntimeCurveEditor
 
             float timeRange = maxTime - minTime;
             float valRange = maxVal - minVal;
-            if (timeRange < 0.001f) timeRange = 1f;
-            if (valRange < 0.001f) valRange = 1f;
+            if (timeRange < 0.001f)
+                timeRange = 1f;
+            if (valRange < 0.001f)
+                valRange = 1f;
 
             float marginFrac = 0.1f;
-            shownAreaMin = new Vector2(minTime - timeRange * marginFrac, minVal - valRange * marginFrac);
-            shownAreaMax = new Vector2(maxTime + timeRange * marginFrac, maxVal + valRange * marginFrac);
+            shownAreaMin = new Vector2(
+                minTime - timeRange * marginFrac,
+                minVal - valRange * marginFrac
+            );
+            shownAreaMax = new Vector2(
+                maxTime + timeRange * marginFrac,
+                maxVal + valRange * marginFrac
+            );
         }
 
         public void FrameSelected()
@@ -79,23 +98,32 @@ namespace RuntimeCurveEditor
             }
 
             AnimationCurve curve = curveWrapper.curve;
-            float minT = float.MaxValue, maxT = float.MinValue;
-            float minV = float.MaxValue, maxV = float.MinValue;
+            float minT = float.MaxValue,
+                maxT = float.MinValue;
+            float minV = float.MaxValue,
+                maxV = float.MinValue;
 
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
-                if (kf.time < minT) minT = kf.time;
-                if (kf.time > maxT) maxT = kf.time;
-                if (kf.value < minV) minV = kf.value;
-                if (kf.value > maxV) maxV = kf.value;
+                if (kf.time < minT)
+                    minT = kf.time;
+                if (kf.time > maxT)
+                    maxT = kf.time;
+                if (kf.value < minV)
+                    minV = kf.value;
+                if (kf.value > maxV)
+                    maxV = kf.value;
             }
 
             float timeRange = maxT - minT;
             float valRange = maxV - minV;
-            if (timeRange < 0.1f) timeRange = 0.5f;
-            if (valRange < 0.1f) valRange = 0.5f;
+            if (timeRange < 0.1f)
+                timeRange = 0.5f;
+            if (valRange < 0.1f)
+                valRange = 0.5f;
 
             float margin = 0.2f;
             shownAreaMin = new Vector2(minT - timeRange * margin, minV - valRange * margin);
@@ -110,10 +138,22 @@ namespace RuntimeCurveEditor
             DrawBackground(curveArea);
 
             // Draw grid
-            RuntimeGridRenderer.DrawGrid(curveArea, shownAreaMin, shownAreaMax, settings.showAxisLabels);
+            RuntimeGridRenderer.DrawGrid(
+                curveArea,
+                shownAreaMin,
+                shownAreaMax,
+                settings.showAxisLabels
+            );
 
             // Draw curve line
-            RuntimeCurveRenderer.DrawCurve(curveWrapper.curve, curveArea, shownAreaMin, shownAreaMax, curveWrapper.color, 2f);
+            RuntimeCurveRenderer.DrawCurve(
+                curveWrapper.curve,
+                curveArea,
+                shownAreaMin,
+                shownAreaMax,
+                curveWrapper.color,
+                2f
+            );
 
             // Draw tangent lines and handles for selected keyframes
             DrawTangentHandles(curveArea);
@@ -150,36 +190,52 @@ namespace RuntimeCurveEditor
         private void DrawKeyframes(Rect area)
         {
             AnimationCurve curve = curveWrapper.curve;
-            if (curve == null) return;
+            if (curve == null)
+                return;
 
             for (int i = 0; i < curve.length; i++)
             {
                 Keyframe kf = curve[i];
                 Vector2 viewPos = RuntimeCurveRenderer.DrawingToView(
-                    new Vector2(kf.time, kf.value), area, shownAreaMin, shownAreaMax);
+                    new Vector2(kf.time, kf.value),
+                    area,
+                    shownAreaMin,
+                    shownAreaMax
+                );
 
                 bool isSelected = selection.IsKeySelected(curveWrapper.id, i);
                 bool isSemiSelected = false;
                 bool isWeighted = kf.weightedMode != WeightedMode.None;
 
-                RuntimeKeyframeRenderer.DrawKeyframe(viewPos, isSelected, isSemiSelected, isWeighted);
+                RuntimeKeyframeRenderer.DrawKeyframe(
+                    viewPos,
+                    isSelected,
+                    isSemiSelected,
+                    isWeighted
+                );
             }
         }
 
         private void DrawTangentHandles(Rect area)
         {
             AnimationCurve curve = curveWrapper.curve;
-            if (curve == null) return;
+            if (curve == null)
+                return;
 
             Color tangentLineColor = new Color(0.6f, 0.6f, 0.6f, 0.8f);
 
             for (int i = 0; i < curve.length; i++)
             {
-                if (!selection.IsKeySelected(curveWrapper.id, i)) continue;
+                if (!selection.IsKeySelected(curveWrapper.id, i))
+                    continue;
 
                 Keyframe kf = curve[i];
                 Vector2 keyViewPos = RuntimeCurveRenderer.DrawingToView(
-                    new Vector2(kf.time, kf.value), area, shownAreaMin, shownAreaMax);
+                    new Vector2(kf.time, kf.value),
+                    area,
+                    shownAreaMin,
+                    shownAreaMax
+                );
 
                 // In tangent (left side)
                 if (i > 0)
@@ -204,7 +260,11 @@ namespace RuntimeCurveEditor
             AnimationCurve curve = curveWrapper.curve;
             Keyframe kf = curve[keyIndex];
             Vector2 keyViewPos = RuntimeCurveRenderer.DrawingToView(
-                new Vector2(kf.time, kf.value), area, shownAreaMin, shownAreaMax);
+                new Vector2(kf.time, kf.value),
+                area,
+                shownAreaMin,
+                shownAreaMax
+            );
 
             float tangent = inTangent ? kf.inTangent : kf.outTangent;
             float sign = inTangent ? -1f : 1f;
@@ -245,7 +305,10 @@ namespace RuntimeCurveEditor
                     dt = 1f;
 
                 Vector2 weightedDir = new Vector2(sign * dt * weight, sign * tangent * dt * weight);
-                Vector2 weightedDirInView = new Vector2(weightedDir.x * viewScale.x, -weightedDir.y * viewScale.y);
+                Vector2 weightedDirInView = new Vector2(
+                    weightedDir.x * viewScale.x,
+                    -weightedDir.y * viewScale.y
+                );
 
                 if (weightedDirInView.magnitude > 10f)
                 {
@@ -269,8 +332,10 @@ namespace RuntimeCurveEditor
         {
             float rangeX = shownAreaMax.x - shownAreaMin.x;
             float rangeY = shownAreaMax.y - shownAreaMin.y;
-            if (rangeX == 0f) rangeX = 1f;
-            if (rangeY == 0f) rangeY = 1f;
+            if (rangeX == 0f)
+                rangeX = 1f;
+            if (rangeY == 0f)
+                rangeY = 1f;
 
             return new Vector2(area.width / rangeX, area.height / rangeY);
         }
@@ -287,16 +352,24 @@ namespace RuntimeCurveEditor
             // Border lines
             RuntimeCurveRenderer.DrawLine(
                 new Vector2(marqueeRect.x, marqueeRect.y),
-                new Vector2(marqueeRect.xMax, marqueeRect.y), borderColor);
+                new Vector2(marqueeRect.xMax, marqueeRect.y),
+                borderColor
+            );
             RuntimeCurveRenderer.DrawLine(
                 new Vector2(marqueeRect.xMax, marqueeRect.y),
-                new Vector2(marqueeRect.xMax, marqueeRect.yMax), borderColor);
+                new Vector2(marqueeRect.xMax, marqueeRect.yMax),
+                borderColor
+            );
             RuntimeCurveRenderer.DrawLine(
                 new Vector2(marqueeRect.xMax, marqueeRect.yMax),
-                new Vector2(marqueeRect.x, marqueeRect.yMax), borderColor);
+                new Vector2(marqueeRect.x, marqueeRect.yMax),
+                borderColor
+            );
             RuntimeCurveRenderer.DrawLine(
                 new Vector2(marqueeRect.x, marqueeRect.yMax),
-                new Vector2(marqueeRect.x, marqueeRect.y), borderColor);
+                new Vector2(marqueeRect.x, marqueeRect.y),
+                borderColor
+            );
         }
 
         public void SelectNone()

@@ -21,10 +21,26 @@ namespace RuntimeCurveEditor
 
         private static void GenerateTextures()
         {
-            s_DiamondUnselected = CreateDiamondTexture(DIAMOND_SIZE, new Color(0.6f, 0.6f, 0.6f, 1f), new Color(0.15f, 0.15f, 0.15f, 1f));
-            s_DiamondSelected = CreateDiamondTexture(DIAMOND_SIZE, new Color(1f, 1f, 1f, 1f), new Color(0.2f, 0.4f, 0.8f, 1f));
-            s_DiamondSemiSelected = CreateDiamondTexture(DIAMOND_SIZE, new Color(0.8f, 0.8f, 1f, 0.8f), new Color(0.15f, 0.15f, 0.15f, 1f));
-            s_WeightedDiamond = CreateDiamondTexture(DIAMOND_SIZE, new Color(1f, 0.8f, 0.2f, 1f), new Color(0.15f, 0.15f, 0.15f, 1f));
+            s_DiamondUnselected = CreateDiamondTexture(
+                DIAMOND_SIZE,
+                new Color(0.6f, 0.6f, 0.6f, 1f),
+                new Color(0.15f, 0.15f, 0.15f, 1f)
+            );
+            s_DiamondSelected = CreateDiamondTexture(
+                DIAMOND_SIZE,
+                new Color(1f, 1f, 1f, 1f),
+                new Color(0.2f, 0.4f, 0.8f, 1f)
+            );
+            s_DiamondSemiSelected = CreateDiamondTexture(
+                DIAMOND_SIZE,
+                new Color(0.8f, 0.8f, 1f, 0.8f),
+                new Color(0.15f, 0.15f, 0.15f, 1f)
+            );
+            s_WeightedDiamond = CreateDiamondTexture(
+                DIAMOND_SIZE,
+                new Color(1f, 0.8f, 0.2f, 1f),
+                new Color(0.15f, 0.15f, 0.15f, 1f)
+            );
             s_TangentDot = CreateCircleTexture(DOT_SIZE, new Color(0.8f, 0.8f, 0.8f, 1f));
         }
 
@@ -79,7 +95,11 @@ namespace RuntimeCurveEditor
                     if (dist <= radius - 1f)
                         tex.SetPixel(x, y, color);
                     else if (dist <= radius)
-                        tex.SetPixel(x, y, new Color(color.r, color.g, color.b, color.a * (radius - dist)));
+                        tex.SetPixel(
+                            x,
+                            y,
+                            new Color(color.r, color.g, color.b, color.a * (radius - dist))
+                        );
                     else
                         tex.SetPixel(x, y, clear);
                 }
@@ -89,7 +109,12 @@ namespace RuntimeCurveEditor
             return tex;
         }
 
-        public static void DrawKeyframe(Vector2 viewPos, bool selected, bool semiSelected, bool weighted)
+        public static void DrawKeyframe(
+            Vector2 viewPos,
+            bool selected,
+            bool semiSelected,
+            bool weighted
+        )
         {
             EnsureInitialized();
 
@@ -131,11 +156,31 @@ namespace RuntimeCurveEditor
 
         public static void Cleanup()
         {
-            if (s_DiamondUnselected != null) { Object.DestroyImmediate(s_DiamondUnselected); s_DiamondUnselected = null; }
-            if (s_DiamondSelected != null) { Object.DestroyImmediate(s_DiamondSelected); s_DiamondSelected = null; }
-            if (s_DiamondSemiSelected != null) { Object.DestroyImmediate(s_DiamondSemiSelected); s_DiamondSemiSelected = null; }
-            if (s_WeightedDiamond != null) { Object.DestroyImmediate(s_WeightedDiamond); s_WeightedDiamond = null; }
-            if (s_TangentDot != null) { Object.DestroyImmediate(s_TangentDot); s_TangentDot = null; }
+            if (s_DiamondUnselected != null)
+            {
+                Object.DestroyImmediate(s_DiamondUnselected);
+                s_DiamondUnselected = null;
+            }
+            if (s_DiamondSelected != null)
+            {
+                Object.DestroyImmediate(s_DiamondSelected);
+                s_DiamondSelected = null;
+            }
+            if (s_DiamondSemiSelected != null)
+            {
+                Object.DestroyImmediate(s_DiamondSemiSelected);
+                s_DiamondSemiSelected = null;
+            }
+            if (s_WeightedDiamond != null)
+            {
+                Object.DestroyImmediate(s_WeightedDiamond);
+                s_WeightedDiamond = null;
+            }
+            if (s_TangentDot != null)
+            {
+                Object.DestroyImmediate(s_TangentDot);
+                s_TangentDot = null;
+            }
         }
     }
 }

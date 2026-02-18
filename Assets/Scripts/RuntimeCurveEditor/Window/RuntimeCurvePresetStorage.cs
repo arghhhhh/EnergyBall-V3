@@ -7,8 +7,12 @@ namespace RuntimeCurveEditor
     [System.Serializable]
     public class SerializableKeyframe
     {
-        public float time, value, inTangent, outTangent;
-        public float inWeight, outWeight;
+        public float time,
+            value,
+            inTangent,
+            outTangent;
+        public float inWeight,
+            outWeight;
         public int weightedMode;
         public int tangentMode;
     }
@@ -46,12 +50,14 @@ namespace RuntimeCurveEditor
                         continue;
 
                     AnimationCurve curve = DeserializeCurve(data);
-                    result.Add(new RuntimeCurvePresets.CurvePreset
-                    {
-                        name = data.name,
-                        curve = curve,
-                        isUserPreset = true
-                    });
+                    result.Add(
+                        new RuntimeCurvePresets.CurvePreset
+                        {
+                            name = data.name,
+                            curve = curve,
+                            isUserPreset = true,
+                        }
+                    );
                 }
                 catch (System.Exception e)
                 {
@@ -115,13 +121,13 @@ namespace RuntimeCurveEditor
                 name = name,
                 keys = new SerializableKeyframe[curve.length],
                 preWrapMode = (int)curve.preWrapMode,
-                postWrapMode = (int)curve.postWrapMode
+                postWrapMode = (int)curve.postWrapMode,
             };
 
             for (int i = 0; i < curve.length; i++)
             {
                 Keyframe kf = curve[i];
-                #pragma warning disable 0618
+#pragma warning disable 0618
                 data.keys[i] = new SerializableKeyframe
                 {
                     time = kf.time,
@@ -131,9 +137,9 @@ namespace RuntimeCurveEditor
                     inWeight = kf.inWeight,
                     outWeight = kf.outWeight,
                     weightedMode = (int)kf.weightedMode,
-                    tangentMode = kf.tangentMode
+                    tangentMode = kf.tangentMode,
                 };
-                #pragma warning restore 0618
+#pragma warning restore 0618
             }
 
             return data;
@@ -145,15 +151,15 @@ namespace RuntimeCurveEditor
             for (int i = 0; i < data.keys.Length; i++)
             {
                 var sk = data.keys[i];
-                #pragma warning disable 0618
+#pragma warning disable 0618
                 keys[i] = new Keyframe(sk.time, sk.value, sk.inTangent, sk.outTangent)
                 {
                     inWeight = sk.inWeight,
                     outWeight = sk.outWeight,
                     weightedMode = (WeightedMode)sk.weightedMode,
-                    tangentMode = sk.tangentMode
+                    tangentMode = sk.tangentMode,
                 };
-                #pragma warning restore 0618
+#pragma warning restore 0618
             }
 
             var curve = new AnimationCurve(keys);

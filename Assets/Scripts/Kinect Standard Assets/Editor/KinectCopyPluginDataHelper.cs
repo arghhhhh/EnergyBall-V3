@@ -15,7 +15,7 @@ public static class KinectCopyPluginDataHelper
     >()
     {
         { BuildTarget.StandaloneWindows, "x86" },
-        { BuildTarget.StandaloneWindows64, "x86_64" }
+        { BuildTarget.StandaloneWindows64, "x86_64" },
     };
 
     public static void CopyPluginData(

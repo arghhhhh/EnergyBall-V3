@@ -249,7 +249,7 @@ public class PlayerConstructor : MonoBehaviour
     {
         None,
         Left,
-        Right
+        Right,
     }
 
     [System.NonSerialized]
@@ -349,7 +349,7 @@ public class PlayerConstructor : MonoBehaviour
             { JointType.HandTipLeft, HandtipLeft },
             { JointType.ThumbLeft, ThumbLeft },
             { JointType.HandTipRight, HandtipRight },
-            { JointType.ThumbRight, ThumbRight }
+            { JointType.ThumbRight, ThumbRight },
         };
     }
 

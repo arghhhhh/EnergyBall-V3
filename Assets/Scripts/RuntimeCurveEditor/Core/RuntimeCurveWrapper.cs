@@ -10,7 +10,7 @@ namespace RuntimeCurveEditor
         {
             None,
             Selected,
-            SemiSelected
+            SemiSelected,
         }
 
         public int id;

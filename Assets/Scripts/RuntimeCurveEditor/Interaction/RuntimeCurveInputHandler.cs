@@ -12,7 +12,7 @@ namespace RuntimeCurveEditor
             DraggingInTangent,
             DraggingOutTangent,
             Panning,
-            MarqueeSelect
+            MarqueeSelect,
         }
 
         private RuntimeCurveEditorCore editor;
@@ -44,7 +44,8 @@ namespace RuntimeCurveEditor
         public void HandleInput(Rect curveArea)
         {
             Event e = Event.current;
-            if (e == null) return;
+            if (e == null)
+                return;
 
             // Block all normal input when menu or edit key dialog is open
             if (menuManager.IsOpen || menuManager.IsEditKeyDialogOpen)
@@ -103,7 +104,8 @@ namespace RuntimeCurveEditor
                 // Check for double click
                 float timeSinceLastClick = Time.realtimeSinceStartup - lastClickTime;
                 float distFromLastClick = Vector2.Distance(e.mousePosition, lastClickPos);
-                bool isDoubleClick = timeSinceLastClick < DOUBLE_CLICK_TIME && distFromLastClick < DOUBLE_CLICK_DIST;
+                bool isDoubleClick =
+                    timeSinceLastClick < DOUBLE_CLICK_TIME && distFromLastClick < DOUBLE_CLICK_DIST;
                 lastClickTime = Time.realtimeSinceStartup;
                 lastClickPos = e.mousePosition;
 
@@ -116,9 +118,13 @@ namespace RuntimeCurveEditor
                 // Check if clicking on a tangent handle
                 int tangentKey;
                 bool isInTangent;
-                if (TryHitTangentHandle(e.mousePosition, curveArea, out tangentKey, out isInTangent))
+                if (
+                    TryHitTangentHandle(e.mousePosition, curveArea, out tangentKey, out isInTangent)
+                )
                 {
-                    dragMode = isInTangent ? DragMode.DraggingInTangent : DragMode.DraggingOutTangent;
+                    dragMode = isInTangent
+                        ? DragMode.DraggingInTangent
+                        : DragMode.DraggingOutTangent;
                     draggingTangentKeyIndex = tangentKey;
                     e.Use();
                     return;
@@ -194,7 +200,12 @@ namespace RuntimeCurveEditor
         {
             float zoomDelta = e.delta.y * 0.05f;
 
-            Vector2 mouseDrawing = RuntimeCurveRenderer.ViewToDrawing(e.mousePosition, curveArea, editor.shownAreaMin, editor.shownAreaMax);
+            Vector2 mouseDrawing = RuntimeCurveRenderer.ViewToDrawing(
+                e.mousePosition,
+                curveArea,
+                editor.shownAreaMin,
+                editor.shownAreaMax
+            );
             Vector2 range = editor.shownAreaMax - editor.shownAreaMin;
 
             float hZoom = e.shift ? 0f : zoomDelta;
@@ -245,7 +256,12 @@ namespace RuntimeCurveEditor
 
         private void HandleDoubleClick(Event e, Rect curveArea)
         {
-            Vector2 drawingPos = RuntimeCurveRenderer.ViewToDrawing(e.mousePosition, curveArea, editor.shownAreaMin, editor.shownAreaMax);
+            Vector2 drawingPos = RuntimeCurveRenderer.ViewToDrawing(
+                e.mousePosition,
+                curveArea,
+                editor.shownAreaMin,
+                editor.shownAreaMax
+            );
 
             AnimationCurve curve = editor.curveWrapper.curve;
 
@@ -305,8 +321,10 @@ namespace RuntimeCurveEditor
 
             foreach (int idx in selectedIndices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
-                if (!dragStartKeyframes.ContainsKey(idx)) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
+                if (!dragStartKeyframes.ContainsKey(idx))
+                    continue;
 
                 Keyframe original = dragStartKeyframes[idx];
                 Keyframe moved = original;
@@ -329,14 +347,21 @@ namespace RuntimeCurveEditor
 
         private void HandleTangentDrag(Event e, Rect curveArea)
         {
-            if (draggingTangentKeyIndex < 0) return;
+            if (draggingTangentKeyIndex < 0)
+                return;
 
             AnimationCurve curve = editor.curveWrapper.curve;
-            if (draggingTangentKeyIndex >= curve.length) return;
+            if (draggingTangentKeyIndex >= curve.length)
+                return;
 
             Keyframe kf = curve[draggingTangentKeyIndex];
             Vector2 keyDrawingPos = new Vector2(kf.time, kf.value);
-            Vector2 mouseDrawingPos = RuntimeCurveRenderer.ViewToDrawing(e.mousePosition, curveArea, editor.shownAreaMin, editor.shownAreaMax);
+            Vector2 mouseDrawingPos = RuntimeCurveRenderer.ViewToDrawing(
+                e.mousePosition,
+                curveArea,
+                editor.shownAreaMin,
+                editor.shownAreaMax
+            );
             Vector2 delta = mouseDrawingPos - keyDrawingPos;
 
             bool isInTangent = dragMode == DragMode.DraggingInTangent;
@@ -351,7 +376,10 @@ namespace RuntimeCurveEditor
                 else
                     kf.inTangent = float.NegativeInfinity;
 
-                KeyframeTangentUtility.SetKeyLeftTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                KeyframeTangentUtility.SetKeyLeftTangentMode(
+                    ref kf,
+                    KeyframeTangentUtility.TangentMode.Free
+                );
 
                 // Handle weighted in-tangent
                 if ((kf.weightedMode & WeightedMode.In) != 0 && draggingTangentKeyIndex > 0)
@@ -364,7 +392,10 @@ namespace RuntimeCurveEditor
                 if (!isBroken)
                 {
                     kf.outTangent = kf.inTangent;
-                    KeyframeTangentUtility.SetKeyRightTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                    KeyframeTangentUtility.SetKeyRightTangentMode(
+                        ref kf,
+                        KeyframeTangentUtility.TangentMode.Free
+                    );
                 }
             }
             else
@@ -376,10 +407,16 @@ namespace RuntimeCurveEditor
                 else
                     kf.outTangent = float.NegativeInfinity;
 
-                KeyframeTangentUtility.SetKeyRightTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                KeyframeTangentUtility.SetKeyRightTangentMode(
+                    ref kf,
+                    KeyframeTangentUtility.TangentMode.Free
+                );
 
                 // Handle weighted out-tangent
-                if ((kf.weightedMode & WeightedMode.Out) != 0 && draggingTangentKeyIndex < curve.length - 1)
+                if (
+                    (kf.weightedMode & WeightedMode.Out) != 0
+                    && draggingTangentKeyIndex < curve.length - 1
+                )
                 {
                     float dt = curve[draggingTangentKeyIndex + 1].time - kf.time;
                     if (dt > 0.0001f)
@@ -389,12 +426,18 @@ namespace RuntimeCurveEditor
                 if (!isBroken)
                 {
                     kf.inTangent = kf.outTangent;
-                    KeyframeTangentUtility.SetKeyLeftTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                    KeyframeTangentUtility.SetKeyLeftTangentMode(
+                        ref kf,
+                        KeyframeTangentUtility.TangentMode.Free
+                    );
                 }
             }
 
             curve.MoveKey(draggingTangentKeyIndex, kf);
-            KeyframeTangentUtility.UpdateTangentsFromModeSurrounding(curve, draggingTangentKeyIndex);
+            KeyframeTangentUtility.UpdateTangentsFromModeSurrounding(
+                curve,
+                draggingTangentKeyIndex
+            );
             editor.curveWrapper.changed = true;
             e.Use();
         }
@@ -412,12 +455,14 @@ namespace RuntimeCurveEditor
 
         private void FinishMarqueeSelect(Rect curveArea)
         {
-            if (marqueeRect.width < 2f && marqueeRect.height < 2f) return;
+            if (marqueeRect.width < 2f && marqueeRect.height < 2f)
+                return;
 
             Rect globalMarquee = marqueeRect;
 
             AnimationCurve curve = editor.curveWrapper.curve;
-            if (curve == null) return;
+            if (curve == null)
+                return;
 
             bool additive = Event.current != null && Event.current.shift;
             if (!additive)
@@ -427,7 +472,11 @@ namespace RuntimeCurveEditor
             {
                 Keyframe kf = curve[i];
                 Vector2 viewPos = RuntimeCurveRenderer.DrawingToView(
-                    new Vector2(kf.time, kf.value), curveArea, editor.shownAreaMin, editor.shownAreaMax);
+                    new Vector2(kf.time, kf.value),
+                    curveArea,
+                    editor.shownAreaMin,
+                    editor.shownAreaMax
+                );
 
                 if (globalMarquee.Contains(viewPos))
                 {
@@ -439,7 +488,8 @@ namespace RuntimeCurveEditor
         private int HitTestKeyframe(Vector2 mousePos, Rect curveArea)
         {
             AnimationCurve curve = editor.curveWrapper.curve;
-            if (curve == null) return -1;
+            if (curve == null)
+                return -1;
 
             float closestDist = float.MaxValue;
             int closestKey = -1;
@@ -448,7 +498,11 @@ namespace RuntimeCurveEditor
             {
                 Keyframe kf = curve[i];
                 Vector2 viewPos = RuntimeCurveRenderer.DrawingToView(
-                    new Vector2(kf.time, kf.value), curveArea, editor.shownAreaMin, editor.shownAreaMax);
+                    new Vector2(kf.time, kf.value),
+                    curveArea,
+                    editor.shownAreaMin,
+                    editor.shownAreaMax
+                );
 
                 Rect hitRect = RuntimeKeyframeRenderer.GetKeyframeRect(viewPos);
                 if (hitRect.Contains(mousePos))
@@ -465,17 +519,24 @@ namespace RuntimeCurveEditor
             return closestKey;
         }
 
-        private bool TryHitTangentHandle(Vector2 mousePos, Rect curveArea, out int keyIndex, out bool isInTangent)
+        private bool TryHitTangentHandle(
+            Vector2 mousePos,
+            Rect curveArea,
+            out int keyIndex,
+            out bool isInTangent
+        )
         {
             keyIndex = -1;
             isInTangent = false;
 
             AnimationCurve curve = editor.curveWrapper.curve;
-            if (curve == null) return false;
+            if (curve == null)
+                return false;
 
             for (int i = 0; i < curve.length; i++)
             {
-                if (!editor.selection.IsKeySelected(editor.curveWrapper.id, i)) continue;
+                if (!editor.selection.IsKeySelected(editor.curveWrapper.id, i))
+                    continue;
 
                 // Check in tangent
                 if (i > 0)
@@ -510,10 +571,12 @@ namespace RuntimeCurveEditor
         private void DeleteSelectedKeys()
         {
             AnimationCurve curve = editor.curveWrapper.curve;
-            if (curve == null) return;
+            if (curve == null)
+                return;
 
             var indices = editor.selection.GetSelectedKeyIndices(editor.curveWrapper.id);
-            if (indices.Count == 0) return;
+            if (indices.Count == 0)
+                return;
 
             // Don't delete last key unless allowed
             if (!editor.settings.allowDeleteLastKeyInCurve && curve.length - indices.Count < 1)
@@ -546,6 +609,5 @@ namespace RuntimeCurveEditor
                     dragStartKeyframes[idx] = curve[idx];
             }
         }
-
     }
 }

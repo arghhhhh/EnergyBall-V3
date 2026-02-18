@@ -25,10 +25,10 @@ namespace RuntimeCurveEditor
         public Vector2 curveRegionDomain = new Vector2(0f, 1f);
 
         public bool hasUnboundedRanges =>
-            hRangeMin == float.NegativeInfinity ||
-            hRangeMax == float.PositiveInfinity ||
-            vRangeMin == float.NegativeInfinity ||
-            vRangeMax == float.PositiveInfinity;
+            hRangeMin == float.NegativeInfinity
+            || hRangeMax == float.PositiveInfinity
+            || vRangeMin == float.NegativeInfinity
+            || vRangeMax == float.PositiveInfinity;
 
         public static RuntimeCurveEditorSettings DefaultNormalized()
         {
@@ -37,7 +37,7 @@ namespace RuntimeCurveEditor
                 hRangeMin = 0f,
                 hRangeMax = 1f,
                 vRangeMin = 0f,
-                vRangeMax = 1f
+                vRangeMax = 1f,
             };
         }
 

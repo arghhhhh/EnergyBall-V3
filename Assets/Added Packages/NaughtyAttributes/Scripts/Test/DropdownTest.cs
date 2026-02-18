@@ -41,7 +41,7 @@ namespace NaughtyAttributes.Test
             {
                 { "Right", Vector3.right },
                 { "Up", Vector3.up },
-                { "Forward", Vector3.forward }
+                { "Forward", Vector3.forward },
             };
         }
     }

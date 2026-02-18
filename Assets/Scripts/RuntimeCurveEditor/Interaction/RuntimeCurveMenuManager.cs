@@ -44,25 +44,29 @@ namespace RuntimeCurveEditor
 
         public void AddItem(string label, bool isChecked, Action callback, string submenu = null)
         {
-            items.Add(new MenuItem
-            {
-                label = label,
-                isChecked = isChecked,
-                isEnabled = true,
-                callback = callback,
-                submenuParent = submenu
-            });
+            items.Add(
+                new MenuItem
+                {
+                    label = label,
+                    isChecked = isChecked,
+                    isEnabled = true,
+                    callback = callback,
+                    submenuParent = submenu,
+                }
+            );
         }
 
         public void AddDisabledItem(string label, string submenu = null)
         {
-            items.Add(new MenuItem
-            {
-                label = label,
-                isChecked = false,
-                isEnabled = false,
-                submenuParent = submenu
-            });
+            items.Add(
+                new MenuItem
+                {
+                    label = label,
+                    isChecked = false,
+                    isEnabled = false,
+                    submenuParent = submenu,
+                }
+            );
         }
 
         public void AddSeparator(string submenu = null)
@@ -94,7 +98,8 @@ namespace RuntimeCurveEditor
         /// <summary>Returns true if the point is inside the main menu or any open submenu.</summary>
         public bool ContainsPoint(Vector2 point)
         {
-            if (!isOpen) return false;
+            if (!isOpen)
+                return false;
 
             float mainHeight = CalculateMenuHeight(null);
             Rect mainRect = new Rect(position.x, position.y, MENU_WIDTH, mainHeight);
@@ -103,18 +108,25 @@ namespace RuntimeCurveEditor
             if (mainRect.yMax > Screen.height)
                 mainRect.y = Screen.height - mainRect.height;
 
-            if (mainRect.Contains(point)) return true;
+            if (mainRect.Contains(point))
+                return true;
 
             if (openSubmenu != null)
             {
                 float subHeight = CalculateMenuHeight(openSubmenu);
-                Rect subRect = new Rect(mainRect.xMax - 2f, GetSubmenuY(mainRect, openSubmenu), SUBMENU_WIDTH, subHeight);
+                Rect subRect = new Rect(
+                    mainRect.xMax - 2f,
+                    GetSubmenuY(mainRect, openSubmenu),
+                    SUBMENU_WIDTH,
+                    subHeight
+                );
                 if (subRect.xMax > Screen.width)
                     subRect.x = mainRect.x - SUBMENU_WIDTH + 2f;
                 if (subRect.yMax > Screen.height)
                     subRect.y = Screen.height - subRect.height;
 
-                if (subRect.Contains(point)) return true;
+                if (subRect.Contains(point))
+                    return true;
             }
 
             return false;
@@ -122,7 +134,8 @@ namespace RuntimeCurveEditor
 
         public bool OnGUI()
         {
-            if (!isOpen) return false;
+            if (!isOpen)
+                return false;
 
             EnsureStyles();
 
@@ -145,7 +158,12 @@ namespace RuntimeCurveEditor
             if (hasSubmenu)
             {
                 float subHeight = CalculateMenuHeight(openSubmenu);
-                subRect = new Rect(mainRect.xMax - 2f, GetSubmenuY(mainRect, openSubmenu), SUBMENU_WIDTH, subHeight);
+                subRect = new Rect(
+                    mainRect.xMax - 2f,
+                    GetSubmenuY(mainRect, openSubmenu),
+                    SUBMENU_WIDTH,
+                    subHeight
+                );
 
                 if (subRect.xMax > Screen.width)
                     subRect.x = mainRect.x - SUBMENU_WIDTH + 2f;
@@ -200,7 +218,8 @@ namespace RuntimeCurveEditor
                 // Check if this item belongs to a submenu that should be shown as a parent entry
                 if (parentSubmenu == null && item.submenuParent != null)
                 {
-                    if (drawnSubmenus.Contains(item.submenuParent)) continue;
+                    if (drawnSubmenus.Contains(item.submenuParent))
+                        continue;
                     drawnSubmenus.Add(item.submenuParent);
 
                     // Draw submenu parent label
@@ -215,14 +234,28 @@ namespace RuntimeCurveEditor
                         openSubmenu = item.submenuParent;
                     }
 
-                    GUI.Label(new Rect(itemRect.x + 20f, itemRect.y, itemRect.width - 40f, itemRect.height), item.submenuParent, s_MenuItemStyle);
-                    GUI.Label(new Rect(itemRect.xMax - 20f, itemRect.y, 20f, itemRect.height), "\u25B6", s_MenuItemStyle);
+                    GUI.Label(
+                        new Rect(
+                            itemRect.x + 20f,
+                            itemRect.y,
+                            itemRect.width - 40f,
+                            itemRect.height
+                        ),
+                        item.submenuParent,
+                        s_MenuItemStyle
+                    );
+                    GUI.Label(
+                        new Rect(itemRect.xMax - 20f, itemRect.y, 20f, itemRect.height),
+                        "\u25B6",
+                        s_MenuItemStyle
+                    );
 
                     y += ITEM_HEIGHT;
                     continue;
                 }
 
-                if (item.submenuParent != parentSubmenu) continue;
+                if (item.submenuParent != parentSubmenu)
+                    continue;
 
                 Rect rect = new Rect(menuRect.x, y, menuRect.width, ITEM_HEIGHT);
                 bool hovered = rect.Contains(Event.current.mousePosition);
@@ -240,18 +273,32 @@ namespace RuntimeCurveEditor
                 // Checkmark
                 if (item.isChecked)
                 {
-                    GUI.Label(new Rect(rect.x + 4f, rect.y, 16f, rect.height), "\u2713", s_MenuItemCheckedStyle);
+                    GUI.Label(
+                        new Rect(rect.x + 4f, rect.y, 16f, rect.height),
+                        "\u2713",
+                        s_MenuItemCheckedStyle
+                    );
                 }
 
                 // Label
                 GUIStyle style = item.isEnabled ? s_MenuItemStyle : s_MenuItemCheckedStyle;
                 Color prevColor = GUI.color;
-                if (!item.isEnabled) GUI.color = new Color(0.5f, 0.5f, 0.5f, 0.6f);
-                GUI.Label(new Rect(rect.x + 20f, rect.y, rect.width - 24f, rect.height), item.label, style);
+                if (!item.isEnabled)
+                    GUI.color = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+                GUI.Label(
+                    new Rect(rect.x + 20f, rect.y, rect.width - 24f, rect.height),
+                    item.label,
+                    style
+                );
                 GUI.color = prevColor;
 
                 // Click
-                if (hovered && item.isEnabled && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+                if (
+                    hovered
+                    && item.isEnabled
+                    && Event.current.type == EventType.MouseDown
+                    && Event.current.button == 0
+                )
                 {
                     item.callback?.Invoke();
                     Close();
@@ -282,13 +329,15 @@ namespace RuntimeCurveEditor
 
                 if (parentSubmenu == null && item.submenuParent != null)
                 {
-                    if (drawnSubmenus.Contains(item.submenuParent)) continue;
+                    if (drawnSubmenus.Contains(item.submenuParent))
+                        continue;
                     drawnSubmenus.Add(item.submenuParent);
                     height += ITEM_HEIGHT;
                     continue;
                 }
 
-                if (item.submenuParent != parentSubmenu) continue;
+                if (item.submenuParent != parentSubmenu)
+                    continue;
                 height += ITEM_HEIGHT;
             }
 
@@ -311,7 +360,8 @@ namespace RuntimeCurveEditor
 
                 if (item.submenuParent != null)
                 {
-                    if (drawnSubmenus.Contains(item.submenuParent)) continue;
+                    if (drawnSubmenus.Contains(item.submenuParent))
+                        continue;
                     drawnSubmenus.Add(item.submenuParent);
 
                     if (item.submenuParent == submenuLabel)
@@ -329,7 +379,8 @@ namespace RuntimeCurveEditor
 
         private static void EnsureStyles()
         {
-            if (s_MenuItemStyle != null) return;
+            if (s_MenuItemStyle != null)
+                return;
 
             s_MenuItemStyle = new GUIStyle(GUI.skin.label);
             s_MenuItemStyle.fontSize = 12;
@@ -400,55 +451,78 @@ namespace RuntimeCurveEditor
             contextMenu.Clear();
 
             AnimationCurve curve = editor.curveWrapper.curve;
-            if (curve == null) return;
+            if (curve == null)
+                return;
 
             var selectedIndices = editor.selection.GetSelectedKeyIndices(editor.curveWrapper.id);
             bool hasSelection = selectedIndices.Count > 0;
 
             // Add key option
-            contextMenu.AddItem("Add Key", false, () =>
-            {
-                Vector2 drawingPos = RuntimeCurveRenderer.ViewToDrawing(position, editor.curveArea, editor.shownAreaMin, editor.shownAreaMax);
-                float value = curve.length > 0 ? curve.Evaluate(drawingPos.x) : drawingPos.y;
-                Keyframe kf = new Keyframe(drawingPos.x, value);
-                int idx = editor.curveWrapper.AddKey(kf);
-                if (idx >= 0)
+            contextMenu.AddItem(
+                "Add Key",
+                false,
+                () =>
                 {
-                    KeyframeTangentUtility.UpdateTangentsFromModeSurrounding(curve, idx);
-                    editor.selection.SelectKey(editor.curveWrapper.id, idx, false);
+                    Vector2 drawingPos = RuntimeCurveRenderer.ViewToDrawing(
+                        position,
+                        editor.curveArea,
+                        editor.shownAreaMin,
+                        editor.shownAreaMax
+                    );
+                    float value = curve.length > 0 ? curve.Evaluate(drawingPos.x) : drawingPos.y;
+                    Keyframe kf = new Keyframe(drawingPos.x, value);
+                    int idx = editor.curveWrapper.AddKey(kf);
+                    if (idx >= 0)
+                    {
+                        KeyframeTangentUtility.UpdateTangentsFromModeSurrounding(curve, idx);
+                        editor.selection.SelectKey(editor.curveWrapper.id, idx, false);
+                    }
                 }
-            });
+            );
 
             if (hasSelection)
             {
-                contextMenu.AddItem("Delete Key", false, () =>
-                {
-                    var indices = editor.selection.GetSelectedKeyIndices(editor.curveWrapper.id);
-                    indices.Sort((a, b) => b.CompareTo(a));
-                    foreach (int idx in indices)
+                contextMenu.AddItem(
+                    "Delete Key",
+                    false,
+                    () =>
                     {
-                        if (idx >= 0 && idx < curve.length)
+                        var indices = editor.selection.GetSelectedKeyIndices(
+                            editor.curveWrapper.id
+                        );
+                        indices.Sort((a, b) => b.CompareTo(a));
+                        foreach (int idx in indices)
                         {
-                            curve.RemoveKey(idx);
-                            editor.selection.UpdateKeyIndicesAfterRemoval(editor.curveWrapper.id, idx);
+                            if (idx >= 0 && idx < curve.length)
+                            {
+                                curve.RemoveKey(idx);
+                                editor.selection.UpdateKeyIndicesAfterRemoval(
+                                    editor.curveWrapper.id,
+                                    idx
+                                );
+                            }
                         }
+                        editor.selection.SelectNone();
+                        editor.curveWrapper.changed = true;
                     }
-                    editor.selection.SelectNone();
-                    editor.curveWrapper.changed = true;
-                });
+                );
 
                 if (selectedIndices.Count == 1)
                 {
                     int keyIdx = selectedIndices[0];
-                    contextMenu.AddItem("Edit Key...", false, () =>
-                    {
-                        Keyframe kf = curve[keyIdx];
-                        editKeyIndex = keyIdx;
-                        editKeyTime = kf.time.ToString("G7");
-                        editKeyValue = kf.value.ToString("G7");
-                        editKeyFocusSet = false;
-                        showEditKeyDialog = true;
-                    });
+                    contextMenu.AddItem(
+                        "Edit Key...",
+                        false,
+                        () =>
+                        {
+                            Keyframe kf = curve[keyIdx];
+                            editKeyIndex = keyIdx;
+                            editKeyTime = kf.time.ToString("G7");
+                            editKeyValue = kf.value.ToString("G7");
+                            editKeyFocusSet = false;
+                            showEditKeyDialog = true;
+                        }
+                    );
                 }
                 else
                 {
@@ -461,37 +535,85 @@ namespace RuntimeCurveEditor
             if (hasSelection)
             {
                 // Build tangent mode check states
-                bool allClampedAuto = true, allAuto = true, allFreeSmooth = true, allFlat = true, allBroken = true;
-                bool allLeftFree = true, allLeftLinear = true, allLeftConstant = true, allLeftWeighted = true;
-                bool allRightFree = true, allRightLinear = true, allRightConstant = true, allRightWeighted = true;
+                bool allClampedAuto = true,
+                    allAuto = true,
+                    allFreeSmooth = true,
+                    allFlat = true,
+                    allBroken = true;
+                bool allLeftFree = true,
+                    allLeftLinear = true,
+                    allLeftConstant = true,
+                    allLeftWeighted = true;
+                bool allRightFree = true,
+                    allRightLinear = true,
+                    allRightConstant = true,
+                    allRightWeighted = true;
 
                 foreach (int idx in selectedIndices)
                 {
-                    if (idx < 0 || idx >= curve.length) continue;
+                    if (idx < 0 || idx >= curve.length)
+                        continue;
                     Keyframe kf = curve[idx];
                     var leftMode = KeyframeTangentUtility.GetKeyLeftTangentMode(kf);
                     var rightMode = KeyframeTangentUtility.GetKeyRightTangentMode(kf);
                     bool broken = KeyframeTangentUtility.GetKeyBroken(kf);
 
-                    if (leftMode != KeyframeTangentUtility.TangentMode.ClampedAuto || rightMode != KeyframeTangentUtility.TangentMode.ClampedAuto) allClampedAuto = false;
-                    if (leftMode != KeyframeTangentUtility.TangentMode.Auto || rightMode != KeyframeTangentUtility.TangentMode.Auto) allAuto = false;
-                    if (broken || leftMode != KeyframeTangentUtility.TangentMode.Free || rightMode != KeyframeTangentUtility.TangentMode.Free) allFreeSmooth = false;
-                    if (broken || leftMode != KeyframeTangentUtility.TangentMode.Free || kf.inTangent != 0f || rightMode != KeyframeTangentUtility.TangentMode.Free || kf.outTangent != 0f) allFlat = false;
-                    if (!broken) allBroken = false;
+                    if (
+                        leftMode != KeyframeTangentUtility.TangentMode.ClampedAuto
+                        || rightMode != KeyframeTangentUtility.TangentMode.ClampedAuto
+                    )
+                        allClampedAuto = false;
+                    if (
+                        leftMode != KeyframeTangentUtility.TangentMode.Auto
+                        || rightMode != KeyframeTangentUtility.TangentMode.Auto
+                    )
+                        allAuto = false;
+                    if (
+                        broken
+                        || leftMode != KeyframeTangentUtility.TangentMode.Free
+                        || rightMode != KeyframeTangentUtility.TangentMode.Free
+                    )
+                        allFreeSmooth = false;
+                    if (
+                        broken
+                        || leftMode != KeyframeTangentUtility.TangentMode.Free
+                        || kf.inTangent != 0f
+                        || rightMode != KeyframeTangentUtility.TangentMode.Free
+                        || kf.outTangent != 0f
+                    )
+                        allFlat = false;
+                    if (!broken)
+                        allBroken = false;
 
-                    if (!broken || leftMode != KeyframeTangentUtility.TangentMode.Free) allLeftFree = false;
-                    if (!broken || leftMode != KeyframeTangentUtility.TangentMode.Linear) allLeftLinear = false;
-                    if (!broken || leftMode != KeyframeTangentUtility.TangentMode.Constant) allLeftConstant = false;
-                    if ((kf.weightedMode & WeightedMode.In) == 0) allLeftWeighted = false;
+                    if (!broken || leftMode != KeyframeTangentUtility.TangentMode.Free)
+                        allLeftFree = false;
+                    if (!broken || leftMode != KeyframeTangentUtility.TangentMode.Linear)
+                        allLeftLinear = false;
+                    if (!broken || leftMode != KeyframeTangentUtility.TangentMode.Constant)
+                        allLeftConstant = false;
+                    if ((kf.weightedMode & WeightedMode.In) == 0)
+                        allLeftWeighted = false;
 
-                    if (!broken || rightMode != KeyframeTangentUtility.TangentMode.Free) allRightFree = false;
-                    if (!broken || rightMode != KeyframeTangentUtility.TangentMode.Linear) allRightLinear = false;
-                    if (!broken || rightMode != KeyframeTangentUtility.TangentMode.Constant) allRightConstant = false;
-                    if ((kf.weightedMode & WeightedMode.Out) == 0) allRightWeighted = false;
+                    if (!broken || rightMode != KeyframeTangentUtility.TangentMode.Free)
+                        allRightFree = false;
+                    if (!broken || rightMode != KeyframeTangentUtility.TangentMode.Linear)
+                        allRightLinear = false;
+                    if (!broken || rightMode != KeyframeTangentUtility.TangentMode.Constant)
+                        allRightConstant = false;
+                    if ((kf.weightedMode & WeightedMode.Out) == 0)
+                        allRightWeighted = false;
                 }
 
-                contextMenu.AddItem("Clamped Auto", allClampedAuto, () => SetBothTangentMode(KeyframeTangentUtility.TangentMode.ClampedAuto));
-                contextMenu.AddItem("Auto", allAuto, () => SetBothTangentMode(KeyframeTangentUtility.TangentMode.Auto));
+                contextMenu.AddItem(
+                    "Clamped Auto",
+                    allClampedAuto,
+                    () => SetBothTangentMode(KeyframeTangentUtility.TangentMode.ClampedAuto)
+                );
+                contextMenu.AddItem(
+                    "Auto",
+                    allAuto,
+                    () => SetBothTangentMode(KeyframeTangentUtility.TangentMode.Auto)
+                );
                 contextMenu.AddItem("Free Smooth", allFreeSmooth, () => SetFreeSmooth());
                 contextMenu.AddItem("Flat", allFlat, () => SetFlat());
                 contextMenu.AddItem("Broken", allBroken, () => SetBroken());
@@ -499,22 +621,82 @@ namespace RuntimeCurveEditor
                 contextMenu.AddSeparator();
 
                 // Left Tangent submenu
-                contextMenu.AddItem("Free", allLeftFree, () => SetTangent(0, KeyframeTangentUtility.TangentMode.Free), "Left Tangent");
-                contextMenu.AddItem("Linear", allLeftLinear, () => SetTangent(0, KeyframeTangentUtility.TangentMode.Linear), "Left Tangent");
-                contextMenu.AddItem("Constant", allLeftConstant, () => SetTangent(0, KeyframeTangentUtility.TangentMode.Constant), "Left Tangent");
-                contextMenu.AddItem("Weighted", allLeftWeighted, () => ToggleWeighted(WeightedMode.In), "Left Tangent");
+                contextMenu.AddItem(
+                    "Free",
+                    allLeftFree,
+                    () => SetTangent(0, KeyframeTangentUtility.TangentMode.Free),
+                    "Left Tangent"
+                );
+                contextMenu.AddItem(
+                    "Linear",
+                    allLeftLinear,
+                    () => SetTangent(0, KeyframeTangentUtility.TangentMode.Linear),
+                    "Left Tangent"
+                );
+                contextMenu.AddItem(
+                    "Constant",
+                    allLeftConstant,
+                    () => SetTangent(0, KeyframeTangentUtility.TangentMode.Constant),
+                    "Left Tangent"
+                );
+                contextMenu.AddItem(
+                    "Weighted",
+                    allLeftWeighted,
+                    () => ToggleWeighted(WeightedMode.In),
+                    "Left Tangent"
+                );
 
                 // Right Tangent submenu
-                contextMenu.AddItem("Free", allRightFree, () => SetTangent(1, KeyframeTangentUtility.TangentMode.Free), "Right Tangent");
-                contextMenu.AddItem("Linear", allRightLinear, () => SetTangent(1, KeyframeTangentUtility.TangentMode.Linear), "Right Tangent");
-                contextMenu.AddItem("Constant", allRightConstant, () => SetTangent(1, KeyframeTangentUtility.TangentMode.Constant), "Right Tangent");
-                contextMenu.AddItem("Weighted", allRightWeighted, () => ToggleWeighted(WeightedMode.Out), "Right Tangent");
+                contextMenu.AddItem(
+                    "Free",
+                    allRightFree,
+                    () => SetTangent(1, KeyframeTangentUtility.TangentMode.Free),
+                    "Right Tangent"
+                );
+                contextMenu.AddItem(
+                    "Linear",
+                    allRightLinear,
+                    () => SetTangent(1, KeyframeTangentUtility.TangentMode.Linear),
+                    "Right Tangent"
+                );
+                contextMenu.AddItem(
+                    "Constant",
+                    allRightConstant,
+                    () => SetTangent(1, KeyframeTangentUtility.TangentMode.Constant),
+                    "Right Tangent"
+                );
+                contextMenu.AddItem(
+                    "Weighted",
+                    allRightWeighted,
+                    () => ToggleWeighted(WeightedMode.Out),
+                    "Right Tangent"
+                );
 
                 // Both Tangents submenu
-                contextMenu.AddItem("Free", allLeftFree && allRightFree, () => SetTangent(2, KeyframeTangentUtility.TangentMode.Free), "Both Tangents");
-                contextMenu.AddItem("Linear", allLeftLinear && allRightLinear, () => SetTangent(2, KeyframeTangentUtility.TangentMode.Linear), "Both Tangents");
-                contextMenu.AddItem("Constant", allLeftConstant && allRightConstant, () => SetTangent(2, KeyframeTangentUtility.TangentMode.Constant), "Both Tangents");
-                contextMenu.AddItem("Weighted", allLeftWeighted && allRightWeighted, () => ToggleWeighted(WeightedMode.Both), "Both Tangents");
+                contextMenu.AddItem(
+                    "Free",
+                    allLeftFree && allRightFree,
+                    () => SetTangent(2, KeyframeTangentUtility.TangentMode.Free),
+                    "Both Tangents"
+                );
+                contextMenu.AddItem(
+                    "Linear",
+                    allLeftLinear && allRightLinear,
+                    () => SetTangent(2, KeyframeTangentUtility.TangentMode.Linear),
+                    "Both Tangents"
+                );
+                contextMenu.AddItem(
+                    "Constant",
+                    allLeftConstant && allRightConstant,
+                    () => SetTangent(2, KeyframeTangentUtility.TangentMode.Constant),
+                    "Both Tangents"
+                );
+                contextMenu.AddItem(
+                    "Weighted",
+                    allLeftWeighted && allRightWeighted,
+                    () => ToggleWeighted(WeightedMode.Both),
+                    "Both Tangents"
+                );
             }
             else
             {
@@ -557,7 +739,8 @@ namespace RuntimeCurveEditor
 
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
                 KeyframeTangentUtility.SetKeyBroken(ref kf, false);
                 KeyframeTangentUtility.SetKeyLeftTangentMode(ref kf, mode);
@@ -576,11 +759,18 @@ namespace RuntimeCurveEditor
 
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
                 KeyframeTangentUtility.SetKeyBroken(ref kf, false);
-                KeyframeTangentUtility.SetKeyLeftTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
-                KeyframeTangentUtility.SetKeyRightTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                KeyframeTangentUtility.SetKeyLeftTangentMode(
+                    ref kf,
+                    KeyframeTangentUtility.TangentMode.Free
+                );
+                KeyframeTangentUtility.SetKeyRightTangentMode(
+                    ref kf,
+                    KeyframeTangentUtility.TangentMode.Free
+                );
                 float smoothTangent = CalculateSmoothTangent(kf);
                 kf.inTangent = smoothTangent;
                 kf.outTangent = smoothTangent;
@@ -600,7 +790,8 @@ namespace RuntimeCurveEditor
 
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
                 kf.inTangent = 0f;
                 kf.outTangent = 0f;
@@ -618,17 +809,32 @@ namespace RuntimeCurveEditor
 
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
                 KeyframeTangentUtility.SetKeyBroken(ref kf, true);
 
-                if (KeyframeTangentUtility.GetKeyLeftTangentMode(kf) == KeyframeTangentUtility.TangentMode.ClampedAuto ||
-                    KeyframeTangentUtility.GetKeyLeftTangentMode(kf) == KeyframeTangentUtility.TangentMode.Auto)
-                    KeyframeTangentUtility.SetKeyLeftTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                if (
+                    KeyframeTangentUtility.GetKeyLeftTangentMode(kf)
+                        == KeyframeTangentUtility.TangentMode.ClampedAuto
+                    || KeyframeTangentUtility.GetKeyLeftTangentMode(kf)
+                        == KeyframeTangentUtility.TangentMode.Auto
+                )
+                    KeyframeTangentUtility.SetKeyLeftTangentMode(
+                        ref kf,
+                        KeyframeTangentUtility.TangentMode.Free
+                    );
 
-                if (KeyframeTangentUtility.GetKeyRightTangentMode(kf) == KeyframeTangentUtility.TangentMode.ClampedAuto ||
-                    KeyframeTangentUtility.GetKeyRightTangentMode(kf) == KeyframeTangentUtility.TangentMode.Auto)
-                    KeyframeTangentUtility.SetKeyRightTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                if (
+                    KeyframeTangentUtility.GetKeyRightTangentMode(kf)
+                        == KeyframeTangentUtility.TangentMode.ClampedAuto
+                    || KeyframeTangentUtility.GetKeyRightTangentMode(kf)
+                        == KeyframeTangentUtility.TangentMode.Auto
+                )
+                    KeyframeTangentUtility.SetKeyRightTangentMode(
+                        ref kf,
+                        KeyframeTangentUtility.TangentMode.Free
+                    );
 
                 curve.MoveKey(idx, kf);
                 KeyframeTangentUtility.UpdateTangentsFromModeSurrounding(curve, idx);
@@ -644,7 +850,8 @@ namespace RuntimeCurveEditor
 
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
                 KeyframeTangentUtility.SetKeyBroken(ref kf, true);
 
@@ -665,14 +872,26 @@ namespace RuntimeCurveEditor
                 if (leftRight == 0)
                 {
                     var rm = KeyframeTangentUtility.GetKeyRightTangentMode(kf);
-                    if (rm == KeyframeTangentUtility.TangentMode.ClampedAuto || rm == KeyframeTangentUtility.TangentMode.Auto)
-                        KeyframeTangentUtility.SetKeyRightTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                    if (
+                        rm == KeyframeTangentUtility.TangentMode.ClampedAuto
+                        || rm == KeyframeTangentUtility.TangentMode.Auto
+                    )
+                        KeyframeTangentUtility.SetKeyRightTangentMode(
+                            ref kf,
+                            KeyframeTangentUtility.TangentMode.Free
+                        );
                 }
                 else if (leftRight == 1)
                 {
                     var lm = KeyframeTangentUtility.GetKeyLeftTangentMode(kf);
-                    if (lm == KeyframeTangentUtility.TangentMode.ClampedAuto || lm == KeyframeTangentUtility.TangentMode.Auto)
-                        KeyframeTangentUtility.SetKeyLeftTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                    if (
+                        lm == KeyframeTangentUtility.TangentMode.ClampedAuto
+                        || lm == KeyframeTangentUtility.TangentMode.Auto
+                    )
+                        KeyframeTangentUtility.SetKeyLeftTangentMode(
+                            ref kf,
+                            KeyframeTangentUtility.TangentMode.Free
+                        );
                 }
 
                 curve.MoveKey(idx, kf);
@@ -691,7 +910,8 @@ namespace RuntimeCurveEditor
             bool allWeighted = true;
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
                 if ((kf.weightedMode & targetMode) != targetMode)
                 {
@@ -702,7 +922,8 @@ namespace RuntimeCurveEditor
 
             foreach (int idx in indices)
             {
-                if (idx < 0 || idx >= curve.length) continue;
+                if (idx < 0 || idx >= curve.length)
+                    continue;
                 Keyframe kf = curve[idx];
 
                 if (allWeighted)
@@ -720,14 +941,26 @@ namespace RuntimeCurveEditor
                 if ((kf.weightedMode & WeightedMode.In) != 0)
                 {
                     var lm = KeyframeTangentUtility.GetKeyLeftTangentMode(kf);
-                    if (lm == KeyframeTangentUtility.TangentMode.Linear || lm == KeyframeTangentUtility.TangentMode.Constant)
-                        KeyframeTangentUtility.SetKeyLeftTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                    if (
+                        lm == KeyframeTangentUtility.TangentMode.Linear
+                        || lm == KeyframeTangentUtility.TangentMode.Constant
+                    )
+                        KeyframeTangentUtility.SetKeyLeftTangentMode(
+                            ref kf,
+                            KeyframeTangentUtility.TangentMode.Free
+                        );
                 }
                 if ((kf.weightedMode & WeightedMode.Out) != 0)
                 {
                     var rm = KeyframeTangentUtility.GetKeyRightTangentMode(kf);
-                    if (rm == KeyframeTangentUtility.TangentMode.Linear || rm == KeyframeTangentUtility.TangentMode.Constant)
-                        KeyframeTangentUtility.SetKeyRightTangentMode(ref kf, KeyframeTangentUtility.TangentMode.Free);
+                    if (
+                        rm == KeyframeTangentUtility.TangentMode.Linear
+                        || rm == KeyframeTangentUtility.TangentMode.Constant
+                    )
+                        KeyframeTangentUtility.SetKeyRightTangentMode(
+                            ref kf,
+                            KeyframeTangentUtility.TangentMode.Free
+                        );
                 }
 
                 curve.MoveKey(idx, kf);
@@ -739,7 +972,8 @@ namespace RuntimeCurveEditor
 
         public void DrawEditKeyDialog(Rect curveArea)
         {
-            if (!showEditKeyDialog) return;
+            if (!showEditKeyDialog)
+                return;
 
             EnsureEditKeyStyles();
 
@@ -766,7 +1000,11 @@ namespace RuntimeCurveEditor
             // Position near the keyframe
             Keyframe kf = curve[editKeyIndex];
             Vector2 keyScreen = RuntimeCurveRenderer.DrawingToView(
-                new Vector2(kf.time, kf.value), curveArea, editor.shownAreaMin, editor.shownAreaMax);
+                new Vector2(kf.time, kf.value),
+                curveArea,
+                editor.shownAreaMin,
+                editor.shownAreaMax
+            );
 
             float dialogX = keyScreen.x + 12f * scale;
             float dialogY = keyScreen.y - dialogHeight - 8f * scale;
@@ -791,14 +1029,22 @@ namespace RuntimeCurveEditor
 
             // Time row
             float rowY = dialogRect.y + fieldPadY;
-            GUI.Label(new Rect(dialogRect.x + fieldPadX, rowY, labelW, rowH), "time", s_EditKeyLabelStyle);
+            GUI.Label(
+                new Rect(dialogRect.x + fieldPadX, rowY, labelW, rowH),
+                "time",
+                s_EditKeyLabelStyle
+            );
             Rect timeFieldRect = new Rect(dialogRect.x + fieldPadX + labelW, rowY, fieldW, rowH);
             GUI.SetNextControlName("EditKeyTimeField");
             editKeyTime = GUI.TextField(timeFieldRect, editKeyTime, s_EditKeyFieldStyle);
 
             // Value row
             rowY += rowH + 4f * scale;
-            GUI.Label(new Rect(dialogRect.x + fieldPadX, rowY, labelW, rowH), "value", s_EditKeyLabelStyle);
+            GUI.Label(
+                new Rect(dialogRect.x + fieldPadX, rowY, labelW, rowH),
+                "value",
+                s_EditKeyLabelStyle
+            );
             Rect valueFieldRect = new Rect(dialogRect.x + fieldPadX + labelW, rowY, fieldW, rowH);
             GUI.SetNextControlName("EditKeyValueField");
             editKeyValue = GUI.TextField(valueFieldRect, editKeyValue, s_EditKeyFieldStyle);
@@ -883,9 +1129,12 @@ namespace RuntimeCurveEditor
 
         private void ApplyEditKey(AnimationCurve curve)
         {
-            if (editKeyIndex >= 0 && editKeyIndex < curve.length &&
-                float.TryParse(editKeyTime, out float newTime) &&
-                float.TryParse(editKeyValue, out float newValue))
+            if (
+                editKeyIndex >= 0
+                && editKeyIndex < curve.length
+                && float.TryParse(editKeyTime, out float newTime)
+                && float.TryParse(editKeyValue, out float newValue)
+            )
             {
                 Keyframe updated = curve[editKeyIndex];
                 updated.time = newTime;
@@ -899,15 +1148,32 @@ namespace RuntimeCurveEditor
 
         private static void DrawRectBorder(Rect rect, Color color)
         {
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.xMax, rect.y), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.y), new Vector2(rect.xMax, rect.yMax), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.yMax), new Vector2(rect.x, rect.yMax), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.yMax), new Vector2(rect.x, rect.y), color);
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.x, rect.y),
+                new Vector2(rect.xMax, rect.y),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.xMax, rect.y),
+                new Vector2(rect.xMax, rect.yMax),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.xMax, rect.yMax),
+                new Vector2(rect.x, rect.yMax),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.x, rect.yMax),
+                new Vector2(rect.x, rect.y),
+                color
+            );
         }
 
         private static void EnsureEditKeyStyles()
         {
-            if (s_EditKeyLabelStyle != null) return;
+            if (s_EditKeyLabelStyle != null)
+                return;
 
             s_EditKeyLabelStyle = new GUIStyle(GUI.skin.label);
             float scale = RuntimeCurveEditorWindow.UIScale;
@@ -929,8 +1195,10 @@ namespace RuntimeCurveEditor
         {
             float inT = key.inTangent;
             float outT = key.outTangent;
-            if (float.IsInfinity(inT)) inT = 0f;
-            if (float.IsInfinity(outT)) outT = 0f;
+            if (float.IsInfinity(inT))
+                inT = 0f;
+            if (float.IsInfinity(outT))
+                outT = 0f;
             return (inT + outT) * 0.5f;
         }
     }

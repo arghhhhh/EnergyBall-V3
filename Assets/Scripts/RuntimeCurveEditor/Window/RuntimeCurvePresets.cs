@@ -59,35 +59,25 @@ namespace RuntimeCurveEditor
         {
             defaultPresets.Clear();
 
-            defaultPresets.Add(new CurvePreset
-            {
-                name = "Constant",
-                curve = CreateCurve(GetConstantKeys(1f))
-            });
+            defaultPresets.Add(
+                new CurvePreset { name = "Constant", curve = CreateCurve(GetConstantKeys(1f)) }
+            );
 
-            defaultPresets.Add(new CurvePreset
-            {
-                name = "Linear",
-                curve = CreateCurve(GetLinearKeys())
-            });
+            defaultPresets.Add(
+                new CurvePreset { name = "Linear", curve = CreateCurve(GetLinearKeys()) }
+            );
 
-            defaultPresets.Add(new CurvePreset
-            {
-                name = "Ease In",
-                curve = CreateCurve(GetEaseInKeys())
-            });
+            defaultPresets.Add(
+                new CurvePreset { name = "Ease In", curve = CreateCurve(GetEaseInKeys()) }
+            );
 
-            defaultPresets.Add(new CurvePreset
-            {
-                name = "Ease Out",
-                curve = CreateCurve(GetEaseOutKeys())
-            });
+            defaultPresets.Add(
+                new CurvePreset { name = "Ease Out", curve = CreateCurve(GetEaseOutKeys()) }
+            );
 
-            defaultPresets.Add(new CurvePreset
-            {
-                name = "Ease In-Out",
-                curve = CreateCurve(GetEaseInOutKeys())
-            });
+            defaultPresets.Add(
+                new CurvePreset { name = "Ease In-Out", curve = CreateCurve(GetEaseInOutKeys()) }
+            );
         }
 
         public void RefreshUserPresets()
@@ -95,7 +85,11 @@ namespace RuntimeCurveEditor
             userPresets = RuntimeCurvePresetStorage.LoadAllPresets();
         }
 
-        public void OnGUI(Rect barRect, Action<AnimationCurve> onPresetSelected, AnimationCurve currentCurve)
+        public void OnGUI(
+            Rect barRect,
+            Action<AnimationCurve> onPresetSelected,
+            AnimationCurve currentCurve
+        )
         {
             EnsureStyles();
 
@@ -127,9 +121,17 @@ namespace RuntimeCurveEditor
             scrollOffset = Mathf.Clamp(scrollOffset, 0f, maxScroll);
 
             // Handle mouse wheel scrolling within the bar area
-            if (needsScroll && Event.current.type == EventType.ScrollWheel && barRect.Contains(Event.current.mousePosition))
+            if (
+                needsScroll
+                && Event.current.type == EventType.ScrollWheel
+                && barRect.Contains(Event.current.mousePosition)
+            )
             {
-                scrollOffset = Mathf.Clamp(scrollOffset + Event.current.delta.y * 20f * Scale, 0f, maxScroll);
+                scrollOffset = Mathf.Clamp(
+                    scrollOffset + Event.current.delta.y * 20f * Scale,
+                    0f,
+                    maxScroll
+                );
                 Event.current.Use();
             }
 
@@ -149,7 +151,12 @@ namespace RuntimeCurveEditor
             float separatorX = currentX + SEPARATOR_MARGIN;
             if (separatorX >= barRect.x && separatorX <= barRect.xMax)
             {
-                Rect vertSepRect = new Rect(separatorX, barRect.y + 8f * Scale, SEPARATOR_WIDTH, presetsAreaHeight - 16f * Scale);
+                Rect vertSepRect = new Rect(
+                    separatorX,
+                    barRect.y + 8f * Scale,
+                    SEPARATOR_WIDTH,
+                    presetsAreaHeight - 16f * Scale
+                );
                 GUI.color = new Color(0.4f, 0.4f, 0.4f, 0.5f);
                 GUI.DrawTexture(vertSepRect, Texture2D.whiteTexture);
                 GUI.color = Color.white;
@@ -173,8 +180,19 @@ namespace RuntimeCurveEditor
             // Draw horizontal scrollbar if needed
             if (needsScroll)
             {
-                Rect scrollBarRect = new Rect(barRect.x, barRect.yMax - SCROLL_BAR_HEIGHT, barRect.width, SCROLL_BAR_HEIGHT);
-                scrollOffset = GUI.HorizontalScrollbar(scrollBarRect, scrollOffset, barRect.width, 0f, contentWidth);
+                Rect scrollBarRect = new Rect(
+                    barRect.x,
+                    barRect.yMax - SCROLL_BAR_HEIGHT,
+                    barRect.width,
+                    SCROLL_BAR_HEIGHT
+                );
+                scrollOffset = GUI.HorizontalScrollbar(
+                    scrollBarRect,
+                    scrollOffset,
+                    barRect.width,
+                    0f,
+                    contentWidth
+                );
             }
 
             // Draw save dialog overlay if active
@@ -184,7 +202,11 @@ namespace RuntimeCurveEditor
             }
 
             // Draw delete confirmation overlay if active
-            if (showDeleteConfirm && deletePresetIndex >= 0 && deletePresetIndex < userPresets.Count)
+            if (
+                showDeleteConfirm
+                && deletePresetIndex >= 0
+                && deletePresetIndex < userPresets.Count
+            )
             {
                 DrawDeleteConfirm(barRect);
             }
@@ -196,14 +218,23 @@ namespace RuntimeCurveEditor
             return elementRect.x >= clipRect.x && elementRect.xMax <= clipRect.xMax;
         }
 
-        private void DrawPresetButton(Rect presetRect, CurvePreset preset, Action<AnimationCurve> onPresetSelected, int userPresetIndex)
+        private void DrawPresetButton(
+            Rect presetRect,
+            CurvePreset preset,
+            Action<AnimationCurve> onPresetSelected,
+            int userPresetIndex
+        )
         {
             bool hovered = presetRect.Contains(Event.current.mousePosition);
-            Color bgColor = hovered ? new Color(0.35f, 0.35f, 0.35f, 1f) : new Color(0.25f, 0.25f, 0.25f, 1f);
+            Color bgColor = hovered
+                ? new Color(0.35f, 0.35f, 0.35f, 1f)
+                : new Color(0.25f, 0.25f, 0.25f, 1f);
 
             // User presets get a slightly different tint
             if (preset.isUserPreset)
-                bgColor = hovered ? new Color(0.30f, 0.35f, 0.30f, 1f) : new Color(0.22f, 0.27f, 0.22f, 1f);
+                bgColor = hovered
+                    ? new Color(0.30f, 0.35f, 0.30f, 1f)
+                    : new Color(0.22f, 0.27f, 0.22f, 1f);
 
             GUI.color = bgColor;
             GUI.DrawTexture(presetRect, Texture2D.whiteTexture);
@@ -218,10 +249,16 @@ namespace RuntimeCurveEditor
 
             if (hovered)
             {
-                float tooltipWidth = s_PresetLabelStyle.CalcSize(new GUIContent(preset.name)).x + 4f * Scale;
+                float tooltipWidth =
+                    s_PresetLabelStyle.CalcSize(new GUIContent(preset.name)).x + 4f * Scale;
                 float tooltipHeight = 14f * Scale;
                 float tooltipX = presetRect.x + (presetRect.width - tooltipWidth) / 2f;
-                Rect tooltipRect = new Rect(tooltipX, presetRect.y - 16f * Scale, tooltipWidth, tooltipHeight);
+                Rect tooltipRect = new Rect(
+                    tooltipX,
+                    presetRect.y - 16f * Scale,
+                    tooltipWidth,
+                    tooltipHeight
+                );
 
                 // Draw tooltip background
                 GUI.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
@@ -253,7 +290,9 @@ namespace RuntimeCurveEditor
         private void DrawAddButton(Rect addRect, AnimationCurve currentCurve)
         {
             bool hovered = addRect.Contains(Event.current.mousePosition);
-            Color bgColor = hovered ? new Color(0.35f, 0.40f, 0.35f, 1f) : new Color(0.25f, 0.30f, 0.25f, 1f);
+            Color bgColor = hovered
+                ? new Color(0.35f, 0.40f, 0.35f, 1f)
+                : new Color(0.25f, 0.30f, 0.25f, 1f);
             GUI.color = bgColor;
             GUI.DrawTexture(addRect, Texture2D.whiteTexture);
             GUI.color = Color.white;
@@ -261,17 +300,22 @@ namespace RuntimeCurveEditor
             DrawRectBorder(addRect, new Color(0.4f, 0.4f, 0.4f, 0.5f));
 
             // Draw "+" text
-            GUI.Label(addRect, "+", new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = Mathf.RoundToInt(16 * Scale),
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.7f, 0.9f, 0.7f, 1f) }
-            });
+            GUI.Label(
+                addRect,
+                "+",
+                new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontSize = Mathf.RoundToInt(16 * Scale),
+                    fontStyle = FontStyle.Bold,
+                    normal = { textColor = new Color(0.7f, 0.9f, 0.7f, 1f) },
+                }
+            );
 
             if (hovered)
             {
-                float tipWidth = s_PresetLabelStyle.CalcSize(new GUIContent("Save Preset")).x + 4f * Scale;
+                float tipWidth =
+                    s_PresetLabelStyle.CalcSize(new GUIContent("Save Preset")).x + 4f * Scale;
                 float tipHeight = 14f * Scale;
                 float tipX = addRect.x + (addRect.width - tipWidth) / 2f;
                 Rect tooltipRect = new Rect(tipX, addRect.y - 16f * Scale, tipWidth, tipHeight);
@@ -321,14 +365,29 @@ namespace RuntimeCurveEditor
 
             // Title
             float rowH = 20f * s;
-            Rect titleRect = new Rect(dialogRect.x + 10f * s, dialogRect.y + 8f * s, dialogRect.width - 20f * s, rowH);
+            Rect titleRect = new Rect(
+                dialogRect.x + 10f * s,
+                dialogRect.y + 8f * s,
+                dialogRect.width - 20f * s,
+                rowH
+            );
             GUI.Label(titleRect, "Save Curve Preset", s_SaveDialogLabelStyle);
 
             // Name field
-            Rect fieldLabelRect = new Rect(dialogRect.x + 10f * s, dialogRect.y + 32f * s, 40f * s, rowH);
+            Rect fieldLabelRect = new Rect(
+                dialogRect.x + 10f * s,
+                dialogRect.y + 32f * s,
+                40f * s,
+                rowH
+            );
             GUI.Label(fieldLabelRect, "Name:", s_PresetLabelStyle);
 
-            Rect fieldRect = new Rect(dialogRect.x + 55f * s, dialogRect.y + 30f * s, dialogRect.width - 70f * s, rowH);
+            Rect fieldRect = new Rect(
+                dialogRect.x + 55f * s,
+                dialogRect.y + 30f * s,
+                dialogRect.width - 70f * s,
+                rowH
+            );
             GUI.SetNextControlName("PresetNameField");
             saveDialogName = GUI.TextField(fieldRect, saveDialogName, s_SaveDialogFieldStyle);
             if (!saveDialogFocusSet)
@@ -341,11 +400,17 @@ namespace RuntimeCurveEditor
             float buttonWidth = 60f * s;
             float buttonSpacing = 10f * s;
             float buttonH = 22f * s;
-            float buttonsStartX = dialogRect.x + (dialogRect.width - (buttonWidth * 2 + buttonSpacing)) / 2f;
+            float buttonsStartX =
+                dialogRect.x + (dialogRect.width - (buttonWidth * 2 + buttonSpacing)) / 2f;
             float buttonsY = dialogRect.y + dialogHeight - 30f * s;
 
             Rect saveRect = new Rect(buttonsStartX, buttonsY, buttonWidth, buttonH);
-            Rect cancelRect = new Rect(buttonsStartX + buttonWidth + buttonSpacing, buttonsY, buttonWidth, buttonH);
+            Rect cancelRect = new Rect(
+                buttonsStartX + buttonWidth + buttonSpacing,
+                buttonsY,
+                buttonWidth,
+                buttonH
+            );
 
             bool shouldSave = false;
             bool shouldCancel = false;
@@ -359,7 +424,10 @@ namespace RuntimeCurveEditor
             // Handle Enter/Escape keys
             if (Event.current.type == EventType.KeyDown)
             {
-                if (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter)
+                if (
+                    Event.current.keyCode == KeyCode.Return
+                    || Event.current.keyCode == KeyCode.KeypadEnter
+                )
                 {
                     shouldSave = true;
                     Event.current.Use();
@@ -386,7 +454,10 @@ namespace RuntimeCurveEditor
             }
 
             // Consume mouse events on the dialog to prevent click-through
-            if (Event.current.type == EventType.MouseDown && dialogRect.Contains(Event.current.mousePosition))
+            if (
+                Event.current.type == EventType.MouseDown
+                && dialogRect.Contains(Event.current.mousePosition)
+            )
             {
                 Event.current.Use();
             }
@@ -418,17 +489,28 @@ namespace RuntimeCurveEditor
             GUI.color = Color.white;
             DrawRectBorder(dialogRect, new Color(0.5f, 0.5f, 0.5f, 0.8f));
 
-            Rect labelRect = new Rect(dialogRect.x + 10f * s, dialogRect.y + 10f * s, dialogRect.width - 20f * s, 30f * s);
+            Rect labelRect = new Rect(
+                dialogRect.x + 10f * s,
+                dialogRect.y + 10f * s,
+                dialogRect.width - 20f * s,
+                30f * s
+            );
             GUI.Label(labelRect, $"Delete \"{presetName}\"?", s_SaveDialogLabelStyle);
 
             float buttonWidth = 60f * s;
             float buttonSpacing = 10f * s;
             float buttonH = 22f * s;
-            float buttonsStartX = dialogRect.x + (dialogRect.width - (buttonWidth * 2 + buttonSpacing)) / 2f;
+            float buttonsStartX =
+                dialogRect.x + (dialogRect.width - (buttonWidth * 2 + buttonSpacing)) / 2f;
             float buttonsY = dialogRect.y + dialogHeight - 30f * s;
 
             Rect deleteRect = new Rect(buttonsStartX, buttonsY, buttonWidth, buttonH);
-            Rect cancelRect = new Rect(buttonsStartX + buttonWidth + buttonSpacing, buttonsY, buttonWidth, buttonH);
+            Rect cancelRect = new Rect(
+                buttonsStartX + buttonWidth + buttonSpacing,
+                buttonsY,
+                buttonWidth,
+                buttonH
+            );
 
             bool shouldDelete = false;
             bool shouldCancel = false;
@@ -459,7 +541,10 @@ namespace RuntimeCurveEditor
                 deletePresetIndex = -1;
             }
 
-            if (Event.current.type == EventType.MouseDown && dialogRect.Contains(Event.current.mousePosition))
+            if (
+                Event.current.type == EventType.MouseDown
+                && dialogRect.Contains(Event.current.mousePosition)
+            )
             {
                 Event.current.Use();
             }
@@ -494,15 +579,26 @@ namespace RuntimeCurveEditor
                     src.time * hRange + hMin,
                     src.value * vRange + vMin,
                     float.IsInfinity(src.inTangent) ? src.inTangent : src.inTangent * tangentScale,
-                    float.IsInfinity(src.outTangent) ? src.outTangent : src.outTangent * tangentScale
+                    float.IsInfinity(src.outTangent)
+                        ? src.outTangent
+                        : src.outTangent * tangentScale
                 );
                 keys[i].weightedMode = src.weightedMode;
                 keys[i].inWeight = src.inWeight;
                 keys[i].outWeight = src.outWeight;
 
-                KeyframeTangentUtility.SetKeyBroken(ref keys[i], KeyframeTangentUtility.GetKeyBroken(src));
-                KeyframeTangentUtility.SetKeyLeftTangentMode(ref keys[i], KeyframeTangentUtility.GetKeyLeftTangentMode(src));
-                KeyframeTangentUtility.SetKeyRightTangentMode(ref keys[i], KeyframeTangentUtility.GetKeyRightTangentMode(src));
+                KeyframeTangentUtility.SetKeyBroken(
+                    ref keys[i],
+                    KeyframeTangentUtility.GetKeyBroken(src)
+                );
+                KeyframeTangentUtility.SetKeyLeftTangentMode(
+                    ref keys[i],
+                    KeyframeTangentUtility.GetKeyLeftTangentMode(src)
+                );
+                KeyframeTangentUtility.SetKeyRightTangentMode(
+                    ref keys[i],
+                    KeyframeTangentUtility.GetKeyRightTangentMode(src)
+                );
             }
 
             AnimationCurve result = new AnimationCurve(keys);
@@ -529,10 +625,26 @@ namespace RuntimeCurveEditor
 
         private static void DrawRectBorder(Rect rect, Color color)
         {
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.xMax, rect.y), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.y), new Vector2(rect.xMax, rect.yMax), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.yMax), new Vector2(rect.x, rect.yMax), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.yMax), new Vector2(rect.x, rect.y), color);
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.x, rect.y),
+                new Vector2(rect.xMax, rect.y),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.xMax, rect.y),
+                new Vector2(rect.xMax, rect.yMax),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.xMax, rect.yMax),
+                new Vector2(rect.x, rect.yMax),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.x, rect.yMax),
+                new Vector2(rect.x, rect.y),
+                color
+            );
         }
 
         // --- Preset keyframe factories ---
@@ -542,7 +654,7 @@ namespace RuntimeCurveEditor
             Keyframe[] keys = new Keyframe[]
             {
                 new Keyframe(0f, 0f, 1f, 1f),
-                new Keyframe(1f, 1f, 1f, 1f)
+                new Keyframe(1f, 1f, 1f, 1f),
             };
             SetSmoothEditable(ref keys, KeyframeTangentUtility.TangentMode.Auto);
             return keys;
@@ -553,7 +665,7 @@ namespace RuntimeCurveEditor
             Keyframe[] keys = new Keyframe[]
             {
                 new Keyframe(0f, 0f, 0f, 0f),
-                new Keyframe(1f, 1f, 2f, 2f)
+                new Keyframe(1f, 1f, 2f, 2f),
             };
             SetSmoothEditable(ref keys, KeyframeTangentUtility.TangentMode.Free);
             return keys;
@@ -564,7 +676,7 @@ namespace RuntimeCurveEditor
             Keyframe[] keys = new Keyframe[]
             {
                 new Keyframe(0f, 0f, 2f, 2f),
-                new Keyframe(1f, 1f, 0f, 0f)
+                new Keyframe(1f, 1f, 0f, 0f),
             };
             SetSmoothEditable(ref keys, KeyframeTangentUtility.TangentMode.Free);
             return keys;
@@ -575,7 +687,7 @@ namespace RuntimeCurveEditor
             Keyframe[] keys = new Keyframe[]
             {
                 new Keyframe(0f, 0f, 0f, 0f),
-                new Keyframe(1f, 1f, 0f, 0f)
+                new Keyframe(1f, 1f, 0f, 0f),
             };
             SetSmoothEditable(ref keys, KeyframeTangentUtility.TangentMode.Free);
             return keys;
@@ -586,13 +698,16 @@ namespace RuntimeCurveEditor
             Keyframe[] keys = new Keyframe[]
             {
                 new Keyframe(0f, value, 0f, 0f),
-                new Keyframe(1f, value, 0f, 0f)
+                new Keyframe(1f, value, 0f, 0f),
             };
             SetSmoothEditable(ref keys, KeyframeTangentUtility.TangentMode.Auto);
             return keys;
         }
 
-        private static void SetSmoothEditable(ref Keyframe[] keys, KeyframeTangentUtility.TangentMode tangentMode)
+        private static void SetSmoothEditable(
+            ref Keyframe[] keys,
+            KeyframeTangentUtility.TangentMode tangentMode
+        )
         {
             for (int i = 0; i < keys.Length; i++)
             {
@@ -607,7 +722,8 @@ namespace RuntimeCurveEditor
         private static void EnsureStyles()
         {
             float scale = Scale;
-            if (s_PresetLabelStyle != null && Mathf.Approximately(s_CachedScale, scale)) return;
+            if (s_PresetLabelStyle != null && Mathf.Approximately(s_CachedScale, scale))
+                return;
             s_CachedScale = scale;
 
             s_PresetLabelStyle = new GUIStyle(GUI.skin.label);
@@ -626,7 +742,8 @@ namespace RuntimeCurveEditor
 
         private static void EnsureDialogStyles()
         {
-            if (s_SaveDialogLabelStyle != null) return;
+            if (s_SaveDialogLabelStyle != null)
+                return;
 
             float scale = Scale;
             s_SaveDialogLabelStyle = new GUIStyle(GUI.skin.label);

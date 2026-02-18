@@ -4,13 +4,15 @@ using System.Collections.Generic;
 namespace RuntimeCurveEditor
 {
     [Serializable]
-    public class RuntimeCurveSelection : IComparable<RuntimeCurveSelection>, IEquatable<RuntimeCurveSelection>
+    public class RuntimeCurveSelection
+        : IComparable<RuntimeCurveSelection>,
+            IEquatable<RuntimeCurveSelection>
     {
         public enum SelectionType
         {
             Key,
             InTangent,
-            OutTangent
+            OutTangent,
         }
 
         public int curveID;
@@ -29,15 +31,18 @@ namespace RuntimeCurveEditor
         public int CompareTo(RuntimeCurveSelection other)
         {
             int cmp = curveID.CompareTo(other.curveID);
-            if (cmp != 0) return cmp;
+            if (cmp != 0)
+                return cmp;
             cmp = key.CompareTo(other.key);
-            if (cmp != 0) return cmp;
+            if (cmp != 0)
+                return cmp;
             return type.CompareTo(other.type);
         }
 
         public bool Equals(RuntimeCurveSelection other)
         {
-            if (other == null) return false;
+            if (other == null)
+                return false;
             return curveID == other.curveID && key == other.key && type == other.type;
         }
 
@@ -68,7 +73,11 @@ namespace RuntimeCurveEditor
             for (int i = 0; i < selectedKeys.Count; i++)
             {
                 var s = selectedKeys[i];
-                if (s.curveID == curveID && s.key == keyIndex && s.type == RuntimeCurveSelection.SelectionType.Key)
+                if (
+                    s.curveID == curveID
+                    && s.key == keyIndex
+                    && s.type == RuntimeCurveSelection.SelectionType.Key
+                )
                     return true;
             }
             return false;
@@ -90,12 +99,21 @@ namespace RuntimeCurveEditor
             if (!additive)
                 selectedKeys.Clear();
 
-            var sel = new RuntimeCurveSelection(curveID, keyIndex, RuntimeCurveSelection.SelectionType.Key);
+            var sel = new RuntimeCurveSelection(
+                curveID,
+                keyIndex,
+                RuntimeCurveSelection.SelectionType.Key
+            );
             if (!selectedKeys.Contains(sel))
                 selectedKeys.Add(sel);
         }
 
-        public void SelectTangent(int curveID, int keyIndex, RuntimeCurveSelection.SelectionType tangentType, bool additive)
+        public void SelectTangent(
+            int curveID,
+            int keyIndex,
+            RuntimeCurveSelection.SelectionType tangentType,
+            bool additive
+        )
         {
             if (!additive)
                 selectedKeys.Clear();
@@ -119,7 +137,9 @@ namespace RuntimeCurveEditor
         {
             selectedKeys.Clear();
             for (int i = 0; i < keyCount; i++)
-                selectedKeys.Add(new RuntimeCurveSelection(curveID, i, RuntimeCurveSelection.SelectionType.Key));
+                selectedKeys.Add(
+                    new RuntimeCurveSelection(curveID, i, RuntimeCurveSelection.SelectionType.Key)
+                );
         }
 
         public List<int> GetSelectedKeyIndices(int curveID)
@@ -128,7 +148,11 @@ namespace RuntimeCurveEditor
             for (int i = 0; i < selectedKeys.Count; i++)
             {
                 var s = selectedKeys[i];
-                if (s.curveID == curveID && s.type == RuntimeCurveSelection.SelectionType.Key && !result.Contains(s.key))
+                if (
+                    s.curveID == curveID
+                    && s.type == RuntimeCurveSelection.SelectionType.Key
+                    && !result.Contains(s.key)
+                )
                     result.Add(s.key);
             }
             result.Sort();
@@ -140,7 +164,8 @@ namespace RuntimeCurveEditor
             for (int i = selectedKeys.Count - 1; i >= 0; i--)
             {
                 var s = selectedKeys[i];
-                if (s.curveID != curveID) continue;
+                if (s.curveID != curveID)
+                    continue;
                 if (s.key == removedIndex)
                     selectedKeys.RemoveAt(i);
                 else if (s.key > removedIndex)

@@ -20,11 +20,11 @@ namespace RuntimeCurveEditor
             Auto = 1,
             Linear = 2,
             Constant = 3,
-            ClampedAuto = 4
+            ClampedAuto = 4,
         }
 
-        private const int kBrokenMask = 1;         // bit 0
-        private const int kLeftTangentMask = 0x3E;  // bits 1-5 (5 bits)
+        private const int kBrokenMask = 1; // bit 0
+        private const int kLeftTangentMask = 0x3E; // bits 1-5 (5 bits)
         private const int kLeftTangentShift = 1;
         private const int kRightTangentMask = 0x7C0; // bits 6-10 (5 bits)
         private const int kRightTangentShift = 6;
@@ -48,12 +48,14 @@ namespace RuntimeCurveEditor
 
         public static void SetKeyLeftTangentMode(ref Keyframe key, TangentMode mode)
         {
-            key.tangentMode = (key.tangentMode & ~kLeftTangentMask) | ((int)mode << kLeftTangentShift);
+            key.tangentMode =
+                (key.tangentMode & ~kLeftTangentMask) | ((int)mode << kLeftTangentShift);
         }
 
         public static void SetKeyRightTangentMode(ref Keyframe key, TangentMode mode)
         {
-            key.tangentMode = (key.tangentMode & ~kRightTangentMask) | ((int)mode << kRightTangentShift);
+            key.tangentMode =
+                (key.tangentMode & ~kRightTangentMask) | ((int)mode << kRightTangentShift);
         }
 
         public static void SetKeyBroken(ref Keyframe key, bool broken)
@@ -87,7 +89,8 @@ namespace RuntimeCurveEditor
         /// </summary>
         public static void UpdateTangentsFromMode(AnimationCurve curve, int index)
         {
-            if (index < 0 || index >= curve.length) return;
+            if (index < 0 || index >= curve.length)
+                return;
 
             Keyframe key = curve[index];
             TangentMode leftMode = GetKeyLeftTangentMode(key);
@@ -116,7 +119,11 @@ namespace RuntimeCurveEditor
             }
             else if (leftMode == TangentMode.ClampedAuto || leftMode == TangentMode.Auto)
             {
-                float tangent = CalculateAutoTangent(curve, index, leftMode == TangentMode.ClampedAuto);
+                float tangent = CalculateAutoTangent(
+                    curve,
+                    index,
+                    leftMode == TangentMode.ClampedAuto
+                );
                 key.inTangent = tangent;
                 if (!GetKeyBroken(key))
                 {
@@ -146,7 +153,11 @@ namespace RuntimeCurveEditor
             }
             else if (rightMode == TangentMode.ClampedAuto || rightMode == TangentMode.Auto)
             {
-                float tangent = CalculateAutoTangent(curve, index, rightMode == TangentMode.ClampedAuto);
+                float tangent = CalculateAutoTangent(
+                    curve,
+                    index,
+                    rightMode == TangentMode.ClampedAuto
+                );
                 key.outTangent = tangent;
                 if (!GetKeyBroken(key))
                 {
@@ -166,7 +177,8 @@ namespace RuntimeCurveEditor
         /// </summary>
         private static float CalculateAutoTangent(AnimationCurve curve, int index, bool clamped)
         {
-            if (curve.length < 2) return 0f;
+            if (curve.length < 2)
+                return 0f;
 
             Keyframe key = curve[index];
 
@@ -208,7 +220,8 @@ namespace RuntimeCurveEditor
             float dtPrev = key.time - prevKey.time;
             float dtNext = nextKey.time - key.time;
 
-            if (dtPrev < 0.0001f || dtNext < 0.0001f) return 0f;
+            if (dtPrev < 0.0001f || dtNext < 0.0001f)
+                return 0f;
 
             float slopePrev = (key.value - prevKey.value) / dtPrev;
             float slopeNext = (nextKey.value - key.value) / dtNext;
@@ -220,8 +233,10 @@ namespace RuntimeCurveEditor
             if (clamped)
             {
                 // Clamp to prevent overshoot: if the key is a local extremum, force flat tangent
-                if ((key.value >= prevKey.value && key.value >= nextKey.value) ||
-                    (key.value <= prevKey.value && key.value <= nextKey.value))
+                if (
+                    (key.value >= prevKey.value && key.value >= nextKey.value)
+                    || (key.value <= prevKey.value && key.value <= nextKey.value)
+                )
                 {
                     tangent = 0f;
                 }
@@ -253,8 +268,10 @@ namespace RuntimeCurveEditor
         {
             float inT = key.inTangent;
             float outT = key.outTangent;
-            if (float.IsInfinity(inT)) inT = 0f;
-            if (float.IsInfinity(outT)) outT = 0f;
+            if (float.IsInfinity(inT))
+                inT = 0f;
+            if (float.IsInfinity(outT))
+                outT = 0f;
             return (inT + outT) * 0.5f;
         }
 
@@ -310,18 +327,24 @@ namespace RuntimeCurveEditor
                 if (keyIndex > 0)
                 {
                     var rm = GetKeyRightTangentMode(curve[keyIndex - 1]);
-                    if (rm != TangentMode.ClampedAuto) allClampedAuto = false;
-                    if (rm != TangentMode.Auto) allAuto = false;
+                    if (rm != TangentMode.ClampedAuto)
+                        allClampedAuto = false;
+                    if (rm != TangentMode.Auto)
+                        allAuto = false;
                 }
                 if (keyIndex < curve.length - 1)
                 {
                     var lm = GetKeyLeftTangentMode(curve[keyIndex + 1]);
-                    if (lm != TangentMode.ClampedAuto) allClampedAuto = false;
-                    if (lm != TangentMode.Auto) allAuto = false;
+                    if (lm != TangentMode.ClampedAuto)
+                        allClampedAuto = false;
+                    if (lm != TangentMode.Auto)
+                        allAuto = false;
                 }
 
-                if (allClampedAuto) mode = TangentMode.ClampedAuto;
-                else if (allAuto) mode = TangentMode.Auto;
+                if (allClampedAuto)
+                    mode = TangentMode.ClampedAuto;
+                else if (allAuto)
+                    mode = TangentMode.Auto;
 
                 SetKeyLeftTangentMode(ref key, mode);
                 SetKeyRightTangentMode(ref key, mode);

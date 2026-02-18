@@ -44,7 +44,7 @@ namespace NaughtyAttributes.Editor
                     x = rect.x,
                     y = rect.y,
                     width = rect.width,
-                    height = EditorGUIUtility.singleLineHeight
+                    height = EditorGUIUtility.singleLineHeight,
                 };
 
                 EditorGUI.PropertyField(propertyRect, property, label);
@@ -57,7 +57,7 @@ namespace NaughtyAttributes.Editor
                         x = rect.x + NaughtyEditorGUI.GetIndentLength(rect),
                         y = rect.y + EditorGUIUtility.singleLineHeight,
                         width = rect.width,
-                        height = GetAssetPreviewSize(property).y
+                        height = GetAssetPreviewSize(property).y,
                     };
 
                     GUI.Label(previewRect, previewTexture);

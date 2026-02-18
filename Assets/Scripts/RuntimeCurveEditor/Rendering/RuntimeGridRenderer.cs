@@ -21,13 +21,20 @@ namespace RuntimeCurveEditor
             }
         }
 
-        public static void DrawGrid(Rect curveArea, Vector2 shownAreaMin, Vector2 shownAreaMax, bool showLabels)
+        public static void DrawGrid(
+            Rect curveArea,
+            Vector2 shownAreaMin,
+            Vector2 shownAreaMax,
+            bool showLabels
+        )
         {
-            if (RuntimeCurveRenderer.LineMaterial == null) return;
+            if (RuntimeCurveRenderer.LineMaterial == null)
+                return;
 
             float rangeX = shownAreaMax.x - shownAreaMin.x;
             float rangeY = shownAreaMax.y - shownAreaMin.y;
-            if (rangeX <= 0f || rangeY <= 0f) return;
+            if (rangeX <= 0f || rangeY <= 0f)
+                return;
 
             // Calculate nice tick spacings
             float hTick = CalculateNiceTickSpacing(rangeX, curveArea.width, 80f);
@@ -55,8 +62,18 @@ namespace RuntimeCurveEditor
             // Axis lines (time=0, value=0)
             if (shownAreaMin.x <= 0f && shownAreaMax.x >= 0f)
             {
-                Vector2 top = RuntimeCurveRenderer.DrawingToView(new Vector2(0f, shownAreaMax.y), curveArea, shownAreaMin, shownAreaMax);
-                Vector2 bot = RuntimeCurveRenderer.DrawingToView(new Vector2(0f, shownAreaMin.y), curveArea, shownAreaMin, shownAreaMax);
+                Vector2 top = RuntimeCurveRenderer.DrawingToView(
+                    new Vector2(0f, shownAreaMax.y),
+                    curveArea,
+                    shownAreaMin,
+                    shownAreaMax
+                );
+                Vector2 bot = RuntimeCurveRenderer.DrawingToView(
+                    new Vector2(0f, shownAreaMin.y),
+                    curveArea,
+                    shownAreaMin,
+                    shownAreaMax
+                );
                 GL.Begin(GL.LINES);
                 GL.Color(axisColor);
                 GL.Vertex3(top.x, top.y, 0f);
@@ -65,8 +82,18 @@ namespace RuntimeCurveEditor
             }
             if (shownAreaMin.y <= 0f && shownAreaMax.y >= 0f)
             {
-                Vector2 left = RuntimeCurveRenderer.DrawingToView(new Vector2(shownAreaMin.x, 0f), curveArea, shownAreaMin, shownAreaMax);
-                Vector2 right = RuntimeCurveRenderer.DrawingToView(new Vector2(shownAreaMax.x, 0f), curveArea, shownAreaMin, shownAreaMax);
+                Vector2 left = RuntimeCurveRenderer.DrawingToView(
+                    new Vector2(shownAreaMin.x, 0f),
+                    curveArea,
+                    shownAreaMin,
+                    shownAreaMax
+                );
+                Vector2 right = RuntimeCurveRenderer.DrawingToView(
+                    new Vector2(shownAreaMax.x, 0f),
+                    curveArea,
+                    shownAreaMin,
+                    shownAreaMax
+                );
                 GL.Begin(GL.LINES);
                 GL.Color(axisColor);
                 GL.Vertex3(left.x, left.y, 0f);
@@ -84,9 +111,17 @@ namespace RuntimeCurveEditor
             }
         }
 
-        private static void DrawGridLines(Rect curveArea, Vector2 shownAreaMin, Vector2 shownAreaMax, float tickSpacing, bool vertical, Color color)
+        private static void DrawGridLines(
+            Rect curveArea,
+            Vector2 shownAreaMin,
+            Vector2 shownAreaMax,
+            float tickSpacing,
+            bool vertical,
+            Color color
+        )
         {
-            if (tickSpacing <= 0f) return;
+            if (tickSpacing <= 0f)
+                return;
 
             GL.Begin(GL.LINES);
             GL.Color(color);
@@ -96,9 +131,20 @@ namespace RuntimeCurveEditor
                 float startTick = Mathf.Floor(shownAreaMin.x / tickSpacing) * tickSpacing;
                 for (float t = startTick; t <= shownAreaMax.x; t += tickSpacing)
                 {
-                    Vector2 top = RuntimeCurveRenderer.DrawingToView(new Vector2(t, shownAreaMax.y), curveArea, shownAreaMin, shownAreaMax);
-                    if (top.x < curveArea.x || top.x > curveArea.xMax) continue;
-                    Vector2 bot = RuntimeCurveRenderer.DrawingToView(new Vector2(t, shownAreaMin.y), curveArea, shownAreaMin, shownAreaMax);
+                    Vector2 top = RuntimeCurveRenderer.DrawingToView(
+                        new Vector2(t, shownAreaMax.y),
+                        curveArea,
+                        shownAreaMin,
+                        shownAreaMax
+                    );
+                    if (top.x < curveArea.x || top.x > curveArea.xMax)
+                        continue;
+                    Vector2 bot = RuntimeCurveRenderer.DrawingToView(
+                        new Vector2(t, shownAreaMin.y),
+                        curveArea,
+                        shownAreaMin,
+                        shownAreaMax
+                    );
                     GL.Vertex3(top.x, top.y, 0f);
                     GL.Vertex3(bot.x, bot.y, 0f);
                 }
@@ -108,9 +154,20 @@ namespace RuntimeCurveEditor
                 float startTick = Mathf.Floor(shownAreaMin.y / tickSpacing) * tickSpacing;
                 for (float v = startTick; v <= shownAreaMax.y; v += tickSpacing)
                 {
-                    Vector2 left = RuntimeCurveRenderer.DrawingToView(new Vector2(shownAreaMin.x, v), curveArea, shownAreaMin, shownAreaMax);
-                    if (left.y < curveArea.y || left.y > curveArea.yMax) continue;
-                    Vector2 right = RuntimeCurveRenderer.DrawingToView(new Vector2(shownAreaMax.x, v), curveArea, shownAreaMin, shownAreaMax);
+                    Vector2 left = RuntimeCurveRenderer.DrawingToView(
+                        new Vector2(shownAreaMin.x, v),
+                        curveArea,
+                        shownAreaMin,
+                        shownAreaMax
+                    );
+                    if (left.y < curveArea.y || left.y > curveArea.yMax)
+                        continue;
+                    Vector2 right = RuntimeCurveRenderer.DrawingToView(
+                        new Vector2(shownAreaMax.x, v),
+                        curveArea,
+                        shownAreaMin,
+                        shownAreaMax
+                    );
                     GL.Vertex3(left.x, left.y, 0f);
                     GL.Vertex3(right.x, right.y, 0f);
                 }
@@ -119,9 +176,16 @@ namespace RuntimeCurveEditor
             GL.End();
         }
 
-        private static void DrawTickLabels(Rect curveArea, Vector2 shownAreaMin, Vector2 shownAreaMax, float tickSpacing, bool horizontal)
+        private static void DrawTickLabels(
+            Rect curveArea,
+            Vector2 shownAreaMin,
+            Vector2 shownAreaMax,
+            float tickSpacing,
+            bool horizontal
+        )
         {
-            if (tickSpacing <= 0f) return;
+            if (tickSpacing <= 0f)
+                return;
 
             string format = GetLabelFormat(tickSpacing);
 
@@ -130,7 +194,12 @@ namespace RuntimeCurveEditor
                 float startTick = Mathf.Floor(shownAreaMin.x / tickSpacing) * tickSpacing;
                 for (float t = startTick; t <= shownAreaMax.x; t += tickSpacing)
                 {
-                    Vector2 pos = RuntimeCurveRenderer.DrawingToView(new Vector2(t, shownAreaMin.y), curveArea, shownAreaMin, shownAreaMax);
+                    Vector2 pos = RuntimeCurveRenderer.DrawingToView(
+                        new Vector2(t, shownAreaMin.y),
+                        curveArea,
+                        shownAreaMin,
+                        shownAreaMax
+                    );
                     if (pos.x >= curveArea.x && pos.x <= curveArea.xMax - 30f)
                     {
                         Rect labelRect = new Rect(pos.x + 2f, curveArea.yMax - 14f, 60f, 14f);
@@ -143,7 +212,12 @@ namespace RuntimeCurveEditor
                 float startTick = Mathf.Floor(shownAreaMin.y / tickSpacing) * tickSpacing;
                 for (float v = startTick; v <= shownAreaMax.y; v += tickSpacing)
                 {
-                    Vector2 pos = RuntimeCurveRenderer.DrawingToView(new Vector2(shownAreaMin.x, v), curveArea, shownAreaMin, shownAreaMax);
+                    Vector2 pos = RuntimeCurveRenderer.DrawingToView(
+                        new Vector2(shownAreaMin.x, v),
+                        curveArea,
+                        shownAreaMin,
+                        shownAreaMax
+                    );
                     if (pos.y >= curveArea.y + 5f && pos.y <= curveArea.yMax - 14f)
                     {
                         Rect labelRect = new Rect(curveArea.x + 2f, pos.y - 7f, 60f, 14f);
@@ -153,9 +227,14 @@ namespace RuntimeCurveEditor
             }
         }
 
-        public static float CalculateNiceTickSpacing(float range, float pixelSize, float minPixelsPerTick)
+        public static float CalculateNiceTickSpacing(
+            float range,
+            float pixelSize,
+            float minPixelsPerTick
+        )
         {
-            if (range <= 0f || pixelSize <= 0f) return 1f;
+            if (range <= 0f || pixelSize <= 0f)
+                return 1f;
 
             float rawSpacing = range * minPixelsPerTick / pixelSize;
             return NiceNumber(rawSpacing, true);
@@ -169,17 +248,25 @@ namespace RuntimeCurveEditor
             float niceFraction;
             if (round)
             {
-                if (fraction < 1.5f) niceFraction = 1f;
-                else if (fraction < 3f) niceFraction = 2f;
-                else if (fraction < 7f) niceFraction = 5f;
-                else niceFraction = 10f;
+                if (fraction < 1.5f)
+                    niceFraction = 1f;
+                else if (fraction < 3f)
+                    niceFraction = 2f;
+                else if (fraction < 7f)
+                    niceFraction = 5f;
+                else
+                    niceFraction = 10f;
             }
             else
             {
-                if (fraction <= 1f) niceFraction = 1f;
-                else if (fraction <= 2f) niceFraction = 2f;
-                else if (fraction <= 5f) niceFraction = 5f;
-                else niceFraction = 10f;
+                if (fraction <= 1f)
+                    niceFraction = 1f;
+                else if (fraction <= 2f)
+                    niceFraction = 2f;
+                else if (fraction <= 5f)
+                    niceFraction = 5f;
+                else
+                    niceFraction = 10f;
             }
 
             return niceFraction * Mathf.Pow(10f, exponent);
@@ -187,9 +274,12 @@ namespace RuntimeCurveEditor
 
         private static string GetLabelFormat(float tickSpacing)
         {
-            if (tickSpacing >= 1f) return "F0";
-            if (tickSpacing >= 0.1f) return "F1";
-            if (tickSpacing >= 0.01f) return "F2";
+            if (tickSpacing >= 1f)
+                return "F0";
+            if (tickSpacing >= 0.1f)
+                return "F1";
+            if (tickSpacing >= 0.01f)
+                return "F2";
             return "F3";
         }
     }

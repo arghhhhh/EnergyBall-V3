@@ -42,7 +42,7 @@ namespace RuntimeCurveEditor
                     hRangeMin = hRangeMin,
                     hRangeMax = hRangeMax,
                     vRangeMin = vRangeMin,
-                    vRangeMax = vRangeMax
+                    vRangeMax = vRangeMax,
                 };
             }
             else
@@ -55,7 +55,12 @@ namespace RuntimeCurveEditor
         {
             EnsureStyles();
 
-            Rect thumbnailRect = new Rect(screenPosition.x, screenPosition.y, thumbnailWidth, thumbnailHeight);
+            Rect thumbnailRect = new Rect(
+                screenPosition.x,
+                screenPosition.y,
+                thumbnailWidth,
+                thumbnailHeight
+            );
 
             // Background
             bool hovered = thumbnailRect.Contains(Event.current.mousePosition);
@@ -81,19 +86,27 @@ namespace RuntimeCurveEditor
                     thumbnailRect.x + 2f,
                     thumbnailRect.y + 2f,
                     thumbnailRect.width - 4f,
-                    thumbnailRect.height - 4f);
+                    thumbnailRect.height - 4f
+                );
 
                 RuntimeCurveRenderer.DrawMiniCurve(curve, curveRect, curveColor);
             }
 
             // Click to open editor
-            if (Event.current.type == EventType.MouseDown &&
-                Event.current.button == 0 &&
-                thumbnailRect.Contains(Event.current.mousePosition) &&
-                !RuntimeCurveEditorWindow.IsVisible)
+            if (
+                Event.current.type == EventType.MouseDown
+                && Event.current.button == 0
+                && thumbnailRect.Contains(Event.current.mousePosition)
+                && !RuntimeCurveEditorWindow.IsVisible
+            )
             {
                 UpdateSettings();
-                RuntimeCurveEditorWindow.Show(curve, OnEditorCurveChanged, editorSettings, thumbnailRect);
+                RuntimeCurveEditorWindow.Show(
+                    curve,
+                    OnEditorCurveChanged,
+                    editorSettings,
+                    thumbnailRect
+                );
                 Event.current.Use();
             }
         }
@@ -105,15 +118,32 @@ namespace RuntimeCurveEditor
 
         private static void DrawRectBorder(Rect rect, Color color)
         {
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.xMax, rect.y), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.y), new Vector2(rect.xMax, rect.yMax), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.yMax), new Vector2(rect.x, rect.yMax), color);
-            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.yMax), new Vector2(rect.x, rect.y), color);
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.x, rect.y),
+                new Vector2(rect.xMax, rect.y),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.xMax, rect.y),
+                new Vector2(rect.xMax, rect.yMax),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.xMax, rect.yMax),
+                new Vector2(rect.x, rect.yMax),
+                color
+            );
+            RuntimeCurveRenderer.DrawLine(
+                new Vector2(rect.x, rect.yMax),
+                new Vector2(rect.x, rect.y),
+                color
+            );
         }
 
         private static void EnsureStyles()
         {
-            if (s_ThumbnailStyle != null) return;
+            if (s_ThumbnailStyle != null)
+                return;
 
             s_ThumbnailStyle = new GUIStyle();
             Texture2D bgTex = new Texture2D(1, 1);
