@@ -133,12 +133,13 @@ namespace RuntimeCurveEditor
             Rect titleRect = new Rect(windowRect.x, windowRect.y, windowRect.width, TITLE_BAR_HEIGHT);
             HandleWindowDrag(titleRect);
 
-            // Click outside to close (only if not dragging, no context menu, and no preset dialog)
+            // Click outside to close (only if not dragging, no context menu, and no dialogs)
             if (!isDraggingWindow &&
                 Event.current.type == EventType.MouseDown &&
                 !windowRect.Contains(Event.current.mousePosition) &&
                 !curveEditor.inputHandler.showContextMenu &&
                 !curveEditor.inputHandler.menuManager.IsOpen &&
+                !curveEditor.inputHandler.menuManager.IsEditKeyDialogOpen &&
                 (presets == null || !presets.IsDialogOpen))
             {
                 Hide();
@@ -177,7 +178,9 @@ namespace RuntimeCurveEditor
             Rect curveArea = new Rect(windowRect.x, curveAreaTop, windowRect.width, curveAreaHeight);
 
             // Skip curve editor when a preset dialog is open (dialog overlaps curve area
-            // and would consume input events meant for the dialog buttons)
+            // and would consume input events meant for the dialog buttons).
+            // Edit key dialog is small and floats over the curve, so we still render the curve
+            // (input is already blocked in RuntimeCurveInputHandler).
             if (presets == null || !presets.IsDialogOpen)
                 curveEditor.OnGUI(curveArea);
 
@@ -189,6 +192,9 @@ namespace RuntimeCurveEditor
                 PRESET_BAR_HEIGHT);
 
             presets.OnGUI(presetBarRect, OnPresetSelected, targetCurve);
+
+            // --- Edit key dialog (drawn on top of curve area) ---
+            curveEditor.inputHandler.menuManager.DrawEditKeyDialog(curveArea);
 
             // --- Context menu (drawn last, on top of everything) ---
             if (curveEditor.inputHandler.showContextMenu)

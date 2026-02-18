@@ -46,8 +46,8 @@ namespace RuntimeCurveEditor
             Event e = Event.current;
             if (e == null) return;
 
-            // Context menu takes priority if open - block all normal input so menu can handle clicks
-            if (menuManager.IsOpen)
+            // Block all normal input when menu or edit key dialog is open
+            if (menuManager.IsOpen || menuManager.IsEditKeyDialogOpen)
             {
                 return;
             }

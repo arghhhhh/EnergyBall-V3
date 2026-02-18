@@ -347,6 +347,19 @@ namespace RuntimeCurveEditor
         private RuntimeCurveEditorCore editor;
         private RuntimeContextMenu contextMenu;
 
+        // Edit Key dialog state
+        private bool showEditKeyDialog;
+        private int editKeyIndex;
+        private string editKeyTime = "";
+        private string editKeyValue = "";
+        private bool editKeyFocusSet;
+
+        private static GUIStyle s_EditKeyLabelStyle;
+        private static GUIStyle s_EditKeyFieldStyle;
+        private static GUIStyle s_EditKeyBtnStyle;
+
+        public bool IsEditKeyDialogOpen => showEditKeyDialog;
+
         public RuntimeCurveMenuManager(RuntimeCurveEditorCore editor)
         {
             this.editor = editor;
@@ -394,6 +407,24 @@ namespace RuntimeCurveEditor
                     editor.selection.SelectNone();
                     editor.curveWrapper.changed = true;
                 });
+
+                if (selectedIndices.Count == 1)
+                {
+                    int keyIdx = selectedIndices[0];
+                    contextMenu.AddItem("Edit Key...", false, () =>
+                    {
+                        Keyframe kf = curve[keyIdx];
+                        editKeyIndex = keyIdx;
+                        editKeyTime = kf.time.ToString("G7");
+                        editKeyValue = kf.value.ToString("G7");
+                        editKeyFocusSet = false;
+                        showEditKeyDialog = true;
+                    });
+                }
+                else
+                {
+                    contextMenu.AddDisabledItem("Edit Key...");
+                }
             }
 
             contextMenu.AddSeparator();
@@ -672,6 +703,191 @@ namespace RuntimeCurveEditor
             }
 
             editor.curveWrapper.changed = true;
+        }
+
+        public void DrawEditKeyDialog(Rect curveArea)
+        {
+            if (!showEditKeyDialog) return;
+
+            EnsureEditKeyStyles();
+
+            AnimationCurve curve = editor.curveWrapper.curve;
+            if (editKeyIndex < 0 || editKeyIndex >= curve.length)
+            {
+                showEditKeyDialog = false;
+                return;
+            }
+
+            float scale = RuntimeCurveEditorWindow.UIScale;
+
+            // Dialog dimensions
+            float btnSize = 20f * scale;
+            float btnSpacing = 4f * scale;
+            float dialogWidth = 200f * scale;
+            float dialogHeight = 70f * scale;
+            float rowH = 20f * scale;
+            float labelW = 40f * scale;
+            float fieldPadX = 8f * scale;
+            float fieldPadY = 6f * scale;
+            float fieldW = dialogWidth - fieldPadX * 2 - labelW - btnSize - btnSpacing;
+
+            // Position near the keyframe
+            Keyframe kf = curve[editKeyIndex];
+            Vector2 keyScreen = RuntimeCurveRenderer.DrawingToView(
+                new Vector2(kf.time, kf.value), curveArea, editor.shownAreaMin, editor.shownAreaMax);
+
+            float dialogX = keyScreen.x + 12f * scale;
+            float dialogY = keyScreen.y - dialogHeight - 8f * scale;
+
+            // Clamp to curve area
+            if (dialogX + dialogWidth > curveArea.xMax)
+                dialogX = keyScreen.x - dialogWidth - 12f * scale;
+            if (dialogY < curveArea.y)
+                dialogY = keyScreen.y + 12f * scale;
+            if (dialogX < curveArea.x)
+                dialogX = curveArea.x + 4f * scale;
+            if (dialogY + dialogHeight > curveArea.yMax)
+                dialogY = curveArea.yMax - dialogHeight - 4f * scale;
+
+            Rect dialogRect = new Rect(dialogX, dialogY, dialogWidth, dialogHeight);
+
+            // Background
+            GUI.color = new Color(0.18f, 0.18f, 0.18f, 0.97f);
+            GUI.DrawTexture(dialogRect, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            DrawRectBorder(dialogRect, new Color(0.5f, 0.5f, 0.5f, 0.8f));
+
+            // Time row
+            float rowY = dialogRect.y + fieldPadY;
+            GUI.Label(new Rect(dialogRect.x + fieldPadX, rowY, labelW, rowH), "time", s_EditKeyLabelStyle);
+            Rect timeFieldRect = new Rect(dialogRect.x + fieldPadX + labelW, rowY, fieldW, rowH);
+            GUI.SetNextControlName("EditKeyTimeField");
+            editKeyTime = GUI.TextField(timeFieldRect, editKeyTime, s_EditKeyFieldStyle);
+
+            // Apply button (checkmark) on the time row
+            Rect applyRect = new Rect(timeFieldRect.xMax + btnSpacing, rowY + (rowH - btnSize) / 2f, btnSize, btnSize);
+            if (GUI.Button(applyRect, "\u2713", s_EditKeyBtnStyle))
+            {
+                ApplyEditKey(curve);
+                return;
+            }
+
+            // Value row
+            rowY += rowH + 4f * scale;
+            GUI.Label(new Rect(dialogRect.x + fieldPadX, rowY, labelW, rowH), "value", s_EditKeyLabelStyle);
+            Rect valueFieldRect = new Rect(dialogRect.x + fieldPadX + labelW, rowY, fieldW, rowH);
+            GUI.SetNextControlName("EditKeyValueField");
+            editKeyValue = GUI.TextField(valueFieldRect, editKeyValue, s_EditKeyFieldStyle);
+
+            // Cancel button (X) on the value row
+            Rect cancelRect = new Rect(valueFieldRect.xMax + btnSpacing, rowY + (rowH - btnSize) / 2f, btnSize, btnSize);
+            if (GUI.Button(cancelRect, "\u2717", s_EditKeyBtnStyle))
+            {
+                showEditKeyDialog = false;
+                return;
+            }
+
+            // Focus the time field on first frame
+            if (!editKeyFocusSet)
+            {
+                GUI.FocusControl("EditKeyTimeField");
+                editKeyFocusSet = true;
+            }
+
+            // Handle keyboard — use rawType so we still see keys consumed by text fields
+            bool shouldApply = false;
+            bool shouldCancel = false;
+            Event e = Event.current;
+
+            if (e.rawType == EventType.KeyDown)
+            {
+                if (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)
+                {
+                    shouldApply = true;
+                    e.Use();
+                }
+                else if (e.keyCode == KeyCode.Escape)
+                {
+                    shouldCancel = true;
+                    e.Use();
+                }
+                else if (e.keyCode == KeyCode.Tab)
+                {
+                    string focused = GUI.GetNameOfFocusedControl();
+                    if (focused == "EditKeyTimeField")
+                        GUI.FocusControl("EditKeyValueField");
+                    else
+                        GUI.FocusControl("EditKeyTimeField");
+                    e.Use();
+                }
+            }
+
+            // Click outside dialog to apply
+            if (e.type == EventType.MouseDown && !dialogRect.Contains(e.mousePosition))
+            {
+                shouldApply = true;
+                e.Use();
+            }
+
+            // Consume mouse events on dialog to prevent click-through
+            if (e.type == EventType.MouseDown && dialogRect.Contains(e.mousePosition))
+            {
+                e.Use();
+            }
+
+            if (shouldApply)
+            {
+                ApplyEditKey(curve);
+            }
+
+            if (shouldCancel)
+            {
+                showEditKeyDialog = false;
+            }
+        }
+
+        private void ApplyEditKey(AnimationCurve curve)
+        {
+            if (editKeyIndex >= 0 && editKeyIndex < curve.length &&
+                float.TryParse(editKeyTime, out float newTime) &&
+                float.TryParse(editKeyValue, out float newValue))
+            {
+                Keyframe updated = curve[editKeyIndex];
+                updated.time = newTime;
+                updated.value = newValue;
+                curve.MoveKey(editKeyIndex, updated);
+                KeyframeTangentUtility.UpdateTangentsFromModeSurrounding(curve, editKeyIndex);
+                editor.curveWrapper.changed = true;
+            }
+            showEditKeyDialog = false;
+        }
+
+        private static void DrawRectBorder(Rect rect, Color color)
+        {
+            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.y), new Vector2(rect.xMax, rect.y), color);
+            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.y), new Vector2(rect.xMax, rect.yMax), color);
+            RuntimeCurveRenderer.DrawLine(new Vector2(rect.xMax, rect.yMax), new Vector2(rect.x, rect.yMax), color);
+            RuntimeCurveRenderer.DrawLine(new Vector2(rect.x, rect.yMax), new Vector2(rect.x, rect.y), color);
+        }
+
+        private static void EnsureEditKeyStyles()
+        {
+            if (s_EditKeyLabelStyle != null) return;
+
+            s_EditKeyLabelStyle = new GUIStyle(GUI.skin.label);
+            float scale = RuntimeCurveEditorWindow.UIScale;
+            s_EditKeyLabelStyle.fontSize = Mathf.RoundToInt(11 * scale);
+            s_EditKeyLabelStyle.normal.textColor = new Color(0.7f, 0.7f, 0.7f, 0.9f);
+            s_EditKeyLabelStyle.alignment = TextAnchor.MiddleLeft;
+
+            s_EditKeyFieldStyle = new GUIStyle(GUI.skin.textField);
+            s_EditKeyFieldStyle.fontSize = Mathf.RoundToInt(11 * scale);
+
+            s_EditKeyBtnStyle = new GUIStyle(GUI.skin.button);
+            s_EditKeyBtnStyle.fontSize = Mathf.RoundToInt(12 * scale);
+            s_EditKeyBtnStyle.fontStyle = FontStyle.Bold;
+            s_EditKeyBtnStyle.alignment = TextAnchor.MiddleCenter;
+            s_EditKeyBtnStyle.padding = new RectOffset(0, 0, 0, 0);
         }
 
         private static float CalculateSmoothTangent(Keyframe key)
