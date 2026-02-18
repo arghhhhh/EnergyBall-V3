@@ -1,12 +1,15 @@
-﻿using RootSystem = System;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Collections.Generic;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.CameraIntrinsics
     //
-    [RootSystem.Runtime.InteropServices.StructLayout(RootSystem.Runtime.InteropServices.LayoutKind.Sequential)]
+    [RootSystem.Runtime.InteropServices.StructLayout(
+        RootSystem.Runtime.InteropServices.LayoutKind.Sequential
+    )]
     public struct CameraIntrinsics
     {
         public float FocalLengthX { get; set; }
@@ -19,10 +22,13 @@ namespace Windows.Kinect
 
         public override int GetHashCode()
         {
-            return FocalLengthX.GetHashCode() ^ FocalLengthY.GetHashCode() ^
-                PrincipalPointX.GetHashCode() ^ PrincipalPointY.GetHashCode() ^
-                RadialDistortionSecondOrder.GetHashCode() ^ RadialDistortionFourthOrder.GetHashCode() ^
-                RadialDistortionSixthOrder.GetHashCode();
+            return FocalLengthX.GetHashCode()
+                ^ FocalLengthY.GetHashCode()
+                ^ PrincipalPointX.GetHashCode()
+                ^ PrincipalPointY.GetHashCode()
+                ^ RadialDistortionSecondOrder.GetHashCode()
+                ^ RadialDistortionFourthOrder.GetHashCode()
+                ^ RadialDistortionSixthOrder.GetHashCode();
         }
 
         public override bool Equals(object obj)
@@ -37,11 +43,13 @@ namespace Windows.Kinect
 
         public bool Equals(CameraIntrinsics obj)
         {
-            return FocalLengthX.Equals(obj.FocalLengthX) && FocalLengthY.Equals(obj.FocalLengthY) &&
-                PrincipalPointX.Equals(obj.PrincipalPointX) && PrincipalPointY.Equals(obj.PrincipalPointY) &&
-                RadialDistortionSecondOrder.Equals(obj.RadialDistortionSecondOrder) &&
-                RadialDistortionFourthOrder.Equals(obj.RadialDistortionFourthOrder) &&
-                RadialDistortionSixthOrder.Equals(obj.RadialDistortionSixthOrder);
+            return FocalLengthX.Equals(obj.FocalLengthX)
+                && FocalLengthY.Equals(obj.FocalLengthY)
+                && PrincipalPointX.Equals(obj.PrincipalPointX)
+                && PrincipalPointY.Equals(obj.PrincipalPointY)
+                && RadialDistortionSecondOrder.Equals(obj.RadialDistortionSecondOrder)
+                && RadialDistortionFourthOrder.Equals(obj.RadialDistortionFourthOrder)
+                && RadialDistortionSixthOrder.Equals(obj.RadialDistortionSixthOrder);
         }
 
         public static bool operator ==(CameraIntrinsics a, CameraIntrinsics b)
@@ -54,5 +62,4 @@ namespace Windows.Kinect
             return !(a.Equals(b));
         }
     }
-
 }

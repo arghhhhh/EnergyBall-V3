@@ -8,7 +8,9 @@ namespace NaughtyAttributes.Test
         public bool enable1;
         public bool enable2;
         public EnableIfEnum enum1;
-        [EnumFlags] public EnableIfEnumFlag enum2;
+
+        [EnumFlags]
+        public EnableIfEnumFlag enum2;
 
         [EnableIf(EConditionOperator.And, "enable1", "enable2")]
         [ReorderableList]
@@ -39,11 +41,25 @@ namespace NaughtyAttributes.Test
         public bool enable1;
         public bool enable2;
         public EnableIfEnum enum1;
-        [EnumFlags] public EnableIfEnumFlag enum2;
-        public bool Enable1 { get { return enable1; } }
-        public bool Enable2 { get { return enable2; } }
-        public EnableIfEnum Enum1 { get { return enum1; } }
-        public EnableIfEnumFlag Enum2 { get { return enum2; } }
+
+        [EnumFlags]
+        public EnableIfEnumFlag enum2;
+        public bool Enable1
+        {
+            get { return enable1; }
+        }
+        public bool Enable2
+        {
+            get { return enable2; }
+        }
+        public EnableIfEnum Enum1
+        {
+            get { return enum1; }
+        }
+        public EnableIfEnumFlag Enum2
+        {
+            get { return enum2; }
+        }
 
         [EnableIf(EConditionOperator.And, "Enable1", "Enable2")]
         [AllowNesting] // Because it's nested we need to explicitly allow nesting
@@ -74,11 +90,29 @@ namespace NaughtyAttributes.Test
         public bool enable1;
         public bool enable2;
         public EnableIfEnum enum1;
-        [EnumFlags] public EnableIfEnumFlag enum2;
-        public bool GetEnable1() { return enable1; }
-        public bool GetEnable2() { return enable2; }
-        public EnableIfEnum GetEnum1() { return enum1; }
-        public EnableIfEnumFlag GetEnum2() { return enum2; }
+
+        [EnumFlags]
+        public EnableIfEnumFlag enum2;
+
+        public bool GetEnable1()
+        {
+            return enable1;
+        }
+
+        public bool GetEnable2()
+        {
+            return enable2;
+        }
+
+        public EnableIfEnum GetEnum1()
+        {
+            return enum1;
+        }
+
+        public EnableIfEnumFlag GetEnum2()
+        {
+            return enum2;
+        }
 
         [EnableIf(EConditionOperator.And, "GetEnable1", "GetEnable2")]
         [MinMaxSlider(0.0f, 1.0f)] // AllowNesting attribute is not needed, because the field is already marked with a custom naughty property drawer

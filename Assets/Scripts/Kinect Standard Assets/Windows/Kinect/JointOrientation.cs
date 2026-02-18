@@ -1,12 +1,15 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.JointOrientation
     //
-    [RootSystem.Runtime.InteropServices.StructLayout(RootSystem.Runtime.InteropServices.LayoutKind.Sequential)]
+    [RootSystem.Runtime.InteropServices.StructLayout(
+        RootSystem.Runtime.InteropServices.LayoutKind.Sequential
+    )]
     public struct JointOrientation
     {
         public Windows.Kinect.JointType JointType { get; set; }
@@ -42,5 +45,4 @@ namespace Windows.Kinect
             return !(a.Equals(b));
         }
     }
-
 }

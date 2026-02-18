@@ -9,39 +9,64 @@ namespace NaughtyAttributes.Editor
     [CustomPropertyDrawer(typeof(AnimatorParamAttribute))]
     public class AnimatorParamPropertyDrawer : PropertyDrawerBase
     {
-        private const string InvalidAnimatorControllerWarningMessage = "Target animator controller is null";
+        private const string InvalidAnimatorControllerWarningMessage =
+            "Target animator controller is null";
         private const string InvalidTypeWarningMessage = "{0} must be an int or a string";
 
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
-            AnimatorParamAttribute animatorParamAttribute = PropertyUtility.GetAttribute<AnimatorParamAttribute>(property);
-            bool validAnimatorController = GetAnimatorController(property, animatorParamAttribute.AnimatorName) != null;
-            bool validPropertyType = property.propertyType == SerializedPropertyType.Integer || property.propertyType == SerializedPropertyType.String;
+            AnimatorParamAttribute animatorParamAttribute =
+                PropertyUtility.GetAttribute<AnimatorParamAttribute>(property);
+            bool validAnimatorController =
+                GetAnimatorController(property, animatorParamAttribute.AnimatorName) != null;
+            bool validPropertyType =
+                property.propertyType == SerializedPropertyType.Integer
+                || property.propertyType == SerializedPropertyType.String;
 
             return (validAnimatorController && validPropertyType)
                 ? GetPropertyHeight(property)
                 : GetPropertyHeight(property) + GetHelpBoxHeight();
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
-            AnimatorParamAttribute animatorParamAttribute = PropertyUtility.GetAttribute<AnimatorParamAttribute>(property);
+            AnimatorParamAttribute animatorParamAttribute =
+                PropertyUtility.GetAttribute<AnimatorParamAttribute>(property);
 
-            AnimatorController animatorController = GetAnimatorController(property, animatorParamAttribute.AnimatorName);
+            AnimatorController animatorController = GetAnimatorController(
+                property,
+                animatorParamAttribute.AnimatorName
+            );
             if (animatorController == null)
             {
-                DrawDefaultPropertyAndHelpBox(rect, property, InvalidAnimatorControllerWarningMessage, MessageType.Warning);
+                DrawDefaultPropertyAndHelpBox(
+                    rect,
+                    property,
+                    InvalidAnimatorControllerWarningMessage,
+                    MessageType.Warning
+                );
                 return;
             }
 
             int parametersCount = animatorController.parameters.Length;
-            List<AnimatorControllerParameter> animatorParameters = new List<AnimatorControllerParameter>(parametersCount);
+            List<AnimatorControllerParameter> animatorParameters =
+                new List<AnimatorControllerParameter>(parametersCount);
             for (int i = 0; i < parametersCount; i++)
             {
                 AnimatorControllerParameter parameter = animatorController.parameters[i];
-                if (animatorParamAttribute.AnimatorParamType == null || parameter.type == animatorParamAttribute.AnimatorParamType)
+                if (
+                    animatorParamAttribute.AnimatorParamType == null
+                    || parameter.type == animatorParamAttribute.AnimatorParamType
+                )
                 {
                     animatorParameters.Add(parameter);
                 }
@@ -56,14 +81,24 @@ namespace NaughtyAttributes.Editor
                     DrawPropertyForString(rect, property, label, animatorParameters);
                     break;
                 default:
-                    DrawDefaultPropertyAndHelpBox(rect, property, string.Format(InvalidTypeWarningMessage, property.name), MessageType.Warning);
+                    DrawDefaultPropertyAndHelpBox(
+                        rect,
+                        property,
+                        string.Format(InvalidTypeWarningMessage, property.name),
+                        MessageType.Warning
+                    );
                     break;
             }
 
             EditorGUI.EndProperty();
         }
 
-        private static void DrawPropertyForInt(Rect rect, SerializedProperty property, GUIContent label, List<AnimatorControllerParameter> animatorParameters)
+        private static void DrawPropertyForInt(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            List<AnimatorControllerParameter> animatorParameters
+        )
         {
             int paramNameHash = property.intValue;
             int index = 0;
@@ -88,7 +123,12 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        private static void DrawPropertyForString(Rect rect, SerializedProperty property, GUIContent label, List<AnimatorControllerParameter> animatorParameters)
+        private static void DrawPropertyForString(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            List<AnimatorControllerParameter> animatorParameters
+        )
         {
             string paramName = property.stringValue;
             int index = 0;
@@ -126,43 +166,52 @@ namespace NaughtyAttributes.Editor
             return displayOptions;
         }
 
-        private static AnimatorController GetAnimatorController(SerializedProperty property, string animatorName)
+        private static AnimatorController GetAnimatorController(
+            SerializedProperty property,
+            string animatorName
+        )
         {
             object target = PropertyUtility.GetTargetObjectWithProperty(property);
 
             FieldInfo animatorFieldInfo = ReflectionUtility.GetField(target, animatorName);
-            if (animatorFieldInfo != null &&
-                animatorFieldInfo.FieldType == typeof(Animator))
+            if (animatorFieldInfo != null && animatorFieldInfo.FieldType == typeof(Animator))
             {
                 Animator animator = animatorFieldInfo.GetValue(target) as Animator;
                 if (animator != null)
                 {
-                    AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
+                    AnimatorController animatorController =
+                        animator.runtimeAnimatorController as AnimatorController;
                     return animatorController;
                 }
             }
 
             PropertyInfo animatorPropertyInfo = ReflectionUtility.GetProperty(target, animatorName);
-            if (animatorPropertyInfo != null &&
-                animatorPropertyInfo.PropertyType == typeof(Animator))
+            if (
+                animatorPropertyInfo != null
+                && animatorPropertyInfo.PropertyType == typeof(Animator)
+            )
             {
                 Animator animator = animatorPropertyInfo.GetValue(target) as Animator;
                 if (animator != null)
                 {
-                    AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
+                    AnimatorController animatorController =
+                        animator.runtimeAnimatorController as AnimatorController;
                     return animatorController;
                 }
             }
 
             MethodInfo animatorGetterMethodInfo = ReflectionUtility.GetMethod(target, animatorName);
-            if (animatorGetterMethodInfo != null &&
-                animatorGetterMethodInfo.ReturnType == typeof(Animator) &&
-                animatorGetterMethodInfo.GetParameters().Length == 0)
+            if (
+                animatorGetterMethodInfo != null
+                && animatorGetterMethodInfo.ReturnType == typeof(Animator)
+                && animatorGetterMethodInfo.GetParameters().Length == 0
+            )
             {
                 Animator animator = animatorGetterMethodInfo.Invoke(target, null) as Animator;
                 if (animator != null)
                 {
-                    AnimatorController animatorController = animator.runtimeAnimatorController as AnimatorController;
+                    AnimatorController animatorController =
+                        animator.runtimeAnimatorController as AnimatorController;
                     return animatorController;
                 }
             }

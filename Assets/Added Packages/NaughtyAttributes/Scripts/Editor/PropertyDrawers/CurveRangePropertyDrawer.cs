@@ -1,21 +1,29 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using UnityEditor;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     [CustomPropertyDrawer(typeof(CurveRangeAttribute))]
     public class CurveRangePropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
-            float propertyHeight = property.propertyType == SerializedPropertyType.AnimationCurve
-                ? GetPropertyHeight(property)
-                : GetPropertyHeight(property) + GetHelpBoxHeight();
+            float propertyHeight =
+                property.propertyType == SerializedPropertyType.AnimationCurve
+                    ? GetPropertyHeight(property)
+                    : GetPropertyHeight(property) + GetHelpBoxHeight();
 
             return propertyHeight;
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -32,14 +40,18 @@ namespace NaughtyAttributes.Editor
                 curveRangeAttribute.Min.x,
                 curveRangeAttribute.Min.y,
                 curveRangeAttribute.Max.x - curveRangeAttribute.Min.x,
-                curveRangeAttribute.Max.y - curveRangeAttribute.Min.y);
+                curveRangeAttribute.Max.y - curveRangeAttribute.Min.y
+            );
 
             EditorGUI.CurveField(
                 rect,
                 property,
-                curveRangeAttribute.Color == EColor.Clear ? Color.green : curveRangeAttribute.Color.GetColor(),
+                curveRangeAttribute.Color == EColor.Clear
+                    ? Color.green
+                    : curveRangeAttribute.Color.GetColor(),
                 curveRanges,
-                label);
+                label
+            );
 
             EditorGUI.EndProperty();
         }

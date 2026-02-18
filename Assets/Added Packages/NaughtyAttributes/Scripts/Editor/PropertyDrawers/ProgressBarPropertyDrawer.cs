@@ -1,15 +1,19 @@
-﻿using UnityEngine;
+﻿using System.Reflection;
 using UnityEditor;
-using System.Reflection;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     [CustomPropertyDrawer(typeof(ProgressBarAttribute))]
     public class ProgressBarPropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
-            ProgressBarAttribute progressBarAttribute = PropertyUtility.GetAttribute<ProgressBarAttribute>(property);
+            ProgressBarAttribute progressBarAttribute =
+                PropertyUtility.GetAttribute<ProgressBarAttribute>(property);
             var maxValue = GetMaxValue(property, progressBarAttribute);
 
             return IsNumber(property) && IsNumber(maxValue)
@@ -17,7 +21,11 @@ namespace NaughtyAttributes.Editor
                 : GetPropertyHeight(property) + GetHelpBoxHeight();
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -28,15 +36,30 @@ namespace NaughtyAttributes.Editor
                 return;
             }
 
-            ProgressBarAttribute progressBarAttribute = PropertyUtility.GetAttribute<ProgressBarAttribute>(property);
-            var value = property.propertyType == SerializedPropertyType.Integer ? property.intValue : property.floatValue;
-            var valueFormatted = property.propertyType == SerializedPropertyType.Integer ? value.ToString() : string.Format("{0:0.00}", value);
+            ProgressBarAttribute progressBarAttribute =
+                PropertyUtility.GetAttribute<ProgressBarAttribute>(property);
+            var value =
+                property.propertyType == SerializedPropertyType.Integer
+                    ? property.intValue
+                    : property.floatValue;
+            var valueFormatted =
+                property.propertyType == SerializedPropertyType.Integer
+                    ? value.ToString()
+                    : string.Format("{0:0.00}", value);
             var maxValue = GetMaxValue(property, progressBarAttribute);
 
             if (maxValue != null && IsNumber(maxValue))
             {
                 var fillPercentage = value / CastToFloat(maxValue);
-                var barLabel = (!string.IsNullOrEmpty(progressBarAttribute.Name) ? "[" + progressBarAttribute.Name + "] " : "") + valueFormatted + "/" + maxValue;
+                var barLabel =
+                    (
+                        !string.IsNullOrEmpty(progressBarAttribute.Name)
+                            ? "[" + progressBarAttribute.Name + "] "
+                            : ""
+                    )
+                    + valueFormatted
+                    + "/"
+                    + maxValue;
                 var barColor = progressBarAttribute.Color.GetColor();
                 var labelColor = Color.white;
 
@@ -55,7 +78,8 @@ namespace NaughtyAttributes.Editor
             {
                 string message = string.Format(
                     "The provided dynamic max value for the progress bar is not correct. Please check if the '{0}' is correct, or the return type is float/int",
-                    nameof(progressBarAttribute.MaxValueName));
+                    nameof(progressBarAttribute.MaxValueName)
+                );
 
                 DrawDefaultPropertyAndHelpBox(rect, property, message, MessageType.Warning);
             }
@@ -63,7 +87,10 @@ namespace NaughtyAttributes.Editor
             EditorGUI.EndProperty();
         }
 
-        private object GetMaxValue(SerializedProperty property, ProgressBarAttribute progressBarAttribute)
+        private object GetMaxValue(
+            SerializedProperty property,
+            ProgressBarAttribute progressBarAttribute
+        )
         {
             if (string.IsNullOrEmpty(progressBarAttribute.MaxValueName))
             {
@@ -73,22 +100,36 @@ namespace NaughtyAttributes.Editor
             {
                 object target = PropertyUtility.GetTargetObjectWithProperty(property);
 
-                FieldInfo valuesFieldInfo = ReflectionUtility.GetField(target, progressBarAttribute.MaxValueName);
+                FieldInfo valuesFieldInfo = ReflectionUtility.GetField(
+                    target,
+                    progressBarAttribute.MaxValueName
+                );
                 if (valuesFieldInfo != null)
                 {
                     return valuesFieldInfo.GetValue(target);
                 }
 
-                PropertyInfo valuesPropertyInfo = ReflectionUtility.GetProperty(target, progressBarAttribute.MaxValueName);
+                PropertyInfo valuesPropertyInfo = ReflectionUtility.GetProperty(
+                    target,
+                    progressBarAttribute.MaxValueName
+                );
                 if (valuesPropertyInfo != null)
                 {
                     return valuesPropertyInfo.GetValue(target);
                 }
 
-                MethodInfo methodValuesInfo = ReflectionUtility.GetMethod(target, progressBarAttribute.MaxValueName);
-                if (methodValuesInfo != null &&
-                    (methodValuesInfo.ReturnType == typeof(float) || methodValuesInfo.ReturnType == typeof(int)) &&
-                    methodValuesInfo.GetParameters().Length == 0)
+                MethodInfo methodValuesInfo = ReflectionUtility.GetMethod(
+                    target,
+                    progressBarAttribute.MaxValueName
+                );
+                if (
+                    methodValuesInfo != null
+                    && (
+                        methodValuesInfo.ReturnType == typeof(float)
+                        || methodValuesInfo.ReturnType == typeof(int)
+                    )
+                    && methodValuesInfo.GetParameters().Length == 0
+                )
                 {
                     return methodValuesInfo.Invoke(target, null);
                 }
@@ -97,7 +138,13 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        private void DrawBar(Rect rect, float fillPercent, string label, Color barColor, Color labelColor)
+        private void DrawBar(
+            Rect rect,
+            float fillPercent,
+            string label,
+            Color barColor,
+            Color labelColor
+        )
         {
             if (Event.current.type != EventType.Repaint)
             {
@@ -130,7 +177,9 @@ namespace NaughtyAttributes.Editor
 
         private bool IsNumber(SerializedProperty property)
         {
-            bool isNumber = property.propertyType == SerializedPropertyType.Float || property.propertyType == SerializedPropertyType.Integer;
+            bool isNumber =
+                property.propertyType == SerializedPropertyType.Float
+                || property.propertyType == SerializedPropertyType.Integer;
             return isNumber;
         }
 

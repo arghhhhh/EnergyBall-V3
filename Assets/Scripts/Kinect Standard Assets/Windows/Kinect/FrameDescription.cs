@@ -1,16 +1,19 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.FrameDescription
     //
     public sealed partial class FrameDescription : Helper.INativeWrapper
-
     {
         internal RootSystem.IntPtr _pNative;
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal FrameDescription(RootSystem.IntPtr pNative)
@@ -24,10 +27,24 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_FrameDescription_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_FrameDescription_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_FrameDescription_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_FrameDescription_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
+
         private void Dispose(bool disposing)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -43,10 +60,16 @@ namespace Windows.Kinect
             _pNative = RootSystem.IntPtr.Zero;
         }
 
-
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern uint Windows_Kinect_FrameDescription_get_BytesPerPixel(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern uint Windows_Kinect_FrameDescription_get_BytesPerPixel(
+            RootSystem.IntPtr pNative
+        );
+
         public uint BytesPerPixel
         {
             get
@@ -60,8 +83,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern float Windows_Kinect_FrameDescription_get_DiagonalFieldOfView(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern float Windows_Kinect_FrameDescription_get_DiagonalFieldOfView(
+            RootSystem.IntPtr pNative
+        );
+
         public float DiagonalFieldOfView
         {
             get
@@ -75,8 +105,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern int Windows_Kinect_FrameDescription_get_Height(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern int Windows_Kinect_FrameDescription_get_Height(
+            RootSystem.IntPtr pNative
+        );
+
         public int Height
         {
             get
@@ -90,8 +127,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern float Windows_Kinect_FrameDescription_get_HorizontalFieldOfView(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern float Windows_Kinect_FrameDescription_get_HorizontalFieldOfView(
+            RootSystem.IntPtr pNative
+        );
+
         public float HorizontalFieldOfView
         {
             get
@@ -105,8 +149,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern uint Windows_Kinect_FrameDescription_get_LengthInPixels(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern uint Windows_Kinect_FrameDescription_get_LengthInPixels(
+            RootSystem.IntPtr pNative
+        );
+
         public uint LengthInPixels
         {
             get
@@ -120,8 +171,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern float Windows_Kinect_FrameDescription_get_VerticalFieldOfView(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern float Windows_Kinect_FrameDescription_get_VerticalFieldOfView(
+            RootSystem.IntPtr pNative
+        );
+
         public float VerticalFieldOfView
         {
             get
@@ -135,8 +193,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern int Windows_Kinect_FrameDescription_get_Width(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern int Windows_Kinect_FrameDescription_get_Width(
+            RootSystem.IntPtr pNative
+        );
+
         public int Width
         {
             get
@@ -150,9 +215,6 @@ namespace Windows.Kinect
             }
         }
 
-        private void __EventCleanup()
-        {
-        }
+        private void __EventCleanup() { }
     }
-
 }

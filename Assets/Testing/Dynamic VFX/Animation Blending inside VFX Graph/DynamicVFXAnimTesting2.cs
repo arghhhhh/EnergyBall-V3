@@ -3,7 +3,7 @@ using UnityEngine.VFX;
 
 public class DynamicVFXAnimTesting2 : MonoBehaviour
 {
-    public VisualEffect vfx;             // Assign in Inspector
+    public VisualEffect vfx; // Assign in Inspector
     public string DirectionParameter = "Direction";
     public string StartTimeParameter = "StartTime";
     public string prevStartTimeParameter = "PrevStartTime";
@@ -12,8 +12,8 @@ public class DynamicVFXAnimTesting2 : MonoBehaviour
     public KeyCode animToggleKey = KeyCode.S;
 
     private bool animDirection = false;
-    private float prevStartTime = 0f;    // Track the previous start time
-    private Vector4 prevValue = Vector4.zero;        // Track the previous value
+    private float prevStartTime = 0f; // Track the previous start time
+    private Vector4 prevValue = Vector4.zero; // Track the previous value
 
     void Start()
     {
@@ -27,7 +27,7 @@ public class DynamicVFXAnimTesting2 : MonoBehaviour
             // Store the current start time as the previous start time
             prevStartTime = vfx.GetFloat(StartTimeParameter);
             prevValue = vfx.GetVector4(currentValueParameter);
-            
+
             animDirection = !animDirection;
             vfx.SetBool(DirectionParameter, animDirection);
             vfx.SetFloat(StartTimeParameter, Time.time);

@@ -1,16 +1,19 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.FrameCapturedEventArgs
     //
     public sealed partial class FrameCapturedEventArgs : RootSystem.EventArgs, Helper.INativeWrapper
-
     {
         internal RootSystem.IntPtr _pNative;
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal FrameCapturedEventArgs(RootSystem.IntPtr pNative)
@@ -24,10 +27,24 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_FrameCapturedEventArgs_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_FrameCapturedEventArgs_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_FrameCapturedEventArgs_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_FrameCapturedEventArgs_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
+
         private void Dispose(bool disposing)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -43,10 +60,16 @@ namespace Windows.Kinect
             _pNative = RootSystem.IntPtr.Zero;
         }
 
-
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern Windows.Kinect.FrameCapturedStatus Windows_Kinect_FrameCapturedEventArgs_get_FrameStatus(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern Windows.Kinect.FrameCapturedStatus Windows_Kinect_FrameCapturedEventArgs_get_FrameStatus(
+            RootSystem.IntPtr pNative
+        );
+
         public Windows.Kinect.FrameCapturedStatus FrameStatus
         {
             get
@@ -60,8 +83,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern Windows.Kinect.FrameSourceTypes Windows_Kinect_FrameCapturedEventArgs_get_FrameType(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern Windows.Kinect.FrameSourceTypes Windows_Kinect_FrameCapturedEventArgs_get_FrameType(
+            RootSystem.IntPtr pNative
+        );
+
         public Windows.Kinect.FrameSourceTypes FrameType
         {
             get
@@ -75,8 +105,15 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern long Windows_Kinect_FrameCapturedEventArgs_get_RelativeTime(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern long Windows_Kinect_FrameCapturedEventArgs_get_RelativeTime(
+            RootSystem.IntPtr pNative
+        );
+
         public RootSystem.TimeSpan RelativeTime
         {
             get
@@ -86,13 +123,12 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("FrameCapturedEventArgs");
                 }
 
-                return RootSystem.TimeSpan.FromMilliseconds(Windows_Kinect_FrameCapturedEventArgs_get_RelativeTime(_pNative));
+                return RootSystem.TimeSpan.FromMilliseconds(
+                    Windows_Kinect_FrameCapturedEventArgs_get_RelativeTime(_pNative)
+                );
             }
         }
 
-        private void __EventCleanup()
-        {
-        }
+        private void __EventCleanup() { }
     }
-
 }

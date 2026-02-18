@@ -1,13 +1,16 @@
-﻿using UnityEngine;
+﻿using System;
 using UnityEditor;
-using System;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     [CustomPropertyDrawer(typeof(EnumFlagsAttribute))]
     public class EnumFlagsPropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             Enum targetEnum = PropertyUtility.GetTargetObjectOfProperty(property) as Enum;
 
@@ -16,7 +19,11 @@ namespace NaughtyAttributes.Editor
                 : GetPropertyHeight(property) + GetHelpBoxHeight();
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 

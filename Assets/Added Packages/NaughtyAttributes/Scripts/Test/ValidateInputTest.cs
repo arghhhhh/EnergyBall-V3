@@ -46,7 +46,5 @@ namespace NaughtyAttributes.Test
     }
 
     [System.Serializable]
-    public class ValidateInputInheritedNest : ValidateInputNest1
-    {
-    }
+    public class ValidateInputInheritedNest : ValidateInputNest1 { }
 }

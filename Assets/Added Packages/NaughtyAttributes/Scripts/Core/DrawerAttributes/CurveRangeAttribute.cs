@@ -18,13 +18,15 @@ namespace NaughtyAttributes
         }
 
         public CurveRangeAttribute(EColor color)
-            : this(Vector2.zero, Vector2.one, color)
-        {
-        }
+            : this(Vector2.zero, Vector2.one, color) { }
 
-        public CurveRangeAttribute(float minX, float minY, float maxX, float maxY, EColor color = EColor.Clear)
-            : this(new Vector2(minX, minY), new Vector2(maxX, maxY), color)
-        {
-        }
+        public CurveRangeAttribute(
+            float minX,
+            float minY,
+            float maxX,
+            float maxY,
+            EColor color = EColor.Clear
+        )
+            : this(new Vector2(minX, minY), new Vector2(maxX, maxY), color) { }
     }
 }

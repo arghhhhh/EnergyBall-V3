@@ -3,7 +3,5 @@
 namespace NaughtyAttributes
 {
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
-    public class EnumFlagsAttribute : DrawerAttribute
-    {
-    }
+    public class EnumFlagsAttribute : DrawerAttribute { }
 }

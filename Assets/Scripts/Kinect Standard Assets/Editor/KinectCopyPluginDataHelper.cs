@@ -1,21 +1,28 @@
-﻿using UnityEngine;
-using UnityEditor;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
+using UnityEngine;
 
 public static class KinectCopyPluginDataHelper
 {
     private const string DataDirSuffix = "_Data";
     private const string PluginsDirName = "Plugins";
 
-    private static Dictionary<BuildTarget, string> TargetToDirName = new Dictionary<BuildTarget, string>()
-        {
-            {BuildTarget.StandaloneWindows, "x86"},
-            {BuildTarget.StandaloneWindows64, "x86_64"}
-        };
+    private static Dictionary<BuildTarget, string> TargetToDirName = new Dictionary<
+        BuildTarget,
+        string
+    >()
+    {
+        { BuildTarget.StandaloneWindows, "x86" },
+        { BuildTarget.StandaloneWindows64, "x86_64" }
+    };
 
-    public static void CopyPluginData(BuildTarget target, string buildTargetPath, string subDirToCopy)
+    public static void CopyPluginData(
+        BuildTarget target,
+        string buildTargetPath,
+        string subDirToCopy
+    )
     {
         string subDirName;
         if (!TargetToDirName.TryGetValue(target, out subDirName))
@@ -30,8 +37,17 @@ public static class KinectCopyPluginDataHelper
         var separator = Path.DirectorySeparatorChar;
 
         var buildDataDir = targetDir.FullName + separator + buildName + DataDirSuffix + separator;
-        var tgtPluginsDir = buildDataDir + separator + PluginsDirName + separator + subDirToCopy + separator;
-        var srcPluginsDir = Application.dataPath + separator + PluginsDirName + separator + subDirName + separator + subDirToCopy + separator;
+        var tgtPluginsDir =
+            buildDataDir + separator + PluginsDirName + separator + subDirToCopy + separator;
+        var srcPluginsDir =
+            Application.dataPath
+            + separator
+            + PluginsDirName
+            + separator
+            + subDirName
+            + separator
+            + subDirToCopy
+            + separator;
 
         CopyAll(new DirectoryInfo(srcPluginsDir), new DirectoryInfo(tgtPluginsDir));
     }
@@ -66,5 +82,4 @@ public static class KinectCopyPluginDataHelper
             CopyAll(subDirInfo, nextTargetSubDir);
         }
     }
-
 }

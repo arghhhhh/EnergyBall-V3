@@ -1,6 +1,7 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
@@ -10,5 +11,4 @@ namespace Windows.Kinect
     {
         WearingGlasses = 0,
     }
-
 }

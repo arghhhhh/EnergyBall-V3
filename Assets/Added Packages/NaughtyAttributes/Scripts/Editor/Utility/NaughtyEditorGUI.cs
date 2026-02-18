@@ -16,9 +16,18 @@ namespace NaughtyAttributes.Editor
 
         private static GUIStyle _buttonStyle = new GUIStyle(GUI.skin.button) { richText = true };
 
-        private delegate void PropertyFieldFunction(Rect rect, SerializedProperty property, GUIContent label, bool includeChildren);
+        private delegate void PropertyFieldFunction(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            bool includeChildren
+        );
 
-        public static void PropertyField(Rect rect, SerializedProperty property, bool includeChildren)
+        public static void PropertyField(
+            Rect rect,
+            SerializedProperty property,
+            bool includeChildren
+        )
         {
             PropertyField_Implementation(rect, property, includeChildren, DrawPropertyField);
         }
@@ -26,22 +35,43 @@ namespace NaughtyAttributes.Editor
         public static void PropertyField_Layout(SerializedProperty property, bool includeChildren)
         {
             Rect dummyRect = new Rect();
-            PropertyField_Implementation(dummyRect, property, includeChildren, DrawPropertyField_Layout);
+            PropertyField_Implementation(
+                dummyRect,
+                property,
+                includeChildren,
+                DrawPropertyField_Layout
+            );
         }
 
-        private static void DrawPropertyField(Rect rect, SerializedProperty property, GUIContent label, bool includeChildren)
+        private static void DrawPropertyField(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            bool includeChildren
+        )
         {
             EditorGUI.PropertyField(rect, property, label, includeChildren);
         }
 
-        private static void DrawPropertyField_Layout(Rect rect, SerializedProperty property, GUIContent label, bool includeChildren)
+        private static void DrawPropertyField_Layout(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label,
+            bool includeChildren
+        )
         {
             EditorGUILayout.PropertyField(property, label, includeChildren);
         }
 
-        private static void PropertyField_Implementation(Rect rect, SerializedProperty property, bool includeChildren, PropertyFieldFunction propertyFieldFunction)
+        private static void PropertyField_Implementation(
+            Rect rect,
+            SerializedProperty property,
+            bool includeChildren,
+            PropertyFieldFunction propertyFieldFunction
+        )
         {
-            SpecialCaseDrawerAttribute specialCaseAttribute = PropertyUtility.GetAttribute<SpecialCaseDrawerAttribute>(property);
+            SpecialCaseDrawerAttribute specialCaseAttribute =
+                PropertyUtility.GetAttribute<SpecialCaseDrawerAttribute>(property);
             if (specialCaseAttribute != null)
             {
                 specialCaseAttribute.GetDrawer().OnGUI(rect, property);
@@ -56,7 +86,8 @@ namespace NaughtyAttributes.Editor
                 }
 
                 // Validate
-                ValidatorAttribute[] validatorAttributes = PropertyUtility.GetAttributes<ValidatorAttribute>(property);
+                ValidatorAttribute[] validatorAttributes =
+                    PropertyUtility.GetAttributes<ValidatorAttribute>(property);
                 foreach (var validatorAttribute in validatorAttributes)
                 {
                     validatorAttribute.GetValidator().ValidateProperty(property);
@@ -68,7 +99,12 @@ namespace NaughtyAttributes.Editor
 
                 using (new EditorGUI.DisabledScope(disabled: !enabled))
                 {
-                    propertyFieldFunction.Invoke(rect, property, PropertyUtility.GetLabel(property), includeChildren);
+                    propertyFieldFunction.Invoke(
+                        rect,
+                        property,
+                        PropertyUtility.GetLabel(property),
+                        includeChildren
+                    );
                 }
 
                 // Call OnValueChanged callbacks
@@ -113,8 +149,15 @@ namespace NaughtyAttributes.Editor
         /// <param name="values">The values of the dropdown</param>
         /// <param name="displayOptions">The display options for the values</param>
         public static void Dropdown(
-            Rect rect, SerializedObject serializedObject, object target, FieldInfo dropdownField,
-            string label, int selectedValueIndex, object[] values, string[] displayOptions)
+            Rect rect,
+            SerializedObject serializedObject,
+            object target,
+            FieldInfo dropdownField,
+            string label,
+            int selectedValueIndex,
+            object[] values,
+            string[] displayOptions
+        )
         {
             EditorGUI.BeginChangeCheck();
 
@@ -142,16 +185,19 @@ namespace NaughtyAttributes.Editor
 
             if (methodInfo.GetParameters().All(p => p.IsOptional))
             {
-                ButtonAttribute buttonAttribute = (ButtonAttribute)methodInfo.GetCustomAttributes(typeof(ButtonAttribute), true)[0];
-                string buttonText = string.IsNullOrEmpty(buttonAttribute.Text) ? ObjectNames.NicifyVariableName(methodInfo.Name) : buttonAttribute.Text;
+                ButtonAttribute buttonAttribute = (ButtonAttribute)
+                    methodInfo.GetCustomAttributes(typeof(ButtonAttribute), true)[0];
+                string buttonText = string.IsNullOrEmpty(buttonAttribute.Text)
+                    ? ObjectNames.NicifyVariableName(methodInfo.Name)
+                    : buttonAttribute.Text;
 
                 bool buttonEnabled = ButtonUtility.IsEnabled(target, methodInfo);
 
                 EButtonEnableMode mode = buttonAttribute.SelectedEnableMode;
                 buttonEnabled &=
-                    mode == EButtonEnableMode.Always ||
-                    mode == EButtonEnableMode.Editor && !Application.isPlaying ||
-                    mode == EButtonEnableMode.Playmode && Application.isPlaying;
+                    mode == EButtonEnableMode.Always
+                    || mode == EButtonEnableMode.Editor && !Application.isPlaying
+                    || mode == EButtonEnableMode.Playmode && Application.isPlaying;
 
                 bool methodIsCoroutine = methodInfo.ReturnType == typeof(IEnumerator);
                 if (methodIsCoroutine)
@@ -163,8 +209,12 @@ namespace NaughtyAttributes.Editor
 
                 if (GUILayout.Button(buttonText, _buttonStyle))
                 {
-                    object[] defaultParams = methodInfo.GetParameters().Select(p => p.DefaultValue).ToArray();
-                    IEnumerator methodResult = methodInfo.Invoke(target, defaultParams) as IEnumerator;
+                    object[] defaultParams = methodInfo
+                        .GetParameters()
+                        .Select(p => p.DefaultValue)
+                        .ToArray();
+                    IEnumerator methodResult =
+                        methodInfo.Invoke(target, defaultParams) as IEnumerator;
 
                     if (!Application.isPlaying)
                     {
@@ -193,7 +243,8 @@ namespace NaughtyAttributes.Editor
             }
             else
             {
-                string warning = typeof(ButtonAttribute).Name + " works only on methods with no parameters";
+                string warning =
+                    typeof(ButtonAttribute).Name + " works only on methods with no parameters";
                 HelpBox_Layout(warning, MessageType.Warning, context: target, logToConsole: true);
             }
         }
@@ -204,12 +255,20 @@ namespace NaughtyAttributes.Editor
 
             if (value == null)
             {
-                string warning = string.Format("{0} is null. {1} doesn't support reference types with null value", ObjectNames.NicifyVariableName(property.Name), typeof(ShowNativePropertyAttribute).Name);
+                string warning = string.Format(
+                    "{0} is null. {1} doesn't support reference types with null value",
+                    ObjectNames.NicifyVariableName(property.Name),
+                    typeof(ShowNativePropertyAttribute).Name
+                );
                 HelpBox_Layout(warning, MessageType.Warning, context: target);
             }
             else if (!Field_Layout(value, ObjectNames.NicifyVariableName(property.Name)))
             {
-                string warning = string.Format("{0} doesn't support {1} types", typeof(ShowNativePropertyAttribute).Name, property.PropertyType.Name);
+                string warning = string.Format(
+                    "{0} doesn't support {1} types",
+                    typeof(ShowNativePropertyAttribute).Name,
+                    property.PropertyType.Name
+                );
                 HelpBox_Layout(warning, MessageType.Warning, context: target);
             }
         }
@@ -220,12 +279,20 @@ namespace NaughtyAttributes.Editor
 
             if (value == null)
             {
-                string warning = string.Format("{0} is null. {1} doesn't support reference types with null value", ObjectNames.NicifyVariableName(field.Name), typeof(ShowNonSerializedFieldAttribute).Name);
+                string warning = string.Format(
+                    "{0} is null. {1} doesn't support reference types with null value",
+                    ObjectNames.NicifyVariableName(field.Name),
+                    typeof(ShowNonSerializedFieldAttribute).Name
+                );
                 HelpBox_Layout(warning, MessageType.Warning, context: target);
             }
             else if (!Field_Layout(value, ObjectNames.NicifyVariableName(field.Name)))
             {
-                string warning = string.Format("{0} doesn't support {1} types", typeof(ShowNonSerializedFieldAttribute).Name, field.FieldType.Name);
+                string warning = string.Format(
+                    "{0} doesn't support {1} types",
+                    typeof(ShowNonSerializedFieldAttribute).Name,
+                    field.FieldType.Name
+                );
                 HelpBox_Layout(warning, MessageType.Warning, context: target);
             }
         }
@@ -236,7 +303,13 @@ namespace NaughtyAttributes.Editor
             EditorGUI.DrawRect(rect, color);
         }
 
-        public static void HelpBox(Rect rect, string message, MessageType type, UnityEngine.Object context = null, bool logToConsole = false)
+        public static void HelpBox(
+            Rect rect,
+            string message,
+            MessageType type,
+            UnityEngine.Object context = null,
+            bool logToConsole = false
+        )
         {
             EditorGUI.HelpBox(rect, message, type);
 
@@ -246,7 +319,12 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        public static void HelpBox_Layout(string message, MessageType type, UnityEngine.Object context = null, bool logToConsole = false)
+        public static void HelpBox_Layout(
+            string message,
+            MessageType type,
+            UnityEngine.Object context = null,
+            bool logToConsole = false
+        )
         {
             EditorGUILayout.HelpBox(message, type);
 
@@ -360,7 +438,11 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        private static void DebugLogMessage(string message, MessageType type, UnityEngine.Object context)
+        private static void DebugLogMessage(
+            string message,
+            MessageType type,
+            UnityEngine.Object context
+        )
         {
             switch (type)
             {

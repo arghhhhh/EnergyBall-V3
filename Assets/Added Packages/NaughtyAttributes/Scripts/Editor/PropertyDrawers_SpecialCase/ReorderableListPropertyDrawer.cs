@@ -1,15 +1,17 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditorInternal;
-using System.Collections.Generic;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     public class ReorderableListPropertyDrawer : SpecialCasePropertyDrawerBase
     {
-        public static readonly ReorderableListPropertyDrawer Instance = new ReorderableListPropertyDrawer();
+        public static readonly ReorderableListPropertyDrawer Instance =
+            new ReorderableListPropertyDrawer();
 
-        private readonly Dictionary<string, ReorderableList> _reorderableListsByPropertyName = new Dictionary<string, ReorderableList>();
+        private readonly Dictionary<string, ReorderableList> _reorderableListsByPropertyName =
+            new Dictionary<string, ReorderableList>();
 
         private GUIStyle _labelStyle;
 
@@ -35,7 +37,12 @@ namespace NaughtyAttributes.Editor
             {
                 string key = GetPropertyKeyName(property);
 
-                if (_reorderableListsByPropertyName.TryGetValue(key, out ReorderableList reorderableList) == false)
+                if (
+                    _reorderableListsByPropertyName.TryGetValue(
+                        key,
+                        out ReorderableList reorderableList
+                    ) == false
+                )
                 {
                     return 0;
                 }
@@ -46,7 +53,11 @@ namespace NaughtyAttributes.Editor
             return EditorGUI.GetPropertyHeight(property, true);
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             if (property.isArray)
             {
@@ -55,11 +66,22 @@ namespace NaughtyAttributes.Editor
                 ReorderableList reorderableList = null;
                 if (!_reorderableListsByPropertyName.ContainsKey(key))
                 {
-                    reorderableList = new ReorderableList(property.serializedObject, property, true, true, true, true)
+                    reorderableList = new ReorderableList(
+                        property.serializedObject,
+                        property,
+                        true,
+                        true,
+                        true,
+                        true
+                    )
                     {
                         drawHeaderCallback = (Rect r) =>
                         {
-                            EditorGUI.LabelField(r, string.Format("{0}: {1}", label.text, property.arraySize), GetLabelStyle());
+                            EditorGUI.LabelField(
+                                r,
+                                string.Format("{0}: {1}", label.text, property.arraySize),
+                                GetLabelStyle()
+                            );
                             HandleDragAndDrop(r, reorderableList);
                         },
 
@@ -70,12 +92,18 @@ namespace NaughtyAttributes.Editor
                             r.x += 10.0f;
                             r.width -= 10.0f;
 
-                            EditorGUI.PropertyField(new Rect(r.x, r.y, r.width, EditorGUIUtility.singleLineHeight), element, true);
+                            EditorGUI.PropertyField(
+                                new Rect(r.x, r.y, r.width, EditorGUIUtility.singleLineHeight),
+                                element,
+                                true
+                            );
                         },
 
                         elementHeightCallback = (int index) =>
                         {
-                            return EditorGUI.GetPropertyHeight(property.GetArrayElementAtIndex(index)) + 4.0f;
+                            return EditorGUI.GetPropertyHeight(
+                                    property.GetArrayElementAtIndex(index)
+                                ) + 4.0f;
                         }
                     };
 
@@ -95,8 +123,13 @@ namespace NaughtyAttributes.Editor
             }
             else
             {
-                string message = typeof(ReorderableListAttribute).Name + " can be used only on arrays or lists";
-                NaughtyEditorGUI.HelpBox_Layout(message, MessageType.Warning, context: property.serializedObject.targetObject);
+                string message =
+                    typeof(ReorderableListAttribute).Name + " can be used only on arrays or lists";
+                NaughtyEditorGUI.HelpBox_Layout(
+                    message,
+                    MessageType.Warning,
+                    context: property.serializedObject.targetObject
+                );
                 EditorGUILayout.PropertyField(property, true);
             }
         }
@@ -179,7 +212,9 @@ namespace NaughtyAttributes.Editor
                                 {
                                     list.serializedProperty.arraySize++;
                                     int arrayEnd = list.serializedProperty.arraySize - 1;
-                                    list.serializedProperty.GetArrayElementAtIndex(arrayEnd).objectReferenceValue = assignableObject;
+                                    list
+                                        .serializedProperty.GetArrayElementAtIndex(arrayEnd)
+                                        .objectReferenceValue = assignableObject;
                                     didAcceptDrag = true;
                                 }
                             }

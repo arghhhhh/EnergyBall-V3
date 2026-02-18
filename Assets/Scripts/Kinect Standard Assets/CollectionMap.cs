@@ -5,7 +5,8 @@ using System.Text;
 
 namespace Helper
 {
-    class CollectionMap<TKey, TValue> : Helper.ThreadSafeDictionary<TKey, TValue> where TValue : new()
+    class CollectionMap<TKey, TValue> : Helper.ThreadSafeDictionary<TKey, TValue>
+        where TValue : new()
     {
         public bool TryAddDefault(TKey key)
         {

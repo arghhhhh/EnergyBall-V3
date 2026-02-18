@@ -1,16 +1,19 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.AudioBeamFrameList
     //
     public sealed partial class AudioBeamFrameList : RootSystem.IDisposable, Helper.INativeWrapper
-
     {
         internal RootSystem.IntPtr _pNative;
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal AudioBeamFrameList(RootSystem.IntPtr pNative)
@@ -24,10 +27,24 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_AudioBeamFrameList_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_AudioBeamFrameList_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_AudioBeamFrameList_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_AudioBeamFrameList_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
+
         private void Dispose(bool disposing)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -48,10 +65,16 @@ namespace Windows.Kinect
             _pNative = RootSystem.IntPtr.Zero;
         }
 
-
         // Public Methods
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_AudioBeamFrameList_Dispose(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_AudioBeamFrameList_Dispose(
+            RootSystem.IntPtr pNative
+        );
+
         public void Dispose()
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -63,9 +86,6 @@ namespace Windows.Kinect
             RootSystem.GC.SuppressFinalize(this);
         }
 
-        private void __EventCleanup()
-        {
-        }
+        private void __EventCleanup() { }
     }
-
 }

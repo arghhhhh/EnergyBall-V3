@@ -1,7 +1,7 @@
-﻿using RootSystem = System;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using RootSystem = System;
 
 namespace Windows.Kinect
 {
@@ -10,7 +10,10 @@ namespace Windows.Kinect
     {
         internal RootSystem.IntPtr _pNative;
 
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal KinectBuffer(RootSystem.IntPtr pNative)
@@ -24,10 +27,22 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl)]
-        private static extern void Windows_Storage_Streams_IBuffer_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl)]
-        private static extern void Windows_Storage_Streams_IBuffer_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl
+        )]
+        private static extern void Windows_Storage_Streams_IBuffer_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl
+        )]
+        private static extern void Windows_Storage_Streams_IBuffer_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
+
         private void Dispose(bool disposing)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -47,10 +62,16 @@ namespace Windows.Kinect
             _pNative = RootSystem.IntPtr.Zero;
         }
 
-
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern uint Windows_Storage_Streams_IBuffer_get_Capacity(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern uint Windows_Storage_Streams_IBuffer_get_Capacity(
+            RootSystem.IntPtr pNative
+        );
+
         public uint Capacity
         {
             get
@@ -66,10 +87,25 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern uint Windows_Storage_Streams_IBuffer_get_Length(RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Storage_Streams_IBuffer_put_Length(RootSystem.IntPtr pNative, uint value);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern uint Windows_Storage_Streams_IBuffer_get_Length(
+            RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Storage_Streams_IBuffer_put_Length(
+            RootSystem.IntPtr pNative,
+            uint value
+        );
+
         public uint Length
         {
             get
@@ -95,8 +131,14 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl)]
-        private static extern void Windows_Storage_Streams_IBuffer_Dispose(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl
+        )]
+        private static extern void Windows_Storage_Streams_IBuffer_Dispose(
+            RootSystem.IntPtr pNative
+        );
+
         // Constructors and Finalizers
         public void Dispose()
         {
@@ -109,8 +151,15 @@ namespace Windows.Kinect
             RootSystem.GC.SuppressFinalize(this);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern RootSystem.IntPtr Windows_Storage_Streams_IBuffer_get_UnderlyingBuffer(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern RootSystem.IntPtr Windows_Storage_Streams_IBuffer_get_UnderlyingBuffer(
+            RootSystem.IntPtr pNative
+        );
+
         public IntPtr UnderlyingBuffer
         {
             get
@@ -120,7 +169,9 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("KinectBuffer");
                 }
 
-                RootSystem.IntPtr value = Windows_Storage_Streams_IBuffer_get_UnderlyingBuffer(_pNative);
+                RootSystem.IntPtr value = Windows_Storage_Streams_IBuffer_get_UnderlyingBuffer(
+                    _pNative
+                );
                 Helper.ExceptionHelper.CheckLastError();
                 return value;
             }

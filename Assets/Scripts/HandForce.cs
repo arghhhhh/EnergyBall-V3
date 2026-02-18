@@ -10,6 +10,7 @@ public class HandForce
     {
         // controller.debugText.text =
         //     $"leftHandState: {player.leftHandState}\nrightHandState: {player.rightHandState}";
+
         if (
             (player.leftHandState == HandState.Closed || player.leftHandState == HandState.Unknown)
             && (
@@ -19,6 +20,9 @@ public class HandForce
         )
         {
             player.pushParticles = true;
+            // Apply one final push when transitioning to both-hands-closed.
+            // The push target will be the last single open hand's position (if we were in that
+            // state long enough), preserving the sphere's momentum direction.
             if (player.initialized && player.turnOnParticles)
             {
                 AlignAndCalculateVectors(player);
@@ -33,26 +37,64 @@ public class HandForce
         }
     }
 
-    bool isSingleHandOpen(PlayerConstructor player)
+    /// <summary>
+    /// Calculates the target position for the sphere's push force.
+    /// Returns the appropriate hand position based on current state:
+    /// - Single hand open: that hand's position
+    /// - Both hands closed (after single-hand-open long enough): last open hand's position (preserves momentum)
+    /// - Both hands open: true midpoint between hands
+    /// - Both hands closed (quick switch or from both-open): true midpoint between hands
+    /// </summary>
+    Vector3 CalculatePushTarget(PlayerConstructor player)
     {
-        return (player.leftHandStateClamped == HandState.Open && player.rightHandStateClamped == HandState.Closed)
-            || (player.leftHandStateClamped == HandState.Closed && player.rightHandStateClamped == HandState.Open);
-    }
+        var runtimeSettings = controller.GetRuntimeSettings();
 
-    Vector3 CalculateMidpoint(PlayerConstructor player)
-    {
         // Giving myself an extra frame of leeway in case hand tracking returns unknown
-        if (player.leftHandState == HandState.Open && player.rightHandState != HandState.Open && player.rightHandStateClamped != HandState.Open)
+        if (
+            player.leftHandState == HandState.Open
+            && player.rightHandState != HandState.Open
+            && player.rightHandStateClamped != HandState.Open
+        )
         {
             return player.HandLeft.transform.position;
         }
-        else if (player.leftHandState != HandState.Open && player.rightHandState == HandState.Open && player.leftHandStateClamped != HandState.Open)
+        else if (
+            player.leftHandState != HandState.Open
+            && player.rightHandState == HandState.Open
+            && player.leftHandStateClamped != HandState.Open
+        )
         {
             return player.HandRight.transform.position;
         }
         else
         {
-            return (player.HandLeft.transform.position + player.HandRight.transform.position) * 0.5f;
+            // Check if both hands are currently closed (not both open)
+            bool bothHandsClosed =
+                player.leftHandState != HandState.Open && player.rightHandState != HandState.Open;
+
+            // Only use last single open hand's position when BOTH hands are CLOSED
+            // (to preserve momentum direction during final push). When both hands are OPEN,
+            // always use the true midpoint.
+            if (bothHandsClosed)
+            {
+                float timeSinceSingleHandOpen = Time.time - player.singleHandOpenStartTime;
+                bool wasSingleHandOpenLongEnough =
+                    player.lastSingleOpenHand != PlayerConstructor.SingleOpenHand.None
+                    && timeSinceSingleHandOpen >= runtimeSettings.singleHandOpenThreshold;
+
+                if (wasSingleHandOpenLongEnough)
+                {
+                    // Use the last single open hand's position as the target
+                    // This preserves momentum direction when closing the last open hand
+                    return player.lastSingleOpenHand == PlayerConstructor.SingleOpenHand.Left
+                        ? player.HandLeft.transform.position
+                        : player.HandRight.transform.position;
+                }
+            }
+
+            // Default: true midpoint between both hands (used when both open, or quick switch)
+            return (player.HandLeft.transform.position + player.HandRight.transform.position)
+                * 0.5f;
         }
     }
 
@@ -88,16 +130,16 @@ public class HandForce
             runtimeSettings.alignmentVectorStrength.Evaluate(remappedHandDistance)
             * runtimeSettings.alignmentVectorStrengthScaler;
 
-        Vector3 handMidpoint = CalculateMidpoint(player);
+        Vector3 pushTarget = CalculatePushTarget(player);
 
-        Vector3 offsetMidpoint = handMidpoint + alignmentVector * alignmentVectorScaler;
-        float distance = Vector3.Distance(offsetMidpoint, player.sphere.transform.position);
-        Vector3 direction = offsetMidpoint - player.sphere.position;
+        Vector3 offsetTarget = pushTarget + alignmentVector * alignmentVectorScaler;
+        float distance = Vector3.Distance(offsetTarget, player.sphere.transform.position);
+        Vector3 direction = offsetTarget - player.sphere.position;
 
-        PushToTarget(player, distance, direction);
+        ApplyForceTowardTarget(player, distance, direction);
     }
 
-    void PushToTarget(PlayerConstructor player, float distance, Vector3 direction)
+    void ApplyForceTowardTarget(PlayerConstructor player, float distance, Vector3 direction)
     {
         var runtimeSettings = controller.GetRuntimeSettings();
 
@@ -106,7 +148,30 @@ public class HandForce
             0,
             distance
         );
-        float forceDamper = runtimeSettings.forceToMiddle.Evaluate(relativeDistance) * ((isSingleHandOpen(player) && player.IsInbounds()) ? runtimeSettings.singleHandOpenForceDamper : 1f);
+
+        // Calculate the single-hand force multiplier with smooth transition
+        float singleHandMultiplier = 1f;
+        if (player.IsSingleHandOpen && player.IsInbounds())
+        {
+            // Currently in single-hand-open state - use full damper
+            singleHandMultiplier = runtimeSettings.singleHandOpenForceDamper;
+        }
+        else
+        {
+            // Check if we recently left single-hand-open state (for smooth transition)
+            float timeSinceSingleHandEnded = Time.time - player.singleHandOpenEndTime;
+            float transitionDuration = runtimeSettings.singleHandForceLerpDuration;
+
+            if (timeSinceSingleHandEnded < transitionDuration && transitionDuration > 0)
+            {
+                // Lerp from damped force to full force over the transition duration
+                float t = timeSinceSingleHandEnded / transitionDuration;
+                singleHandMultiplier = Mathf.Lerp(runtimeSettings.singleHandOpenForceDamper, 1f, t);
+            }
+        }
+
+        float forceDamper =
+            runtimeSettings.forceToMiddle.Evaluate(relativeDistance) * singleHandMultiplier;
 
         Vector3 forceDirection = direction.normalized;
         Vector3 forceVector = runtimeSettings.pushForce * forceDamper * forceDirection;

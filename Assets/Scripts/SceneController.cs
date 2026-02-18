@@ -106,6 +106,10 @@ public class SceneController : MonoBehaviour
     public float minimumUnscaledSize = 0.5f;
 
     [BoxGroup("Movement-Based Pulsation")]
+    [Tooltip("The maximum size that the body can scale up to.")]
+    public float maximumUnscaledSize = 3.0f;
+
+    [BoxGroup("Movement-Based Pulsation")]
     [Range(0.0001f, 5f)]
     [Tooltip(
         "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
@@ -149,12 +153,30 @@ public class SceneController : MonoBehaviour
     public float initializationResetDelay = 3f;
 
     [BoxGroup("Animation")]
+    [Tooltip(
+        "Minimum time in single-hand-open state before the final push uses that hand's position. "
+            + "Accounts for slight timing discrepancies with real Kinect users."
+    )]
+    public float singleHandOpenThreshold = 0.1f;
+
+    [BoxGroup("Animation")]
+    [Tooltip(
+        "Duration in seconds to lerp the force damper from single-hand to both-hands strength "
+            + "when transitioning from single-hand-open to both-hands-open."
+    )]
+    public float singleHandForceLerpDuration = 0.35f;
+
+    [BoxGroup("Animation")]
     [Range(0f, 1f)]
-    [Tooltip("Speed of the hand opening animation during initialization. Lower values = slower animation.")]
+    [Tooltip(
+        "Speed of the hand opening animation during initialization. Lower values = slower animation."
+    )]
     public float initializationSpeed = 0.05f;
 
     [BoxGroup("Animation")]
-    [Tooltip("Duration in seconds for the metaball radius to animate from minimum to full size during initialization.")]
+    [Tooltip(
+        "Duration in seconds for the metaball radius to animate from minimum to full size during initialization."
+    )]
     public float metaballRadiusAnimationDuration = 2f;
 
     [BoxGroup("Animation")]
@@ -162,7 +184,9 @@ public class SceneController : MonoBehaviour
     public float metaballRadiusAnimationStartSize = 0.1f;
 
     [BoxGroup("Animation")]
-    [Tooltip("Animation curve for the metaball radius transition (0-1 input maps to animation progress).")]
+    [Tooltip(
+        "Animation curve for the metaball radius transition (0-1 input maps to animation progress)."
+    )]
     public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Curve Settings")]
@@ -208,7 +232,7 @@ public class SceneController : MonoBehaviour
         Color.magenta,
         Color.red,
         new(1, 0.5f, 0),
-        Color.yellow
+        Color.yellow,
     };
 
     [ShowIf("customColors")]
@@ -222,7 +246,7 @@ public class SceneController : MonoBehaviour
         new(),
         new(),
         new(),
-        new()
+        new(),
     };
 
     [BoxGroup("Debugging")]
@@ -277,37 +301,36 @@ public class SceneController : MonoBehaviour
 
     private readonly Dictionary<ulong, GameObject> dummies = new();
 
-    private readonly Dictionary<JointType, JointType> boneMap =
-        new()
-        {
-            // { JointType.FootLeft, JointType.AnkleLeft },
-            // { JointType.AnkleLeft, JointType.KneeLeft },
-            // { JointType.KneeLeft, JointType.HipLeft },
-            // { JointType.HipLeft, JointType.SpineBase },
+    private readonly Dictionary<JointType, JointType> boneMap = new()
+    {
+        // { JointType.FootLeft, JointType.AnkleLeft },
+        // { JointType.AnkleLeft, JointType.KneeLeft },
+        // { JointType.KneeLeft, JointType.HipLeft },
+        // { JointType.HipLeft, JointType.SpineBase },
 
-            // { JointType.FootRight, JointType.AnkleRight },
-            // { JointType.AnkleRight, JointType.KneeRight },
-            // { JointType.KneeRight, JointType.HipRight },
-            // { JointType.HipRight, JointType.SpineBase },
+        // { JointType.FootRight, JointType.AnkleRight },
+        // { JointType.AnkleRight, JointType.KneeRight },
+        // { JointType.KneeRight, JointType.HipRight },
+        // { JointType.HipRight, JointType.SpineBase },
 
-            // { JointType.HandTipLeft, JointType.HandLeft },
-            // { JointType.ThumbLeft, JointType.HandLeft },
-            { JointType.HandLeft, JointType.WristLeft },
-            { JointType.WristLeft, JointType.ElbowLeft },
-            { JointType.ElbowLeft, JointType.ShoulderLeft },
-            { JointType.ShoulderLeft, JointType.SpineShoulder },
-            // { JointType.HandTipRight, JointType.HandRight },
-            // { JointType.ThumbRight, JointType.HandRight },
-            { JointType.HandRight, JointType.WristRight },
-            { JointType.WristRight, JointType.ElbowRight },
-            { JointType.ElbowRight, JointType.ShoulderRight },
-            { JointType.ShoulderRight, JointType.SpineShoulder },
+        // { JointType.HandTipLeft, JointType.HandLeft },
+        // { JointType.ThumbLeft, JointType.HandLeft },
+        { JointType.HandLeft, JointType.WristLeft },
+        { JointType.WristLeft, JointType.ElbowLeft },
+        { JointType.ElbowLeft, JointType.ShoulderLeft },
+        { JointType.ShoulderLeft, JointType.SpineShoulder },
+        // { JointType.HandTipRight, JointType.HandRight },
+        // { JointType.ThumbRight, JointType.HandRight },
+        { JointType.HandRight, JointType.WristRight },
+        { JointType.WristRight, JointType.ElbowRight },
+        { JointType.ElbowRight, JointType.ShoulderRight },
+        { JointType.ShoulderRight, JointType.SpineShoulder },
 
-            // { JointType.SpineBase, JointType.SpineMid },
-            // { JointType.SpineMid, JointType.SpineShoulder },
-            // { JointType.SpineShoulder, JointType.Neck },
-            // { JointType.Neck, JointType.Head },
-        };
+        // { JointType.SpineBase, JointType.SpineMid },
+        // { JointType.SpineMid, JointType.SpineShoulder },
+        // { JointType.SpineShoulder, JointType.Neck },
+        // { JointType.Neck, JointType.Head },
+    };
 
     private void OnEnable()
     {
@@ -566,6 +589,9 @@ public class SceneController : MonoBehaviour
     {
         PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
 
+        // Update hand state tracking before processing hand forces
+        playerConstructor.UpdateSingleHandOpenTracking();
+
         if (playerConstructor.beginInitialization)
         {
             metaballsToSDF.SetMetaballPosition(
@@ -607,7 +633,6 @@ public class SceneController : MonoBehaviour
             playerConstructor.beginInitialization = true;
             // playerConstructor.InitializeParticles();
         }
-
         else if (!playerConstructor.beginInitialization)
         {
             playerConstructor.ResetSphereToHandMidpoint();
@@ -828,6 +853,7 @@ public class SceneController : MonoBehaviour
         // Movement-Based Pulsation
         target.singleHandScaling = singleHandScaling;
         target.minimumUnscaledSize = minimumUnscaledSize;
+        target.maximumUnscaledSize = maximumUnscaledSize;
         target.minHandDisplacementPerFrame = minHandDisplacementPerFrame;
         target.distanceDamper = new AnimationCurve(distanceDamper.keys);
         target.pulseScaleDamper = pulseScaleDamper;
@@ -843,6 +869,8 @@ public class SceneController : MonoBehaviour
         // Animation
         target.particleInitializationDelay = particleInitializationDelay;
         target.initializationResetDelay = initializationResetDelay;
+        target.singleHandOpenThreshold = singleHandOpenThreshold;
+        target.singleHandForceLerpDuration = singleHandForceLerpDuration;
         target.initializationSpeed = initializationSpeed;
         target.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
         target.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;
@@ -902,6 +930,7 @@ public class SceneController : MonoBehaviour
         // Movement-Based Pulsation
         singleHandScaling = source.singleHandScaling;
         minimumUnscaledSize = source.minimumUnscaledSize;
+        maximumUnscaledSize = source.maximumUnscaledSize;
         minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
         distanceDamper = new AnimationCurve(source.distanceDamper.keys);
         pulseScaleDamper = source.pulseScaleDamper;
@@ -917,6 +946,8 @@ public class SceneController : MonoBehaviour
         // Animation
         particleInitializationDelay = source.particleInitializationDelay;
         initializationResetDelay = source.initializationResetDelay;
+        singleHandOpenThreshold = source.singleHandOpenThreshold;
+        singleHandForceLerpDuration = source.singleHandForceLerpDuration;
         initializationSpeed = source.initializationSpeed;
         metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;

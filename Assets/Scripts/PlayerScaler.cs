@@ -29,7 +29,8 @@ public class PlayerScaler
         ).magnitude;
 
         var runtimeSettings = controller.GetRuntimeSettings();
-        player.sphere.gameObject.GetComponent<MeshRenderer>().enabled = runtimeSettings.alwaysShowSphereMesh;
+        player.sphere.gameObject.GetComponent<MeshRenderer>().enabled =
+            runtimeSettings.alwaysShowSphereMesh;
 
         // only scale sphere when it's between the hands
         if (
@@ -248,6 +249,10 @@ public class PlayerScaler
         if (Utils.GetVector3Avg(player.unscaledSize) < runtimeSettings.minimumUnscaledSize)
         {
             player.unscaledSize = Utils.FloatToVector3(runtimeSettings.minimumUnscaledSize);
+        }
+        else if (Utils.GetVector3Avg(player.unscaledSize) > runtimeSettings.maximumUnscaledSize)
+        {
+            player.unscaledSize = Utils.FloatToVector3(runtimeSettings.maximumUnscaledSize);
         }
 
         // Debug.Log(hand.gameObject.name + ", distance: " + normal.magnitude + ", projected velo:" + projVelocity.magnitude + ", disp: " + projVelocity.magnitude*Time.deltaTime);

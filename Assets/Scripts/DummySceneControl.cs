@@ -26,8 +26,14 @@ public class DummySceneControl : MonoBehaviour
         SetKeys();
         if (toggleSprites)
         {
-            SetSpriteAlpha(leftHandSprite, player.leftHandState == Windows.Kinect.HandState.Open ? 1f : 0.5f);
-            SetSpriteAlpha(rightHandSprite, player.rightHandState == Windows.Kinect.HandState.Open ? 1f : 0.5f);
+            SetSpriteAlpha(
+                leftHandSprite,
+                player.leftHandState == Windows.Kinect.HandState.Open ? 1f : 0.5f
+            );
+            SetSpriteAlpha(
+                rightHandSprite,
+                player.rightHandState == Windows.Kinect.HandState.Open ? 1f : 0.5f
+            );
         }
     }
 
@@ -87,7 +93,8 @@ public class DummySceneControl : MonoBehaviour
 
     void SetSpriteAlpha(SpriteRenderer sprite, float alpha)
     {
-        if (sprite == null) return;
+        if (sprite == null)
+            return;
         Color color = sprite.color;
         color.a = alpha;
         sprite.color = color;

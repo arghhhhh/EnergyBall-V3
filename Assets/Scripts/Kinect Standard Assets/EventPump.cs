@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Helper
 {
@@ -10,11 +10,7 @@ namespace Helper
         private static object s_Lock = new object();
         private Queue<Action> m_Queue = new Queue<Action>();
 
-        public static EventPump Instance
-        {
-            get;
-            private set;
-        }
+        public static EventPump Instance { get; private set; }
 
         public static void EnsureInitialized()
         {
@@ -26,7 +22,9 @@ namespace Helper
                     {
                         if (EventPump.Instance == null)
                         {
-                            UnityEngine.GameObject parent = new UnityEngine.GameObject("Kinect Desktop Event Pump");
+                            UnityEngine.GameObject parent = new UnityEngine.GameObject(
+                                "Kinect Desktop Event Pump"
+                            );
                             EventPump.Instance = parent.AddComponent<Helper.EventPump>();
                             DontDestroyOnLoad(parent);
                         }

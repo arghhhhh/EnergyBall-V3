@@ -68,49 +68,68 @@ public class PlayerConstructor : MonoBehaviour
     [Foldout("Left Hand")]
     [HideInInspector]
     public Vector3 leftHandPrevPosition = Vector3.zero;
+
     [Foldout("Left Hand")]
     public Transform leftHandCollider;
+
     [Foldout("Left Hand")]
     public GameObject[] leftHandTrailDistorters = new GameObject[2];
+
     [Foldout("Left Hand")]
     [HideInInspector]
     public HandState leftHandState;
+
     [Foldout("Left Hand")]
     [HideInInspector]
     public HandState leftHandStateClamped = HandState.NotTracked;
+
     [Foldout("Left Hand")]
     public Transform leftHandSecondaryAttractor;
+
     [Foldout("Left Hand")]
     public VisualEffect leftHandVfx;
+
     [Foldout("Left Hand")]
     public Animator leftHandAnimator;
+
     [Foldout("Left Hand")]
     public float leftHandStateChangeTime = 0f;
+
     [Foldout("Left Hand")]
     [HideInInspector]
     public Coroutine leftHandOpenCoroutine = null;
+
     [Foldout("Right Hand")]
     [HideInInspector]
     public Vector3 rightHandPrevPosition = Vector3.zero;
+
     [Foldout("Right Hand")]
     public Transform rightHandCollider;
+
     [Foldout("Right Hand")]
     public GameObject[] rightHandTrailDistorters = new GameObject[2];
+
     [Foldout("Right Hand")]
     public Transform rightHandSecondaryAttractor;
+
     [Foldout("Right Hand")]
     [HideInInspector]
     public HandState rightHandState;
+
     [Foldout("Right Hand")]
     [HideInInspector]
     public HandState rightHandStateClamped = HandState.NotTracked;
+
     [Foldout("Right Hand")]
     public float rightHandStateChangeTime = 0f;
+
     [Foldout("Right Hand")]
     [HideInInspector]
     public Coroutine rightHandOpenCoroutine = null;
+
     [Foldout("Right Hand")]
     public VisualEffect rightHandVfx;
+
     [Foldout("Right Hand")]
     public Animator rightHandAnimator;
     #endregion
@@ -209,16 +228,98 @@ public class PlayerConstructor : MonoBehaviour
     // Metaball radius animation - NonSerialized to prevent Unity from persisting stale animation state
     [System.NonSerialized]
     public bool metaballRadiusAnimating = false;
+
     [System.NonSerialized]
     public float metaballRadiusAnimationStartTime = 0f;
+
     // Tracks the radius at the moment animation was interrupted, for smooth transitions
     [System.NonSerialized]
     public float metaballRadiusAtAnimationStart = 0f;
+
     // Tracks when both hands became closed - used to determine if animation should play
     // Animation only plays if BOTH hands have been closed for initializationResetDelay
     // (not just one hand). This prevents animation when quickly switching which hand is open.
     [System.NonSerialized]
     public float bothHandsClosedSinceTime = 0f;
+
+    // Tracks single-hand-open state for momentum-preserving final push when both hands close.
+    // When transitioning from single-hand-open to both-hands-closed, the "push target" should
+    // be the last single open hand's position (not the midpoint) to preserve momentum direction.
+    public enum SingleOpenHand
+    {
+        None,
+        Left,
+        Right
+    }
+
+    [System.NonSerialized]
+    public SingleOpenHand lastSingleOpenHand = SingleOpenHand.None;
+
+    [System.NonSerialized]
+    public float singleHandOpenStartTime = 0f;
+
+    // Tracks when we exited single-hand-open state, used for smooth force damper transition
+    [System.NonSerialized]
+    public float singleHandOpenEndTime = 0f;
+
+    /// <summary>
+    /// Returns true if exactly one hand is open (using clamped states).
+    /// </summary>
+    public bool IsSingleHandOpen =>
+        (leftHandStateClamped == HandState.Open && rightHandStateClamped == HandState.Closed)
+        || (leftHandStateClamped == HandState.Closed && rightHandStateClamped == HandState.Open);
+
+    /// <summary>
+    /// Updates the tracking of which single hand is open and when it started.
+    /// Should be called every frame from SceneController.UpdateOtherPlayerData.
+    /// </summary>
+    public void UpdateSingleHandOpenTracking()
+    {
+        bool leftOpen = leftHandState == HandState.Open || leftHandStateClamped == HandState.Open;
+        bool rightOpen =
+            rightHandState == HandState.Open || rightHandStateClamped == HandState.Open;
+
+        // Determine current single-hand state
+        SingleOpenHand currentSingleHand = SingleOpenHand.None;
+        if (leftOpen && !rightOpen)
+        {
+            currentSingleHand = SingleOpenHand.Left;
+        }
+        else if (rightOpen && !leftOpen)
+        {
+            currentSingleHand = SingleOpenHand.Right;
+        }
+
+        // Track if we were in single-hand-open state last frame
+        bool wasInSingleHandOpen = lastSingleOpenHand != SingleOpenHand.None;
+
+        // Update tracking based on state changes
+        if (currentSingleHand != SingleOpenHand.None)
+        {
+            // We're in single-hand-open state
+            if (lastSingleOpenHand != currentSingleHand)
+            {
+                // Just entered this single-hand state (or switched hands)
+                lastSingleOpenHand = currentSingleHand;
+                singleHandOpenStartTime = Time.time;
+            }
+            // If same hand, keep the existing start time
+        }
+        else if (leftOpen && rightOpen)
+        {
+            // Both hands are open - record when we left single-hand-open state
+            // for smooth force damper transition
+            if (wasInSingleHandOpen)
+            {
+                singleHandOpenEndTime = Time.time;
+            }
+            // Reset tracking so that closing both hands from this state
+            // uses the midpoint, not a stale single-hand position
+            lastSingleOpenHand = SingleOpenHand.None;
+        }
+        // When both hands are closed, we preserve lastSingleOpenHand
+        // so CalculatePushTarget can use it for the final momentum-preserving push
+    }
 
     private void Awake()
     {
@@ -327,9 +428,9 @@ public class PlayerConstructor : MonoBehaviour
             // set size of radius sprite
             radiusSprite.transform.localScale = new Vector3(
                 runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
-                    runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
-                    runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler
-                );
+                runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler,
+                runtimeSettings.attractionRadiusMultiplier * 0.4f * attractionRadiusScaler
+            );
         }
     }
 
@@ -427,9 +528,12 @@ public class PlayerConstructor : MonoBehaviour
         Vector3 gridMin = new(-bounds.x, -bounds.y, -bounds.z + runtimeSettings.baseZDepth);
         Vector3 gridMax = new(bounds.x, bounds.y, bounds.z + runtimeSettings.baseZDepth);
 
-        return position.x >= gridMin.x && position.x <= gridMax.x &&
-               position.y >= gridMin.y && position.y <= gridMax.y &&
-               position.z >= gridMin.z && position.z <= gridMax.z;
+        return position.x >= gridMin.x
+            && position.x <= gridMax.x
+            && position.y >= gridMin.y
+            && position.y <= gridMax.y
+            && position.z >= gridMin.z
+            && position.z <= gridMax.z;
     }
 
     public Vector3 GetClampedMetaballPosition()
@@ -442,12 +546,6 @@ public class PlayerConstructor : MonoBehaviour
             return spherePos;
         }
 
-        // Calculate the midpoint between the two hands as the ray origin
-        Vector3 handMidpoint = (HandLeft.transform.position + HandRight.transform.position) / 2f;
-
-        // Direction from hand midpoint to sphere
-        Vector3 direction = (spherePos - handMidpoint).normalized;
-
         // Get grid boundaries
         Vector3 bounds = controller.GetGridSize() / 2f;
         var runtimeSettings = controller.GetRuntimeSettings();
@@ -456,46 +554,10 @@ public class PlayerConstructor : MonoBehaviour
         Vector3 gridMin = new(-bounds.x, -bounds.y, -bounds.z + runtimeSettings.baseZDepth);
         Vector3 gridMax = new(bounds.x, bounds.y, bounds.z + runtimeSettings.baseZDepth);
 
-        // Perform ray-box intersection to find where the ray intersects the grid boundary
-        // We'll find the furthest point along the ray from handMidpoint that stays within bounds
-        float tMax = float.MaxValue;
-
-        // Check intersection with each axis-aligned plane
-        for (int axis = 0; axis < 3; axis++)
-        {
-            if (Mathf.Abs(direction[axis]) > 0.0001f)
-            {
-                // Check intersection with min plane
-                float tMin = (gridMin[axis] - handMidpoint[axis]) / direction[axis];
-                if (tMin > 0 && tMin < tMax)
-                {
-                    Vector3 intersectionPoint = handMidpoint + direction * tMin;
-                    if (IsInbounds(intersectionPoint))
-                    {
-                        tMax = tMin;
-                    }
-                }
-
-                // Check intersection with max plane
-                float tMaxPlane = (gridMax[axis] - handMidpoint[axis]) / direction[axis];
-                if (tMaxPlane > 0 && tMaxPlane < tMax)
-                {
-                    Vector3 intersectionPoint = handMidpoint + direction * tMaxPlane;
-                    if (IsInbounds(intersectionPoint))
-                    {
-                        tMax = tMaxPlane;
-                    }
-                }
-            }
-        }
-
-        // If we found an intersection, return that point
-        if (tMax < float.MaxValue)
-        {
-            return handMidpoint + direction * tMax;
-        }
-
-        // Fallback: clamp the sphere position to the grid boundaries
+        // Simple axis-aligned clamping: clamp each axis independently to the boundary.
+        // This preserves the sphere's position on axes that are in bounds while clamping
+        // only the out-of-bounds axes. BoundaryForce handles slowing the sphere when it
+        // exceeds the boundary, so complex ray-intersection logic is no longer needed.
         return new Vector3(
             Mathf.Clamp(spherePos.x, gridMin.x, gridMax.x),
             Mathf.Clamp(spherePos.y, gridMin.y, gridMax.y),
@@ -506,7 +568,13 @@ public class PlayerConstructor : MonoBehaviour
     public void ResetSphereToHandMidpoint()
     {
         Vector3 handMidpoint = (HandLeft.transform.position + HandRight.transform.position) / 2f;
-        sphere.transform.position = handMidpoint + new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f));
+        sphere.transform.position =
+            handMidpoint
+            + new Vector3(
+                UnityEngine.Random.Range(-0.5f, 0.5f),
+                UnityEngine.Random.Range(-0.5f, 0.5f),
+                UnityEngine.Random.Range(-0.5f, 0.5f)
+            );
         sphere.linearVelocity = Vector3.zero;
         sphere.angularVelocity = Vector3.zero;
     }
@@ -557,11 +625,7 @@ public class PlayerConstructor : MonoBehaviour
         // Apply animation curve to remap linear t to curved progression
         float curvedT = settings.metaballRadiusAnimationCurve.Evaluate(t);
 
-        return Mathf.Lerp(
-            metaballRadiusAtAnimationStart,
-            sphere.transform.localScale.x,
-            curvedT
-        );
+        return Mathf.Lerp(metaballRadiusAtAnimationStart, sphere.transform.localScale.x, curvedT);
     }
 
     /// <summary>

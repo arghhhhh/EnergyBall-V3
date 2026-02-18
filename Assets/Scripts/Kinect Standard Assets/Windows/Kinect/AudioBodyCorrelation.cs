@@ -1,16 +1,19 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.AudioBodyCorrelation
     //
     public sealed partial class AudioBodyCorrelation : Helper.INativeWrapper
-
     {
         internal RootSystem.IntPtr _pNative;
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal AudioBodyCorrelation(RootSystem.IntPtr pNative)
@@ -24,10 +27,24 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_AudioBodyCorrelation_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern void Windows_Kinect_AudioBodyCorrelation_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_AudioBodyCorrelation_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_AudioBodyCorrelation_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
+
         private void Dispose(bool disposing)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -43,10 +60,16 @@ namespace Windows.Kinect
             _pNative = RootSystem.IntPtr.Zero;
         }
 
-
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError = true)]
-        private static extern ulong Windows_Kinect_AudioBodyCorrelation_get_BodyTrackingId(RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern ulong Windows_Kinect_AudioBodyCorrelation_get_BodyTrackingId(
+            RootSystem.IntPtr pNative
+        );
+
         public ulong BodyTrackingId
         {
             get
@@ -60,9 +83,6 @@ namespace Windows.Kinect
             }
         }
 
-        private void __EventCleanup()
-        {
-        }
+        private void __EventCleanup() { }
     }
-
 }

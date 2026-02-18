@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Helper
 {
     public class SmartGCHandle : IDisposable
     {
         private GCHandle handle;
+
         public SmartGCHandle(GCHandle handle)
         {
             this.handle = handle;
@@ -35,7 +36,6 @@ namespace Helper
 
         public static implicit operator GCHandle(SmartGCHandle other)
         {
-
             return other.handle;
         }
     }

@@ -1,6 +1,6 @@
+using System;
 using NaughtyAttributes;
 using UnityEngine;
-using System;
 
 [CreateAssetMenu]
 public class SceneSettingsSO : ScriptableObject
@@ -33,7 +33,6 @@ public class SceneSettingsSO : ScriptableObject
     public float attractionRadiusMultiplier;
 
     [BoxGroup("Hands Attraction")]
-    [InfoBox("Curve settings (forceToMiddle, alignmentVectorStrength) are managed in SceneController inspector and saved in scene profiles", EInfoBoxType.Normal)]
     public float singleHandOpenForceDamper;
 
     [BoxGroup("Hands Attraction")]
@@ -52,11 +51,15 @@ public class SceneSettingsSO : ScriptableObject
     public float handPushScaler;
 
     [BoxGroup("Hands Attraction")]
-    [Tooltip("When enabled, players must bring their hands together to initialize. When disabled, players start initialized.")]
+    [Tooltip(
+        "When enabled, players must bring their hands together to initialize. When disabled, players start initialized."
+    )]
     public bool prayToActivate;
 
     [BoxGroup("Hands Attraction")]
-    [Tooltip("The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled.")]
+    [Tooltip(
+        "The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled."
+    )]
     public float prayToActivateDistance = 0.65f;
 
     [BoxGroup("Intrinsic Pulsation")]
@@ -81,6 +84,10 @@ public class SceneSettingsSO : ScriptableObject
     public float minimumUnscaledSize;
 
     [BoxGroup("Movement-Based Pulsation")]
+    [Tooltip("The maximum size that the body can scale up to.")]
+    public float maximumUnscaledSize;
+
+    [BoxGroup("Movement-Based Pulsation")]
     [Range(0.0001f, 5f)]
     [Tooltip(
         "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
@@ -88,7 +95,10 @@ public class SceneSettingsSO : ScriptableObject
     public float minHandDisplacementPerFrame;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [InfoBox("distanceDamper curve is managed in SceneController inspector and saved in scene profiles", EInfoBoxType.Normal)]
+    [InfoBox(
+        "distanceDamper curve is managed in SceneController inspector and saved in scene profiles",
+        EInfoBoxType.Normal
+    )]
     [Tooltip("An overall damper for the movement-based pulsation scaling.")]
     public float pulseScaleDamper;
 
@@ -98,6 +108,7 @@ public class SceneSettingsSO : ScriptableObject
 
     [BoxGroup("Miscellaneous")]
     public float maxDistanceBetweenHands;
+
     [BoxGroup("Miscellaneous")]
     public float baseZDepth;
 

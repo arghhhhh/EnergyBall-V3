@@ -1,16 +1,19 @@
-using RootSystem = System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using RootSystem = System;
+
 namespace Windows.Kinect
 {
     //
     // Windows.Kinect.ColorCameraSettings
     //
     public sealed partial class ColorCameraSettings : Helper.INativeWrapper
-
     {
         internal RootSystem.IntPtr _pNative;
-        RootSystem.IntPtr Helper.INativeWrapper.nativePtr { get { return _pNative; } }
+        RootSystem.IntPtr Helper.INativeWrapper.nativePtr
+        {
+            get { return _pNative; }
+        }
 
         // Constructors and Finalizers
         internal ColorCameraSettings(RootSystem.IntPtr pNative)
@@ -24,10 +27,24 @@ namespace Windows.Kinect
             Dispose(false);
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
-        private static extern void Windows_Kinect_ColorCameraSettings_ReleaseObject(ref RootSystem.IntPtr pNative);
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
-        private static extern void Windows_Kinect_ColorCameraSettings_AddRefObject(ref RootSystem.IntPtr pNative);
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_ColorCameraSettings_ReleaseObject(
+            ref RootSystem.IntPtr pNative
+        );
+
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern void Windows_Kinect_ColorCameraSettings_AddRefObject(
+            ref RootSystem.IntPtr pNative
+        );
+
         private void Dispose(bool disposing)
         {
             if (_pNative == RootSystem.IntPtr.Zero)
@@ -38,16 +55,22 @@ namespace Windows.Kinect
             __EventCleanup();
 
             Helper.NativeObjectCache.RemoveObject<ColorCameraSettings>(_pNative);
-                Windows_Kinect_ColorCameraSettings_ReleaseObject(ref _pNative);
+            Windows_Kinect_ColorCameraSettings_ReleaseObject(ref _pNative);
 
             _pNative = RootSystem.IntPtr.Zero;
         }
 
-
         // Public Properties
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
-        private static extern long Windows_Kinect_ColorCameraSettings_get_ExposureTime(RootSystem.IntPtr pNative);
-        public  RootSystem.TimeSpan ExposureTime
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern long Windows_Kinect_ColorCameraSettings_get_ExposureTime(
+            RootSystem.IntPtr pNative
+        );
+
+        public RootSystem.TimeSpan ExposureTime
         {
             get
             {
@@ -56,13 +79,22 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("ColorCameraSettings");
                 }
 
-                return RootSystem.TimeSpan.FromMilliseconds(Windows_Kinect_ColorCameraSettings_get_ExposureTime(_pNative));
+                return RootSystem.TimeSpan.FromMilliseconds(
+                    Windows_Kinect_ColorCameraSettings_get_ExposureTime(_pNative)
+                );
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
-        private static extern long Windows_Kinect_ColorCameraSettings_get_FrameInterval(RootSystem.IntPtr pNative);
-        public  RootSystem.TimeSpan FrameInterval
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern long Windows_Kinect_ColorCameraSettings_get_FrameInterval(
+            RootSystem.IntPtr pNative
+        );
+
+        public RootSystem.TimeSpan FrameInterval
         {
             get
             {
@@ -71,13 +103,22 @@ namespace Windows.Kinect
                     throw new RootSystem.ObjectDisposedException("ColorCameraSettings");
                 }
 
-                return RootSystem.TimeSpan.FromMilliseconds(Windows_Kinect_ColorCameraSettings_get_FrameInterval(_pNative));
+                return RootSystem.TimeSpan.FromMilliseconds(
+                    Windows_Kinect_ColorCameraSettings_get_FrameInterval(_pNative)
+                );
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
-        private static extern float Windows_Kinect_ColorCameraSettings_get_Gain(RootSystem.IntPtr pNative);
-        public  float Gain
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern float Windows_Kinect_ColorCameraSettings_get_Gain(
+            RootSystem.IntPtr pNative
+        );
+
+        public float Gain
         {
             get
             {
@@ -90,9 +131,16 @@ namespace Windows.Kinect
             }
         }
 
-        [RootSystem.Runtime.InteropServices.DllImport("KinectUnityAddin", CallingConvention=RootSystem.Runtime.InteropServices.CallingConvention.Cdecl, SetLastError=true)]
-        private static extern float Windows_Kinect_ColorCameraSettings_get_Gamma(RootSystem.IntPtr pNative);
-        public  float Gamma
+        [RootSystem.Runtime.InteropServices.DllImport(
+            "KinectUnityAddin",
+            CallingConvention = RootSystem.Runtime.InteropServices.CallingConvention.Cdecl,
+            SetLastError = true
+        )]
+        private static extern float Windows_Kinect_ColorCameraSettings_get_Gamma(
+            RootSystem.IntPtr pNative
+        );
+
+        public float Gamma
         {
             get
             {
@@ -105,9 +153,6 @@ namespace Windows.Kinect
             }
         }
 
-        private void __EventCleanup()
-        {
-        }
+        private void __EventCleanup() { }
     }
-
 }

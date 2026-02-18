@@ -25,13 +25,9 @@ namespace NaughtyAttributes
         }
 
         public ProgressBarAttribute(float maxValue, EColor color = EColor.Blue)
-            : this("", maxValue, color)
-        {
-        }
+            : this("", maxValue, color) { }
 
         public ProgressBarAttribute(string maxValueName, EColor color = EColor.Blue)
-            : this("", maxValueName, color)
-        {
-        }
+            : this("", maxValueName, color) { }
     }
 }

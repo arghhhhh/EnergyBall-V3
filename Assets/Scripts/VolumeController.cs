@@ -121,7 +121,10 @@ public class VolumeController : MonoBehaviour
     private static RuntimeSceneSettings GetCurrentRuntimeSettings(InGameSettingsMenu settingsMenu)
     {
         // Use reflection to access the private runtimeSettings field
-        var field = typeof(InGameSettingsMenu).GetField("runtimeSettings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var field = typeof(InGameSettingsMenu).GetField(
+            "runtimeSettings",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        );
         if (field != null)
         {
             return field.GetValue(settingsMenu) as RuntimeSceneSettings;
@@ -151,7 +154,9 @@ public class VolumeController : MonoBehaviour
             }
             else
             {
-                Debug.Log("VolumeController: Missing Volume Profile path or original settings, cannot check for changes");
+                Debug.Log(
+                    "VolumeController: Missing Volume Profile path or original settings, cannot check for changes"
+                );
             }
         }
     }
@@ -181,7 +186,10 @@ public class VolumeController : MonoBehaviour
         }
 
         // Check if the profile has been modified (focusing on post-processing values)
-        bool hasProfileChanged = HasPostProcessingSettingsChanged(currentSettings, originalSettings);
+        bool hasProfileChanged = HasPostProcessingSettingsChanged(
+            currentSettings,
+            originalSettings
+        );
 
         if (hasProfileChanged)
         {
@@ -189,38 +197,44 @@ public class VolumeController : MonoBehaviour
         }
     }
 
-    private static bool HasPostProcessingSettingsChanged(RuntimeSceneSettings current, RuntimeSceneSettings original)
+    private static bool HasPostProcessingSettingsChanged(
+        RuntimeSceneSettings current,
+        RuntimeSceneSettings original
+    )
     {
         if (current == null || original == null)
             return false;
 
         // Check if any post-processing values have changed
-        return current.bloomThreshold != original.bloomThreshold ||
-               current.bloomIntensity != original.bloomIntensity ||
-               current.bloomScatter != original.bloomScatter ||
-               current.lensFlareIntensity != original.lensFlareIntensity ||
-               current.lensFlareRegularMultiplier != original.lensFlareRegularMultiplier ||
-               current.lensFlareReversedMultiplier != original.lensFlareReversedMultiplier ||
-               current.lensFlareStreaksMultiplier != original.lensFlareStreaksMultiplier ||
-               current.lensFlareStreaksLength != original.lensFlareStreaksLength ||
-               current.lensFlareStreaksOrientation != original.lensFlareStreaksOrientation ||
-               current.lensFlareStreaksThreshold != original.lensFlareStreaksThreshold ||
-               current.lensFlareChromaticIntensity != original.lensFlareChromaticIntensity ||
-               current.lensDistortionIntensity != original.lensDistortionIntensity ||
-               current.lensDistortionXMultiplier != original.lensDistortionXMultiplier ||
-               current.lensDistortionYMultiplier != original.lensDistortionYMultiplier ||
-               current.lensDistortionScale != original.lensDistortionScale ||
-               current.lensDistortionCenterX != original.lensDistortionCenterX ||
-               current.lensDistortionCenterY != original.lensDistortionCenterY ||
-               current.colorAdjustmentsPostExposure != original.colorAdjustmentsPostExposure ||
-               current.colorAdjustmentsContrast != original.colorAdjustmentsContrast ||
-               current.colorAdjustmentsHueShift != original.colorAdjustmentsHueShift ||
-               current.colorAdjustmentsSaturation != original.colorAdjustmentsSaturation ||
-               current.whiteBalanceTemperature != original.whiteBalanceTemperature ||
-               current.whiteBalanceTint != original.whiteBalanceTint;
+        return current.bloomThreshold != original.bloomThreshold
+            || current.bloomIntensity != original.bloomIntensity
+            || current.bloomScatter != original.bloomScatter
+            || current.lensFlareIntensity != original.lensFlareIntensity
+            || current.lensFlareRegularMultiplier != original.lensFlareRegularMultiplier
+            || current.lensFlareReversedMultiplier != original.lensFlareReversedMultiplier
+            || current.lensFlareStreaksMultiplier != original.lensFlareStreaksMultiplier
+            || current.lensFlareStreaksLength != original.lensFlareStreaksLength
+            || current.lensFlareStreaksOrientation != original.lensFlareStreaksOrientation
+            || current.lensFlareStreaksThreshold != original.lensFlareStreaksThreshold
+            || current.lensFlareChromaticIntensity != original.lensFlareChromaticIntensity
+            || current.lensDistortionIntensity != original.lensDistortionIntensity
+            || current.lensDistortionXMultiplier != original.lensDistortionXMultiplier
+            || current.lensDistortionYMultiplier != original.lensDistortionYMultiplier
+            || current.lensDistortionScale != original.lensDistortionScale
+            || current.lensDistortionCenterX != original.lensDistortionCenterX
+            || current.lensDistortionCenterY != original.lensDistortionCenterY
+            || current.colorAdjustmentsPostExposure != original.colorAdjustmentsPostExposure
+            || current.colorAdjustmentsContrast != original.colorAdjustmentsContrast
+            || current.colorAdjustmentsHueShift != original.colorAdjustmentsHueShift
+            || current.colorAdjustmentsSaturation != original.colorAdjustmentsSaturation
+            || current.whiteBalanceTemperature != original.whiteBalanceTemperature
+            || current.whiteBalanceTint != original.whiteBalanceTint;
     }
 
-    private static void ApplySettingsToVolumeProfile(string volumePath, RuntimeSceneSettings settings)
+    private static void ApplySettingsToVolumeProfile(
+        string volumePath,
+        RuntimeSceneSettings settings
+    )
     {
         // Load the Volume Profile asset from the stored path
         VolumeProfile profileAsset = AssetDatabase.LoadAssetAtPath<VolumeProfile>(volumePath);
@@ -270,7 +284,10 @@ public class VolumeController : MonoBehaviour
             profileLensDistortion.xMultiplier.value = settings.lensDistortionXMultiplier;
             profileLensDistortion.yMultiplier.value = settings.lensDistortionYMultiplier;
             profileLensDistortion.scale.value = settings.lensDistortionScale;
-            profileLensDistortion.center.value = new Vector2(settings.lensDistortionCenterX, settings.lensDistortionCenterY);
+            profileLensDistortion.center.value = new Vector2(
+                settings.lensDistortionCenterX,
+                settings.lensDistortionCenterY
+            );
             profileLensDistortion.intensity.overrideState = true;
             profileLensDistortion.xMultiplier.overrideState = true;
             profileLensDistortion.yMultiplier.overrideState = true;
@@ -320,7 +337,8 @@ public class VolumeController : MonoBehaviour
         {
             screenSpaceLensFlare.intensity.value = settings.lensFlareIntensity;
             screenSpaceLensFlare.firstFlareIntensity.value = settings.lensFlareRegularMultiplier;
-            screenSpaceLensFlare.secondaryFlareIntensity.value = settings.lensFlareReversedMultiplier;
+            screenSpaceLensFlare.secondaryFlareIntensity.value =
+                settings.lensFlareReversedMultiplier;
             screenSpaceLensFlare.streaksIntensity.value = settings.lensFlareStreaksMultiplier;
             screenSpaceLensFlare.streaksLength.value = settings.lensFlareStreaksLength;
             screenSpaceLensFlare.streaksOrientation.value = settings.lensFlareStreaksOrientation;
@@ -341,7 +359,10 @@ public class VolumeController : MonoBehaviour
             lensDistortion.xMultiplier.value = settings.lensDistortionXMultiplier;
             lensDistortion.yMultiplier.value = settings.lensDistortionYMultiplier;
             lensDistortion.scale.value = settings.lensDistortionScale;
-            lensDistortion.center.value = new Vector2(settings.lensDistortionCenterX, settings.lensDistortionCenterY);
+            lensDistortion.center.value = new Vector2(
+                settings.lensDistortionCenterX,
+                settings.lensDistortionCenterY
+            );
         }
     }
 

@@ -55,6 +55,7 @@ public class RuntimeSceneSettings
     [Header("Movement-Based Pulsation")]
     public bool singleHandScaling = true;
     public float minimumUnscaledSize = 0.5f;
+    public float maximumUnscaledSize = 3.0f;
 
     [Range(0.0001f, 5f)]
     public float minHandDisplacementPerFrame = 0.01f;
@@ -73,14 +74,36 @@ public class RuntimeSceneSettings
     [Header("Animation")]
     public float particleInitializationDelay = 1f;
     public float initializationResetDelay = 3f;
+
+    [Tooltip(
+        "Minimum time in single-hand-open state before the final push uses that hand's position. "
+            + "Accounts for slight timing discrepancies with real Kinect users."
+    )]
+    public float singleHandOpenThreshold = 0.1f;
+
+    [Tooltip(
+        "Duration in seconds to lerp the force damper from single-hand to both-hands strength "
+            + "when transitioning from single-hand-open to both-hands-open."
+    )]
+    public float singleHandForceLerpDuration = 0.35f;
+
     [Range(0f, 1f)]
-    [Tooltip("Speed of the hand opening animation during initialization. Lower values = slower animation.")]
+    [Tooltip(
+        "Speed of the hand opening animation during initialization. Lower values = slower animation."
+    )]
     public float initializationSpeed = 0.05f;
-    [Tooltip("Duration in seconds for the metaball radius to animate from minimum to full size during initialization.")]
+
+    [Tooltip(
+        "Duration in seconds for the metaball radius to animate from minimum to full size during initialization."
+    )]
     public float metaballRadiusAnimationDuration = 2f;
+
     [Tooltip("The starting radius for the metaball animation during initialization.")]
     public float metaballRadiusAnimationStartSize = 0.1f;
-    [Tooltip("Animation curve for the metaball radius transition (0-1 input maps to animation progress).")]
+
+    [Tooltip(
+        "Animation curve for the metaball radius transition (0-1 input maps to animation progress)."
+    )]
     public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Style")]
@@ -222,6 +245,7 @@ public class RuntimeSceneSettings
         copy.pulseFreqs = (float[])pulseFreqs.Clone();
         copy.singleHandScaling = singleHandScaling;
         copy.minimumUnscaledSize = minimumUnscaledSize;
+        copy.maximumUnscaledSize = maximumUnscaledSize;
         copy.minHandDisplacementPerFrame = minHandDisplacementPerFrame;
         copy.distanceDamper = new AnimationCurve(distanceDamper.keys);
         copy.pulseScaleDamper = pulseScaleDamper;
@@ -233,6 +257,8 @@ public class RuntimeSceneSettings
         copy.maxDistanceFromCamera = maxDistanceFromCamera;
         copy.particleInitializationDelay = particleInitializationDelay;
         copy.initializationResetDelay = initializationResetDelay;
+        copy.singleHandOpenThreshold = singleHandOpenThreshold;
+        copy.singleHandForceLerpDuration = singleHandForceLerpDuration;
         copy.initializationSpeed = initializationSpeed;
         copy.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
         copy.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;

@@ -1,14 +1,17 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using System;
 using System.Text.RegularExpressions;
-using System;
+using UnityEditor;
+using UnityEngine;
 
 namespace NaughtyAttributes.Editor
 {
     [CustomPropertyDrawer(typeof(ResizableTextAreaAttribute))]
     public class ResizableTextAreaPropertyDrawer : PropertyDrawerBase
     {
-        protected override float GetPropertyHeight_Internal(SerializedProperty property, GUIContent label)
+        protected override float GetPropertyHeight_Internal(
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             if (property.propertyType == SerializedPropertyType.String)
             {
@@ -22,7 +25,11 @@ namespace NaughtyAttributes.Editor
             }
         }
 
-        protected override void OnGUI_Internal(Rect rect, SerializedProperty property, GUIContent label)
+        protected override void OnGUI_Internal(
+            Rect rect,
+            SerializedProperty property,
+            GUIContent label
+        )
         {
             EditorGUI.BeginProperty(rect, label, property);
 
@@ -57,7 +64,8 @@ namespace NaughtyAttributes.Editor
             }
             else
             {
-                string message = typeof(ResizableTextAreaAttribute).Name + " can only be used on string fields";
+                string message =
+                    typeof(ResizableTextAreaAttribute).Name + " can only be used on string fields";
                 DrawDefaultPropertyAndHelpBox(rect, property, message, MessageType.Warning);
             }
 
@@ -67,13 +75,17 @@ namespace NaughtyAttributes.Editor
         private int GetNumberOfLines(string text)
         {
             string content = Regex.Replace(text, @"\r\n|\n\r|\r|\n", Environment.NewLine);
-            string[] lines = content.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            string[] lines = content.Split(
+                new string[] { Environment.NewLine },
+                StringSplitOptions.None
+            );
             return lines.Length;
         }
 
         private float GetTextAreaHeight(string text)
         {
-            float height = (EditorGUIUtility.singleLineHeight - 3.0f) * GetNumberOfLines(text) + 3.0f;
+            float height =
+                (EditorGUIUtility.singleLineHeight - 3.0f) * GetNumberOfLines(text) + 3.0f;
             return height;
         }
     }
