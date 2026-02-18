@@ -218,9 +218,16 @@ namespace RuntimeCurveEditor
 
             if (hovered)
             {
-                float tooltipWidth = s_PresetLabelStyle.CalcSize(new GUIContent(preset.name)).x + 4f;
+                float tooltipWidth = s_PresetLabelStyle.CalcSize(new GUIContent(preset.name)).x + 4f * Scale;
+                float tooltipHeight = 14f * Scale;
                 float tooltipX = presetRect.x + (presetRect.width - tooltipWidth) / 2f;
-                Rect tooltipRect = new Rect(tooltipX, presetRect.y - 16f * Scale, tooltipWidth, 14f * Scale);
+                Rect tooltipRect = new Rect(tooltipX, presetRect.y - 16f * Scale, tooltipWidth, tooltipHeight);
+
+                // Draw tooltip background
+                GUI.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+                GUI.DrawTexture(tooltipRect, Texture2D.whiteTexture);
+                GUI.color = Color.white;
+
                 GUI.Label(tooltipRect, preset.name, s_PresetLabelStyle);
             }
 
@@ -264,9 +271,16 @@ namespace RuntimeCurveEditor
 
             if (hovered)
             {
-                float tipWidth = s_PresetLabelStyle.CalcSize(new GUIContent("Save Preset")).x + 4f;
+                float tipWidth = s_PresetLabelStyle.CalcSize(new GUIContent("Save Preset")).x + 4f * Scale;
+                float tipHeight = 14f * Scale;
                 float tipX = addRect.x + (addRect.width - tipWidth) / 2f;
-                Rect tooltipRect = new Rect(tipX, addRect.y - 16f * Scale, tipWidth, 14f * Scale);
+                Rect tooltipRect = new Rect(tipX, addRect.y - 16f * Scale, tipWidth, tipHeight);
+
+                // Draw tooltip background
+                GUI.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+                GUI.DrawTexture(tooltipRect, Texture2D.whiteTexture);
+                GUI.color = Color.white;
+
                 GUI.Label(tooltipRect, "Save Preset", s_PresetLabelStyle);
             }
 
