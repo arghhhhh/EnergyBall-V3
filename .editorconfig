@@ -12,6 +12,9 @@ trim_trailing_whitespace = true
 indent_size = 4
 charset = utf-8
 
+# Allow namespace to differ from folder structure (e.g. use RuntimeCurveEditor instead of Assets.Scripts.RuntimeCurveEditor.Window)
+dotnet_style_namespace_match_folder = false
+
 # Code style rules
 csharp_new_line_before_open_brace = all
 csharp_new_line_before_else = true
