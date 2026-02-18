@@ -1,0 +1,37 @@
+{
+    "name": "beekok",
+    "keys": [
+        {
+            "time": 0.0,
+            "value": 0.0,
+            "inTangent": 1.189365029335022,
+            "outTangent": 1.189365029335022,
+            "inWeight": 0.0,
+            "outWeight": 0.0,
+            "weightedMode": 0,
+            "tangentMode": 0
+        },
+        {
+            "time": 0.44985026121139529,
+            "value": 0.857666015625,
+            "inTangent": 0.6742885112762451,
+            "outTangent": 0.6742885112762451,
+            "inWeight": 0.0,
+            "outWeight": 0.0,
+            "weightedMode": 0,
+            "tangentMode": 0
+        },
+        {
+            "time": 1.0,
+            "value": 1.0,
+            "inTangent": 0.0,
+            "outTangent": 0.0,
+            "inWeight": 0.0,
+            "outWeight": 0.0,
+            "weightedMode": 0,
+            "tangentMode": 0
+        }
+    ],
+    "preWrapMode": 8,
+    "postWrapMode": 8
+}

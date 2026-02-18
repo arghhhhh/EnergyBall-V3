@@ -91,6 +91,35 @@ namespace RuntimeCurveEditor
             return new Rect(position.x, position.y, MENU_WIDTH, height);
         }
 
+        /// <summary>Returns true if the point is inside the main menu or any open submenu.</summary>
+        public bool ContainsPoint(Vector2 point)
+        {
+            if (!isOpen) return false;
+
+            float mainHeight = CalculateMenuHeight(null);
+            Rect mainRect = new Rect(position.x, position.y, MENU_WIDTH, mainHeight);
+            if (mainRect.xMax > Screen.width)
+                mainRect.x = Screen.width - mainRect.width;
+            if (mainRect.yMax > Screen.height)
+                mainRect.y = Screen.height - mainRect.height;
+
+            if (mainRect.Contains(point)) return true;
+
+            if (openSubmenu != null)
+            {
+                float subHeight = CalculateMenuHeight(openSubmenu);
+                Rect subRect = new Rect(mainRect.xMax - 2f, GetSubmenuY(mainRect, openSubmenu), SUBMENU_WIDTH, subHeight);
+                if (subRect.xMax > Screen.width)
+                    subRect.x = mainRect.x - SUBMENU_WIDTH + 2f;
+                if (subRect.yMax > Screen.height)
+                    subRect.y = Screen.height - subRect.height;
+
+                if (subRect.Contains(point)) return true;
+            }
+
+            return false;
+        }
+
         public bool OnGUI()
         {
             if (!isOpen) return false;
@@ -513,6 +542,9 @@ namespace RuntimeCurveEditor
 
         public bool IsOpen => contextMenu.IsOpen;
 
+        /// <summary>Returns true if the point is inside any open menu or submenu.</summary>
+        public bool MenuContainsPoint(Vector2 point) => contextMenu.ContainsPoint(point);
+
         public void Close()
         {
             contextMenu.Close();
@@ -722,14 +754,14 @@ namespace RuntimeCurveEditor
 
             // Dialog dimensions
             float btnSize = 20f * scale;
-            float btnSpacing = 4f * scale;
+            float btnSpacing = 8f * scale;
             float dialogWidth = 200f * scale;
-            float dialogHeight = 70f * scale;
+            float dialogHeight = 90f * scale;
             float rowH = 20f * scale;
             float labelW = 40f * scale;
             float fieldPadX = 8f * scale;
             float fieldPadY = 6f * scale;
-            float fieldW = dialogWidth - fieldPadX * 2 - labelW - btnSize - btnSpacing;
+            float fieldW = dialogWidth - fieldPadX * 2 - labelW;
 
             // Position near the keyframe
             Keyframe kf = curve[editKeyIndex];
@@ -764,14 +796,6 @@ namespace RuntimeCurveEditor
             GUI.SetNextControlName("EditKeyTimeField");
             editKeyTime = GUI.TextField(timeFieldRect, editKeyTime, s_EditKeyFieldStyle);
 
-            // Apply button (checkmark) on the time row
-            Rect applyRect = new Rect(timeFieldRect.xMax + btnSpacing, rowY + (rowH - btnSize) / 2f, btnSize, btnSize);
-            if (GUI.Button(applyRect, "\u2713", s_EditKeyBtnStyle))
-            {
-                ApplyEditKey(curve);
-                return;
-            }
-
             // Value row
             rowY += rowH + 4f * scale;
             GUI.Label(new Rect(dialogRect.x + fieldPadX, rowY, labelW, rowH), "value", s_EditKeyLabelStyle);
@@ -779,8 +803,19 @@ namespace RuntimeCurveEditor
             GUI.SetNextControlName("EditKeyValueField");
             editKeyValue = GUI.TextField(valueFieldRect, editKeyValue, s_EditKeyFieldStyle);
 
-            // Cancel button (X) on the value row
-            Rect cancelRect = new Rect(valueFieldRect.xMax + btnSpacing, rowY + (rowH - btnSize) / 2f, btnSize, btnSize);
+            // Bottom button row (checkmark to apply, X to cancel)
+            float btnRowY = dialogRect.yMax - btnSize - fieldPadY;
+            float totalBtnsW = btnSize * 2 + btnSpacing;
+            float btnStartX = dialogRect.x + (dialogWidth - totalBtnsW) / 2f;
+
+            Rect applyRect = new Rect(btnStartX, btnRowY, btnSize, btnSize);
+            if (GUI.Button(applyRect, "\u2713", s_EditKeyBtnStyle))
+            {
+                ApplyEditKey(curve);
+                return;
+            }
+
+            Rect cancelRect = new Rect(btnStartX + btnSize + btnSpacing, btnRowY, btnSize, btnSize);
             if (GUI.Button(cancelRect, "\u2717", s_EditKeyBtnStyle))
             {
                 showEditKeyDialog = false;
@@ -822,10 +857,10 @@ namespace RuntimeCurveEditor
                 }
             }
 
-            // Click outside dialog to apply
+            // Click outside dialog to cancel
             if (e.type == EventType.MouseDown && !dialogRect.Contains(e.mousePosition))
             {
-                shouldApply = true;
+                shouldCancel = true;
                 e.Use();
             }
 

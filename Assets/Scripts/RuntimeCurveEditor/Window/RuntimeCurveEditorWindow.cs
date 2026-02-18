@@ -129,22 +129,41 @@ namespace RuntimeCurveEditor
             GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
             GUI.color = Color.white;
 
-            // Handle title bar dragging (before click-outside-to-close)
-            Rect titleRect = new Rect(windowRect.x, windowRect.y, windowRect.width, TITLE_BAR_HEIGHT);
-            HandleWindowDrag(titleRect);
-
-            // Click outside to close (only if not dragging, no context menu, and no dialogs)
-            if (!isDraggingWindow &&
-                Event.current.type == EventType.MouseDown &&
-                !windowRect.Contains(Event.current.mousePosition) &&
-                !curveEditor.inputHandler.showContextMenu &&
-                !curveEditor.inputHandler.menuManager.IsOpen &&
-                !curveEditor.inputHandler.menuManager.IsEditKeyDialogOpen &&
-                (presets == null || !presets.IsDialogOpen))
+            // Block all mouse interaction with UI behind the overlay (settings menu, etc.)
+            // Clicks outside the window either close the editor or get consumed.
+            // Context menus may extend beyond the window, so let those events through.
+            bool insideWindow = windowRect.Contains(Event.current.mousePosition);
+            bool insideMenu = curveEditor.inputHandler.menuManager.MenuContainsPoint(Event.current.mousePosition);
+            if (Event.current.isMouse && !insideWindow && !insideMenu)
             {
-                Hide();
+                bool anyDialogOpen = curveEditor.inputHandler.showContextMenu ||
+                                     curveEditor.inputHandler.menuManager.IsOpen ||
+                                     curveEditor.inputHandler.menuManager.IsEditKeyDialogOpen ||
+                                     (presets != null && presets.IsDialogOpen);
+
+                if (Event.current.type == EventType.MouseDown && !isDraggingWindow && !anyDialogOpen)
+                {
+                    Hide();
+                    Event.current.Use();
+                    return;
+                }
+
+                // Consume all other mouse events outside the window (drag, up, scroll, etc.)
                 Event.current.Use();
-                return;
+            }
+
+            Rect titleRect = new Rect(windowRect.x, windowRect.y, windowRect.width, TITLE_BAR_HEIGHT);
+
+            // When a modal dialog (edit key, context menu, preset dialog) is open,
+            // block all mouse interaction with the rest of the curve editor window
+            // (close button, title drag, preset bar, etc.).  The dialog itself will
+            // handle its own events when drawn later.
+            bool modalOpen = curveEditor.inputHandler.menuManager.IsEditKeyDialogOpen ||
+                             curveEditor.inputHandler.menuManager.IsOpen ||
+                             (presets != null && presets.IsDialogOpen);
+            if (!modalOpen)
+            {
+                HandleWindowDrag(titleRect);
             }
 
             // --- Draw window background ---
@@ -163,13 +182,20 @@ namespace RuntimeCurveEditor
             float scale = UIScale;
             GUI.Label(new Rect(windowRect.x + 8f * scale, windowRect.y + 1f, windowRect.width - 30f * scale, TITLE_BAR_HEIGHT), "Curve", s_TitleStyle);
 
-            // Close button
+            // Close button (disabled when a modal dialog is open)
             float closeBtnSize = 18f * scale;
             Rect closeRect = new Rect(windowRect.xMax - closeBtnSize - 4f * scale, windowRect.y + (TITLE_BAR_HEIGHT - closeBtnSize) / 2f, closeBtnSize, closeBtnSize);
-            if (GUI.Button(closeRect, "x", s_CloseButtonStyle))
+            if (!modalOpen && GUI.Button(closeRect, "x", s_CloseButtonStyle))
             {
                 Hide();
                 return;
+            }
+            if (modalOpen)
+            {
+                // Still draw the button visually but don't let it interact
+                GUI.color = new Color(1f, 1f, 1f, 0.5f);
+                GUI.Label(closeRect, "x", s_CloseButtonStyle);
+                GUI.color = Color.white;
             }
 
             // --- Curve editor area (screen coordinates) ---
@@ -190,6 +216,15 @@ namespace RuntimeCurveEditor
                 windowRect.yMax - PRESET_BAR_HEIGHT,
                 windowRect.width,
                 PRESET_BAR_HEIGHT);
+
+            // When edit key dialog or context menu is open, consume mouse events
+            // on the preset bar before it can process them
+            if ((curveEditor.inputHandler.menuManager.IsEditKeyDialogOpen ||
+                 curveEditor.inputHandler.menuManager.IsOpen) &&
+                Event.current.isMouse && presetBarRect.Contains(Event.current.mousePosition))
+            {
+                Event.current.Use();
+            }
 
             presets.OnGUI(presetBarRect, OnPresetSelected, targetCurve);
 

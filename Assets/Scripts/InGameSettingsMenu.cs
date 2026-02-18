@@ -46,6 +46,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private readonly Dictionary<string, VisualElement> settingElements = new();
     private readonly List<Texture2D> curveTextures = new();
     private bool isModalOpen = false;
+    private VisualElement curveEditorBlocker;
 
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
 
@@ -119,6 +120,15 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             ToggleMenu();
         }
+
+        // Toggle the invisible blocker overlay so UI Toolkit elements can't be
+        // interacted with while the IMGUI curve editor is visible.
+        if (curveEditorBlocker != null)
+        {
+            curveEditorBlocker.style.display = RuntimeCurveEditorWindow.IsVisible
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
     }
 
     private void InitializeRuntimeSettings()
@@ -150,6 +160,18 @@ public class InGameSettingsMenu : MonoBehaviour
         }
 
         var root = uiDocument.rootVisualElement;
+
+        // Invisible overlay that blocks all UI Toolkit interaction when the
+        // IMGUI curve editor is open (the two input systems are independent).
+        curveEditorBlocker = new VisualElement();
+        curveEditorBlocker.style.position = Position.Absolute;
+        curveEditorBlocker.style.left = 0;
+        curveEditorBlocker.style.top = 0;
+        curveEditorBlocker.style.right = 0;
+        curveEditorBlocker.style.bottom = 0;
+        curveEditorBlocker.pickingMode = PickingMode.Position;
+        curveEditorBlocker.style.display = DisplayStyle.None;
+        root.Add(curveEditorBlocker);
 
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         sceneSettingsPanel = root.Q<ScrollView>("SceneSettingsPanel");
@@ -371,6 +393,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(group, "Initialization Speed", () => runtimeSettings.initializationSpeed, v => runtimeSettings.initializationSpeed = v, 0f, 1f);
         CreateFloatField(group, "Metaball Radius Animation Duration", () => runtimeSettings.metaballRadiusAnimationDuration, v => runtimeSettings.metaballRadiusAnimationDuration = v);
         CreateFloatField(group, "Metaball Radius Animation Start Size", () => runtimeSettings.metaballRadiusAnimationStartSize, v => runtimeSettings.metaballRadiusAnimationStartSize = v);
+        CreateCurveField(group, "Metaball Radius Animation Curve", () => runtimeSettings.metaballRadiusAnimationCurve, v => runtimeSettings.metaballRadiusAnimationCurve = v);
     }
 
     private void CreatePostProcessingGroup(ScrollView parentContainer)
@@ -1035,6 +1058,8 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.initializationSpeed = loadedSettings.initializationSpeed;
         runtimeSettings.metaballRadiusAnimationDuration = loadedSettings.metaballRadiusAnimationDuration;
         runtimeSettings.metaballRadiusAnimationStartSize = loadedSettings.metaballRadiusAnimationStartSize;
+        if (loadedSettings.metaballRadiusAnimationCurve != null && loadedSettings.metaballRadiusAnimationCurve.length > 0)
+            runtimeSettings.metaballRadiusAnimationCurve = new AnimationCurve(loadedSettings.metaballRadiusAnimationCurve.keys);
 
         // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
@@ -1146,6 +1171,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = source.initializationSpeed;
         destination.metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         destination.metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
+        destination.metaballRadiusAnimationCurve = new AnimationCurve(source.metaballRadiusAnimationCurve.keys);
 
         // Style settings
         destination.customColors = source.customColors;
@@ -1267,8 +1293,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = 0.0f;
         destination.metaballRadiusAnimationDuration = 0.0f;
         destination.metaballRadiusAnimationStartSize = 0.0f;
-        // Note: metaballRadiusAnimationCurve is managed by SceneController inspector (set to default curve)
-        destination.metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        destination.metaballRadiusAnimationCurve = new AnimationCurve();
         destination.dummyOnlyMode = false;
         destination.drawSkeleton = false;
         destination.customColors = false;
