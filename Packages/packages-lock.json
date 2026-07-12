@@ -1,13 +1,22 @@
 {
   "dependencies": {
-    "com.boxqkrtm.ide.cursor": {
-      "version": "https://github.com/boxqkrtm/com.unity.ide.cursor.git",
+    "com.akiojin.unity-cli-bridge": {
+      "version": "file:unity-cli-bridge",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.inputsystem": "1.14.2"
+      }
+    },
+    "com.maligan.unity-zed": {
+      "version": "https://github.com/maligan/unity-zed.git",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.unity.test-framework": "1.1.9"
+        "com.unity.ide.visualstudio": "2.0.20"
       },
-      "hash": "53e1baac3cde90c46934f82ee1d61802d2bd6651"
+      "hash": "25f1b97fedb6cf7b4b566c4a83ec8311b68d3e82"
     },
     "com.unity.burst": {
       "version": "1.8.29",
@@ -27,11 +36,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
-      "version": "2.6.6",
+      "version": "2.6.7",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.8.28",
+        "com.unity.burst": "1.8.29",
         "com.unity.mathematics": "1.3.2",
         "com.unity.test-framework": "1.4.6",
         "com.unity.nuget.mono-cecil": "1.11.6",
@@ -47,7 +56,7 @@
     },
     "com.unity.ide.visualstudio": {
       "version": "2.0.26",
-      "depth": 0,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.1.33"
@@ -70,17 +79,16 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.multiplayer.center": {
-      "version": "1.0.1",
-      "depth": 0,
-      "source": "builtin",
-      "dependencies": {
-        "com.unity.modules.uielements": "1.0.0"
-      }
-    },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
       "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.2",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -144,7 +152,7 @@
       }
     },
     "com.unity.test-framework.performance": {
-      "version": "3.4.0",
+      "version": "3.5.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -216,19 +224,19 @@
       "url": "https://registry.npmjs.com"
     },
     "jp.keijiro.noiseshader": {
-      "version": "2.0.0",
-      "depth": 2,
+      "version": "3.0.1",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://registry.npmjs.com"
     },
     "jp.keijiro.shadergraphassets": {
-      "version": "2.5.2",
-      "depth": 1,
+      "version": "2.5.3",
+      "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.shadergraph": "12.1.0",
-        "jp.keijiro.noiseshader": "2.0.0"
+        "jp.keijiro.noiseshader": "3.0.1"
       },
       "url": "https://registry.npmjs.com"
     },

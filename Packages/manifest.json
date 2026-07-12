@@ -1,11 +1,10 @@
 {
   "dependencies": {
-    "com.boxqkrtm.ide.cursor": "https://github.com/boxqkrtm/com.unity.ide.cursor.git",
+    "com.maligan.unity-zed": "https://github.com/maligan/unity-zed.git",
     "com.unity.collab-proxy": "2.12.4",
-    "com.unity.collections": "2.6.6",
-    "com.unity.ide.visualstudio": "2.0.26",
+    "com.unity.collections": "2.6.7",
     "com.unity.inputsystem": "1.19.0",
-    "com.unity.multiplayer.center": "1.0.1",
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.render-pipelines.universal": "17.3.0",
     "com.unity.timeline": "1.8.12",
     "com.unity.ugui": "2.0.0",
@@ -14,6 +13,8 @@
     "jp.keijiro.klutter-tools": "2.6.0",
     "jp.keijiro.metamesh": "1.2.2",
     "jp.keijiro.metawire": "2.1.3",
+    "jp.keijiro.noiseshader": "3.0.1",
+    "jp.keijiro.shadergraphassets": "2.5.3",
     "jp.keijiro.vfxgraphassets": "3.10.1",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",

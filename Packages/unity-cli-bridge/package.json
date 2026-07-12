@@ -1,0 +1,31 @@
+{
+  "name": "com.akiojin.unity-cli-bridge",
+  "displayName": "Unity CLI Bridge",
+  "version": "0.12.0",
+  "unity": "2022.3",
+  "description": "Unity Editor bridge package for unity-cli automation (screenshots, video capture, scene analysis, input automation).",
+  "keywords": [
+    "cli",
+    "ai",
+    "editor",
+    "automation",
+    "claude",
+    "cursor"
+  ],
+  "author": {
+    "name": "akiojin",
+    "email": "akio-jinsenji@cloud-creative-studios.com",
+    "url": "https://github.com/akiojin"
+  },
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.inputsystem": "1.14.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akiojin/unity-cli.git"
+  },
+  "homepage": "https://github.com/akiojin/unity-cli/tree/main/UnityCliBridge/Packages/unity-cli-bridge#readme",
+  "license": "MIT",
+  "hideInEditor": false
+}
