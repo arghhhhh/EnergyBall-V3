@@ -18,3 +18,8 @@ UserSettings/
 *.xml
 *.yaml
 *.yml
+
+# Third-party / vendored code — do not reformat (keeps diffs vs upstream clean)
+Assets/Added Packages/
+Assets/Scripts/Kinect Standard Assets/
+Packages/

@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Auto-format staged C# files with the pinned CSharpier tool, then re-stage them.
+# CSharpier honors .csharpierignore, so vendored/third-party files are skipped.
+staged=$(git diff --cached --name-only --diff-filter=ACM -- '*.cs')
+[ -z "$staged" ] && exit 0
+
+OLDIFS=$IFS
+IFS='
+'
+for file in $staged; do
+  [ -z "$file" ] && continue
+  dotnet csharpier format "$file" >/dev/null 2>&1
+  git add -- "$file"
+done
+IFS=$OLDIFS
+exit 0

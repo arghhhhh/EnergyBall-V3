@@ -1,0 +1,2 @@
+# Shell hooks must stay LF or they break when run via sh on fresh clones.
+.husky/pre-commit text eol=lf
