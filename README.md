@@ -9,8 +9,7 @@ Compared to [V2](https://github.com/arghhhhh/EnergyBall-V2), this project adds t
 * Optional live camera feed rendered behind the particles and tracked bodies
 
 ## Preview
-
-
+[v3_prev_3.webm](https://github.com/user-attachments/assets/4a3e4f32-90ac-4084-b775-feb7333421b7)
 
 ## Requirements
 - Kinect V2 Camera
