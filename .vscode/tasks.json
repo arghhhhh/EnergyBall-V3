@@ -4,8 +4,8 @@
     {
       "label": "Format with CSharpier",
       "type": "shell",
-      "command": "csharpier",
-      "args": ["format", "${file}"],
+      "command": "dotnet",
+      "args": ["csharpier", "format", "${file}"],
       "presentation": {
         "echo": true,
         "reveal": "silent",
@@ -19,8 +19,8 @@
     {
       "label": "Format All C# Files",
       "type": "shell",
-      "command": "csharpier",
-      "args": ["format", "Assets"],
+      "command": "dotnet",
+      "args": ["csharpier", "format", "."],
       "presentation": {
         "echo": true,
         "reveal": "always",
