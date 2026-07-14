@@ -25,11 +25,5 @@ Compared to [V2](https://github.com/arghhhhh/EnergyBall-V2), this project adds t
 
 No Kinect handy? Open `Assets/Testing/Dummy Scene.unity` to experiment with the particles and metaballs without any tracking hardware.
 
-## How It Works
-- **Kinect body tracking** feeds joint positions for each tracked player into the scene.
-- **Hands** act as force sources that push metaball density around a 3D field.
-- **A compute shader** builds the metaball scalar field every frame; **marching cubes** (also on the GPU) turns it into a watertight mesh.
-- **VFX Graph** layers particle effects on top for the energy look.
-
 ## License
 See [`LICENSE.txt`](LICENSE.txt). Free to use, modify, and distribute — if you use it at an event or in an art piece, send some clips!
