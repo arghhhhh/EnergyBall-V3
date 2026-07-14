@@ -31,12 +31,5 @@ No Kinect handy? Open `Assets/Testing/Dummy Scene.unity` to experiment with the 
 - **A compute shader** builds the metaball scalar field every frame; **marching cubes** (also on the GPU) turns it into a watertight mesh.
 - **VFX Graph** layers particle effects on top for the energy look.
 
-## Tech Stack
-- **Engine:** Unity 6 (6000.3 LTS)
-- **Rendering:** Universal Render Pipeline (URP)
-- **Compute:** HLSL compute shaders (metaball field + marching cubes)
-- **VFX:** Unity Visual Effect Graph, plus [Keijiro](https://github.com/keijiro) tooling
-- **Language:** C#
-
 ## License
 See [`LICENSE.txt`](LICENSE.txt). Free to use, modify, and distribute — if you use it at an event or in an art piece, send some clips!
