@@ -1,6 +1,6 @@
 # Energy Ball V3
 
-Create, shape, and fling energy balls with your body using a Kinect V2 camera. Built in Unity with real-time metaball fluid rendering and VFX Graph.
+Create and move energy balls with your body using a Kinect V2 camera. Built in Unity with real-time metaball fluid rendering and VFX Graph.
 
 Compared to [V2](https://github.com/arghhhhh/EnergyBall-V2), this project adds the following notable enhancements:
 * Real-time metaball rendering for smoother energy ball merging
