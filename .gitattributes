@@ -1,2 +1,6 @@
+# CSharpier normalizes to LF; force LF on checkout so autocrlf doesn't make
+# every C# file show as "unformatted" (and get rewritten) on Windows.
+*.cs text eol=lf
+
 # Shell hooks must stay LF or they break when run via sh on fresh clones.
 .husky/pre-commit text eol=lf
