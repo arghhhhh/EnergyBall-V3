@@ -1,83 +1,128 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repository.
 
 ## Project Overview
 
-EnergyBall-V3 is a Unity 3D interactive experience that uses Kinect motion tracking and metaballs rendering for immersive body-based interactions. The project features real-time 3D fluid simulations using marching cubes algorithm and compute shaders for performant metaballs generation.
+EnergyBall-V3 is a Unity installation piece. A Kinect v2 sensor tracks people's
+bodies; each tracked person becomes a floating "energy ball" (a metaball rendered
+as a marching-cubes isosurface) that they push, pull, grow, and shrink with their
+hands. Multiple players' balls attract each other under a custom gravity model.
+It runs full-screen on Windows against a physical Kinect, but can also be driven
+by "dummy" players for development without hardware.
 
-## Development Commands
+## Environment
 
-### Unity Editor
-- **Open Project**: Launch Unity Hub and open the project folder
-- **Unity Version**: 6000.2.2f1 (specified in ProjectSettings/ProjectVersion.txt:1)
-- **Main Scene**: Assets/Energy Ball V3.unity
+- **Unity**: `6000.3.19f1` (see `ProjectSettings/ProjectVersion.txt`). Unity 6.3.
+- **Render pipeline**: URP 17.3 (`com.unity.render-pipelines.universal`).
+- **Main scene**: `Assets/Energy Ball V3.unity`.
+- **Platform**: Windows only (Kinect SDK v2 native plugins). Requires a physical
+  Kinect v2 to track real bodies; use dummy players otherwise (see below).
+- **Solution**: `EnergyBall-V3.sln`. Editor: Visual Studio (`.vscode/settings.json`).
+- **Code style**: 4-space indent, format-on-save (`.editorconfig`, VS Code settings).
 
-### C# Development
-- **Solution File**: EnergyBall-V3.sln
-- **Default IDE**: Visual Studio (configured in .vscode/settings.json:54)
-- **Format Code**: Handled automatically via .editorconfig and VS Code settings
-- **C# Formatting**: Uses ms-dotnettools.csharp with 4-space indentation (configured in .vscode/settings.json:63-70)
+## Dependencies (how they're vendored)
 
-### Package Management
-- **Unity Package Manager**: Packages managed via Packages/manifest.json
-- **Key Dependencies**: 
-  - Keijiro packages for VFX and motion tools (jp.keijiro.*)
-  - Unity Visual Effect Graph for particle systems
-  - NaughtyAttributes for enhanced inspector UI
+Not everything comes from Package Manager — check the right place before assuming a
+package is missing:
 
-## Architecture Overview
+- **Package Manager** (`Packages/manifest.json`): URP, VFX Graph 17.3, Input System
+  1.19, Timeline, Collections, Newtonsoft JSON, and Keijiro packages from the
+  `jp.keijiro` scoped npm registry (`klak.motion`, `klutter-tools`, `metamesh`,
+  `metawire`, `noiseshader`, `shadergraphassets`, `vfxgraphassets`).
+- **Git dependency**: `com.maligan.unity-zed` (from GitHub).
+- **Kinect SDK v2**: vendored in `Assets/Scripts/Kinect Standard Assets/`
+  (`Windows.Kinect` namespace). Native plugins live in `Assets/Plugins/`
+  (`Metro/`, `x86/`, `x86_64/`).
+- **NaughtyAttributes**: vendored in `Assets/Added Packages/NaughtyAttributes/`
+  (inspector decorators — `[BoxGroup]`, `[Foldout]`, etc. — used throughout).
+- **unity-cli bridge**: embedded at `Packages/unity-cli-bridge/` (a VFX-Graph-capable
+  fork). This is what backs the unity-cli automation tooling for this repo.
 
-### Core Systems
-- **SceneController** (Assets/Scripts/SceneController.cs:10): Singleton pattern coordinator managing the entire application state, Kinect body tracking, and player lifecycle
-- **PlayerConstructor** (Assets/Scripts/PlayerConstructor.cs:10): Individual player entity management with metaball integration and visual effects
-- **SceneSettingsSO**: ScriptableObject for configuration data
+## Architecture
 
-### Kinect Integration
-- **BodySourceManager** (Assets/Scripts/BodySourceManager.cs): Kinect SDK v2 integration for body tracking
-- **HandForce & HandEffects**: Hand gesture recognition and physics interaction systems
-- **Player Scaling**: Dynamic player size adjustment based on tracking data
+All gameplay code is in `Assets/Scripts/`. The metaball/mesh code sits in
+`Assets/Scripts/Metaballs/` and `Assets/Scripts/MarchingCubes/` (NOT top-level
+`Assets/`).
 
-### Metaballs & Rendering
-- **MetaballsToSDF** (Assets/Metaballs/MetaballsToSDF.cs): Converts metaball data to signed distance fields
-- **MarchingCubes** (Assets/MarchingCubes/): Compute shader-based mesh generation from SDF data
-- **Compute Shaders**:
-  - MetaballsGenerator.compute: Real-time metaball field calculation
-  - MarchingCubes.compute: Mesh triangulation
+### Coordinator: `SceneController.cs`
+Singleton (`SceneController.Instance`), `[DefaultExecutionOrder(-200)]`,
+`[RequireComponent(typeof(MetaballsToSDF))]`. This is the spine of the app. Its
+`FixedUpdate`:
+1. Pulls Kinect bodies via `bodySourceManager.GetData()`.
+2. Diffs tracked `TrackingId`s against the `Players` dictionary — creates a player
+   for each new tracked body, removes players whose body is gone.
+3. Updates each player's Kinect-driven data, then runs the per-player gameplay
+   logic.
+4. Runs `gravityForceController.ManageGravity()` for inter-player attraction.
 
-### Physics & Effects
-- **GravityForce**: Custom physics controller for metaball interactions
-- **VFX Integration**: Visual Effect Graph for particle systems and effects
+Mouse input handled here: **left-click** deletes all bodies, **right-click**
+reloads the scene. Honors `dummyOnlyMode` to skip Kinect entirely.
 
-## Project Structure
+### Kinect input
+- `BodySourceManager.cs` (`[RequireComponent(typeof(SceneController))]`): opens the
+  Kinect sensor, color + body frame readers, exposes `Body[] GetData()`.
+- `KinectManager.cs`: a simpler standalone sensor reader (color + body).
 
-### Key Directories
-- **Assets/Scripts/**: Core C# gameplay logic (220+ scripts total)
-- **Assets/Metaballs/**: Metaballs generation and SDF conversion
-- **Assets/MarchingCubes/**: Marching cubes algorithm implementation
-- **Assets/VFX/**: Visual effects and particle systems
-- **Assets/Config/**: Runtime configuration data
-- **Assets/Prefabs/**: Reusable game objects and components
+### Per-player entity: `PlayerConstructor.cs`
+`[DefaultExecutionOrder(100)]`. One per tracked/dummy person. Holds the `Rigidbody`
+sphere, hand objects/colliders, per-hand VFX (`leftHandVfx`/`rightHandVfx`), the
+`metaballIndex` into the shared metaball field, hand states, and initialization
+state. Players "activate" via a pray-to-activate gesture (hands brought together).
 
-### External Dependencies
-- **Windows Kinect SDK v2**: Body tracking via Windows.Kinect namespace
-- **Keijiro Tool Suite**: Professional VFX and animation utilities
-- **NaughtyAttributes**: Enhanced Unity Inspector functionality
-- **Universal Render Pipeline (URP)**: Modern rendering pipeline
+### Gameplay logic ("force" classes)
+Plain C# classes (NOT MonoBehaviours) that grab `SceneController.Instance` and are
+invoked each frame from the controller. Put new per-frame gameplay behavior here,
+following the existing pattern:
+- `HandForce.cs` — translates hand open/closed states into pushing/pulling the ball.
+- `HandEffects.cs` — activation gesture, in-bounds handling, hand VFX flags.
+- `GravityForce.cs` — pairwise attraction between all players' spheres.
+- `PlayerScaler.cs` — grows/shrinks the ball based on hand-vs-body distances.
+- `BoundaryForce.cs` / `BoundaryGizmos.cs` — keeps balls inside the play volume.
 
-## Development Workflow
+### Metaballs → SDF → mesh pipeline
+- `Metaballs/MetaballsToSDF.cs` (`[RequireComponent]` MeshFilter+MeshRenderer):
+  owns the `List<Metaball>` (position + radius), a volume `ComputeShader`
+  (default grid `64x32x64`, `gridScale`, `targetValue 0.26`, `triangleBudget`
+  65536). Runs `Metaballs/MetaballsGenerator.compute` to build a scalar field.
+- `MarchingCubes/MeshBuilder.cs` + `MarchingCubes/MarchingCubes.compute` +
+  `TriangleTable.cs`: triangulate the isosurface into a `Mesh` each frame.
+- Each player owns one metaball index; hands/body movement move the metaballs.
 
-### Code Style
-- **Indentation**: 4 spaces (enforced by .editorconfig and VS Code settings)
-- **Formatting**: Auto-format on save enabled for all file types
-- **C# Conventions**: Uses Unity coding standards with NaughtyAttributes decorators
+### VFX & post-processing
+- VFX Graph assets in `Assets/VFX/` (`BodyEffects.vfx`, `HandEffects.vfx`,
+  `Subgraphs/`), driven from `PlayerConstructor` via exposed properties/bools.
+- `VolumeController.cs`: manages the URP post-processing `Volume` (Bloom, Vignette,
+  ChromaticAberration, LensDistortion, ColorAdjustments, WhiteBalance,
+  ScreenSpaceLensFlare) and persists edits via `SessionState`.
 
-### Performance Considerations
-- Compute shaders handle intensive mathematical operations (metaballs, marching cubes)
-- Singleton patterns used for critical managers (SceneController)
-- Object pooling implemented for player entities via dictionary tracking
+### Settings system (two layers)
+- `SceneSettingsSO.cs` — a `ScriptableObject` asset for authoring defaults in the
+  inspector.
+- `RuntimeSceneSettings.cs` — a `[Serializable]` runtime class the game actually
+  reads (`SceneController.CurrentSettings` / `GetRuntimeSettings()`). The controller
+  copies inspector ↔ runtime.
+- `InGameSettingsMenu.cs` / `SettingsMenuSetup.cs` — live in-game tuning UI.
+- Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
+  animation-curve presets in `Assets/StreamingAssets/CurvePresets/`, edited via the
+  `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor.
 
-### Testing & Building
-- No specific test framework configured - testing done in Unity Play Mode
-- Build configurations available through Unity Editor Build Settings
-- Platform target: Windows with Kinect SDK dependency
+### Dummy players (dev without a Kinect)
+`DummySceneControl.cs`, `DummyHandController.cs`, `DummyTransformer.cs` plus
+`dummyOnlyMode` let you spawn and puppet players without a sensor. Use these to test
+metaballs, gravity, scaling, and VFX from the editor. Test scenes live in
+`Assets/Testing/` (e.g. `Dummy Scene.unity`, VFX experiments, Kinect webcam output).
+
+## Working in this repo
+
+- **Unity automation**: the unity-cli bridge is installed (embedded package). Use
+  the `unity` agent / unity-cli skills for scene inspection, GameObject/component
+  edits, C# navigation, and play-mode testing. For `.vfx` graph work use the VFX
+  Graph bridge skill — the general unity-cli skills don't cover VFX Graph.
+- **No test framework** — verification is done in Play Mode. Prefer dummy players
+  over requiring the physical Kinect when reproducing/verifying behavior.
+- **Adding gameplay behavior**: mirror the existing "force class" pattern (plain
+  class pulling `SceneController.Instance`, called per-frame from the controller)
+  rather than adding new MonoBehaviours, unless the behavior genuinely needs one.
+- **Performance**: heavy math (metaball field, marching cubes) runs on compute
+  shaders; the controller runs on `FixedUpdate`. Keep per-frame allocations down.
