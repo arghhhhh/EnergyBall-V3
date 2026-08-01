@@ -100,6 +100,7 @@
     ],
     "singleHandScaling": true,
     "minimumUnscaledSize": 1.25,
+    "maximumUnscaledSize": 3.0,
     "minHandDisplacementPerFrame": 0.05000000074505806,
     "distanceDamper": {
         "serializedVersion": "2",
@@ -151,6 +152,8 @@
     "maxDistanceFromCamera": 60.0,
     "particleInitializationDelay": 1.75,
     "initializationResetDelay": 3.0,
+    "singleHandOpenThreshold": 0.10000000149011612,
+    "singleHandForceLerpDuration": 0.3499999940395355,
     "initializationSpeed": 0.03700000047683716,
     "metaballRadiusAnimationDuration": 2.0,
     "metaballRadiusAnimationStartSize": 0.10000000149011612,
@@ -223,8 +226,8 @@
     "whiteBalanceTint": 0.0,
     "dummyOnlyMode": true,
     "showSphereMeshOnHandCollision": false,
-    "alwaysShowSphereMesh": true,
-    "showMetaballMesh": true,
+    "alwaysShowSphereMesh": false,
+    "showMetaballMesh": false,
     "_showAttractionRadius": false,
     "_showHandTrailDistorters": false,
     "_showSecondaryAttractor": false
