@@ -48,6 +48,8 @@ namespace UnityCliBridge.Handlers
         private static Type UIInfoType => T("UnityEditor.VFX.VFXUI+UIInfo");
         private static Type StickyNoteInfoType => T("UnityEditor.VFX.VFXUI+StickyNoteInfo");
         private static Type CategoryInfoType => T("UnityEditor.VFX.VFXUI+CategoryInfo");
+        private static Type GroupInfoType => T("UnityEditor.VFX.VFXUI+GroupInfo");
+        private static Type NodeIDType => T("UnityEditor.VFX.VFXNodeID");
         private static Type TemplateHelperType => T("UnityEditor.VFX.VFXTemplateHelperInternal");
         private static Type TemplateDescriptorType => T("UnityEditor.Experimental.GraphView.GraphViewTemplateDescriptor");
         private static Type ErrorReporterType => T("UnityEditor.VFX.VFXErrorReporter");
@@ -492,6 +494,7 @@ namespace UnityCliBridge.Handlers
                     ["contextType"] = ctxType,
                     ["type"] = ctx.GetType().Name,
                     ["name"] = ModelName(ctx),
+                    ["position"] = PositionJson(ModelPosition(ctx)),
                     ["settings"] = ModelSettings(ctx),
                     ["inputs"] = FlowRefs(ctx, "inputContexts", ctxList),
                     ["outputs"] = FlowRefs(ctx, "outputContexts", ctxList),
@@ -513,6 +516,7 @@ namespace UnityCliBridge.Handlers
                     ["index"] = i,
                     ["type"] = op.GetType().Name,
                     ["name"] = ModelName(op),
+                    ["position"] = PositionJson(ModelPosition(op)),
                     ["settings"] = ModelSettings(op),
                     ["inputSlots"] = SlotsJson(op, true),
                     ["outputSlots"] = SlotsJson(op, false)
@@ -537,6 +541,19 @@ namespace UnityCliBridge.Handlers
                 try { max = ToJToken(Prop(p, "max")); } catch { }
                 try { valueFilter = new JValue(Prop(p, "valueFilter")?.ToString()); } catch { }
                 try { order = new JValue(Convert.ToInt32(Prop(p, "order"))); } catch { }
+                // Canvas nodes: a parameter appears on the canvas once per VFXParameter.Node.
+                var canvasNodes = new JArray();
+                try
+                {
+                    if (Prop(p, "nodes") is IEnumerable nodeList)
+                        foreach (var n in nodeList)
+                            canvasNodes.Add(new JObject
+                            {
+                                ["id"] = Convert.ToInt32(Prop(n, "id")),
+                                ["position"] = PositionJson((Vector2)(FindField(n.GetType(), "position")?.GetValue(n) ?? Vector2.zero))
+                            });
+                }
+                catch { /* parameter without canvas nodes — leave empty */ }
                 paramsJson.Add(new JObject
                 {
                     ["index"] = i,
@@ -547,6 +564,7 @@ namespace UnityCliBridge.Handlers
                     ["isOutput"] = isOutput,
                     ["category"] = category,
                     ["order"] = order,
+                    ["nodes"] = canvasNodes,
                     ["tooltip"] = tooltip,
                     ["value"] = value,
                     ["valueFilter"] = valueFilter,
@@ -558,6 +576,42 @@ namespace UnityCliBridge.Handlers
             }
 
             var stickyNotes = StickyNotesJson(graph);
+
+            // Group boxes (VFXUI.groupInfos): title + canvas rect + member nodes resolved to the
+            // same stable addresses the rest of describe uses (sticky-note members carry their id).
+            var groupsJson = new JArray();
+            try
+            {
+                var uiInfos = Prop(graph, "UIInfos");
+                if (FindField(uiInfos?.GetType(), "groupInfos")?.GetValue(uiInfos) is Array groupArr)
+                {
+                    foreach (var g in groupArr)
+                    {
+                        var rect = (Rect)(FindField(GroupInfoType, "position")?.GetValue(g) ?? default(Rect));
+                        var members = new JArray();
+                        if (FindField(GroupInfoType, "contents")?.GetValue(g) is Array contents)
+                        {
+                            foreach (var nid in contents)
+                            {
+                                bool sticky = (bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false);
+                                var member = sticky
+                                    ? new JObject { ["kind"] = "stickyNote" }
+                                    : ResolveAddress(FindField(NodeIDType, "model")?.GetValue(nid));
+                                member["id"] = Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? 0);
+                                members.Add(member);
+                            }
+                        }
+                        groupsJson.Add(new JObject
+                        {
+                            ["title"] = FindField(GroupInfoType, "title")?.GetValue(g) as string,
+                            ["position"] = new JArray { rect.x, rect.y, rect.width, rect.height },
+                            ["contents"] = members
+                        });
+                    }
+                }
+            }
+            catch { /* graphs without UI sidecar — leave empty */ }
+
             var categories = CategoriesJson(graph);
             var customAttributes = CustomAttributesJson(graph);
             string initialEventName = null;
@@ -583,6 +637,8 @@ namespace UnityCliBridge.Handlers
                 ["parameters"] = paramsJson,
                 ["stickyNoteCount"] = stickyNotes.Count,
                 ["stickyNotes"] = stickyNotes,
+                ["groupCount"] = groupsJson.Count,
+                ["groups"] = groupsJson,
                 ["categories"] = categories,
                 ["customAttributeCount"] = customAttributes.Count,
                 ["customAttributes"] = customAttributes,
@@ -839,6 +895,8 @@ namespace UnityCliBridge.Handlers
                 case "set_block_enabled": return SetBlockEnabled(parameters);
                 case "reorder_block": return ReorderBlock(parameters);
                 case "move_block": return MoveBlock(parameters);
+                case "move_node": return MoveNode(parameters);
+                case "group_nodes": return GroupNodes(parameters);
                 case "duplicate_block": return DuplicateBlock(parameters);
                 case "duplicate_operator": return DuplicateOperator(parameters);
                 case "remove_operator": return RemoveOperator(parameters);
@@ -867,7 +925,7 @@ namespace UnityCliBridge.Handlers
                 case "insert_template": return InsertTemplate(parameters);
                 case "designate_template": return DesignateTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, remove_block, set_block_enabled, reorder_block, move_block, move_node, group_nodes, duplicate_block, duplicate_operator, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template" };
             }
         }
 
@@ -1675,6 +1733,58 @@ namespace UnityCliBridge.Handlers
             };
         }
 
+        // ---- Canvas layout helpers ---------------------------------------
+
+        /// <summary>Optional `[x, y]` canvas position parameter. Null when absent.</summary>
+        private static Vector2? PositionParam(JObject parameters)
+        {
+            if (!(parameters?["position"] is JArray arr) || arr.Count < 2) return null;
+            return new Vector2(arr[0].ToObject<float>(), arr[1].ToObject<float>());
+        }
+
+        private static Vector2 ModelPosition(object model)
+        {
+            try { return (Vector2)Prop(model, "position"); }
+            catch { return Vector2.zero; }
+        }
+
+        private static JArray PositionJson(Vector2 pos) => new JArray { pos.x, pos.y };
+
+        // Spacing constants for auto-placement. VFX Graph systems flow top-to-bottom
+        // (Spawn → Init → Update → Output) with operators feeding in from the left.
+        private const float ContextFlowStepY = 450f;
+        private const float SystemColumnStepX = 700f;
+        private const float OperatorColumnOffsetX = 600f;
+        private const float OperatorStackStepY = 180f;
+
+        /// <summary>
+        /// Default canvas position for a new context: below its flow source when linking (systems
+        /// read top-to-bottom), otherwise right of the rightmost existing context so a new system
+        /// starts its own column instead of stacking at the origin.
+        /// </summary>
+        private static Vector2 AutoContextPosition(object graph, object linkFromContext, object newContext)
+        {
+            if (linkFromContext != null)
+                return ModelPosition(linkFromContext) + new Vector2(0, ContextFlowStepY);
+            var others = Children(graph)
+                .Where(c => ContextType.IsInstanceOfType(c) && !ReferenceEquals(c, newContext)).ToList();
+            if (others.Count == 0) return Vector2.zero;
+            return new Vector2(others.Max(c => ModelPosition(c).x) + SystemColumnStepX, 0);
+        }
+
+        /// <summary>
+        /// Default canvas position for a new operator: a staggered column left of the leftmost
+        /// context (operators feed rightward into blocks/contexts), stepping down per operator.
+        /// </summary>
+        private static Vector2 AutoOperatorPosition(object graph, object newOp)
+        {
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            float baseX = (ctxs.Count > 0 ? ctxs.Min(c => ModelPosition(c).x) : 0f) - OperatorColumnOffsetX;
+            int stack = Children(graph)
+                .Count(c => OperatorType.IsInstanceOfType(c) && !ReferenceEquals(c, newOp));
+            return new Vector2(baseX, stack * OperatorStackStepY);
+        }
+
         private static object AddContext(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -1736,9 +1846,10 @@ namespace UnityCliBridge.Handlers
 
             // Optional flow link: an existing context (by contextType) flows INTO the new one.
             JObject linked = null;
+            object fromContext = null;
             if (!string.IsNullOrEmpty(linkFrom))
             {
-                var fromContext = FindContext(graph, linkFrom);
+                fromContext = FindContext(graph, linkFrom);
                 if (fromContext == null)
                     throw new Exception($"linkFrom context '{linkFrom}' not found in {assetPath}");
                 int fromIndex = parameters?["fromIndex"]?.ToObject<int>() ?? 0;
@@ -1752,6 +1863,11 @@ namespace UnityCliBridge.Handlers
                 };
             }
 
+            // Canvas position: explicit `position:[x,y]`, else auto-place so nodes never stack at
+            // the origin (below the flow source, or a fresh column for an unlinked context).
+            var pos = PositionParam(parameters) ?? AutoContextPosition(graph, fromContext, context);
+            SetProp(context, "position", pos);
+
             Persist(graph, assetPath);
 
             return new JObject
@@ -1761,7 +1877,8 @@ namespace UnityCliBridge.Handlers
                 ["addedContext"] = context.GetType().Name,
                 ["matchedDescriptor"] = matchedDescriptor,
                 ["settingsApplied"] = appliedSettings,
-                ["linked"] = linked
+                ["linked"] = linked,
+                ["position"] = PositionJson(pos)
             };
         }
 
@@ -1790,6 +1907,11 @@ namespace UnityCliBridge.Handlers
 
             Call(graph, ModelType, "AddChild", op, -1, true);
 
+            // Canvas position: explicit `position:[x,y]`, else a staggered column left of the
+            // contexts so operators stay readable instead of stacking at the origin.
+            var pos = PositionParam(parameters) ?? AutoOperatorPosition(graph, op);
+            SetProp(op, "position", pos);
+
             Persist(graph, assetPath);
 
             int operatorIndex = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList()
@@ -1801,7 +1923,8 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["addedOperator"] = op.GetType().Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
-                ["operatorIndex"] = operatorIndex
+                ["operatorIndex"] = operatorIndex,
+                ["position"] = PositionJson(pos)
             };
         }
 
@@ -2670,6 +2793,147 @@ namespace UnityCliBridge.Handlers
                 ["toContextType"] = toContext,
                 ["toIndex"] = newIndex,
                 ["remainingInSource"] = Children(srcCtx).Count()
+            };
+        }
+
+        /// <summary>
+        /// Set a node's canvas position — layout only, no functional graph change. `target` uses the
+        /// same addressing as link_slots endpoints ({node: context|operator|parameter, …address});
+        /// `position` is `[x, y]`. Contexts and operators carry one VFXModel.position; a parameter's
+        /// canvas presence is its VFXParameter.Node list, so every node of the parameter is moved
+        /// (nodes after the first are staggered vertically to stay individually clickable), and the
+        /// model position doubles as the seed for the node the editor auto-creates when a linked
+        /// parameter has no canvas node yet.
+        /// </summary>
+        private static object MoveNode(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var target = parameters?["target"] as JObject;
+            if (target == null)
+                return new { error = "target is required (an object {node: context|operator|parameter, …address})" };
+            var pos = PositionParam(parameters);
+            if (pos == null)
+                return new { error = "position is required ([x, y])" };
+
+            var graph = LoadGraph(assetPath);
+            var node = ResolveNode(graph, target, "target");
+            if (BlockType.IsInstanceOfType(node))
+                return new { error = "Blocks have no canvas position (they are ordered inside their context); use reorder_block or move_block." };
+
+            int movedParameterNodes = 0;
+            // Contexts/operators carry one VFXModel.position. A parameter's canvas presence is its
+            // VFXParameter.Node list — move every node (staggered so they stay individually
+            // clickable). Setting the model position too is deliberate: for a parameter with links
+            // but no canvas node yet, VFXParameter.OnEnable seeds the auto-created node from it.
+            SetProp(node, "position", pos.Value);
+            if (ParameterType.IsInstanceOfType(node))
+            {
+                var nodes = (Prop(node, "nodes") as IEnumerable)?.Cast<object>().ToList()
+                            ?? new List<object>();
+                var posField = nodes.Count > 0 ? FindField(nodes[0].GetType(), "position") : null;
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    posField.SetValue(nodes[i], pos.Value + new Vector2(0, i * OperatorStackStepY));
+                    movedParameterNodes++;
+                }
+            }
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "move_node",
+                ["assetPath"] = assetPath,
+                ["node"] = node.GetType().Name,
+                ["position"] = PositionJson(pos.Value),
+                ["movedParameterNodes"] = ParameterType.IsInstanceOfType(node) ? (int?)movedParameterNodes : null
+            };
+        }
+
+        /// <summary>
+        /// Add nodes to a named group box (VFXUI.groupInfos), creating the group when no group with
+        /// that title exists. `nodes` = array of node addresses ({node: context|operator|parameter,
+        /// …index}); optional `position` = [x, y, w, h] applies only when creating. A parameter entry
+        /// uses its first canvas node's id (0 when the parameter has no canvas node yet — the id the
+        /// editor assigns when it auto-creates one).
+        /// </summary>
+        private static object GroupNodes(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var title = parameters?["title"]?.ToString();
+            if (string.IsNullOrEmpty(title))
+                return new { error = "title is required" };
+            if (!(parameters?["nodes"] is JArray nodesTok) || nodesTok.Count == 0)
+                return new { error = "nodes is required (array of node addresses: {node: context|operator|parameter, …index})" };
+
+            var graph = LoadGraph(assetPath);
+            var ui = Prop(graph, "UIInfos");
+            if (ui == null)
+                throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
+            var groupsField = FindField(ui.GetType(), "groupInfos");
+            var groups = groupsField.GetValue(ui) as Array ?? Array.CreateInstance(GroupInfoType, 0);
+
+            var ids = new List<object>();
+            foreach (var tok in nodesTok)
+            {
+                var node = ResolveNode(graph, tok as JObject, "nodes[]");
+                if (BlockType.IsInstanceOfType(node))
+                    return new { error = "Blocks cannot be grouped (they live inside their context); group the context instead." };
+                int id = 0;
+                if (ParameterType.IsInstanceOfType(node) && Prop(node, "nodes") is IEnumerable pn)
+                    foreach (var n in pn) { id = Convert.ToInt32(Prop(n, "id")); break; }
+                ids.Add(Activator.CreateInstance(NodeIDType, node, id));
+            }
+
+            int gi = -1;
+            var titleField = FindField(GroupInfoType, "title");
+            for (int i = 0; i < groups.Length; i++)
+                if (string.Equals(titleField.GetValue(groups.GetValue(i)) as string, title, StringComparison.Ordinal))
+                { gi = i; break; }
+
+            object group;
+            bool created = gi < 0;
+            if (created)
+            {
+                group = Activator.CreateInstance(GroupInfoType);
+                titleField.SetValue(group, title);
+                var rect = new Rect(0, 0, 500, 300);
+                if (parameters?["position"] is JArray gp && gp.Count >= 4)
+                    rect = new Rect(gp[0].ToObject<float>(), gp[1].ToObject<float>(),
+                                    gp[2].ToObject<float>(), gp[3].ToObject<float>());
+                FindField(GroupInfoType, "position").SetValue(group, rect);
+                FindField(GroupInfoType, "contents").SetValue(group, Array.CreateInstance(NodeIDType, 0));
+                var newGroups = Array.CreateInstance(GroupInfoType, groups.Length + 1);
+                Array.Copy(groups, newGroups, groups.Length);
+                newGroups.SetValue(group, groups.Length);
+                groupsField.SetValue(ui, newGroups);
+                gi = newGroups.Length - 1;
+            }
+            else
+            {
+                group = groups.GetValue(gi);
+            }
+
+            var contentsField = FindField(GroupInfoType, "contents");
+            var contents = contentsField.GetValue(group) as Array ?? Array.CreateInstance(NodeIDType, 0);
+            var merged = Array.CreateInstance(NodeIDType, contents.Length + ids.Count);
+            Array.Copy(contents, merged, contents.Length);
+            for (int i = 0; i < ids.Count; i++)
+                merged.SetValue(ids[i], contents.Length + i);
+            contentsField.SetValue(group, merged);
+
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "group_nodes",
+                ["assetPath"] = assetPath,
+                ["title"] = title,
+                ["groupIndex"] = gi,
+                ["createdGroup"] = created,
+                ["added"] = ids.Count,
+                ["contentCount"] = merged.Length
             };
         }
 

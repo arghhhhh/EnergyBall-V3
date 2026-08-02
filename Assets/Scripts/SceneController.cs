@@ -609,6 +609,7 @@ public class SceneController : MonoBehaviour
             // );
             playerConstructor.SetAttractionRadius();
             playerConstructor.SetMass();
+            playerConstructor.SetVfxBodyVelocity();
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);

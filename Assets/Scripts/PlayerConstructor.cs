@@ -439,6 +439,21 @@ public class PlayerConstructor : MonoBehaviour
         sphere.mass = Utils.GetVector3Avg(sphere.transform.localScale);
     }
 
+    public void SetVfxBodyVelocity()
+    {
+        // Ball velocity in each VFX's local space, so tangential damping acts on
+        // particle velocity relative to the moving attractor rather than world rest.
+        Vector3 ballVelocity = sphere.linearVelocity;
+        leftHandVfx.SetVector3(
+            "bodyVelocity",
+            leftHandVfx.transform.InverseTransformVector(ballVelocity)
+        );
+        rightHandVfx.SetVector3(
+            "bodyVelocity",
+            rightHandVfx.transform.InverseTransformVector(ballVelocity)
+        );
+    }
+
     public void SetPulseSize()
     {
         var runtimeSettings = controller.GetRuntimeSettings();
