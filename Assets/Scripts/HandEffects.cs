@@ -34,6 +34,18 @@ public class HandEffects
         player.leftHandVfx.SetBool("isInBounds", isInBounds);
         player.rightHandVfx.SetBool("isInBounds", isInBounds);
 
+        // Ball velocity in each VFX's local space, so tangential damping acts on
+        // particle velocity relative to the moving attractor rather than world rest.
+        Vector3 ballVelocity = player.sphere.linearVelocity;
+        player.leftHandVfx.SetVector3(
+            "bodyVelocity",
+            player.leftHandVfx.transform.InverseTransformVector(ballVelocity)
+        );
+        player.rightHandVfx.SetVector3(
+            "bodyVelocity",
+            player.rightHandVfx.transform.InverseTransformVector(ballVelocity)
+        );
+
         // If player just went out of bounds, force hands to close
         if (justWentOutOfBounds)
         {
