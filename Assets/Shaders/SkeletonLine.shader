@@ -1,16 +1,21 @@
-// Vertex-colored unlit line shader for the debug skeleton.
-// ZTest Always so skeleton lines are never culled by the body depth
-// occluder (or anything else) — they're a diagnostic overlay and should
-// always be visible on top.
+// Vertex-colored unlit line shader for debug overlays (skeleton, bounds box).
+// _ZTest is a material property: the skeleton material uses Always (8) so the
+// body depth occluder never culls it; the bounds-box material uses LEqual (4)
+// so the point cloud occludes it, giving a depth cue against the flat video.
 Shader "EnergyBall/SkeletonLine"
 {
+    Properties
+    {
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("ZTest", Float) = 8
+    }
+
     SubShader
     {
         Tags { "RenderType" = "Transparent" "Queue" = "Transparent+50" "IgnoreProjector" = "True" }
 
         Pass
         {
-            ZTest Always
+            ZTest [_ZTest]
             ZWrite Off
             Blend SrcAlpha OneMinusSrcAlpha
             Cull Off

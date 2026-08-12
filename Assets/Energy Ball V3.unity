@@ -1849,7 +1849,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d36bd9bc8c21bc74e8773c0a07018529, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MetaballBoundsVisualizer
-  lineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0, type: 2}
+  lineMaterial: {fileID: 2100000, guid: 96ba059f82b4777499baf503d41a7f7d, type: 2}
   color: {r: 0.2, g: 1, b: 0.4, a: 1}
 --- !u!23 &1869582563
 MeshRenderer:
