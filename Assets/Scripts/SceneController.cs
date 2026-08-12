@@ -62,6 +62,20 @@ public class SceneController : MonoBehaviour
     public float pushForce = 5f;
 
     [BoxGroup("Hands Attraction")]
+    [Tooltip(
+        "How far the ball's push target is pulled toward the camera when the hands sit at torso "
+            + "depth, so the ball isn't occluded by the player's own body. 0 disables."
+    )]
+    public float torsoForwardOffset = 0.75f;
+
+    [BoxGroup("Hands Attraction")]
+    [Tooltip(
+        "How far (in z) the hands must be from the torso plane, forward or backward, for the "
+            + "torso forward offset to fade to zero."
+    )]
+    public float torsoForwardOffsetRange = 1.5f;
+
+    [BoxGroup("Hands Attraction")]
     public float minDrag = 0.1f;
 
     [BoxGroup("Hands Attraction")]
@@ -293,6 +307,13 @@ public class SceneController : MonoBehaviour
             + "visibly, colored by depth — body pixels warm, environment cool."
     )]
     public bool showPointCloud = false;
+
+    [BoxGroup("Debugging")]
+    [Tooltip(
+        "When enabled, the metaball volume's bounding box is drawn as a wireframe for checking "
+            + "grid placement while tuning baseZDepth."
+    )]
+    public bool showMetaballBounds = false;
 
     [BoxGroup("Debugging")]
     public bool showAttractionRadius = false;
@@ -928,6 +949,8 @@ public class SceneController : MonoBehaviour
         target.outOfBoundsResetDelay = outOfBoundsResetDelay;
 
         target.pushForce = pushForce;
+        target.torsoForwardOffset = torsoForwardOffset;
+        target.torsoForwardOffsetRange = torsoForwardOffsetRange;
         target.minDrag = minDrag;
         target.maxDrag = maxDrag;
         target.alignmentVectorStrength = new AnimationCurve(alignmentVectorStrength.keys);
@@ -976,6 +999,7 @@ public class SceneController : MonoBehaviour
         target.alwaysShowSphereMesh = alwaysShowSphereMesh;
         target.showMetaballMesh = showMetaballMesh;
         target.showPointCloud = showPointCloud;
+        target.showMetaballBounds = showMetaballBounds;
         target.showAttractionRadius = showAttractionRadius;
         target.showHandTrailDistorters = showHandTrailDistorters;
         target.showSecondaryAttractor = showSecondaryAttractor;
@@ -1006,6 +1030,8 @@ public class SceneController : MonoBehaviour
         outOfBoundsResetDelay = source.outOfBoundsResetDelay;
 
         pushForce = source.pushForce;
+        torsoForwardOffset = source.torsoForwardOffset;
+        torsoForwardOffsetRange = source.torsoForwardOffsetRange;
         minDrag = source.minDrag;
         maxDrag = source.maxDrag;
         alignmentVectorStrength = new AnimationCurve(source.alignmentVectorStrength.keys);
@@ -1054,6 +1080,7 @@ public class SceneController : MonoBehaviour
         alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         showMetaballMesh = source.showMetaballMesh;
         showPointCloud = source.showPointCloud;
+        showMetaballBounds = source.showMetaballBounds;
         showAttractionRadius = source.showAttractionRadius;
         showHandTrailDistorters = source.showHandTrailDistorters;
         showSecondaryAttractor = source.showSecondaryAttractor;

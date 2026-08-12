@@ -512,7 +512,7 @@ MonoBehaviour:
       serializedVersion: 2
       x: -1162
       y: 562
-      width: 1453
+      width: 1454
       height: 570
     contents:
     - model: {fileID: 8926484042661614555}
@@ -633,7 +633,7 @@ MonoBehaviour:
       serializedVersion: 2
       x: -386
       y: 1000
-      width: 114
+      width: 115
       height: 100
     contents: "Only apply to particles outside the sphere \n(scale.x * 0.5)"
     theme: Classic
@@ -2125,11 +2125,11 @@ MonoBehaviour:
       inputSlot: {fileID: 8926484042661617408}
     - outputSlot: {fileID: 8926484042661614566}
       inputSlot: {fileID: 8926484042661617489}
-    position: {x: -1098.4, y: 938.4}
+    position: {x: -1101.6001, y: 992.00006}
     expandedSlots:
     - {fileID: 8926484042661614556}
     expanded: 1
-    supecollapsed: 0
+    supecollapsed: 1
 --- !u!114 &8926484042661614556
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -48059,7 +48059,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661617462}
       inputSlot: {fileID: 8926484042661617478}
-    position: {x: -748.8, y: 894.4}
+    position: {x: -776, y: 894.4}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1

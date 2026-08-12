@@ -98,6 +98,40 @@ public class HandForce
         }
     }
 
+    /// <summary>
+    /// Pulls the push target toward the camera when it sits near the player's
+    /// torso depth, so the ball isn't occluded by the player's own body (e.g.
+    /// arms outstretched sideways puts the hand midpoint inside the chest).
+    /// The offset is strongest when the target is exactly at torso depth and
+    /// fades smoothly to zero as the hands move forward or backward from it.
+    /// </summary>
+    Vector3 ApplyTorsoForwardOffset(
+        PlayerConstructor player,
+        Vector3 target,
+        RuntimeSceneSettings settings
+    )
+    {
+        if (settings.torsoForwardOffset <= 0f || settings.torsoForwardOffsetRange <= 0f)
+        {
+            return target;
+        }
+
+        // SpineMid is not in the controller's boneMap (its transform never
+        // updates) — the shoulders are tracked, so derive torso depth from them.
+        float torsoZ =
+            (player.ShoulderLeft.transform.position.z + player.ShoulderRight.transform.position.z)
+            * 0.5f;
+        float distanceFromTorsoPlane = Mathf.Abs(target.z - torsoZ);
+        float falloff =
+            1f - Mathf.Clamp01(distanceFromTorsoPlane / settings.torsoForwardOffsetRange);
+        // Smoothstep for a soft bell shape (no kink at the torso plane or at the edges)
+        falloff = falloff * falloff * (3f - 2f * falloff);
+
+        // -z is toward the camera
+        target.z -= settings.torsoForwardOffset * falloff;
+        return target;
+    }
+
     // See dev log [2024-08-03] for visuals on what this does
     void AlignAndCalculateVectors(PlayerConstructor player)
     {
@@ -130,7 +164,11 @@ public class HandForce
             runtimeSettings.alignmentVectorStrength.Evaluate(remappedHandDistance)
             * runtimeSettings.alignmentVectorStrengthScaler;
 
-        Vector3 pushTarget = CalculatePushTarget(player);
+        Vector3 pushTarget = ApplyTorsoForwardOffset(
+            player,
+            CalculatePushTarget(player),
+            runtimeSettings
+        );
 
         Vector3 offsetTarget = pushTarget + alignmentVector * alignmentVectorScaler;
         float distance = Vector3.Distance(offsetTarget, player.sphere.transform.position);

@@ -422,6 +422,18 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
+            "Torso Forward Offset",
+            () => runtimeSettings.torsoForwardOffset,
+            v => runtimeSettings.torsoForwardOffset = v
+        );
+        CreateFloatField(
+            group,
+            "Torso Offset Range",
+            () => runtimeSettings.torsoForwardOffsetRange,
+            v => runtimeSettings.torsoForwardOffsetRange = v
+        );
+        CreateFloatField(
+            group,
             "Min Drag",
             () => runtimeSettings.minDrag,
             v => runtimeSettings.minDrag = v
@@ -912,6 +924,12 @@ public class InGameSettingsMenu : MonoBehaviour
             "Show Point Cloud",
             () => runtimeSettings.showPointCloud,
             v => runtimeSettings.showPointCloud = v
+        );
+        CreateToggleField(
+            group,
+            "Show Metaball Bounds",
+            () => runtimeSettings.showMetaballBounds,
+            v => runtimeSettings.showMetaballBounds = v
         );
         CreateToggleField(
             group,
@@ -1596,6 +1614,8 @@ public class InGameSettingsMenu : MonoBehaviour
         // Hand interaction settings
         runtimeSettings.singleHandOpenForceDamper = loadedSettings.singleHandOpenForceDamper;
         runtimeSettings.pushForce = loadedSettings.pushForce;
+        runtimeSettings.torsoForwardOffset = loadedSettings.torsoForwardOffset;
+        runtimeSettings.torsoForwardOffsetRange = loadedSettings.torsoForwardOffsetRange;
         runtimeSettings.minDrag = loadedSettings.minDrag;
         runtimeSettings.maxDrag = loadedSettings.maxDrag;
         runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
@@ -1665,6 +1685,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.alwaysShowSphereMesh = loadedSettings.alwaysShowSphereMesh;
         runtimeSettings.showMetaballMesh = loadedSettings.showMetaballMesh;
         runtimeSettings.showPointCloud = loadedSettings.showPointCloud;
+        runtimeSettings.showMetaballBounds = loadedSettings.showMetaballBounds;
         runtimeSettings.showAttractionRadius = loadedSettings.showAttractionRadius;
         runtimeSettings.showHandTrailDistorters = loadedSettings.showHandTrailDistorters;
         runtimeSettings.showSecondaryAttractor = loadedSettings.showSecondaryAttractor;
@@ -1729,6 +1750,8 @@ public class InGameSettingsMenu : MonoBehaviour
         // Hand interaction settings
         destination.singleHandOpenForceDamper = source.singleHandOpenForceDamper;
         destination.pushForce = source.pushForce;
+        destination.torsoForwardOffset = source.torsoForwardOffset;
+        destination.torsoForwardOffsetRange = source.torsoForwardOffsetRange;
         destination.minDrag = source.minDrag;
         destination.maxDrag = source.maxDrag;
         destination.addedBoundaryDistance = source.addedBoundaryDistance;
@@ -1785,6 +1808,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         destination.showMetaballMesh = source.showMetaballMesh;
         destination.showPointCloud = source.showPointCloud;
+        destination.showMetaballBounds = source.showMetaballBounds;
         destination.showAttractionRadius = source.showAttractionRadius;
         destination.showHandTrailDistorters = source.showHandTrailDistorters;
         destination.showSecondaryAttractor = source.showSecondaryAttractor;
@@ -1868,6 +1892,8 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.forceToMiddle = new AnimationCurve();
         destination.singleHandOpenForceDamper = 0.0f;
         destination.pushForce = 0.0f;
+        destination.torsoForwardOffset = 0.0f;
+        destination.torsoForwardOffsetRange = 0.0f;
         destination.minDrag = 0.0f;
         destination.maxDrag = 0.0f;
         destination.addedBoundaryDistance = 0.0f;
@@ -1909,6 +1935,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.alwaysShowSphereMesh = false;
         destination.showMetaballMesh = false;
         destination.showPointCloud = false;
+        destination.showMetaballBounds = false;
         destination.showAttractionRadius = false;
         destination.showHandTrailDistorters = false;
         destination.showSecondaryAttractor = false;

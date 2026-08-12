@@ -39,6 +39,16 @@ public class SceneSettingsSO : ScriptableObject
     public float pushForce;
 
     [BoxGroup("Hands Attraction")]
+    [Tooltip(
+        "How far the ball's push target is pulled toward the camera when the hands sit at torso depth. 0 disables."
+    )]
+    public float torsoForwardOffset;
+
+    [BoxGroup("Hands Attraction")]
+    [Tooltip("Hand-to-torso z distance at which the torso forward offset fades to zero.")]
+    public float torsoForwardOffsetRange;
+
+    [BoxGroup("Hands Attraction")]
     public float minDrag;
 
     [BoxGroup("Hands Attraction")]
@@ -161,6 +171,23 @@ public class SceneSettingsSO : ScriptableObject
             if (_showPointCloud != value)
             {
                 _showPointCloud = value;
+                OnAnyDebuggingSettingChanged?.Invoke();
+            }
+        }
+    }
+
+    [BoxGroup("Debugging")]
+    [Tooltip("When enabled, the metaball volume's bounding box is drawn as a wireframe.")]
+    [SerializeField]
+    private bool _showMetaballBounds;
+    public bool showMetaballBounds
+    {
+        get => _showMetaballBounds;
+        set
+        {
+            if (_showMetaballBounds != value)
+            {
+                _showMetaballBounds = value;
                 OnAnyDebuggingSettingChanged?.Invoke();
             }
         }
