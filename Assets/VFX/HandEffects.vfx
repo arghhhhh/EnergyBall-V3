@@ -361,7 +361,7 @@ MonoBehaviour:
     - model: {fileID: 8926484042661616377}
       id: 0
       isStickyNote: 0
-  - title: Body Collision
+  - title: vfxSphere Collision
     position:
       serializedVersion: 2
       x: 1183
@@ -608,7 +608,7 @@ MonoBehaviour:
       width: 178
       height: 100
     contents: this should prevent the particles from having nowhere to go when the
-      body exits the sdf bounds
+      vfx body exits the sdf bounds
     theme: 
     textSize: Small
     colorTheme: 1
@@ -617,23 +617,14 @@ MonoBehaviour:
       serializedVersion: 2
       x: 2774
       y: 740
-      width: 475
-      height: 236
+      width: 251
+      height: 267
     contents: "Two additive steering systems, both writing via ADD-composition velocity
       blocks (never Set - other forces must not be cancelled). Shared front end:\n\nd
-      = Dot(SafeNormalize(velocity), SafeNormalize(body.position - particle position)).\nUnit
-      vectors, so d = cos(angle between current heading and direction to body):\n 
-      d=1 -> dead-on (0 deg) | d=0 -> perpendicular (90 deg) | d=-1 -> fleeing (180
-      deg). theta = arccos(d).\n\nSYSTEM 1 (first |Add|_Velocity block) - band-pass
-      correction, any age:\nTrapezoid weight from two Smoothsteps:\n  rise  Smoothstep(-0.6,
-      0.5, d): 0 past ~127 deg off (ignored), full by 60 deg.\n  fall  1 - Smoothstep(0.866,
-      1.0, d): full until 30 deg, 0 at dead-on.\nPeak band 30-60 deg off target.
-      weight * toBodyDir * seekStrength * deltaTime.\n\nSYSTEM 2 (second Add velocity
-      block) - youth-only proportional correction:\n  misalign = 1 - d (0 dead-on
-      .. 2 fleeing): the further off target, the stronger the pull. No band filter.\n 
-      age gate = 1 - Smoothstep(0, 0.4, ageOverLifetime): full at birth, completely
-      gone by 40% of lifetime.\n  misalign * ageGate * youngSeekStrength * deltaTime
-      * toBodyDir.\nDisable either system via its blocks enable checkbox."
+      = Dot(SafeNormalize(velocity), SafeNormalize(vfxSphere.position - particle
+      position)).\nUnit vectors, so d = cos(angle between current heading and direction
+      to body):\n  d=1 -> dead-on (0 deg) | d=0 -> perpendicular (90 deg) | d=-1
+      -> fleeing (180 deg). theta = arccos(d)."
     theme: 
     textSize: Small
     colorTheme: 1
@@ -653,7 +644,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: -5258
     y: -494
-    width: 8508
+    width: 8284
     height: 5326
 --- !u!114 &114350483966674976
 MonoBehaviour:
@@ -882,7 +873,7 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: body
+  - name: vfxSphere
     path: 
     tooltip: 
     space: 0
@@ -898,7 +889,7 @@ MonoBehaviour:
     enumValues: []
     descendantCount: 3
   - name: position
-    path: body_position
+    path: vfxSphere_position
     tooltip: Sets the transform position.
     space: -1
     spaceable: 0
@@ -914,7 +905,7 @@ MonoBehaviour:
     enumValues: []
     descendantCount: 0
   - name: angles
-    path: body_angles
+    path: vfxSphere_angles
     tooltip: Sets the euler angles of the transform.
     space: -1
     spaceable: 0
@@ -930,7 +921,7 @@ MonoBehaviour:
     enumValues: []
     descendantCount: 0
   - name: scale
-    path: body_scale
+    path: vfxSphere_scale
     tooltip: Sets the scale of the transform along each axis.
     space: -1
     spaceable: 0
@@ -1313,8 +1304,8 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: bodyCollisionScaleMult
-    path: bodyCollisionScaleMult
+  - name: vfxSphereCollisionScaleMult
+    path: vfxSphereCollisionScaleMult
     tooltip: 
     space: -1
     spaceable: 0
@@ -1473,8 +1464,8 @@ MonoBehaviour:
     max: 30
     enumValues: []
     descendantCount: 0
-  - name: bodyVelocity
-    path: bodyVelocity
+  - name: vfxSphereVelocity
+    path: vfxSphereVelocity
     tooltip: 
     space: -1
     spaceable: 0
@@ -2036,7 +2027,7 @@ MonoBehaviour:
   m_InputSlots: []
   m_OutputSlots:
   - {fileID: 8926484042661614556}
-  m_ExposedName: body
+  m_ExposedName: vfxSphere
   m_Exposed: 1
   m_Order: 1
   m_Category: 
@@ -13820,7 +13811,7 @@ MonoBehaviour:
   m_InputSlots: []
   m_OutputSlots:
   - {fileID: 8926484042661615007}
-  m_ExposedName: bodyCollisionScaleMult
+  m_ExposedName: vfxSphereCollisionScaleMult
   m_Exposed: 1
   m_Order: 25
   m_Category: 
@@ -29586,7 +29577,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.02
+      m_SerializableObject: 0.08
     m_Space: -1
   m_Property:
     name: A
@@ -29620,7 +29611,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.05
+      m_SerializableObject: 0.12
     m_Space: -1
   m_Property:
     name: B
@@ -44898,7 +44889,7 @@ MonoBehaviour:
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 0
+  m_UICollapsed: 1
   m_UISuperCollapsed: 0
   m_InputSlots: []
   m_OutputSlots:
@@ -48047,7 +48038,7 @@ MonoBehaviour:
   m_InputSlots: []
   m_OutputSlots:
   - {fileID: 8926484042661617462}
-  m_ExposedName: bodyVelocity
+  m_ExposedName: vfxSphereVelocity
   m_Exposed: 1
   m_Order: 35
   m_Category: 

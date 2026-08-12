@@ -370,6 +370,16 @@ public class PlayerConstructor : MonoBehaviour
         // If prayToActivate is false, player starts initialized
         initialized = !runtimeSettings.prayToActivate;
 
+        // Skeleton lines are a diagnostic overlay — swap in the ZTest Always
+        // material so the body depth occluder can't cull them.
+        if (controller.skeletonLineMaterial != null)
+        {
+            foreach (LineRenderer lr in GetComponentsInChildren<LineRenderer>(true))
+            {
+                lr.sharedMaterial = controller.skeletonLineMaterial;
+            }
+        }
+
         if (isDummy)
         {
             Actions.OnDummyAdded?.Invoke(this);
@@ -439,17 +449,17 @@ public class PlayerConstructor : MonoBehaviour
         sphere.mass = Utils.GetVector3Avg(sphere.transform.localScale);
     }
 
-    public void SetVfxBodyVelocity()
+    public void SetVfxSphereVelocity()
     {
         // Ball velocity in each VFX's local space, so tangential damping acts on
         // particle velocity relative to the moving attractor rather than world rest.
         Vector3 ballVelocity = sphere.linearVelocity;
         leftHandVfx.SetVector3(
-            "bodyVelocity",
+            "vfxSphereVelocity",
             leftHandVfx.transform.InverseTransformVector(ballVelocity)
         );
         rightHandVfx.SetVector3(
-            "bodyVelocity",
+            "vfxSphereVelocity",
             rightHandVfx.transform.InverseTransformVector(ballVelocity)
         );
     }

@@ -909,6 +909,12 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateToggleField(
             group,
+            "Show Point Cloud",
+            () => runtimeSettings.showPointCloud,
+            v => runtimeSettings.showPointCloud = v
+        );
+        CreateToggleField(
+            group,
             "Show Attraction Radius",
             () => runtimeSettings.showAttractionRadius,
             v => runtimeSettings.showAttractionRadius = v
@@ -1658,6 +1664,7 @@ public class InGameSettingsMenu : MonoBehaviour
             loadedSettings.showSphereMeshOnHandCollision;
         runtimeSettings.alwaysShowSphereMesh = loadedSettings.alwaysShowSphereMesh;
         runtimeSettings.showMetaballMesh = loadedSettings.showMetaballMesh;
+        runtimeSettings.showPointCloud = loadedSettings.showPointCloud;
         runtimeSettings.showAttractionRadius = loadedSettings.showAttractionRadius;
         runtimeSettings.showHandTrailDistorters = loadedSettings.showHandTrailDistorters;
         runtimeSettings.showSecondaryAttractor = loadedSettings.showSecondaryAttractor;
@@ -1777,6 +1784,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         destination.alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         destination.showMetaballMesh = source.showMetaballMesh;
+        destination.showPointCloud = source.showPointCloud;
         destination.showAttractionRadius = source.showAttractionRadius;
         destination.showHandTrailDistorters = source.showHandTrailDistorters;
         destination.showSecondaryAttractor = source.showSecondaryAttractor;
@@ -1900,6 +1908,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.showSphereMeshOnHandCollision = false;
         destination.alwaysShowSphereMesh = false;
         destination.showMetaballMesh = false;
+        destination.showPointCloud = false;
         destination.showAttractionRadius = false;
         destination.showHandTrailDistorters = false;
         destination.showSecondaryAttractor = false;

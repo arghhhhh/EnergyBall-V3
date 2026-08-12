@@ -603,7 +603,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.VisualEffectGraph.Runtime::UnityEngine.VFX.Utility.VFXTransformBinder
   Space: 0
   m_Property:
-    m_Name: body
+    m_Name: vfxSphere
   Target: {fileID: 0}
 --- !u!114 &4756465954479378574
 MonoBehaviour:

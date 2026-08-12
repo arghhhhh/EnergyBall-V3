@@ -80,11 +80,11 @@ public class SceneSettingsSO : ScriptableObject
     public bool singleHandScaling;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The minimum size that the body can scale down to.")]
+    [Tooltip("The minimum size that the vfx body can scale down to.")]
     public float minimumUnscaledSize;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The maximum size that the body can scale up to.")]
+    [Tooltip("The maximum size that the vfx body can scale up to.")]
     public float maximumUnscaledSize;
 
     [BoxGroup("Movement-Based Pulsation")]
@@ -146,6 +146,25 @@ public class SceneSettingsSO : ScriptableObject
     [BoxGroup("Debugging")]
     [Tooltip("When enabled, the metaball mesh renderer is visible for debugging.")]
     public bool showMetaballMesh;
+
+    [BoxGroup("Debugging")]
+    [Tooltip(
+        "When enabled, the Kinect depth point cloud (body occlusion geometry) is rendered visibly."
+    )]
+    [SerializeField]
+    private bool _showPointCloud;
+    public bool showPointCloud
+    {
+        get => _showPointCloud;
+        set
+        {
+            if (_showPointCloud != value)
+            {
+                _showPointCloud = value;
+                OnAnyDebuggingSettingChanged?.Invoke();
+            }
+        }
+    }
 
     [BoxGroup("Debugging")]
     [SerializeField]

@@ -166,6 +166,21 @@ public class RuntimeSceneSettings
     public bool showMetaballMesh = false;
 
     [SerializeField]
+    private bool _showPointCloud = false;
+    public bool showPointCloud
+    {
+        get => _showPointCloud;
+        set
+        {
+            if (_showPointCloud != value)
+            {
+                _showPointCloud = value;
+                OnAnyDebuggingSettingChanged?.Invoke();
+            }
+        }
+    }
+
+    [SerializeField]
     private bool _showAttractionRadius = false;
     public bool showAttractionRadius
     {
@@ -293,6 +308,7 @@ public class RuntimeSceneSettings
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         copy.alwaysShowSphereMesh = alwaysShowSphereMesh;
         copy.showMetaballMesh = showMetaballMesh;
+        copy._showPointCloud = _showPointCloud;
         copy._showAttractionRadius = _showAttractionRadius;
         copy._showHandTrailDistorters = _showHandTrailDistorters;
         copy._showSecondaryAttractor = _showSecondaryAttractor;

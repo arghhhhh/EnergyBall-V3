@@ -19,14 +19,34 @@ public class BodySourceManager : MonoBehaviour
     private KinectSensor _sensor;
     private ColorFrameReader _colorReader;
     private BodyFrameReader _bodyReader;
+    private DepthFrameReader _depthReader;
+    private BodyIndexFrameReader _bodyIndexReader;
 
     // This Texture2D will serve as our intermediate buffer for the raw Kinect data.
     private Texture2D _colorTexture2D;
     private byte[] _colorData;
     private Body[] _bodyData = null;
 
+    private ushort[] _depthData;
+    private byte[] _bodyIndexData;
+    private ColorSpacePoint[] _depthToColorPoints;
+
     private int _colorFrameCount = 0;
     private int _bodyFrameCount = 0;
+
+    // GPU-side copies of the depth-camera frames, consumed by BodyDepthOccluder.
+    // DepthToColorTexture holds, per depth pixel, its color-image pixel coordinates
+    // (CoordinateMapper.MapDepthFrameToColorSpace) — invalid pixels are -Infinity.
+    public Texture2D DepthTexture { get; private set; }
+    public Texture2D BodyIndexTexture { get; private set; }
+    public Texture2D DepthToColorTexture { get; private set; }
+    public int DepthWidth { get; private set; }
+    public int DepthHeight { get; private set; }
+    public int ColorWidth { get; private set; } = 1920;
+    public int ColorHeight { get; private set; } = 1080;
+    public bool DepthFramesReady { get; private set; }
+
+    public CoordinateMapper Mapper => _sensor != null ? _sensor.CoordinateMapper : null;
 
     public Body[] GetData()
     {
@@ -88,6 +108,56 @@ public class BodySourceManager : MonoBehaviour
                 Debug.LogError("BodySourceManager: Failed to open ColorFrameReader.");
             }
 
+            // --- Initialize Depth + BodyIndex Streams (for body occlusion) ---
+            _depthReader = _sensor.DepthFrameSource.OpenReader();
+            _bodyIndexReader = _sensor.BodyIndexFrameSource.OpenReader();
+            if (_depthReader != null && _bodyIndexReader != null)
+            {
+                var depthDesc = _sensor.DepthFrameSource.FrameDescription;
+                DepthWidth = depthDesc.Width;
+                DepthHeight = depthDesc.Height;
+                var colorDesc = _sensor.ColorFrameSource.CreateFrameDescription(
+                    ColorImageFormat.Bgra
+                );
+                ColorWidth = colorDesc.Width;
+                ColorHeight = colorDesc.Height;
+
+                int depthLen = DepthWidth * DepthHeight;
+                _depthData = new ushort[depthLen];
+                _bodyIndexData = new byte[depthLen];
+                _depthToColorPoints = new ColorSpacePoint[depthLen];
+
+                DepthTexture = new Texture2D(DepthWidth, DepthHeight, TextureFormat.R16, false)
+                {
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                };
+                BodyIndexTexture = new Texture2D(DepthWidth, DepthHeight, TextureFormat.R8, false)
+                {
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                };
+                DepthToColorTexture = new Texture2D(
+                    DepthWidth,
+                    DepthHeight,
+                    TextureFormat.RGFloat,
+                    false
+                )
+                {
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                };
+
+                if (EnableVerboseLogging)
+                    Debug.Log(
+                        $"BodySourceManager: Depth/BodyIndex readers initialized ({DepthWidth}x{DepthHeight})."
+                    );
+            }
+            else
+            {
+                Debug.LogError("BodySourceManager: Failed to open Depth/BodyIndex readers.");
+            }
+
             // --- Initialize Body Stream ---
             _bodyReader = _sensor.BodyFrameSource.OpenReader();
             if (_bodyReader != null)
@@ -142,6 +212,57 @@ public class BodySourceManager : MonoBehaviour
                 }
             }
         }
+
+        UpdateDepthFrames();
+    }
+
+    private void UpdateDepthFrames()
+    {
+        if (_depthReader == null || _bodyIndexReader == null)
+        {
+            return;
+        }
+
+        bool gotDepth = false;
+        using (var frame = _depthReader.AcquireLatestFrame())
+        {
+            if (frame != null)
+            {
+                frame.CopyFrameDataToArray(_depthData);
+                gotDepth = true;
+            }
+        }
+
+        bool gotBodyIndex = false;
+        using (var frame = _bodyIndexReader.AcquireLatestFrame())
+        {
+            if (frame != null)
+            {
+                frame.CopyFrameDataToArray(_bodyIndexData);
+                gotBodyIndex = true;
+            }
+        }
+
+        if (gotDepth)
+        {
+            _sensor.CoordinateMapper.MapDepthFrameToColorSpace(_depthData, _depthToColorPoints);
+
+            DepthTexture.SetPixelData(_depthData, 0);
+            DepthTexture.Apply(false);
+            DepthToColorTexture.SetPixelData(_depthToColorPoints, 0);
+            DepthToColorTexture.Apply(false);
+        }
+
+        if (gotBodyIndex)
+        {
+            BodyIndexTexture.SetPixelData(_bodyIndexData, 0);
+            BodyIndexTexture.Apply(false);
+        }
+
+        if (gotDepth && gotBodyIndex)
+        {
+            DepthFramesReady = true;
+        }
     }
 
     private void Reader_ColorFrameArrived(object sender, ColorFrameArrivedEventArgs e)
@@ -183,6 +304,18 @@ public class BodySourceManager : MonoBehaviour
         {
             _bodyReader.Dispose();
             _bodyReader = null;
+        }
+
+        if (_depthReader != null)
+        {
+            _depthReader.Dispose();
+            _depthReader = null;
+        }
+
+        if (_bodyIndexReader != null)
+        {
+            _bodyIndexReader.Dispose();
+            _bodyIndexReader = null;
         }
 
         if (_sensor != null)

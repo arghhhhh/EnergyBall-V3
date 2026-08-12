@@ -104,6 +104,12 @@ namespace MarchingCubes
             var runtimeSettings = controller.GetRuntimeSettings();
             _meshRenderer.enabled = runtimeSettings.showMetaballMesh;
 
+            // The metaball volume is world-fixed at (0,0,baseZDepth) — clamping,
+            // BoundaryForce, and the gizmos all assume this. Keep this transform
+            // there so the marching-cubes mesh (built in volume-local space)
+            // renders at its true world position instead of baseZDepth behind it.
+            transform.position = new Vector3(0f, 0f, runtimeSettings.baseZDepth);
+
             UpdateMetaballBuffers();
 
             _volumeCompute.SetInts("Dims", _dimensions);
@@ -117,11 +123,14 @@ namespace MarchingCubes
             _builder.BuildIsosurface(_voxelBuffer, _targetValue, _gridScale);
             GetComponent<MeshFilter>().sharedMesh = _builder.Mesh;
 
+            // Bake in volume-local space (mesh vertices are local); the VFX
+            // graph's ConformToSDF FieldTransform (center z = zDepth = baseZDepth)
+            // places the field back at the volume's world position.
             if (sdfBaker == null)
             {
                 sdfBaker = new MeshToSDFBaker(
                     sizeBox,
-                    CenterWS,
+                    center,
                     resolution,
                     _builder.Mesh,
                     1,
@@ -131,7 +140,7 @@ namespace MarchingCubes
             }
             else
             {
-                sdfBaker.Reinit(sizeBox, CenterWS, resolution, _builder.Mesh, 1, 0.5f, 0f);
+                sdfBaker.Reinit(sizeBox, center, resolution, _builder.Mesh, 1, 0.5f, 0f);
             }
 
             sdfBaker.BakeSDF();

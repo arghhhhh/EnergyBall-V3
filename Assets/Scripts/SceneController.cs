@@ -98,11 +98,11 @@ public class SceneController : MonoBehaviour
     public bool singleHandScaling = true;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The minimum size that the body can scale down to.")]
+    [Tooltip("The minimum size that the vfx body can scale down to.")]
     public float minimumUnscaledSize = 0.5f;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The maximum size that the body can scale up to.")]
+    [Tooltip("The maximum size that the vfx body can scale up to.")]
     public float maximumUnscaledSize = 3.0f;
 
     [BoxGroup("Movement-Based Pulsation")]
@@ -134,6 +134,32 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Miscellaneous")]
     public float maxDistanceFromCamera = 10f;
+
+    [BoxGroup("Camera Feed Alignment")]
+    [Tooltip(
+        "Project joints through the Kinect color-camera intrinsics onto the camera feed quad "
+            + "so skeletons/hands align with the video at every depth. Falls back to the legacy "
+            + "linear mapping when off or when the mapper is unavailable."
+    )]
+    public bool projectiveAlignment = true;
+
+    [BoxGroup("Camera Feed Alignment")]
+    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
+    public Transform cameraFeedQuad;
+
+    [BoxGroup("Camera Feed Alignment")]
+    [Tooltip(
+        "Transform of the camera the players are rendered through (Main Camera — the Overlay "
+            + "Camera must share its position for alignment to hold)."
+    )]
+    public Transform renderCameraTransform;
+
+    [BoxGroup("Camera Feed Alignment")]
+    [Tooltip(
+        "Material applied to skeleton LineRenderers at player creation. Uses ZTest Always so "
+            + "the debug skeleton is never hidden by the body depth occluder."
+    )]
+    public Material skeletonLineMaterial;
 
     [BoxGroup("Animation")]
     [Tooltip(
@@ -195,7 +221,7 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Movement-Based Pulsation Curves")]
     [Tooltip(
-        "Dampen the ratio between body scale and hand distance based on hand distance relative to maxDistanceBetweenHands"
+        "Dampen the ratio between vfx body scale and hand distance based on hand distance relative to maxDistanceBetweenHands"
     )]
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
 
@@ -260,6 +286,13 @@ public class SceneController : MonoBehaviour
     [BoxGroup("Debugging")]
     [Tooltip("When enabled, the metaball mesh renderer is visible for debugging.")]
     public bool showMetaballMesh = false;
+
+    [BoxGroup("Debugging")]
+    [Tooltip(
+        "When enabled, the Kinect depth point cloud (the body occlusion geometry) is rendered "
+            + "visibly, colored by depth — body pixels warm, environment cool."
+    )]
+    public bool showPointCloud = false;
 
     [BoxGroup("Debugging")]
     public bool showAttractionRadius = false;
@@ -563,11 +596,74 @@ public class SceneController : MonoBehaviour
 
     private Vector3 GetVector3FromJoint(Joint joint)
     {
+        if (projectiveAlignment && TryProjectJointThroughColorCamera(joint, out Vector3 projected))
+        {
+            return projected;
+        }
+
         return new Vector3(
             joint.Position.X * CurrentSettings.bodyScale,
             joint.Position.Y * CurrentSettings.bodyScale,
             joint.Position.Z * CurrentSettings.bodyScale
         );
+    }
+
+    /// <summary>
+    /// Maps a Kinect camera-space joint to the world point that sits on the ray
+    /// from the render camera through the joint's pixel on the color-feed quad,
+    /// at view depth Z * bodyScale. This makes skeletons/hands line up with the
+    /// displayed video at every depth, since both go through the color camera's
+    /// real projection instead of a linear scale.
+    /// </summary>
+    private bool TryProjectJointThroughColorCamera(Joint joint, out Vector3 result)
+    {
+        result = default;
+
+        if (cameraFeedQuad == null || renderCameraTransform == null || bodySourceManager == null)
+        {
+            return false;
+        }
+
+        var mapper = bodySourceManager.Mapper;
+        if (mapper == null || joint.Position.Z <= 0.01f)
+        {
+            return false;
+        }
+
+        Windows.Kinect.ColorSpacePoint colorPoint = mapper.MapCameraPointToColorSpace(
+            joint.Position
+        );
+        if (
+            float.IsInfinity(colorPoint.X)
+            || float.IsNaN(colorPoint.X)
+            || float.IsInfinity(colorPoint.Y)
+            || float.IsNaN(colorPoint.Y)
+        )
+        {
+            return false;
+        }
+
+        // Color pixel -> point on the feed quad. The quad mesh spans ±0.5 in
+        // local XY with uv (0,0) at the (-0.5,-0.5) corner, and the color
+        // texture's first row (image top) sits at v = 0, matching the
+        // top-left-origin pixel coordinates ColorSpacePoint uses.
+        Vector3 quadPoint = cameraFeedQuad.TransformPoint(
+            new Vector3(
+                colorPoint.X / bodySourceManager.ColorWidth - 0.5f,
+                colorPoint.Y / bodySourceManager.ColorHeight - 0.5f,
+                0f
+            )
+        );
+
+        Vector3 camLocal = renderCameraTransform.InverseTransformPoint(quadPoint);
+        if (camLocal.z <= 0.01f)
+        {
+            return false;
+        }
+
+        camLocal *= joint.Position.Z * CurrentSettings.bodyScale / camLocal.z;
+        result = renderCameraTransform.TransformPoint(camLocal);
+        return true;
     }
 
     private static Color ColorSkeleton(TrackingState state)
@@ -609,7 +705,7 @@ public class SceneController : MonoBehaviour
             // );
             playerConstructor.SetAttractionRadius();
             playerConstructor.SetMass();
-            playerConstructor.SetVfxBodyVelocity();
+            playerConstructor.SetVfxSphereVelocity();
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);
@@ -879,6 +975,7 @@ public class SceneController : MonoBehaviour
         target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         target.alwaysShowSphereMesh = alwaysShowSphereMesh;
         target.showMetaballMesh = showMetaballMesh;
+        target.showPointCloud = showPointCloud;
         target.showAttractionRadius = showAttractionRadius;
         target.showHandTrailDistorters = showHandTrailDistorters;
         target.showSecondaryAttractor = showSecondaryAttractor;
@@ -956,6 +1053,7 @@ public class SceneController : MonoBehaviour
         showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         showMetaballMesh = source.showMetaballMesh;
+        showPointCloud = source.showPointCloud;
         showAttractionRadius = source.showAttractionRadius;
         showHandTrailDistorters = source.showHandTrailDistorters;
         showSecondaryAttractor = source.showSecondaryAttractor;
