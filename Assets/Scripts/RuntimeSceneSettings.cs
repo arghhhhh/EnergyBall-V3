@@ -36,8 +36,8 @@ public class RuntimeSceneSettings
     )]
     public float outOfBoundsResetDelay = 3f;
     public float pushForce = 5f;
-    public float torsoForwardOffset = 0.75f;
-    public float torsoForwardOffsetRange = 1.5f;
+    public float torsoMaxForwardOffset = 0.75f;
+    public float torsoOffsetFalloffDistance = 1.5f;
     public float minDrag = 0.1f;
     public float maxDrag = 5f;
 
@@ -69,6 +69,7 @@ public class RuntimeSceneSettings
     public float mergeSizeScalerDamper = 1f;
     public float maxDistanceBetweenHands = 2f;
     public float baseZDepth = 5f;
+    public float gridScale = 0.3f;
     public float defaultUnscaledSize = 1f;
     public float bodyScale = 1f;
     public float maxDistanceFromCamera = 10f;
@@ -264,8 +265,8 @@ public class RuntimeSceneSettings
         copy.boundaryOutwardDrag = boundaryOutwardDrag;
         copy.outOfBoundsResetDelay = outOfBoundsResetDelay;
         copy.pushForce = pushForce;
-        copy.torsoForwardOffset = torsoForwardOffset;
-        copy.torsoForwardOffsetRange = torsoForwardOffsetRange;
+        copy.torsoMaxForwardOffset = torsoMaxForwardOffset;
+        copy.torsoOffsetFalloffDistance = torsoOffsetFalloffDistance;
         copy.minDrag = minDrag;
         copy.maxDrag = maxDrag;
         copy.alignmentVectorStrength = new AnimationCurve(alignmentVectorStrength.keys);
@@ -286,6 +287,7 @@ public class RuntimeSceneSettings
         copy.mergeSizeScalerDamper = mergeSizeScalerDamper;
         copy.maxDistanceBetweenHands = maxDistanceBetweenHands;
         copy.baseZDepth = baseZDepth;
+        copy.gridScale = gridScale;
         copy.defaultUnscaledSize = defaultUnscaledSize;
         copy.bodyScale = bodyScale;
         copy.maxDistanceFromCamera = maxDistanceFromCamera;

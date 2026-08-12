@@ -42,11 +42,11 @@ public class SceneSettingsSO : ScriptableObject
     [Tooltip(
         "How far the ball's push target is pulled toward the camera when the hands sit at torso depth. 0 disables."
     )]
-    public float torsoForwardOffset;
+    public float torsoMaxForwardOffset;
 
     [BoxGroup("Hands Attraction")]
     [Tooltip("Hand-to-torso z distance at which the torso forward offset fades to zero.")]
-    public float torsoForwardOffsetRange;
+    public float torsoOffsetFalloffDistance;
 
     [BoxGroup("Hands Attraction")]
     public float minDrag;
@@ -121,6 +121,12 @@ public class SceneSettingsSO : ScriptableObject
 
     [BoxGroup("Miscellaneous")]
     public float baseZDepth;
+
+    [BoxGroup("Miscellaneous")]
+    [Tooltip(
+        "World size of one marching-cubes voxel (volume = 64x32x64 voxels). Scale with bodyScale."
+    )]
+    public float gridScale;
 
     [BoxGroup("Miscellaneous")]
     public float defaultUnscaledSize;

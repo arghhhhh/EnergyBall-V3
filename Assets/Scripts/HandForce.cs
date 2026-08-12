@@ -111,7 +111,7 @@ public class HandForce
         RuntimeSceneSettings settings
     )
     {
-        if (settings.torsoForwardOffset <= 0f || settings.torsoForwardOffsetRange <= 0f)
+        if (settings.torsoMaxForwardOffset <= 0f || settings.torsoOffsetFalloffDistance <= 0f)
         {
             return target;
         }
@@ -123,12 +123,12 @@ public class HandForce
             * 0.5f;
         float distanceFromTorsoPlane = Mathf.Abs(target.z - torsoZ);
         float falloff =
-            1f - Mathf.Clamp01(distanceFromTorsoPlane / settings.torsoForwardOffsetRange);
+            1f - Mathf.Clamp01(distanceFromTorsoPlane / settings.torsoOffsetFalloffDistance);
         // Smoothstep for a soft bell shape (no kink at the torso plane or at the edges)
         falloff = falloff * falloff * (3f - 2f * falloff);
 
         // -z is toward the camera
-        target.z -= settings.torsoForwardOffset * falloff;
+        target.z -= settings.torsoMaxForwardOffset * falloff;
         return target;
     }
 

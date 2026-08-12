@@ -422,15 +422,15 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Torso Forward Offset",
-            () => runtimeSettings.torsoForwardOffset,
-            v => runtimeSettings.torsoForwardOffset = v
+            "Torso Max Forward Offset",
+            () => runtimeSettings.torsoMaxForwardOffset,
+            v => runtimeSettings.torsoMaxForwardOffset = v
         );
         CreateFloatField(
             group,
-            "Torso Offset Range",
-            () => runtimeSettings.torsoForwardOffsetRange,
-            v => runtimeSettings.torsoForwardOffsetRange = v
+            "Torso Offset Falloff Distance",
+            () => runtimeSettings.torsoOffsetFalloffDistance,
+            v => runtimeSettings.torsoOffsetFalloffDistance = v
         );
         CreateFloatField(
             group,
@@ -592,6 +592,12 @@ public class InGameSettingsMenu : MonoBehaviour
             "Base Z Depth",
             () => runtimeSettings.baseZDepth,
             v => runtimeSettings.baseZDepth = v
+        );
+        CreateFloatField(
+            group,
+            "Grid Scale",
+            () => runtimeSettings.gridScale,
+            v => runtimeSettings.gridScale = v
         );
         CreateFloatField(
             group,
@@ -1614,8 +1620,8 @@ public class InGameSettingsMenu : MonoBehaviour
         // Hand interaction settings
         runtimeSettings.singleHandOpenForceDamper = loadedSettings.singleHandOpenForceDamper;
         runtimeSettings.pushForce = loadedSettings.pushForce;
-        runtimeSettings.torsoForwardOffset = loadedSettings.torsoForwardOffset;
-        runtimeSettings.torsoForwardOffsetRange = loadedSettings.torsoForwardOffsetRange;
+        runtimeSettings.torsoMaxForwardOffset = loadedSettings.torsoMaxForwardOffset;
+        runtimeSettings.torsoOffsetFalloffDistance = loadedSettings.torsoOffsetFalloffDistance;
         runtimeSettings.minDrag = loadedSettings.minDrag;
         runtimeSettings.maxDrag = loadedSettings.maxDrag;
         runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
@@ -1651,6 +1657,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.mergeSizeScalerDamper = loadedSettings.mergeSizeScalerDamper;
         runtimeSettings.maxDistanceBetweenHands = loadedSettings.maxDistanceBetweenHands;
         runtimeSettings.baseZDepth = loadedSettings.baseZDepth;
+        runtimeSettings.gridScale = loadedSettings.gridScale;
         runtimeSettings.defaultUnscaledSize = loadedSettings.defaultUnscaledSize;
         runtimeSettings.bodyScale = loadedSettings.bodyScale;
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
@@ -1750,8 +1757,8 @@ public class InGameSettingsMenu : MonoBehaviour
         // Hand interaction settings
         destination.singleHandOpenForceDamper = source.singleHandOpenForceDamper;
         destination.pushForce = source.pushForce;
-        destination.torsoForwardOffset = source.torsoForwardOffset;
-        destination.torsoForwardOffsetRange = source.torsoForwardOffsetRange;
+        destination.torsoMaxForwardOffset = source.torsoMaxForwardOffset;
+        destination.torsoOffsetFalloffDistance = source.torsoOffsetFalloffDistance;
         destination.minDrag = source.minDrag;
         destination.maxDrag = source.maxDrag;
         destination.addedBoundaryDistance = source.addedBoundaryDistance;
@@ -1781,6 +1788,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.mergeSizeScalerDamper = source.mergeSizeScalerDamper;
         destination.maxDistanceBetweenHands = source.maxDistanceBetweenHands;
         destination.baseZDepth = source.baseZDepth;
+        destination.gridScale = source.gridScale;
         destination.defaultUnscaledSize = source.defaultUnscaledSize;
         destination.bodyScale = source.bodyScale;
         destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
@@ -1892,8 +1900,8 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.forceToMiddle = new AnimationCurve();
         destination.singleHandOpenForceDamper = 0.0f;
         destination.pushForce = 0.0f;
-        destination.torsoForwardOffset = 0.0f;
-        destination.torsoForwardOffsetRange = 0.0f;
+        destination.torsoMaxForwardOffset = 0.0f;
+        destination.torsoOffsetFalloffDistance = 0.0f;
         destination.minDrag = 0.0f;
         destination.maxDrag = 0.0f;
         destination.addedBoundaryDistance = 0.0f;
@@ -1917,6 +1925,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.mergeSizeScalerDamper = 0.0f;
         destination.maxDistanceBetweenHands = 0.0f;
         destination.baseZDepth = 0.0f;
+        destination.gridScale = 0.0f;
         destination.defaultUnscaledSize = 0.0f;
         destination.bodyScale = 0.0f;
         destination.maxDistanceFromCamera = 0.0f;

@@ -110,17 +110,28 @@ namespace MarchingCubes
             // renders at its true world position instead of baseZDepth behind it.
             transform.position = new Vector3(0f, 0f, runtimeSettings.baseZDepth);
 
+            // gridScale is a per-profile setting (falls back to the serialized
+            // value if unset) so differently-scaled worlds keep a well-resolved
+            // ball. Voxel count is fixed; only the voxel size changes.
+            float gridScale =
+                runtimeSettings.gridScale > 0f ? runtimeSettings.gridScale : _gridScale;
+            sizeBox = new Vector3(
+                _dimensions.x * gridScale,
+                _dimensions.y * gridScale,
+                _dimensions.z * gridScale
+            );
+
             UpdateMetaballBuffers();
 
             _volumeCompute.SetInts("Dims", _dimensions);
-            _volumeCompute.SetFloat("Scale", _gridScale);
+            _volumeCompute.SetFloat("Scale", gridScale);
             _volumeCompute.SetBuffer(0, "Voxels", _voxelBuffer);
             _volumeCompute.SetBuffer(0, "MetaballCenters", _positionsBuffer);
             _volumeCompute.SetBuffer(0, "MetaballRadii", _radiiBuffer);
             _volumeCompute.DispatchThreads(0, _dimensions);
 
             // Isosurface reconstruction
-            _builder.BuildIsosurface(_voxelBuffer, _targetValue, _gridScale);
+            _builder.BuildIsosurface(_voxelBuffer, _targetValue, gridScale);
             GetComponent<MeshFilter>().sharedMesh = _builder.Mesh;
 
             // Bake in volume-local space (mesh vertices are local); the VFX

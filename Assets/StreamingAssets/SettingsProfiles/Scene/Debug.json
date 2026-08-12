@@ -53,8 +53,8 @@
     "boundaryOutwardDrag": 20.0,
     "outOfBoundsResetDelay": 3.0,
     "pushForce": 70.0,
-    "torsoForwardOffset": 1.0,
-    "torsoForwardOffsetRange": 2.0,
+    "torsoMaxForwardOffset": 1.0,
+    "torsoOffsetFalloffDistance": 2.0,
     "minDrag": 0.25,
     "maxDrag": 1.0,
     "alignmentVectorStrength": {

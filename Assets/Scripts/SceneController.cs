@@ -66,14 +66,14 @@ public class SceneController : MonoBehaviour
         "How far the ball's push target is pulled toward the camera when the hands sit at torso "
             + "depth, so the ball isn't occluded by the player's own body. 0 disables."
     )]
-    public float torsoForwardOffset = 0.75f;
+    public float torsoMaxForwardOffset = 0.75f;
 
     [BoxGroup("Hands Attraction")]
     [Tooltip(
         "How far (in z) the hands must be from the torso plane, forward or backward, for the "
             + "torso forward offset to fade to zero."
     )]
-    public float torsoForwardOffsetRange = 1.5f;
+    public float torsoOffsetFalloffDistance = 1.5f;
 
     [BoxGroup("Hands Attraction")]
     public float minDrag = 0.1f;
@@ -139,6 +139,13 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Miscellaneous")]
     public float baseZDepth = 5f;
+
+    [BoxGroup("Miscellaneous")]
+    [Tooltip(
+        "World size of one marching-cubes voxel; the metaball volume spans 64x32x64 voxels. "
+            + "Scale together with bodyScale so the ball spans enough voxels to stay smooth."
+    )]
+    public float gridScale = 0.3f;
 
     [BoxGroup("Miscellaneous")]
     public float defaultUnscaledSize = 1f;
@@ -949,8 +956,8 @@ public class SceneController : MonoBehaviour
         target.outOfBoundsResetDelay = outOfBoundsResetDelay;
 
         target.pushForce = pushForce;
-        target.torsoForwardOffset = torsoForwardOffset;
-        target.torsoForwardOffsetRange = torsoForwardOffsetRange;
+        target.torsoMaxForwardOffset = torsoMaxForwardOffset;
+        target.torsoOffsetFalloffDistance = torsoOffsetFalloffDistance;
         target.minDrag = minDrag;
         target.maxDrag = maxDrag;
         target.alignmentVectorStrength = new AnimationCurve(alignmentVectorStrength.keys);
@@ -977,6 +984,7 @@ public class SceneController : MonoBehaviour
         target.mergeSizeScalerDamper = mergeSizeScalerDamper;
         target.maxDistanceBetweenHands = maxDistanceBetweenHands;
         target.baseZDepth = baseZDepth;
+        target.gridScale = gridScale;
         target.defaultUnscaledSize = defaultUnscaledSize;
         target.bodyScale = bodyScale;
         target.maxDistanceFromCamera = maxDistanceFromCamera;
@@ -1030,8 +1038,8 @@ public class SceneController : MonoBehaviour
         outOfBoundsResetDelay = source.outOfBoundsResetDelay;
 
         pushForce = source.pushForce;
-        torsoForwardOffset = source.torsoForwardOffset;
-        torsoForwardOffsetRange = source.torsoForwardOffsetRange;
+        torsoMaxForwardOffset = source.torsoMaxForwardOffset;
+        torsoOffsetFalloffDistance = source.torsoOffsetFalloffDistance;
         minDrag = source.minDrag;
         maxDrag = source.maxDrag;
         alignmentVectorStrength = new AnimationCurve(source.alignmentVectorStrength.keys);
@@ -1058,6 +1066,7 @@ public class SceneController : MonoBehaviour
         mergeSizeScalerDamper = source.mergeSizeScalerDamper;
         maxDistanceBetweenHands = source.maxDistanceBetweenHands;
         baseZDepth = source.baseZDepth;
+        gridScale = source.gridScale;
         defaultUnscaledSize = source.defaultUnscaledSize;
         bodyScale = source.bodyScale;
         maxDistanceFromCamera = source.maxDistanceFromCamera;
