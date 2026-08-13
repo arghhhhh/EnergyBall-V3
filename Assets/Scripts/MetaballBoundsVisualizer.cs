@@ -1,22 +1,41 @@
+using MarchingCubes;
 using UnityEngine;
 
 /// <summary>
-/// Draws the metaball volume's bounding box as a wireframe in game view so the
-/// grid placement can be checked while tuning baseZDepth. The box is world-fixed
-/// at (0, 0, baseZDepth) with size MetaballsToSDF.GetGridSize() — the same
-/// volume used for metaball clamping and boundary forces. Toggled by the
-/// "Show Metaball Bounds" debug setting.
+/// Single home for metaball-volume visualization (absorbs the old BoundaryGizmos):
+///
+/// - Scene view / edit mode: gizmo wire cubes for the marching-cubes grid and
+///   the force boundary (grid + addedBoundaryDistance), no play mode required.
+/// - Game view (play mode): the same boxes as depth-tested line meshes on the
+///   KinectOverlay layer, toggled by the "Show Metaball Bounds" debug setting —
+///   the body occluder hides edges behind people/objects, giving a depth cue
+///   against the flat camera feed.
+///
+/// The volume is world-fixed at (0, 0, baseZDepth) with size
+/// MetaballsToSDF.GetGridSize(), the same box used for metaball clamping and
+/// BoundaryForce.
 /// </summary>
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class MetaballBoundsVisualizer : MonoBehaviour
 {
-    [Tooltip("Material for the wire box (SkeletonLine works: vertex-colored, ZTest Always).")]
+    [Header("Visibility")]
+    public bool showGridBoundary = true;
+    public bool showForceBoundary = true;
+
+    [Header("Colors")]
+    public Color gridBoundaryColor = new Color(0.2f, 1f, 0.4f, 1f);
+    public Color forceBoundaryColor = new Color(1f, 0.5f, 0f, 1f);
+
+    [Header("Runtime Rendering")]
+    [Tooltip("Material for the in-game wire boxes (BoundsLine: vertex-colored, depth-tested).")]
     public Material lineMaterial;
 
-    [Tooltip("Wireframe color.")]
-    public Color color = new Color(0.2f, 1f, 0.4f, 1f);
+    [Header("References (auto-found if empty)")]
+    public SceneController sceneController;
+    public MetaballsToSDF metaballsToSDF;
 
     private MeshRenderer _renderer;
+    private Mesh _forceMesh;
 
     void Awake()
     {
@@ -29,7 +48,8 @@ public class MetaballBoundsVisualizer : MonoBehaviour
         {
             _renderer.sharedMaterial = lineMaterial;
         }
-        GetComponent<MeshFilter>().sharedMesh = BuildWireCube(color);
+        GetComponent<MeshFilter>().sharedMesh = BuildWireCube(gridBoundaryColor);
+        _forceMesh = BuildWireCube(forceBoundaryColor);
     }
 
     void LateUpdate()
@@ -41,17 +61,70 @@ public class MetaballBoundsVisualizer : MonoBehaviour
         }
 
         var settings = controller.GetRuntimeSettings();
-        _renderer.enabled = settings.showMetaballBounds;
-        if (!_renderer.enabled)
+        Vector3 gridSize = controller.GetGridSize();
+        Vector3 center = new Vector3(0f, 0f, settings.baseZDepth);
+
+        _renderer.enabled = settings.showMetaballBounds && showGridBoundary;
+        transform.position = center;
+        transform.localScale = gridSize;
+
+        if (settings.showMetaballBounds && showForceBoundary && lineMaterial != null)
+        {
+            float doubled = settings.addedBoundaryDistance * 2f;
+            Vector3 forceSize = gridSize + new Vector3(doubled, doubled, doubled);
+            Graphics.DrawMesh(
+                _forceMesh,
+                Matrix4x4.TRS(center, Quaternion.identity, forceSize),
+                lineMaterial,
+                gameObject.layer
+            );
+        }
+    }
+
+    // Edit-mode + scene-view boxes (absorbed from BoundaryGizmos): uses
+    // inspector values so it works without play mode.
+    void OnDrawGizmos()
+    {
+        if (sceneController == null)
+        {
+            sceneController = FindFirstObjectByType<SceneController>();
+        }
+        if (metaballsToSDF == null)
+        {
+            metaballsToSDF = FindFirstObjectByType<MetaballsToSDF>();
+        }
+
+        if (metaballsToSDF == null)
         {
             return;
         }
 
-        transform.position = new Vector3(0f, 0f, settings.baseZDepth);
-        transform.localScale = controller.GetGridSize();
+        Vector3 gridSize = metaballsToSDF.GetGridSize();
+        if (gridSize == Vector3.zero)
+        {
+            return;
+        }
+
+        float baseZDepth = sceneController != null ? sceneController.baseZDepth : 5f;
+        float addedBoundaryDistance =
+            sceneController != null ? sceneController.addedBoundaryDistance : 1.5f;
+        Vector3 center = new Vector3(0f, 0f, baseZDepth);
+
+        if (showGridBoundary)
+        {
+            Gizmos.color = gridBoundaryColor;
+            Gizmos.DrawWireCube(center, gridSize);
+        }
+
+        if (showForceBoundary)
+        {
+            float doubled = addedBoundaryDistance * 2f;
+            Gizmos.color = forceBoundaryColor;
+            Gizmos.DrawWireCube(center, gridSize + new Vector3(doubled, doubled, doubled));
+        }
     }
 
-    // Unit cube (±0.5) as 12 line-topology edges; scaled via the transform.
+    // Unit cube (±0.5) as 12 line-topology edges; scaled at draw time.
     private static Mesh BuildWireCube(Color color)
     {
         var vertices = new Vector3[8];
