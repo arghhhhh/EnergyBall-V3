@@ -8,7 +8,6 @@ using Windows.Kinect;
 using Joint = Windows.Kinect.Joint;
 
 [DefaultExecutionOrder(-200)]
-[RequireComponent(typeof(MetaballsToSDF))]
 public class SceneController : MonoBehaviour
 {
     public static SceneController Instance { get; private set; } // singleton pattern
@@ -342,6 +341,11 @@ public class SceneController : MonoBehaviour
     HandEffects handEffectsController;
     BoundaryForce boundaryForceController;
     PlayerScaler playerScaleController;
+
+    [SerializeField]
+    [Tooltip(
+        "The MetaballsToSDF component (lives on the Metaballs GameObject; auto-found if empty)."
+    )]
     MetaballsToSDF metaballsToSDF = null;
     BodySourceManager bodySourceManager = null;
     Body[] bodyData;
@@ -445,7 +449,15 @@ public class SceneController : MonoBehaviour
         handEffectsController = new();
         boundaryForceController = new();
         playerScaleController = new();
-        metaballsToSDF = GetComponent<MetaballsToSDF>();
+        if (metaballsToSDF == null)
+        {
+            // Backward compatible: same GameObject first, then anywhere in the scene
+            metaballsToSDF = GetComponent<MetaballsToSDF>();
+            if (metaballsToSDF == null)
+            {
+                metaballsToSDF = FindFirstObjectByType<MetaballsToSDF>();
+            }
+        }
         bodySourceManager = GetComponent<BodySourceManager>();
 
         // Initialize runtime settings from inspector values

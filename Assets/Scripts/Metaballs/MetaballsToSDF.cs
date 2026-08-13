@@ -75,7 +75,14 @@ namespace MarchingCubes
         {
             InitializeMetaballBuffers();
             _builder = new MeshBuilder(_dimensions, _triangleBudget, _builderCompute);
-            controller = GetComponent<SceneController>();
+            // May live on its own "Metaballs" GameObject — resolve the
+            // controller via the singleton (set in SceneController.Awake,
+            // which runs first via [DefaultExecutionOrder(-200)]).
+            controller = SceneController.Instance;
+            if (controller == null)
+            {
+                controller = GetComponent<SceneController>();
+            }
             _meshRenderer = GetComponent<MeshRenderer>();
             sizeBox = new Vector3(
                 _dimensions.x * _gridScale,
