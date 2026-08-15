@@ -379,10 +379,10 @@ MonoBehaviour:
   - title: vfxSphere Collision
     position:
       serializedVersion: 2
-      x: 1183
+      x: 1182
       y: 1833
-      width: 867
-      height: 375
+      width: 742
+      height: 351
     contents:
     - model: {fileID: 8926484042661614598}
       id: 1
@@ -395,6 +395,9 @@ MonoBehaviour:
       isStickyNote: 0
     - model: {fileID: 8926484042661616659}
       id: 0
+      isStickyNote: 0
+    - model: {fileID: 8926484042661614555}
+      id: 5
       isStickyNote: 0
   - title: Noise Driver
     position:
@@ -891,134 +894,6 @@ MonoBehaviour:
   m_CustomAttributes:
   - {fileID: 8926484042661615192}
   m_ParameterInfo:
-  - name: flipVelo
-    path: flipVelo
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Bool
-    realType: Boolean
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: False
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: playerAuraBase
-    path: playerAuraBase
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Gradient
-    realType: Gradient
-    defaultValue:
-      m_Type:
-        m_SerializableType: UnityEngine.Gradient, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"colorKeys":[{"color":{"r":1.0,"g":1.0,"b":1.0,"a":1.0},"time":0.0},{"color":{"r":0.5471698045730591,"g":0.5471698045730591,"b":0.5471698045730591,"a":1.0},"time":0.3542229235172272},{"color":{"r":3.00174617767334,"g":3.00174617767334,"b":3.00174617767334,"a":1.0},"time":0.5051193833351135},{"color":{"r":3.195544958114624,"g":3.195544958114624,"b":3.195544958114624,"a":1.0},"time":0.6636759042739868},{"color":{"r":0.0,"g":0.0,"b":0.0,"a":1.0},"time":1.0}],"alphaKeys":[{"alpha":1.0,"time":0.0},{"alpha":1.0,"time":1.0}],"gradientMode":0}'
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: lengthScaler
-    path: lengthScaler
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.25
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: sizeRange
-    path: sizeRange
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Vector2f
-    realType: Vector2
-    defaultValue:
-      m_Type:
-        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.03999999910593033,"y":0.07000000029802323}'
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: lifeRange
-    path: lifeRange
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Vector2f
-    realType: Vector2
-    defaultValue:
-      m_Type:
-        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":1.0,"y":2.0}'
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: spawnRate
-    path: spawnRate
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Int
-    realType: Int32
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 1500
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: spawnSphereRadius
-    path: spawnSphereRadius
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.06
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: spawnVeloSpread
-    path: spawnVeloSpread
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.5
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
   - name: handPos
     path: handPos
     tooltip: 
@@ -1098,24 +973,24 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: vfxSphereVelocity
-    path: vfxSphereVelocity
-    tooltip: 
+  - name: noiseFrequency
+    path: noiseFrequency
+    tooltip: Higher value makes the noise faster and more compact
     space: -1
     spaceable: 0
-    sheetType: m_Vector3f
-    realType: Vector3
+    sheetType: m_Float
+    realType: Single
     defaultValue:
       m_Type:
-        m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.0,"y":0.0,"z":0.0}'
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 2.33
     min: -Infinity
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: vfxSphereCollisionScaleMult
-    path: vfxSphereCollisionScaleMult
+  - name: noiseScale
+    path: noiseScale
     tooltip: 
     space: -1
     spaceable: 0
@@ -1125,9 +1000,25 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.93
-    min: 0.5
-    max: 1.5
+      m_SerializableObject: 0.8
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: playerAuraBase
+    path: playerAuraBase
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Gradient
+    realType: Gradient
+    defaultValue:
+      m_Type:
+        m_SerializableType: UnityEngine.Gradient, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"colorKeys":[{"color":{"r":1.0,"g":1.0,"b":1.0,"a":1.0},"time":0.0},{"color":{"r":0.5471698045730591,"g":0.5471698045730591,"b":0.5471698045730591,"a":1.0},"time":0.3542229235172272},{"color":{"r":3.00174617767334,"g":3.00174617767334,"b":3.00174617767334,"a":1.0},"time":0.5051193833351135},{"color":{"r":3.195544958114624,"g":3.195544958114624,"b":3.195544958114624,"a":1.0},"time":0.6636759042739868},{"color":{"r":0.0,"g":0.0,"b":0.0,"a":1.0},"time":1.0}],"alphaKeys":[{"alpha":1.0,"time":0.0},{"alpha":1.0,"time":1.0}],"gradientMode":0}'
+    min: -Infinity
+    max: Infinity
     enumValues: []
     descendantCount: 0
   - name: sdfScale
@@ -1162,8 +1053,56 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: saMinRadius
-    path: saMinRadius
+  - name: spawnVeloSpread
+    path: spawnVeloSpread
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 0.5
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: zDepth
+    path: zDepth
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 16
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: flipVelo
+    path: flipVelo
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Bool
+    realType: Boolean
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: False
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: closeProgress
+    path: closeProgress
     tooltip: 
     space: -1
     spaceable: 0
@@ -1174,8 +1113,8 @@ MonoBehaviour:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
       m_SerializableObject: 0
-    min: -Infinity
-    max: Infinity
+    min: 0
+    max: 1
     enumValues: []
     descendantCount: 0
   - name: saAttractionSpeed
@@ -1194,18 +1133,18 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: saAttractionForce
-    path: saAttractionForce
+  - name: spawnRate
+    path: spawnRate
     tooltip: 
     space: -1
     spaceable: 0
-    sheetType: m_Float
-    realType: Single
+    sheetType: m_Int
+    realType: Int32
     defaultValue:
       m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        m_SerializableType: System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 50
+      m_SerializableObject: 1500
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1226,8 +1165,8 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: saStickForce
-    path: saStickForce
+  - name: saAttractionForce
+    path: saAttractionForce
     tooltip: 
     space: -1
     spaceable: 0
@@ -1237,7 +1176,23 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 5
+      m_SerializableObject: 50
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: tdAttractionForce
+    path: tdAttractionForce
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 10
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1274,6 +1229,22 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
+  - name: spawnSphereRadius
+    path: spawnSphereRadius
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 0.06
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
   - name: tdRadius
     path: tdRadius
     tooltip: 
@@ -1302,54 +1273,6 @@ MonoBehaviour:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
       m_SerializableObject: 200
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: tdAttractionForce
-    path: tdAttractionForce
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 10
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: tdStickDistance
-    path: tdStickDistance
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.1
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: tdStickForce
-    path: tdStickForce
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 5
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1418,8 +1341,8 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: noiseScale
-    path: noiseScale
+  - name: vfxSphereCollisionScaleMult
+    path: vfxSphereCollisionScaleMult
     tooltip: 
     space: -1
     spaceable: 0
@@ -1429,25 +1352,9 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.8
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: noiseFrequency
-    path: noiseFrequency
-    tooltip: Higher value makes the noise faster and more compact
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 2.33
-    min: -Infinity
-    max: Infinity
+      m_SerializableObject: 0.93
+    min: 0.5
+    max: 1.5
     enumValues: []
     descendantCount: 0
   - name: noiseRoughness
@@ -1482,8 +1389,8 @@ MonoBehaviour:
     max: 8
     enumValues: []
     descendantCount: 0
-  - name: turbulenceFrequency
-    path: turbulenceFrequency
+  - name: lengthScaler
+    path: lengthScaler
     tooltip: 
     space: -1
     spaceable: 0
@@ -1493,13 +1400,13 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 1
+      m_SerializableObject: 0.25
     min: -Infinity
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: turbulenceIntensity
-    path: turbulenceIntensity
+  - name: saMinRadius
+    path: saMinRadius
     tooltip: 
     space: -1
     spaceable: 0
@@ -1509,7 +1416,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 5
+      m_SerializableObject: 0
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1530,20 +1437,36 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: tangentialDamping
-    path: tangentialDamping
+  - name: isInBounds
+    path: isInBounds
+    tooltip: Set automatically via HandEffects
+    space: -1
+    spaceable: 0
+    sheetType: m_Bool
+    realType: Boolean
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: False
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: lifeRange
+    path: lifeRange
     tooltip: 
     space: -1
     spaceable: 0
-    sheetType: m_Float
-    realType: Single
+    sheetType: m_Vector2f
+    realType: Vector2
     defaultValue:
       m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 5
-    min: 0
-    max: 30
+        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"x":1.0,"y":2.0}'
+    min: -Infinity
+    max: Infinity
     enumValues: []
     descendantCount: 0
   - name: seekStrength
@@ -1562,24 +1485,40 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: isInBounds
-    path: isInBounds
-    tooltip: Set automatically via HandEffects
+  - name: tangentialDamping
+    path: tangentialDamping
+    tooltip: 
     space: -1
     spaceable: 0
-    sheetType: m_Bool
-    realType: Boolean
+    sheetType: m_Float
+    realType: Single
     defaultValue:
       m_Type:
-        m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: False
+      m_SerializableObject: 5
+    min: 0
+    max: 30
+    enumValues: []
+    descendantCount: 0
+  - name: vfxSphereVelocity
+    path: vfxSphereVelocity
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Vector3f
+    realType: Vector3
+    defaultValue:
+      m_Type:
+        m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"x":0.0,"y":0.0,"z":0.0}'
     min: -Infinity
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: closeProgress
-    path: closeProgress
+  - name: tdStickForce
+    path: tdStickForce
     tooltip: 
     space: -1
     spaceable: 0
@@ -1589,13 +1528,13 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0
-    min: 0
-    max: 1
+      m_SerializableObject: 5
+    min: -Infinity
+    max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: zDepth
-    path: zDepth
+  - name: tdStickDistance
+    path: tdStickDistance
     tooltip: 
     space: -1
     spaceable: 0
@@ -1605,7 +1544,71 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 16
+      m_SerializableObject: 0.1
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: turbulenceIntensity
+    path: turbulenceIntensity
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 5
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: turbulenceFrequency
+    path: turbulenceFrequency
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 1
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: saStickForce
+    path: saStickForce
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 5
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: sizeRange
+    path: sizeRange
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Vector2f
+    realType: Vector2
+    defaultValue:
+      m_Type:
+        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"x":0.03999999910593033,"y":0.07000000029802323}'
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1673,40 +1676,8 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: snareSizeRange
-    path: snareSizeRange
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Vector2f
-    realType: Vector2
-    defaultValue:
-      m_Type:
-        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.07999999821186066,"y":0.15000000596046449}'
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: snareRadiusRandRange
-    path: snareRadiusRandRange
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Vector2f
-    realType: Vector2
-    defaultValue:
-      m_Type:
-        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":-0.10000000149011612,"y":0.20000000298023225}'
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: snareSpawnVeloSphereRadius
-    path: snareSpawnVeloSphereRadius
+  - name: oHatSize
+    path: oHatSize
     tooltip: 
     space: -1
     spaceable: 0
@@ -1716,13 +1687,13 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 1
+      m_SerializableObject: 0.02
     min: -Infinity
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: cHatNoiseAmp
-    path: cHatNoiseAmp
+  - name: oHatNoiseAmp
+    path: oHatNoiseAmp
     tooltip: 
     space: -1
     spaceable: 0
@@ -1732,13 +1703,13 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 5
+      m_SerializableObject: 0.04
     min: -Infinity
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: cHatNoiseYScroll
-    path: cHatNoiseYScroll
+  - name: oHatNoiseFreq
+    path: oHatNoiseFreq
     tooltip: 
     space: -1
     spaceable: 0
@@ -1748,23 +1719,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.4
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
-  - name: cHatNoiseFreq
-    path: cHatNoiseFreq
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Float
-    realType: Single
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 4
+      m_SerializableObject: 2
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1801,8 +1756,8 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: oHatSize
-    path: oHatSize
+  - name: cHatNoiseFreq
+    path: cHatNoiseFreq
     tooltip: 
     space: -1
     spaceable: 0
@@ -1812,13 +1767,13 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.02
+      m_SerializableObject: 4
     min: -Infinity
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: oHatNoiseFreq
-    path: oHatNoiseFreq
+  - name: cHatNoiseAmp
+    path: cHatNoiseAmp
     tooltip: 
     space: -1
     spaceable: 0
@@ -1828,7 +1783,23 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 2
+      m_SerializableObject: 5
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: cHatNoiseYScroll
+    path: cHatNoiseYScroll
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Float
+    realType: Single
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: 0.4
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -1849,8 +1820,24 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: oHatNoiseAmp
-    path: oHatNoiseAmp
+  - name: snareRadiusRandRange
+    path: snareRadiusRandRange
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Vector2f
+    realType: Vector2
+    defaultValue:
+      m_Type:
+        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"x":-0.10000000149011612,"y":0.20000000298023225}'
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: snareSpawnVeloSphereRadius
+    path: snareSpawnVeloSphereRadius
     tooltip: 
     space: -1
     spaceable: 0
@@ -1860,7 +1847,23 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.04
+      m_SerializableObject: 1
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: snareSizeRange
+    path: snareSizeRange
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Vector2f
+    realType: Vector2
+    defaultValue:
+      m_Type:
+        m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"x":0.07999999821186066,"y":0.15000000596046449}'
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -2187,7 +2190,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614551}
   m_ExposedName: handPos
   m_Exposed: 1
-  m_Order: 16
+  m_Order: 0
   m_Category: 
   m_Min:
     m_Type:
@@ -2415,7 +2418,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614556}
   m_ExposedName: vfxSphere
   m_Exposed: 1
-  m_Order: 18
+  m_Order: 1
   m_Category: 
   m_Min:
     m_Type:
@@ -2479,12 +2482,12 @@ MonoBehaviour:
       inputSlot: {fileID: 8926484042661616663}
     - outputSlot: {fileID: 8926484042661614565}
       inputSlot: {fileID: 8926484042661614998}
-    position: {x: 1255.0337, y: 1873.7336}
+    position: {x: 1265.6, y: 2004.8}
     expandedSlots:
     - {fileID: 8926484042661614556}
     - {fileID: 8926484042661614557}
     expanded: 1
-    supecollapsed: 0
+    supecollapsed: 1
   - m_Id: 6
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614557}
@@ -2995,7 +2998,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614584}
   m_ExposedName: noiseFrequency
   m_Exposed: 1
-  m_Order: 43
+  m_Order: 2
   m_Category: 
   m_Min:
     m_Type:
@@ -3076,7 +3079,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614586}
   m_ExposedName: noiseScale
   m_Exposed: 1
-  m_Order: 42
+  m_Order: 3
   m_Category: 
   m_Min:
     m_Type:
@@ -3157,7 +3160,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614588}
   m_ExposedName: playerAuraBase
   m_Exposed: 1
-  m_Order: 2
+  m_Order: 4
   m_Category: 
   m_Min:
     m_Type:
@@ -3247,7 +3250,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614590}
   m_ExposedName: sdfScale
   m_Exposed: 1
-  m_Order: 24
+  m_Order: 5
   m_Category: 
   m_Min:
     m_Type:
@@ -3440,7 +3443,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614595}
   m_ExposedName: sdfTexture
   m_Exposed: 1
-  m_Order: 25
+  m_Order: 6
   m_Category: 
   m_Min:
     m_Type:
@@ -3521,7 +3524,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614597}
   m_ExposedName: spawnVeloSpread
   m_Exposed: 1
-  m_Order: 14
+  m_Order: 7
   m_Category: 
   m_Min:
     m_Type:
@@ -3602,7 +3605,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614599}
   m_ExposedName: zDepth
   m_Exposed: 1
-  m_Order: 53
+  m_Order: 8
   m_Category: 
   m_Min:
     m_Type:
@@ -3629,7 +3632,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614599}
       inputSlot: {fileID: 8926484042661616674}
-    position: {x: 1480, y: 1994.6666}
+    position: {x: 1480, y: 1994.4}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -3701,7 +3704,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614601}
   m_ExposedName: flipVelo
   m_Exposed: 1
-  m_Order: 0
+  m_Order: 9
   m_Category: 
   m_Min:
     m_Type:
@@ -3782,7 +3785,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614603}
   m_ExposedName: closeProgress
   m_Exposed: 1
-  m_Order: 52
+  m_Order: 10
   m_Category: 
   m_Min:
     m_Type:
@@ -3925,7 +3928,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614609}
   m_ExposedName: saAttractionSpeed
   m_Exposed: 1
-  m_Order: 27
+  m_Order: 11
   m_Category: 
   m_Min:
     m_Type:
@@ -4006,7 +4009,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614611}
   m_ExposedName: spawnRate
   m_Exposed: 1
-  m_Order: 10
+  m_Order: 12
   m_Category: 
   m_Min:
     m_Type:
@@ -4087,7 +4090,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614613}
   m_ExposedName: saStickDistance
   m_Exposed: 1
-  m_Order: 29
+  m_Order: 13
   m_Category: 
   m_Min:
     m_Type:
@@ -4168,7 +4171,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614615}
   m_ExposedName: saAttractionForce
   m_Exposed: 1
-  m_Order: 28
+  m_Order: 14
   m_Category: 
   m_Min:
     m_Type:
@@ -4249,7 +4252,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614617}
   m_ExposedName: tdAttractionForce
   m_Exposed: 1
-  m_Order: 35
+  m_Order: 15
   m_Category: 
   m_Min:
     m_Type:
@@ -4330,7 +4333,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614619}
   m_ExposedName: TD1
   m_Exposed: 1
-  m_Order: 31
+  m_Order: 16
   m_Category: 
   m_Min:
     m_Type:
@@ -4513,7 +4516,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614624}
   m_ExposedName: TD2
   m_Exposed: 1
-  m_Order: 32
+  m_Order: 17
   m_Category: 
   m_Min:
     m_Type:
@@ -6440,7 +6443,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614684}
   m_ExposedName: spawnSphereRadius
   m_Exposed: 1
-  m_Order: 12
+  m_Order: 18
   m_Category: 
   m_Min:
     m_Type:
@@ -8484,7 +8487,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614816}
   m_ExposedName: tdRadius
   m_Exposed: 1
-  m_Order: 33
+  m_Order: 19
   m_Category: 
   m_Min:
     m_Type:
@@ -8568,7 +8571,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614818}
   m_ExposedName: tdAttractionSpeed
   m_Exposed: 1
-  m_Order: 34
+  m_Order: 20
   m_Category: 
   m_Min:
     m_Type:
@@ -12844,7 +12847,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614968}
   m_ExposedName: mainAttractionSpeed
   m_Exposed: 1
-  m_Order: 38
+  m_Order: 21
   m_Category: 
   m_Min:
     m_Type:
@@ -12925,7 +12928,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614970}
   m_ExposedName: mainAttractionForce
   m_Exposed: 1
-  m_Order: 39
+  m_Order: 22
   m_Category: 
   m_Min:
     m_Type:
@@ -13009,7 +13012,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614972}
   m_ExposedName: mainStickDistance
   m_Exposed: 1
-  m_Order: 40
+  m_Order: 23
   m_Category: 
   m_Min:
     m_Type:
@@ -13093,7 +13096,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614974}
   m_ExposedName: mainStickForce
   m_Exposed: 1
-  m_Order: 41
+  m_Order: 24
   m_Category: 
   m_Min:
     m_Type:
@@ -14164,7 +14167,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615007}
   m_ExposedName: vfxSphereCollisionScaleMult
   m_Exposed: 1
-  m_Order: 22
+  m_Order: 25
   m_Category: 
   m_Min:
     m_Type:
@@ -14185,7 +14188,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661615007}
       inputSlot: {fileID: 8926484042661614996}
-    position: {x: 1208, y: 2048.6667}
+    position: {x: 1208, y: 2048.8}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -14465,7 +14468,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615066}
   m_ExposedName: noiseRoughness
   m_Exposed: 1
-  m_Order: 44
+  m_Order: 26
   m_Category: 
   m_Min:
     m_Type:
@@ -14546,7 +14549,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615068}
   m_ExposedName: noiseOctaves
   m_Exposed: 1
-  m_Order: 45
+  m_Order: 27
   m_Category: 
   m_Min:
     m_Type:
@@ -15456,7 +15459,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615135}
   m_ExposedName: lengthScaler
   m_Exposed: 1
-  m_Order: 4
+  m_Order: 28
   m_Category: 
   m_Min:
     m_Type:
@@ -18684,7 +18687,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615530}
   m_ExposedName: saMinRadius
   m_Exposed: 1
-  m_Order: 26
+  m_Order: 29
   m_Category: 
   m_Min:
     m_Type:
@@ -19439,7 +19442,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615746}
   m_ExposedName: collisionDetectionScaleMult
   m_Exposed: 1
-  m_Order: 48
+  m_Order: 30
   m_Category: 
   m_Min:
     m_Type:
@@ -32454,7 +32457,7 @@ MonoBehaviour:
   - {fileID: 8926484042661616378}
   m_ExposedName: isInBounds
   m_Exposed: 1
-  m_Order: 51
+  m_Order: 31
   m_Category: 
   m_Min:
     m_Type:
@@ -39090,7 +39093,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617015}
   m_ExposedName: lifeRange
   m_Exposed: 1
-  m_Order: 8
+  m_Order: 32
   m_Category: 
   m_Min:
     m_Type:
@@ -39637,7 +39640,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617031}
   m_ExposedName: seekStrength
   m_Exposed: 1
-  m_Order: 50
+  m_Order: 33
   m_Category: 
   m_Min:
     m_Type:
@@ -44482,7 +44485,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617352}
   m_ExposedName: tangentialDamping
   m_Exposed: 1
-  m_Order: 49
+  m_Order: 34
   m_Category: 
   m_Min:
     m_Type:
@@ -47626,7 +47629,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617462}
   m_ExposedName: vfxSphereVelocity
   m_Exposed: 1
-  m_Order: 20
+  m_Order: 35
   m_Category: 
   m_Min:
     m_Type:
@@ -49026,7 +49029,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617538}
   m_ExposedName: tdStickForce
   m_Exposed: 1
-  m_Order: 37
+  m_Order: 36
   m_Category: 
   m_Min:
     m_Type:
@@ -49110,7 +49113,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617540}
   m_ExposedName: tdStickDistance
   m_Exposed: 1
-  m_Order: 36
+  m_Order: 37
   m_Category: 
   m_Min:
     m_Type:
@@ -49194,7 +49197,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617542}
   m_ExposedName: turbulenceIntensity
   m_Exposed: 1
-  m_Order: 47
+  m_Order: 38
   m_Category: 
   m_Min:
     m_Type:
@@ -49275,7 +49278,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617544}
   m_ExposedName: turbulenceFrequency
   m_Exposed: 1
-  m_Order: 46
+  m_Order: 39
   m_Category: 
   m_Min:
     m_Type:
@@ -49356,7 +49359,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617546}
   m_ExposedName: saStickForce
   m_Exposed: 1
-  m_Order: 30
+  m_Order: 40
   m_Category: 
   m_Min:
     m_Type:
@@ -49437,7 +49440,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617548}
   m_ExposedName: oHatSize
   m_Exposed: 1
-  m_Order: 17
+  m_Order: 41
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -49518,7 +49521,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617550}
   m_ExposedName: oHatNoiseAmp
   m_Exposed: 1
-  m_Order: 23
+  m_Order: 42
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -49599,7 +49602,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617552}
   m_ExposedName: oHatNoiseFreq
   m_Exposed: 1
-  m_Order: 19
+  m_Order: 43
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -49680,7 +49683,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617556}
   m_ExposedName: cHatSpawnVeloSphereRadius
   m_Exposed: 1
-  m_Order: 13
+  m_Order: 44
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -49761,7 +49764,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617558}
   m_ExposedName: cHatSize
   m_Exposed: 1
-  m_Order: 15
+  m_Order: 45
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -49842,7 +49845,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617560}
   m_ExposedName: cHatNoiseFreq
   m_Exposed: 1
-  m_Order: 11
+  m_Order: 46
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -49923,7 +49926,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617562}
   m_ExposedName: cHatNoiseAmp
   m_Exposed: 1
-  m_Order: 6
+  m_Order: 47
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -50004,7 +50007,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617564}
   m_ExposedName: cHatNoiseYScroll
   m_Exposed: 1
-  m_Order: 9
+  m_Order: 48
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -50085,7 +50088,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617566}
   m_ExposedName: oHatNoiseYScroll
   m_Exposed: 1
-  m_Order: 21
+  m_Order: 49
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -50166,7 +50169,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617568}
   m_ExposedName: snareRadiusRandRange
   m_Exposed: 1
-  m_Order: 3
+  m_Order: 50
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -50319,7 +50322,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617572}
   m_ExposedName: snareSpawnVeloSphereRadius
   m_Exposed: 1
-  m_Order: 5
+  m_Order: 51
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -50400,7 +50403,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617574}
   m_ExposedName: snareSizeRange
   m_Exposed: 1
-  m_Order: 1
+  m_Order: 52
   m_Category: SpawnFX
   m_Min:
     m_Type:
@@ -50553,7 +50556,7 @@ MonoBehaviour:
   - {fileID: 8926484042661617578}
   m_ExposedName: sizeRange
   m_Exposed: 1
-  m_Order: 7
+  m_Order: 53
   m_Category: 
   m_Min:
     m_Type:
