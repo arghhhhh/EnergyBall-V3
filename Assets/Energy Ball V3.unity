@@ -1181,66 +1181,121 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64e0a8cbe467405488d02a1bef548523, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  g: 9.81
-  maxTowardsForce: 10
-  maxAwayFromForce: 10
-  gravityForceDamper: 1
-  stopGravityDistance: 0.1
-  stopMovingDistance: 0.05
+  g: 0.48
+  maxTowardsForce: 0.39999998
+  maxAwayFromForce: 1
+  gravityForceDamper: 0.95
+  stopGravityDistance: 0.024
+  stopMovingDistance: 0.010000001
   stopVelocity: 0.1
-  attractionRadiusMultiplier: 1
-  singleHandOpenForceDamper: 1
-  addedBoundaryDistance: 1.5
-  boundaryOutwardDrag: 50
+  attractionRadiusMultiplier: 3.5
+  singleHandOpenForceDamper: 0.75
+  addedBoundaryDistance: 0.26
+  boundaryOutwardDrag: 4
   outOfBoundsResetDelay: 3
-  pushForce: 5
-  torsoMaxForwardOffset: 0.75
-  torsoOffsetFalloffDistance: 1.5
-  minDrag: 0.1
-  maxDrag: 5
-  alignmentVectorStrengthScaler: 1
-  handPushScaler: 1
-  prayToActivate: 1
-  prayToActivateDistance: 0.7
-  pulseAmount: 1
-  pulseSpeed: 1
-  graphLimit: 10
+  pushForce: 2.8
+  torsoMaxForwardOffset: 0.2
+  torsoOffsetFalloffDistance: 0.4
+  minDrag: 0.25
+  maxDrag: 1
+  alignmentVectorStrengthScaler: 0.07
+  handPushScaler: 10
+  prayToActivate: 0
+  prayToActivateDistance: 0.14
+  pulseAmount: 2
+  pulseSpeed: 3
+  graphLimit: 3.883
   pulseFreqs:
-  - 1
+  - 0.3
+  - 0.8
   - 2
   - 3
   singleHandScaling: 1
-  minimumUnscaledSize: 0.5
-  maximumUnscaledSize: 3
-  minHandDisplacementPerFrame: 0.01
-  pulseScaleDamper: 1
-  mergeSizeScalerDamper: 1
-  maxDistanceBetweenHands: 2
-  baseZDepth: 5
-  gridScale: 0.3
-  defaultUnscaledSize: 1
-  bodyScale: 1
-  maxDistanceFromCamera: 10
+  minimumUnscaledSize: 0.3
+  maximumUnscaledSize: 0.6
+  minHandDisplacementPerFrame: 0.010000001
+  maxHandVelocity: 3
+  pulseScaleDamper: 0.3
+  mergeSizeScalerDamper: 0.15
+  maxDistanceBetweenHands: 1.6
+  baseZDepth: 2
+  gridScale: 0.060000002
+  defaultUnscaledSize: 0.5
+  bodyScale: 5
+  maxDistanceFromCamera: 2.6000001
+  sphereResetJitter: 0.1
+  handVfx:
+    spawnRate: 1500
+    spawnSphereRadius: 0.012
+    spawnVeloSpread: 0.1
+    sizeRange: {x: 0.008, y: 0.014}
+    lifetimeRemapMaxDist: 0.6
+    boundsPadding: {x: 0, y: 0, z: 0}
+    mainAttractionSpeed: 0.95
+    mainAttractionForce: 43
+    mainStickDistance: 0.02
+    mainStickForce: 0.4
+    seekStrength: 1
+    tdRadius: 0.1
+    tdStickDistance: 0.02
+    tdStickForce: 1
+    tdAttractionForce: 2
+    tdAttractionSpeed: 40
+    tdWanderAmount: 0.06
+    saAttractionSpeed: 0.95
+    saAttractionForce: 10
+    saStickDistance: 0.02
+    saStickForce: 1
+    saMinRadius: 0
+    noiseScale: 0.02
+    noiseFrequency: 4.5
+    noiseRoughness: 0.5
+    noiseOctaves: 1
+    turbulenceIntensity: 1
+    turbulenceFrequency: 5
+    lengthScaler: 1.25
+    minStretchLength: 0.01
+    cHatSize: 0.005
+    cHatNoiseAmp: 1
+    cHatNoiseFreq: 20
+    cHatNoiseYScroll: 0.08
+    cHatSpawnVeloSphereRadius: 1
+    oHatSize: 0.004
+    oHatNoiseAmp: 0.008
+    oHatNoiseFreq: 10
+    oHatNoiseYScroll: 0.2
+    snareSizeRange: {x: 0.016, y: 0.03}
+    snareRadiusRandRange: {x: -0.02, y: 0.04}
+    snareSpawnVeloSphereRadius: 0.2
   projectiveAlignment: 1
   cameraFeedQuad: {fileID: 1766269651}
   renderCameraTransform: {fileID: 118562682}
   skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
     type: 2}
-  particleInitializationDelay: 1
+  particleInitializationDelay: 1.75
   initializationResetDelay: 3
   singleHandOpenThreshold: 0.1
   singleHandForceLerpDuration: 0.35
   initializationSpeed: 0.05
   metaballRadiusAnimationDuration: 2
-  metaballRadiusAnimationStartSize: 0.1
+  metaballRadiusAnimationStartSize: 0.020000001
   metaballRadiusAnimationCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
+      inSlope: 1.189365
+      outSlope: 1.189365
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.44985026
+      value: 0.857666
+      inSlope: 0.6742885
+      outSlope: 0.6742885
       tangentMode: 0
       weightedMode: 0
       inWeight: 0

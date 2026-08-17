@@ -6,6 +6,12 @@ This guide explains how to add new settings fields to an existing tab in the in-
 
 The settings menu system uses `RuntimeSceneSettings` as the central data class. Settings are organized into groups within tabs, and changes are persisted through JSON profile files.
 
+**Base vs. effective values.** Everything the menu, the `SceneController` inspector and the JSON profiles hold is a _base_ value at `bodyScale = 1`. `SceneController.RebuildEffectiveSettings()` derives the object consumers read (`CurrentSettings` / `GetRuntimeSettings()`) as `base × bodyScale^exp` via `BodyScaling.CreateEffective`. So:
+
+- **If the new setting has a dimension** (a length, velocity, per-frame displacement, rigidbody force, spatial frequency), put `[BodyScaled(exp)]` on the `RuntimeSceneSettings` field and store the **1× value**. Exponents: lengths / velocities / per-frame displacements `1`; rigidbody forces (`AddForce`) `2` (mass ∝ s); spatial frequencies `-1`. Time, ratios, rates, curves, bools and counts get no attribute. See `Docs/BodyScale-settings-audit.md` for the derivation and worked examples.
+- Append the unit hint to the menu label by hand: `"Push Force (×s²)"`, `"TD Radius (×s)"`, `"Noise Frequency (×1/s)"`.
+- Consumers never rescale anything themselves — they just read the effective object.
+
 ## Quick Reference
 
 | Step | File                      | Action                                                           |
@@ -36,9 +42,15 @@ public float boundaryOutwardDrag = 50f;
 **Property Types Supported:**
 
 - `float` - Use `CreateFloatField()` or `CreateSliderField()`
+- `int` - Use `CreateIntField()`
+- `Vector2` / `Vector3` - Use `CreateVector2Field()` / `CreateVector3Field()`
 - `bool` - Use `CreateToggleField()`
 - `float[]` - Use `CreateFloatArrayField()`
 - `AnimationCurve` - Use `CreateCurveField()` (opens the runtime curve editor popup)
+
+`[BodyScaled]` supports `float`, `Vector2` and `Vector3` fields.
+
+**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`; the PP copy sets `destination.handVfx = new HandVfxSettings()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching `CreateHandVfx*Group` in the menu. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write.
 
 **For properties with change notifications:**
 
@@ -341,6 +353,13 @@ target.myCurve = new AnimationCurve(myCurve.keys);
 myCurve = new AnimationCurve(source.myCurve.keys);
 ```
 
+### Int / Vector Fields
+
+```csharp
+CreateIntField(group, "Label", () => runtimeSettings.handVfx.spawnRate, v => runtimeSettings.handVfx.spawnRate = v);
+CreateVector2Field(group, "Label (×s)", () => runtimeSettings.handVfx.sizeRange, v => runtimeSettings.handVfx.sizeRange = v);
+```
+
 ### Testing Checklist (curve-specific)
 
 In addition to the general checklist:
@@ -365,6 +384,7 @@ The settings menu follows this group structure to match the SceneController insp
 - Movement-Based Pulsation
 - Miscellaneous
 - Animation
+- Hand VFX - Spawn & Size / Main Attractor / Trail Distorters / Secondary Attractor / Noise & Turbulence / Stretch / Bursts (CHat/OHat) / Snare (mirror the `[Header]`s in `HandVfxSettings`)
 - Style
 - Debugging
 
@@ -377,6 +397,8 @@ The settings menu follows this group structure to match the SceneController insp
 - White Balance
 
 ## Common Pitfalls
+
+0. **Storing an effective value**: a dimensioned field without `[BodyScaled]`, or a `[BodyScaled]` field seeded with a 5×-tuned number, breaks the "change bodyScale, nothing else" invariant. Store the 1× value.
 
 1. **Forgetting DeepCopy()**: Your setting won't be properly copied when backing up/restoring settings.
 

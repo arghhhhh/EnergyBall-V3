@@ -318,6 +318,14 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateMovementPulsationGroup(sceneSettingsPanel);
         CreateMiscellaneousGroup(sceneSettingsPanel);
         CreateAnimationGroup(sceneSettingsPanel);
+        CreateHandVfxSpawnGroup(sceneSettingsPanel);
+        CreateHandVfxMainAttractorGroup(sceneSettingsPanel);
+        CreateHandVfxTrailDistortersGroup(sceneSettingsPanel);
+        CreateHandVfxSecondaryAttractorGroup(sceneSettingsPanel);
+        CreateHandVfxNoiseGroup(sceneSettingsPanel);
+        CreateHandVfxStretchGroup(sceneSettingsPanel);
+        CreateHandVfxBurstsGroup(sceneSettingsPanel);
+        CreateHandVfxSnareGroup(sceneSettingsPanel);
         CreateStyleGroup(sceneSettingsPanel);
         CreateDebuggingGroup(sceneSettingsPanel);
     }
@@ -353,16 +361,16 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = CreateGroup("Gravity Attraction", parentContainer);
 
-        CreateFloatField(group, "G", () => runtimeSettings.g, v => runtimeSettings.g = v);
+        CreateFloatField(group, "G (×s²)", () => runtimeSettings.g, v => runtimeSettings.g = v);
         CreateFloatField(
             group,
-            "Max Towards Force",
+            "Max Towards Force (×s²)",
             () => runtimeSettings.maxTowardsForce,
             v => runtimeSettings.maxTowardsForce = v
         );
         CreateFloatField(
             group,
-            "Max Away Force",
+            "Max Away Force (×s²)",
             () => runtimeSettings.maxAwayFromForce,
             v => runtimeSettings.maxAwayFromForce = v
         );
@@ -374,19 +382,19 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Stop Gravity Distance",
+            "Stop Gravity Distance (×s)",
             () => runtimeSettings.stopGravityDistance,
             v => runtimeSettings.stopGravityDistance = v
         );
         CreateFloatField(
             group,
-            "Stop Moving Distance",
+            "Stop Moving Distance (×s)",
             () => runtimeSettings.stopMovingDistance,
             v => runtimeSettings.stopMovingDistance = v
         );
         CreateFloatField(
             group,
-            "Stop Velocity",
+            "Stop Velocity (×s)",
             () => runtimeSettings.stopVelocity,
             v => runtimeSettings.stopVelocity = v
         );
@@ -416,19 +424,19 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Push Force",
+            "Push Force (×s²)",
             () => runtimeSettings.pushForce,
             v => runtimeSettings.pushForce = v
         );
         CreateFloatField(
             group,
-            "Torso Max Forward Offset",
+            "Torso Max Forward Offset (×s)",
             () => runtimeSettings.torsoMaxForwardOffset,
             v => runtimeSettings.torsoMaxForwardOffset = v
         );
         CreateFloatField(
             group,
-            "Torso Offset Falloff Distance",
+            "Torso Offset Falloff Distance (×s)",
             () => runtimeSettings.torsoOffsetFalloffDistance,
             v => runtimeSettings.torsoOffsetFalloffDistance = v
         );
@@ -453,7 +461,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Alignment Vector Strength Scaler",
+            "Alignment Vector Strength Scaler (×s)",
             () => runtimeSettings.alignmentVectorStrengthScaler,
             v => runtimeSettings.alignmentVectorStrengthScaler = v
         );
@@ -471,7 +479,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Pray To Activate Distance",
+            "Pray To Activate Distance (×s)",
             () => runtimeSettings.prayToActivateDistance,
             v => runtimeSettings.prayToActivateDistance = v
         );
@@ -483,13 +491,13 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Boundary Distance Multiplier",
+            "Added Boundary Distance (×s)",
             () => runtimeSettings.addedBoundaryDistance,
             v => runtimeSettings.addedBoundaryDistance = v
         );
         CreateFloatField(
             group,
-            "Boundary Outward Drag",
+            "Boundary Outward Drag (×s)",
             () => runtimeSettings.boundaryOutwardDrag,
             v => runtimeSettings.boundaryOutwardDrag = v
         );
@@ -545,13 +553,25 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Minimum Unscaled Size",
+            "Minimum Unscaled Size (×s)",
             () => runtimeSettings.minimumUnscaledSize,
             v => runtimeSettings.minimumUnscaledSize = v
         );
+        CreateFloatField(
+            group,
+            "Maximum Unscaled Size (×s)",
+            () => runtimeSettings.maximumUnscaledSize,
+            v => runtimeSettings.maximumUnscaledSize = v
+        );
+        CreateFloatField(
+            group,
+            "Max Hand Velocity (×s)",
+            () => runtimeSettings.maxHandVelocity,
+            v => runtimeSettings.maxHandVelocity = v
+        );
         CreateSliderField(
             group,
-            "Min Hand Displacement Per Frame",
+            "Min Hand Displacement Per Frame (×s)",
             () => runtimeSettings.minHandDisplacementPerFrame,
             v => runtimeSettings.minHandDisplacementPerFrame = v,
             0.0001f,
@@ -583,25 +603,25 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Max Distance Between Hands",
+            "Max Distance Between Hands (×s)",
             () => runtimeSettings.maxDistanceBetweenHands,
             v => runtimeSettings.maxDistanceBetweenHands = v
         );
         CreateFloatField(
             group,
-            "Base Z Depth",
+            "Base Z Depth (×s)",
             () => runtimeSettings.baseZDepth,
             v => runtimeSettings.baseZDepth = v
         );
         CreateFloatField(
             group,
-            "Grid Scale",
+            "Grid Scale (×s)",
             () => runtimeSettings.gridScale,
             v => runtimeSettings.gridScale = v
         );
         CreateFloatField(
             group,
-            "Default Unscaled Size",
+            "Default Unscaled Size (×s)",
             () => runtimeSettings.defaultUnscaledSize,
             v => runtimeSettings.defaultUnscaledSize = v
         );
@@ -613,9 +633,15 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Max Distance From Camera",
+            "Max Distance From Camera (×s)",
             () => runtimeSettings.maxDistanceFromCamera,
             v => runtimeSettings.maxDistanceFromCamera = v
+        );
+        CreateFloatField(
+            group,
+            "Sphere Reset Jitter (×s)",
+            () => runtimeSettings.sphereResetJitter,
+            v => runtimeSettings.sphereResetJitter = v
         );
     }
 
@@ -663,7 +689,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Metaball Radius Animation Start Size",
+            "Metaball Radius Animation Start Size (×s)",
             () => runtimeSettings.metaballRadiusAnimationStartSize,
             v => runtimeSettings.metaballRadiusAnimationStartSize = v
         );
@@ -672,6 +698,316 @@ public class InGameSettingsMenu : MonoBehaviour
             "Metaball Radius Animation Curve",
             () => runtimeSettings.metaballRadiusAnimationCurve,
             v => runtimeSettings.metaballRadiusAnimationCurve = v
+        );
+        CreateFloatField(
+            group,
+            "Body Spawn Size (×s)",
+            () => runtimeSettings.bodySpawnSize,
+            v => runtimeSettings.bodySpawnSize = v
+        );
+    }
+
+    // ---- Hand VFX (HandVfxSettings, nested in the scene profile as "handVfx") ----
+    // Group names mirror the [Header]s in HandVfxSettings. Every dimensioned row shows the
+    // base value with a unit hint; the effective value is base × bodyScale^exp.
+
+    private void CreateHandVfxSpawnGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Spawn & Size", parentContainer);
+
+        CreateIntField(
+            group,
+            "Spawn Rate",
+            () => runtimeSettings.handVfx.spawnRate,
+            v => runtimeSettings.handVfx.spawnRate = v
+        );
+        CreateFloatField(
+            group,
+            "Spawn Sphere Radius (×s)",
+            () => runtimeSettings.handVfx.spawnSphereRadius,
+            v => runtimeSettings.handVfx.spawnSphereRadius = v
+        );
+        CreateFloatField(
+            group,
+            "Spawn Velocity Spread (×s)",
+            () => runtimeSettings.handVfx.spawnVeloSpread,
+            v => runtimeSettings.handVfx.spawnVeloSpread = v
+        );
+        CreateVector2Field(
+            group,
+            "Size Range (×s)",
+            () => runtimeSettings.handVfx.sizeRange,
+            v => runtimeSettings.handVfx.sizeRange = v
+        );
+        CreateFloatField(
+            group,
+            "Lifetime Remap Max Dist (×s)",
+            () => runtimeSettings.handVfx.lifetimeRemapMaxDist,
+            v => runtimeSettings.handVfx.lifetimeRemapMaxDist = v
+        );
+        CreateVector3Field(
+            group,
+            "Bounds Padding (×s)",
+            () => runtimeSettings.handVfx.boundsPadding,
+            v => runtimeSettings.handVfx.boundsPadding = v
+        );
+    }
+
+    private void CreateHandVfxMainAttractorGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Main Attractor", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Main Attraction Speed (×s)",
+            () => runtimeSettings.handVfx.mainAttractionSpeed,
+            v => runtimeSettings.handVfx.mainAttractionSpeed = v
+        );
+        CreateFloatField(
+            group,
+            "Main Attraction Force (×s)",
+            () => runtimeSettings.handVfx.mainAttractionForce,
+            v => runtimeSettings.handVfx.mainAttractionForce = v
+        );
+        CreateFloatField(
+            group,
+            "Main Stick Distance (×s)",
+            () => runtimeSettings.handVfx.mainStickDistance,
+            v => runtimeSettings.handVfx.mainStickDistance = v
+        );
+        CreateFloatField(
+            group,
+            "Main Stick Force (×s)",
+            () => runtimeSettings.handVfx.mainStickForce,
+            v => runtimeSettings.handVfx.mainStickForce = v
+        );
+        CreateFloatField(
+            group,
+            "Seek Strength (×s)",
+            () => runtimeSettings.handVfx.seekStrength,
+            v => runtimeSettings.handVfx.seekStrength = v
+        );
+    }
+
+    private void CreateHandVfxTrailDistortersGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Trail Distorters", parentContainer);
+
+        CreateFloatField(
+            group,
+            "TD Radius (×s)",
+            () => runtimeSettings.handVfx.tdRadius,
+            v => runtimeSettings.handVfx.tdRadius = v
+        );
+        CreateFloatField(
+            group,
+            "TD Stick Distance (×s)",
+            () => runtimeSettings.handVfx.tdStickDistance,
+            v => runtimeSettings.handVfx.tdStickDistance = v
+        );
+        CreateFloatField(
+            group,
+            "TD Stick Force (×s)",
+            () => runtimeSettings.handVfx.tdStickForce,
+            v => runtimeSettings.handVfx.tdStickForce = v
+        );
+        CreateFloatField(
+            group,
+            "TD Attraction Force (×s)",
+            () => runtimeSettings.handVfx.tdAttractionForce,
+            v => runtimeSettings.handVfx.tdAttractionForce = v
+        );
+        CreateFloatField(
+            group,
+            "TD Attraction Speed (×s)",
+            () => runtimeSettings.handVfx.tdAttractionSpeed,
+            v => runtimeSettings.handVfx.tdAttractionSpeed = v
+        );
+        CreateFloatField(
+            group,
+            "TD Wander Amount (×s)",
+            () => runtimeSettings.handVfx.tdWanderAmount,
+            v => runtimeSettings.handVfx.tdWanderAmount = v
+        );
+    }
+
+    private void CreateHandVfxSecondaryAttractorGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Secondary Attractor", parentContainer);
+
+        CreateFloatField(
+            group,
+            "SA Attraction Speed (×s)",
+            () => runtimeSettings.handVfx.saAttractionSpeed,
+            v => runtimeSettings.handVfx.saAttractionSpeed = v
+        );
+        CreateFloatField(
+            group,
+            "SA Attraction Force (×s)",
+            () => runtimeSettings.handVfx.saAttractionForce,
+            v => runtimeSettings.handVfx.saAttractionForce = v
+        );
+        CreateFloatField(
+            group,
+            "SA Stick Distance (×s)",
+            () => runtimeSettings.handVfx.saStickDistance,
+            v => runtimeSettings.handVfx.saStickDistance = v
+        );
+        CreateFloatField(
+            group,
+            "SA Stick Force (×s)",
+            () => runtimeSettings.handVfx.saStickForce,
+            v => runtimeSettings.handVfx.saStickForce = v
+        );
+        CreateFloatField(
+            group,
+            "SA Min Radius (×s)",
+            () => runtimeSettings.handVfx.saMinRadius,
+            v => runtimeSettings.handVfx.saMinRadius = v
+        );
+    }
+
+    private void CreateHandVfxNoiseGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Noise & Turbulence", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Noise Scale (×s)",
+            () => runtimeSettings.handVfx.noiseScale,
+            v => runtimeSettings.handVfx.noiseScale = v
+        );
+        CreateFloatField(
+            group,
+            "Noise Frequency (×1/s)",
+            () => runtimeSettings.handVfx.noiseFrequency,
+            v => runtimeSettings.handVfx.noiseFrequency = v
+        );
+        CreateFloatField(
+            group,
+            "Noise Roughness",
+            () => runtimeSettings.handVfx.noiseRoughness,
+            v => runtimeSettings.handVfx.noiseRoughness = v
+        );
+        CreateIntField(
+            group,
+            "Noise Octaves",
+            () => runtimeSettings.handVfx.noiseOctaves,
+            v => runtimeSettings.handVfx.noiseOctaves = v
+        );
+        CreateFloatField(
+            group,
+            "Turbulence Intensity (×s)",
+            () => runtimeSettings.handVfx.turbulenceIntensity,
+            v => runtimeSettings.handVfx.turbulenceIntensity = v
+        );
+        CreateFloatField(
+            group,
+            "Turbulence Frequency (×1/s)",
+            () => runtimeSettings.handVfx.turbulenceFrequency,
+            v => runtimeSettings.handVfx.turbulenceFrequency = v
+        );
+    }
+
+    private void CreateHandVfxStretchGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Stretch", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Length Scaler (×1/s)",
+            () => runtimeSettings.handVfx.lengthScaler,
+            v => runtimeSettings.handVfx.lengthScaler = v
+        );
+        CreateFloatField(
+            group,
+            "Min Stretch Length",
+            () => runtimeSettings.handVfx.minStretchLength,
+            v => runtimeSettings.handVfx.minStretchLength = v
+        );
+    }
+
+    private void CreateHandVfxBurstsGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Bursts (CHat/OHat)", parentContainer);
+
+        CreateFloatField(
+            group,
+            "CHat Size (×s)",
+            () => runtimeSettings.handVfx.cHatSize,
+            v => runtimeSettings.handVfx.cHatSize = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Noise Amp (×s)",
+            () => runtimeSettings.handVfx.cHatNoiseAmp,
+            v => runtimeSettings.handVfx.cHatNoiseAmp = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Noise Freq (×1/s)",
+            () => runtimeSettings.handVfx.cHatNoiseFreq,
+            v => runtimeSettings.handVfx.cHatNoiseFreq = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Noise Y Scroll (×s)",
+            () => runtimeSettings.handVfx.cHatNoiseYScroll,
+            v => runtimeSettings.handVfx.cHatNoiseYScroll = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Spawn Velo Sphere Radius (×s)",
+            () => runtimeSettings.handVfx.cHatSpawnVeloSphereRadius,
+            v => runtimeSettings.handVfx.cHatSpawnVeloSphereRadius = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Size (×s)",
+            () => runtimeSettings.handVfx.oHatSize,
+            v => runtimeSettings.handVfx.oHatSize = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Noise Amp (×s)",
+            () => runtimeSettings.handVfx.oHatNoiseAmp,
+            v => runtimeSettings.handVfx.oHatNoiseAmp = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Noise Freq (×1/s)",
+            () => runtimeSettings.handVfx.oHatNoiseFreq,
+            v => runtimeSettings.handVfx.oHatNoiseFreq = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Noise Y Scroll (×s)",
+            () => runtimeSettings.handVfx.oHatNoiseYScroll,
+            v => runtimeSettings.handVfx.oHatNoiseYScroll = v
+        );
+    }
+
+    private void CreateHandVfxSnareGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Snare", parentContainer);
+
+        CreateVector2Field(
+            group,
+            "Snare Size Range (×s)",
+            () => runtimeSettings.handVfx.snareSizeRange,
+            v => runtimeSettings.handVfx.snareSizeRange = v
+        );
+        CreateVector2Field(
+            group,
+            "Snare Radius Rand Range (×s)",
+            () => runtimeSettings.handVfx.snareRadiusRandRange,
+            v => runtimeSettings.handVfx.snareRadiusRandRange = v
+        );
+        CreateFloatField(
+            group,
+            "Snare Spawn Velo Sphere Radius (×s)",
+            () => runtimeSettings.handVfx.snareSpawnVeloSphereRadius,
+            v => runtimeSettings.handVfx.snareSpawnVeloSphereRadius = v
         );
     }
 
@@ -986,6 +1322,97 @@ public class InGameSettingsMenu : MonoBehaviour
         labelElement.AddToClassList("setting-label");
 
         var field = new FloatField();
+        field.name = label;
+        field.AddToClassList("setting-input");
+        field.value = getter();
+        field.RegisterValueChangedCallback(evt =>
+        {
+            setter(evt.newValue);
+            OnSettingsChanged?.Invoke(runtimeSettings);
+        });
+
+        row.Add(labelElement);
+        row.Add(field);
+        parent.Add(row);
+
+        settingElements[label] = field;
+    }
+
+    private void CreateIntField(
+        VisualElement parent,
+        string label,
+        Func<int> getter,
+        Action<int> setter
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+
+        var field = new IntegerField();
+        field.name = label;
+        field.AddToClassList("setting-input");
+        field.value = getter();
+        field.RegisterValueChangedCallback(evt =>
+        {
+            setter(evt.newValue);
+            OnSettingsChanged?.Invoke(runtimeSettings);
+        });
+
+        row.Add(labelElement);
+        row.Add(field);
+        parent.Add(row);
+
+        settingElements[label] = field;
+    }
+
+    private void CreateVector2Field(
+        VisualElement parent,
+        string label,
+        Func<Vector2> getter,
+        Action<Vector2> setter
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+
+        var field = new Vector2Field();
+        field.name = label;
+        field.AddToClassList("setting-input");
+        field.value = getter();
+        field.RegisterValueChangedCallback(evt =>
+        {
+            setter(evt.newValue);
+            OnSettingsChanged?.Invoke(runtimeSettings);
+        });
+
+        row.Add(labelElement);
+        row.Add(field);
+        parent.Add(row);
+
+        settingElements[label] = field;
+    }
+
+    private void CreateVector3Field(
+        VisualElement parent,
+        string label,
+        Func<Vector3> getter,
+        Action<Vector3> setter
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+
+        var field = new Vector3Field();
+        field.name = label;
         field.AddToClassList("setting-input");
         field.value = getter();
         field.RegisterValueChangedCallback(evt =>
@@ -1557,6 +1984,18 @@ public class InGameSettingsMenu : MonoBehaviour
             // Merge loaded settings based on profile type
             if (profileType == ProfileType.Scene)
             {
+                // Legacy (version 0) scene files hold effective values tuned at their own
+                // bodyScale - convert to base-at-1x in memory (never written back here).
+                // PP profiles are version 0 too and must NOT be touched.
+                if (loadedSettings.settingsVersion < RuntimeSceneSettings.CurrentSettingsVersion)
+                {
+                    BodyScaling.ConvertLegacyProfileInPlace(loadedSettings, json);
+                    Debug.Log(
+                        $"[InGameSettingsMenu] '{Path.GetFileName(path)}' is a legacy (v0) scene profile - "
+                            + "converted to base values in memory. Save it (or run EnergyBall/Migrate Scene Profiles To Base) to persist."
+                    );
+                }
+
                 // Load only scene settings, keep current post-processing settings
                 MergeSceneSettings(loadedSettings);
                 currentSceneProfilePath = path;
@@ -1602,6 +2041,7 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         // Copy only non-post-processing settings from loaded profile
         // Keep the current post-processing settings intact
+        runtimeSettings.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
 
         // Gravity and Force settings
         runtimeSettings.g = loadedSettings.g;
@@ -1651,6 +2091,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.minimumUnscaledSize = loadedSettings.minimumUnscaledSize;
         runtimeSettings.maximumUnscaledSize = loadedSettings.maximumUnscaledSize;
         runtimeSettings.minHandDisplacementPerFrame = loadedSettings.minHandDisplacementPerFrame;
+        runtimeSettings.maxHandVelocity = loadedSettings.maxHandVelocity;
         if (loadedSettings.distanceDamper != null && loadedSettings.distanceDamper.length > 0)
             runtimeSettings.distanceDamper = new AnimationCurve(loadedSettings.distanceDamper.keys);
         runtimeSettings.pulseScaleDamper = loadedSettings.pulseScaleDamper;
@@ -1661,6 +2102,13 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.defaultUnscaledSize = loadedSettings.defaultUnscaledSize;
         runtimeSettings.bodyScale = loadedSettings.bodyScale;
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
+        runtimeSettings.sphereResetJitter = loadedSettings.sphereResetJitter;
+
+        // Hand VFX (nested group, copied as one object; old files without the key get C# defaults)
+        runtimeSettings.handVfx =
+            loadedSettings.handVfx != null
+                ? loadedSettings.handVfx.DeepCopy()
+                : new HandVfxSettings();
 
         // Animation
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
@@ -1672,6 +2120,7 @@ public class InGameSettingsMenu : MonoBehaviour
             loadedSettings.metaballRadiusAnimationDuration;
         runtimeSettings.metaballRadiusAnimationStartSize =
             loadedSettings.metaballRadiusAnimationStartSize;
+        runtimeSettings.bodySpawnSize = loadedSettings.bodySpawnSize;
         if (
             loadedSettings.metaballRadiusAnimationCurve != null
             && loadedSettings.metaballRadiusAnimationCurve.length > 0
@@ -1739,7 +2188,9 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
     {
-        // Copy only non-post-processing settings to destination
+        // Copy only non-post-processing settings to destination.
+        // Saved scene profiles are always base-at-1x (version 1).
+        destination.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
 
         // Gravity and Force settings
         destination.g = source.g;
@@ -1783,6 +2234,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.minimumUnscaledSize = source.minimumUnscaledSize;
         destination.maximumUnscaledSize = source.maximumUnscaledSize;
         destination.minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
+        destination.maxHandVelocity = source.maxHandVelocity;
         destination.distanceDamper = new AnimationCurve(source.distanceDamper.keys);
         destination.pulseScaleDamper = source.pulseScaleDamper;
         destination.mergeSizeScalerDamper = source.mergeSizeScalerDamper;
@@ -1792,6 +2244,11 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.defaultUnscaledSize = source.defaultUnscaledSize;
         destination.bodyScale = source.bodyScale;
         destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
+        destination.sphereResetJitter = source.sphereResetJitter;
+
+        // Hand VFX (nested group, copied as one object)
+        destination.handVfx =
+            source.handVfx != null ? source.handVfx.DeepCopy() : new HandVfxSettings();
 
         // Animation
         destination.particleInitializationDelay = source.particleInitializationDelay;
@@ -1801,6 +2258,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = source.initializationSpeed;
         destination.metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         destination.metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
+        destination.bodySpawnSize = source.bodySpawnSize;
         destination.metaballRadiusAnimationCurve = new AnimationCurve(
             source.metaballRadiusAnimationCurve.keys
         );
@@ -1853,6 +2311,7 @@ public class InGameSettingsMenu : MonoBehaviour
     )
     {
         // Copy only post-processing settings to destination
+        destination.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
 
         // Bloom settings
         destination.bloomThreshold = source.bloomThreshold;
@@ -1920,6 +2379,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.minimumUnscaledSize = 0.0f;
         destination.maximumUnscaledSize = 0.0f;
         destination.minHandDisplacementPerFrame = 0.0f;
+        destination.maxHandVelocity = 0.0f;
         destination.distanceDamper = new AnimationCurve();
         destination.pulseScaleDamper = 0.0f;
         destination.mergeSizeScalerDamper = 0.0f;
@@ -1929,6 +2389,10 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.defaultUnscaledSize = 0.0f;
         destination.bodyScale = 0.0f;
         destination.maxDistanceFromCamera = 0.0f;
+        destination.sphereResetJitter = 0.0f;
+        // JsonUtility can't write null for a class field - PP files carry a defaults block
+        // (MergePostProcessingSettings ignores it).
+        destination.handVfx = new HandVfxSettings();
         destination.particleInitializationDelay = 0.0f;
         destination.initializationResetDelay = 0.0f;
         destination.singleHandOpenThreshold = 0.0f;
@@ -1936,6 +2400,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = 0.0f;
         destination.metaballRadiusAnimationDuration = 0.0f;
         destination.metaballRadiusAnimationStartSize = 0.0f;
+        destination.bodySpawnSize = 0.0f;
         destination.metaballRadiusAnimationCurve = new AnimationCurve();
         destination.dummyOnlyMode = false;
         destination.drawSkeleton = false;

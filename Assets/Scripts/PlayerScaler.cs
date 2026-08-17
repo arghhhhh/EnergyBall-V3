@@ -46,7 +46,7 @@ public class PlayerScaler
             if (runtimeSettings.singleHandScaling)
             {
                 if (
-                    leftHandVelocity.magnitude < 15f
+                    leftHandVelocity.magnitude < runtimeSettings.maxHandVelocity
                     && leftHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
                 )
                 {
@@ -59,7 +59,7 @@ public class PlayerScaler
                     player.leftHandCollider.rotation = Quaternion.LookRotation(leftHandVelocity);
                 }
                 if (
-                    rightHandVelocity.magnitude < 15f
+                    rightHandVelocity.magnitude < runtimeSettings.maxHandVelocity
                     && rightHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
                 )
                 {
@@ -73,9 +73,9 @@ public class PlayerScaler
                 }
             }
             else if (
-                leftHandVelocity.magnitude < 15f
+                leftHandVelocity.magnitude < runtimeSettings.maxHandVelocity
                 && leftHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
-                && rightHandVelocity.magnitude < 15f
+                && rightHandVelocity.magnitude < runtimeSettings.maxHandVelocity
                 && rightHandDisplacement.magnitude > runtimeSettings.minHandDisplacementPerFrame
             )
             {
@@ -219,10 +219,13 @@ public class PlayerScaler
             0,
             bodyHitDistFromPerpPoint
         );
+        // World half-diagonal of the hand collider: prefab size is authored at 1x and the
+        // collider transform is scaled by bodyScale (PlayerScaleApplier), so use lossyScale.
+        BoxCollider oppoBox = oppoHand.GetComponent<BoxCollider>();
         float oppoHandAlignment = Mathf.InverseLerp(
             0,
             Vector3.Distance(oppoHandHP, oppoHand.position),
-            oppoHand.GetComponent<BoxCollider>().size.y * 1.4142f // 1.41 = approximation of sqrt(2)
+            oppoBox.size.y * oppoHand.lossyScale.y * 1.4142f // 1.41 = approximation of sqrt(2)
         );
 
         // controller.debugText.text =

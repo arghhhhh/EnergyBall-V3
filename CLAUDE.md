@@ -92,20 +92,37 @@ following the existing pattern:
 ### VFX & post-processing
 - VFX Graph assets in `Assets/VFX/` (`BodyEffects.vfx`, `HandEffects.vfx`,
   `Subgraphs/`), driven from `PlayerConstructor` via exposed properties/bools.
+- Hand-VFX tuning lives in `HandVfxSettings.cs` (nested in the scene profile as
+  `handVfx`, one `[VfxProperty("graphName")]` field per exposed value) and is pushed
+  to both hand graphs by `PlayerScaleApplier.cs` on spawn and on every settings
+  change. `bodySpawnSize` (top-level setting) drives `BodyEffects.vfx` the same way.
 - `VolumeController.cs`: manages the URP post-processing `Volume` (Bloom, Vignette,
   ChromaticAberration, LensDistortion, ColorAdjustments, WhiteBalance,
   ScreenSpaceLensFlare) and persists edits via `SessionState`.
 
-### Settings system (two layers)
-- `SceneSettingsSO.cs` — a `ScriptableObject` asset for authoring defaults in the
-  inspector.
-- `RuntimeSceneSettings.cs` — a `[Serializable]` runtime class the game actually
-  reads (`SceneController.CurrentSettings` / `GetRuntimeSettings()`). The controller
-  copies inspector ↔ runtime.
-- `InGameSettingsMenu.cs` / `SettingsMenuSetup.cs` — live in-game tuning UI.
+### Settings system (base → effective)
+- `RuntimeSceneSettings.cs` — the `[Serializable]` settings class. Profiles, the
+  `SceneController` inspector twins and the in-game menu all hold **base values at
+  `bodyScale = 1`**. Every dimensioned field carries `[BodyScaled(exp)]` (lengths /
+  velocities 1, rigidbody forces 2, spatial frequencies −1; time/ratios/curves none).
+- `BodyScaling.cs` — builds a reflection table of `[BodyScaled]` fields once and
+  derives the **effective** object (`base × bodyScale^exp`) via `CreateEffective`.
+  `SceneController.RebuildEffectiveSettings()` runs it on every settings change;
+  consumers read `SceneController.CurrentSettings` / `GetRuntimeSettings()` (effective,
+  cached, never mutate it). Data flows one way: menu/inspector → base → effective.
+- `PlayerScaleApplier.cs` — the per-player scale step (hand/body VFX values, TD debug
+  spheres + BrownianMotion wander, hand collider scale) and the live-state rescale
+  when `bodyScale` changes while players exist.
+- `settingsVersion` on the settings class: 0 = legacy effective-value profile
+  (auto-converted on load for Scene profiles), 1 = base-at-1×. Saves stamp 1.
+  `EnergyBall/Migrate Scene Profiles To Base` (Editor menu) rewrites v0 files.
+- `InGameSettingsMenu.cs` / `SettingsMenuSetup.cs` — live in-game tuning UI (base
+  values, labels carry `(×s)` / `(×s²)` / `(×1/s)` hints).
 - Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
   animation-curve presets in `Assets/StreamingAssets/CurvePresets/`, edited via the
   `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor.
+- Full design/decisions: `Docs/BodyScale-Autoscale-Handoff.md`; exponent derivation:
+  `Docs/BodyScale-settings-audit.md`, `Docs/HandEffects-scale-audit.md`.
 
 ### Dummy players (dev without a Kinect)
 `DummySceneControl.cs`, `DummyHandController.cs`, `DummyTransformer.cs` plus

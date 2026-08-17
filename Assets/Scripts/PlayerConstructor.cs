@@ -134,6 +134,11 @@ public class PlayerConstructor : MonoBehaviour
     public Animator rightHandAnimator;
     #endregion
 
+    [Tooltip(
+        "The VFX_Body VisualEffect (BodyEffects.vfx spawn flash). Its bodySpawnSize is driven by PlayerScaleApplier."
+    )]
+    public VisualEffect bodyVfx;
+
     #region joints
     [Foldout("Joints")]
     public GameObject SpineBase;
@@ -593,12 +598,13 @@ public class PlayerConstructor : MonoBehaviour
     public void ResetSphereToHandMidpoint()
     {
         Vector3 handMidpoint = (HandLeft.transform.position + HandRight.transform.position) / 2f;
+        float jitter = controller.GetRuntimeSettings().sphereResetJitter; // effective (x bodyScale)
         sphere.transform.position =
             handMidpoint
             + new Vector3(
-                UnityEngine.Random.Range(-0.5f, 0.5f),
-                UnityEngine.Random.Range(-0.5f, 0.5f),
-                UnityEngine.Random.Range(-0.5f, 0.5f)
+                UnityEngine.Random.Range(-jitter, jitter),
+                UnityEngine.Random.Range(-jitter, jitter),
+                UnityEngine.Random.Range(-jitter, jitter)
             );
         sphere.linearVelocity = Vector3.zero;
         sphere.angularVelocity = Vector3.zero;

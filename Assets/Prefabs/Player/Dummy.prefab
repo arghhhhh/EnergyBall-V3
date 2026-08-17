@@ -693,8 +693,8 @@ MonoBehaviour:
   leftHand: {fileID: 866041019225627101}
   rightHand: {fileID: 5922806509526188756}
   sphere: {fileID: 2796890592421979884}
-  positionOffset: {x: 0, y: 0, z: 19}
-  spaceBetweenHands: 5
+  positionOffset: {x: 0, y: 0, z: 3.8}
+  spaceBetweenHands: 1
   selectedAxis: 0
 --- !u!114 &6669253669967695172
 MonoBehaviour:
@@ -728,7 +728,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hand: {fileID: 866041019225589245}
-  speed: 5
+  speed: 1
   upKey: W
   downKey: S
   leftKey: A
@@ -746,7 +746,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hand: {fileID: 5922806509525901044}
-  speed: 5
+  speed: 1
   upKey: UpArrow
   downKey: DownArrow
   leftKey: LeftArrow

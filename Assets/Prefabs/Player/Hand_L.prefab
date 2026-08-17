@@ -275,7 +275,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5, y: 5, z: 0.1}
+  m_Size: {x: 1, y: 1, z: 0.02}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2743055998565536770
 GameObject:
@@ -483,15 +483,6 @@ VisualEffect:
       - m_Value: 0
         m_Name: closeProgress
         m_Overridden: 1
-      - m_Value: 0.5
-        m_Name: noiseRoughness
-        m_Overridden: 1
-      - m_Value: 0.9
-        m_Name: noiseFrequency
-        m_Overridden: 1
-      - m_Value: 0.1
-        m_Name: noiseScale
-        m_Overridden: 1
     m_Vector2f:
       m_Array: []
     m_Vector3f:
@@ -510,10 +501,7 @@ VisualEffect:
     m_Uint:
       m_Array: []
     m_Int:
-      m_Array:
-      - m_Value: 1
-        m_Name: noiseOctaves
-        m_Overridden: 1
+      m_Array: []
     m_Matrix4x4f:
       m_Array: []
     m_AnimationCurve:
