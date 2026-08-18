@@ -8,7 +8,8 @@ public enum Axis
 }
 
 /// <summary>
-/// Places a dummy's hands (and sphere) from values authored at bodyScale = 1.
+/// Places a dummy's hands (and sphere) and scales its hand sprites from values
+/// authored at bodyScale = 1.
 /// At runtime the lateral offsets are multiplied by the effective bodyScale and the
 /// depth axis is set to the effective <c>baseZDepth</c> — the same treatment Kinect
 /// joints get in <c>SceneController.GetVector3FromJoint</c>. OnValidate previews the
@@ -24,6 +25,14 @@ public class DummyTransformer : MonoBehaviour
 
     [Foldout("Transforms")]
     public Transform sphere = null;
+
+    [Foldout("Transforms")]
+    [Tooltip("Optional hand sprite, authored at localScale 1 (multiplied by bodyScale at runtime).")]
+    public Transform leftHandSprite = null;
+
+    [Foldout("Transforms")]
+    [Tooltip("Optional hand sprite, authored at localScale 1 (multiplied by bodyScale at runtime).")]
+    public Transform rightHandSprite = null;
 
     [Tooltip(
         "Hand-pair centre at bodyScale 1 (multiplied by bodyScale at runtime; the depth axis is replaced by baseZDepth)."
@@ -49,6 +58,7 @@ public class DummyTransformer : MonoBehaviour
         appliedBodyScale = SafeScale(runtimeSettings.bodyScale);
         appliedDepth = runtimeSettings.baseZDepth;
         Layout(appliedBodyScale, appliedDepth, useDepth: true);
+        ApplySpriteScale(appliedBodyScale);
         laidOut = true;
     }
 
@@ -71,6 +81,7 @@ public class DummyTransformer : MonoBehaviour
         float ratio = bodyScale / appliedBodyScale;
         leftHand.localPosition = Rescale(leftHand.localPosition, ratio, depth);
         rightHand.localPosition = Rescale(rightHand.localPosition, ratio, depth);
+        ApplySpriteScale(bodyScale);
         appliedBodyScale = bodyScale;
         appliedDepth = depth;
     }
@@ -82,6 +93,17 @@ public class DummyTransformer : MonoBehaviour
             : new Vector3(depth, p.y * ratio, p.z * ratio);
     }
 
+    // Sprites are unit-scale children of the hands (sprite size is authored on the
+    // SpriteRenderer), so localScale carries only the bodyScale factor.
+    private void ApplySpriteScale(float bodyScale)
+    {
+        Vector3 scale = Vector3.one * bodyScale;
+        if (leftHandSprite != null)
+            leftHandSprite.localScale = scale;
+        if (rightHandSprite != null)
+            rightHandSprite.localScale = scale;
+    }
+
     private static float SafeScale(float s) => s > 0f ? s : 1f;
 
     void OnValidate()
@@ -89,6 +111,7 @@ public class DummyTransformer : MonoBehaviour
         if (leftHand != null && rightHand != null && sphere != null)
         {
             Layout(1f, 0f, useDepth: false);
+            ApplySpriteScale(1f);
         }
     }
 

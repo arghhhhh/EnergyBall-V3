@@ -274,6 +274,7 @@ GameObject:
   - component: {fileID: 118562681}
   - component: {fileID: 118562679}
   - component: {fileID: 118562683}
+  - component: {fileID: 118562684}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -324,7 +325,7 @@ Camera:
   far clip plane: 1000
   field of view: 60.000004
   orthographic: 1
-  orthographic size: 4.75
+  orthographic size: 0.95
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -399,6 +400,19 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &118562684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118562677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5f9cd5c38aa8f849be02add9df48e68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DummyCameraScaler
+  orthographicSize: 0.95
 --- !u!1 &326409335
 GameObject:
   m_ObjectHideFlags: 0

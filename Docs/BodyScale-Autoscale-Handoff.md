@@ -48,7 +48,8 @@ menu / inspector / profile  ──►  runtimeSettings (BASE)
 
 - Consumers (`GravityForce`, `HandForce`, `BoundaryForce`, `PlayerScaler`,
   `HandEffects`, `PlayerConstructor`, `MetaballsToSDF`, `MetaballBoundsVisualizer`,
-  `BodyDepthOccluder`, `DummyTransformer`, `DummyHandController`) read the
+  `BodyDepthOccluder`, `DummyTransformer`, `DummyHandController`,
+  `DummyCameraScaler`) read the
   effective object and never rescale anything themselves. **Nothing writes into
   the effective object**; mutate the base and let `OnSettingsChanged` rebuild.
 - `CurrentSettings` rebuilds lazily if read before `Awake` finished (there is no
@@ -139,7 +140,14 @@ menu / inspector / profile  ──►  runtimeSettings (BASE)
   the old `GetComponent<SceneController>()` was always null) and, when
   bodyScale/baseZDepth change at runtime, rescales the hands' *current* positions
   proportionally instead of snapping them back. `DummyHandController` multiplies
-  its per-frame step by bodyScale.
+  its per-frame step by bodyScale. The `Sprite_L`/`Sprite_R` hand sprites (children
+  of the hand joints) are authored at `localScale = 1` (was 5) and scaled by
+  `DummyTransformer` (`leftHandSprite`/`rightHandSprite`) alongside the layout.
+  The scene's orthographic `Main Camera` carries `DummyCameraScaler`: authored
+  half-height 0.95 at 1× (was 4.75 at 5×), sets
+  `orthographicSize = base × bodyScale` and follows runtime bodyScale changes —
+  the main scene's perspective camera keeps alignment for free (world scales
+  about the origin), an ortho camera must follow explicitly.
 - `BodyDepthOccluder.depthBias` is multiplied by bodyScale (`minDepth` is Kinect
   metres, untouched). Scene value is 0.
 - Deleted: `SceneSettingsSO.cs` and `Assets/Config/*.asset` (nothing else

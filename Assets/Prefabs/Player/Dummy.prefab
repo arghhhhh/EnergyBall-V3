@@ -27,7 +27,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 5922806509526188756}
@@ -118,7 +118,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 866041019225627101}
@@ -203,7 +203,7 @@ PrefabInstance:
     - target: {fileID: 1366983329138525572, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19
+      value: 3.8
       objectReference: {fileID: 0}
     - target: {fileID: 1668275789557089919, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
@@ -233,12 +233,12 @@ PrefabInstance:
     - target: {fileID: 4047828432384637621, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.5
+      value: -0.5
       objectReference: {fileID: 0}
     - target: {fileID: 4047828432384637621, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19
+      value: 3.8
       objectReference: {fileID: 0}
     - target: {fileID: 4073918913171837999, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
@@ -478,12 +478,12 @@ PrefabInstance:
     - target: {fileID: 7357197439812592060, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.5
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 7357197439812592060, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19
+      value: 3.8
       objectReference: {fileID: 0}
     - target: {fileID: 7710126860832210582, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
@@ -693,6 +693,8 @@ MonoBehaviour:
   leftHand: {fileID: 866041019225627101}
   rightHand: {fileID: 5922806509526188756}
   sphere: {fileID: 2796890592421979884}
+  leftHandSprite: {fileID: 3449505824426365178}
+  rightHandSprite: {fileID: 9075634050177083530}
   positionOffset: {x: 0, y: 0, z: 3.8}
   spaceBetweenHands: 1
   selectedAxis: 0
