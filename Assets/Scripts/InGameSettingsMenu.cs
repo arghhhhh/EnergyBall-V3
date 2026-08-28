@@ -53,6 +53,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private readonly List<Texture2D> curveTextures = new();
     private bool isModalOpen = false;
     private VisualElement curveEditorBlocker;
+    private Label tooltipElement;
 
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
 
@@ -195,6 +196,15 @@ public class InGameSettingsMenu : MonoBehaviour
         curveEditorBlocker.pickingMode = PickingMode.Position;
         curveEditorBlocker.style.display = DisplayStyle.None;
         root.Add(curveEditorBlocker);
+
+        // Runtime tooltip popup. UI Toolkit's built-in VisualElement.tooltip only renders
+        // inside the Editor, so hover descriptions are drawn with this shared label.
+        tooltipElement = new Label();
+        tooltipElement.AddToClassList("setting-tooltip");
+        tooltipElement.pickingMode = PickingMode.Ignore;
+        tooltipElement.style.position = Position.Absolute;
+        tooltipElement.style.display = DisplayStyle.None;
+        root.Add(tooltipElement);
 
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         sceneSettingsPanel = root.Q<ScrollView>("SceneSettingsPanel");
@@ -366,43 +376,50 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Max Towards Force (×s²)",
             () => runtimeSettings.maxTowardsForce,
-            v => runtimeSettings.maxTowardsForce = v
+            v => runtimeSettings.maxTowardsForce = v,
+            tooltip: "Cap on the pairwise gravity force (G*m1*m2/r^2) while two balls are moving toward each other. Keeps close balls from slamming together."
         );
         CreateFloatField(
             group,
             "Max Away Force (×s²)",
             () => runtimeSettings.maxAwayFromForce,
-            v => runtimeSettings.maxAwayFromForce = v
+            v => runtimeSettings.maxAwayFromForce = v,
+            tooltip: "Cap on the pairwise gravity force while two balls are moving apart. Setting it above Max Towards Force lets gravity resist separation more than it accelerates approach."
         );
         CreateFloatField(
             group,
             "Gravity Force Damper",
             () => runtimeSettings.gravityForceDamper,
-            v => runtimeSettings.gravityForceDamper = v
+            v => runtimeSettings.gravityForceDamper = v,
+            tooltip: "Multiplier applied to Max Towards Force when that cap kicks in. Below 1 softens the final approach; 1 = no extra damping."
         );
         CreateFloatField(
             group,
             "Stop Gravity Distance (×s)",
             () => runtimeSettings.stopGravityDistance,
-            v => runtimeSettings.stopGravityDistance = v
+            v => runtimeSettings.stopGravityDistance = v,
+            tooltip: "Center-to-center distance below which gravity stops being applied. Inside this range the balls coast (or get stopped, see Stop Moving Distance)."
         );
         CreateFloatField(
             group,
             "Stop Moving Distance (×s)",
             () => runtimeSettings.stopMovingDistance,
-            v => runtimeSettings.stopMovingDistance = v
+            v => runtimeSettings.stopMovingDistance = v,
+            tooltip: "Within this center-to-center distance, if the balls' relative speed is below Stop Velocity, a counter-force cancels their motion so they settle side by side."
         );
         CreateFloatField(
             group,
             "Stop Velocity (×s)",
             () => runtimeSettings.stopVelocity,
-            v => runtimeSettings.stopVelocity = v
+            v => runtimeSettings.stopVelocity = v,
+            tooltip: "Relative speed threshold for the settle-in-place behavior. Balls closer than Stop Moving Distance and slower than this are brought to rest."
         );
         CreateFloatField(
             group,
             "Attraction Radius Multiplier",
             () => runtimeSettings.attractionRadiusMultiplier,
-            v => runtimeSettings.attractionRadiusMultiplier = v
+            v => runtimeSettings.attractionRadiusMultiplier = v,
+            tooltip: "Scales each ball's attraction radius (relative to its current diameter). Gravity only starts once another ball's body enters this radius. Also sizes the debug radius sprite."
         );
     }
 
@@ -414,74 +431,86 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Force To Middle",
             () => runtimeSettings.forceToMiddle,
-            v => runtimeSettings.forceToMiddle = v
+            v => runtimeSettings.forceToMiddle = v,
+            tooltip: "Curve of push-force strength vs. how close the ball is to its target. X: 0 = ball is Max Distance Between Hands away, 1 = ball is at the target. Y multiplies Push Force."
         );
         CreateFloatField(
             group,
             "Single Hand Open Force Damper",
             () => runtimeSettings.singleHandOpenForceDamper,
-            v => runtimeSettings.singleHandOpenForceDamper = v
+            v => runtimeSettings.singleHandOpenForceDamper = v,
+            tooltip: "Multiplier on Push Force while only one hand is open (0-1). Lets one-handed steering be gentler than two-handed."
         );
         CreateFloatField(
             group,
             "Push Force (×s²)",
             () => runtimeSettings.pushForce,
-            v => runtimeSettings.pushForce = v
+            v => runtimeSettings.pushForce = v,
+            tooltip: "Base rigidbody force driving the ball toward the hand target (midpoint of both hands, or the single open hand). Everything else in this group multiplies it."
         );
         CreateFloatField(
             group,
             "Torso Max Forward Offset (×s)",
             () => runtimeSettings.torsoMaxForwardOffset,
-            v => runtimeSettings.torsoMaxForwardOffset = v
+            v => runtimeSettings.torsoMaxForwardOffset = v,
+            tooltip: "How far the ball's push target is pulled toward the camera when the hands sit at torso depth. 0 disables."
         );
         CreateFloatField(
             group,
             "Torso Offset Falloff Distance (×s)",
             () => runtimeSettings.torsoOffsetFalloffDistance,
-            v => runtimeSettings.torsoOffsetFalloffDistance = v
+            v => runtimeSettings.torsoOffsetFalloffDistance = v,
+            tooltip: "Hand-to-torso z distance at which the torso forward offset fades to zero."
         );
         CreateFloatField(
             group,
             "Min Drag",
             () => runtimeSettings.minDrag,
-            v => runtimeSettings.minDrag = v
+            v => runtimeSettings.minDrag = v,
+            tooltip: "Rigidbody linear damping when the ball is far from the hand target (at Max Distance Between Hands). Lower = ball keeps its momentum longer."
         );
         CreateFloatField(
             group,
             "Max Drag",
             () => runtimeSettings.maxDrag,
-            v => runtimeSettings.maxDrag = v
+            v => runtimeSettings.maxDrag = v,
+            tooltip: "Rigidbody linear damping when the ball is right at the hand target. Higher = ball settles quickly instead of overshooting."
         );
 
         CreateCurveField(
             group,
             "Alignment Vector Strength",
             () => runtimeSettings.alignmentVectorStrength,
-            v => runtimeSettings.alignmentVectorStrength = v
+            v => runtimeSettings.alignmentVectorStrength = v,
+            tooltip: "Curve of how far the target is offset along the direction the hands point (wrist to fingertip). X: 0 = hands together, 1 = hands at Max Distance Between Hands. Y multiplies the scaler below."
         );
         CreateFloatField(
             group,
             "Alignment Vector Strength Scaler (×s)",
             () => runtimeSettings.alignmentVectorStrengthScaler,
-            v => runtimeSettings.alignmentVectorStrengthScaler = v
+            v => runtimeSettings.alignmentVectorStrengthScaler = v,
+            tooltip: "Max distance the hand target is pushed along the hands' pointing direction. Lets players aim the ball by tilting their hands rather than only by moving them."
         );
         CreateFloatField(
             group,
             "Hand Push Scaler",
             () => runtimeSettings.handPushScaler,
-            v => runtimeSettings.handPushScaler = v
+            v => runtimeSettings.handPushScaler = v,
+            tooltip: "Extra multiplier on the push force applied while both hands are closed (the final flick that sends the ball off). Drag is set to 0 during this push."
         );
         CreateToggleField(
             group,
             "Pray To Activate",
             () => runtimeSettings.prayToActivate,
-            v => runtimeSettings.prayToActivate = v
+            v => runtimeSettings.prayToActivate = v,
+            tooltip: "When enabled, players must bring their hands together to initialize. When disabled, players start initialized."
         );
         CreateFloatField(
             group,
             "Pray To Activate Distance (×s)",
             () => runtimeSettings.prayToActivateDistance,
-            v => runtimeSettings.prayToActivateDistance = v
+            v => runtimeSettings.prayToActivateDistance = v,
+            tooltip: "The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled."
         );
     }
 
@@ -493,19 +522,22 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Added Boundary Distance (×s)",
             () => runtimeSettings.addedBoundaryDistance,
-            v => runtimeSettings.addedBoundaryDistance = v
+            v => runtimeSettings.addedBoundaryDistance = v,
+            tooltip: "Margin added around the metaball grid to define the play boundary. Beyond it Boundary Outward Drag engages and the ball becomes eligible for reset."
         );
         CreateFloatField(
             group,
             "Boundary Outward Drag (×s)",
             () => runtimeSettings.boundaryOutwardDrag,
-            v => runtimeSettings.boundaryOutwardDrag = v
+            v => runtimeSettings.boundaryOutwardDrag = v,
+            tooltip: "Drag that opposes the ball while it is past the boundary and moving away from the hands. 0 disables."
         );
         CreateFloatField(
             group,
             "Out Of Bounds Reset Delay",
             () => runtimeSettings.outOfBoundsResetDelay,
-            v => runtimeSettings.outOfBoundsResetDelay = v
+            v => runtimeSettings.outOfBoundsResetDelay = v,
+            tooltip: "Seconds the ball must stay out of bounds before opening both hands snaps it back to the hand midpoint (plus Sphere Reset Jitter)."
         );
     }
 
@@ -519,25 +551,29 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.pulseAmount,
             v => runtimeSettings.pulseAmount = v,
             0f,
-            10f
+            10f,
+            tooltip: "Amplitude of the idle 'breathing' size wobble, as a fraction of the ball's size (value/10). 0 disables intrinsic pulsation."
         );
         CreateFloatField(
             group,
             "Pulse Speed",
             () => runtimeSettings.pulseSpeed,
-            v => runtimeSettings.pulseSpeed = v
+            v => runtimeSettings.pulseSpeed = v,
+            tooltip: "Time multiplier for the breathing wobble. Higher = faster oscillation."
         );
         CreateFloatField(
             group,
             "Graph Limit",
             () => runtimeSettings.graphLimit,
-            v => runtimeSettings.graphLimit = v
+            v => runtimeSettings.graphLimit = v,
+            tooltip: "Expected peak of the summed sine waves, used to normalize the wobble into 0..Pulse Amount. Roughly the number of Pulse Frequencies entries; lower values clip, higher values flatten the pulse."
         );
         CreateFloatArrayField(
             group,
             "Pulse Frequencies",
             () => runtimeSettings.pulseFreqs,
-            v => runtimeSettings.pulseFreqs = v
+            v => runtimeSettings.pulseFreqs = v,
+            tooltip: "Frequencies of the sine waves summed to make the breathing wobble (y = sin(f1*t) + sin(f2*t) + ...). Mixed, non-integer values give a less regular pulse."
         );
     }
 
@@ -549,25 +585,29 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Single Hand Scaling",
             () => runtimeSettings.singleHandScaling,
-            v => runtimeSettings.singleHandScaling = v
+            v => runtimeSettings.singleHandScaling = v,
+            tooltip: "Allow scaling to occur with only one hand's velocity."
         );
         CreateFloatField(
             group,
             "Minimum Unscaled Size (×s)",
             () => runtimeSettings.minimumUnscaledSize,
-            v => runtimeSettings.minimumUnscaledSize = v
+            v => runtimeSettings.minimumUnscaledSize = v,
+            tooltip: "The minimum size that the vfx body can scale down to."
         );
         CreateFloatField(
             group,
             "Maximum Unscaled Size (×s)",
             () => runtimeSettings.maximumUnscaledSize,
-            v => runtimeSettings.maximumUnscaledSize = v
+            v => runtimeSettings.maximumUnscaledSize = v,
+            tooltip: "The maximum size that the vfx body can scale up to."
         );
         CreateFloatField(
             group,
             "Max Hand Velocity (×s)",
             () => runtimeSettings.maxHandVelocity,
-            v => runtimeSettings.maxHandVelocity = v
+            v => runtimeSettings.maxHandVelocity = v,
+            tooltip: "Hand-velocity sanity gate for movement-based scaling: frames where a hand moves faster than this are ignored as tracking glitches."
         );
         CreateSliderField(
             group,
@@ -575,19 +615,22 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.minHandDisplacementPerFrame,
             v => runtimeSettings.minHandDisplacementPerFrame = v,
             0.0001f,
-            5f
+            5f,
+            tooltip: "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
         );
         CreateCurveField(
             group,
             "Distance Damper",
             () => runtimeSettings.distanceDamper,
-            v => runtimeSettings.distanceDamper = v
+            v => runtimeSettings.distanceDamper = v,
+            tooltip: "Curve scaling the grow/shrink effect by hand separation. X: 0 = hands at Max Distance Between Hands, 1 = hands together. Y multiplies the scale change, so hands close to the ball have more effect."
         );
         CreateFloatField(
             group,
             "Pulse Scale Damper",
             () => runtimeSettings.pulseScaleDamper,
-            v => runtimeSettings.pulseScaleDamper = v
+            v => runtimeSettings.pulseScaleDamper = v,
+            tooltip: "An overall damper for the movement-based pulsation scaling."
         );
     }
 
@@ -599,49 +642,57 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Merge Size Scaler Damper",
             () => runtimeSettings.mergeSizeScalerDamper,
-            v => runtimeSettings.mergeSizeScalerDamper = v
+            v => runtimeSettings.mergeSizeScalerDamper = v,
+            tooltip: "A damper for the scaling that occurs when multiple bodies merge together."
         );
         CreateFloatField(
             group,
             "Max Distance Between Hands (×s)",
             () => runtimeSettings.maxDistanceBetweenHands,
-            v => runtimeSettings.maxDistanceBetweenHands = v
+            v => runtimeSettings.maxDistanceBetweenHands = v,
+            tooltip: "Reference hand separation used to normalize several curves (Force To Middle, Alignment Vector Strength, Distance Damper) and the drag remap. Distances beyond it are clamped."
         );
         CreateFloatField(
             group,
             "Base Z Depth (×s)",
             () => runtimeSettings.baseZDepth,
-            v => runtimeSettings.baseZDepth = v
+            v => runtimeSettings.baseZDepth = v,
+            tooltip: "World-space depth of the play volume: the metaball grid, boundary and Kinect joints are all placed at this Z. Also sent to the hand VFX."
         );
         CreateFloatField(
             group,
             "Grid Scale (×s)",
             () => runtimeSettings.gridScale,
-            v => runtimeSettings.gridScale = v
+            v => runtimeSettings.gridScale = v,
+            tooltip: "World size of one marching-cubes voxel (volume = 64x32x64 voxels). Scales with bodyScale."
         );
         CreateFloatField(
             group,
             "Default Unscaled Size (×s)",
             () => runtimeSettings.defaultUnscaledSize,
-            v => runtimeSettings.defaultUnscaledSize = v
+            v => runtimeSettings.defaultUnscaledSize = v,
+            tooltip: "Starting diameter of a new player's ball before any pulsation, growing or shrinking is applied."
         );
         CreateFloatField(
             group,
             "Body Scale",
             () => runtimeSettings.bodyScale,
-            v => runtimeSettings.bodyScale = v
+            v => runtimeSettings.bodyScale = v,
+            tooltip: "World scale of the Kinect space. Every setting marked (×s), (×s²) or (×1/s) is stored at 1x and multiplied by this at runtime, so changing it alone keeps gameplay and look identical relative to the body."
         );
         CreateFloatField(
             group,
             "Max Distance From Camera (×s)",
             () => runtimeSettings.maxDistanceFromCamera,
-            v => runtimeSettings.maxDistanceFromCamera = v
+            v => runtimeSettings.maxDistanceFromCamera = v,
+            tooltip: "If a player's hands are tracked farther from the camera than this, they are treated as closed and their colliders/skeleton lines are disabled (filters people far in the background)."
         );
         CreateFloatField(
             group,
             "Sphere Reset Jitter (×s)",
             () => runtimeSettings.sphereResetJitter,
-            v => runtimeSettings.sphereResetJitter = v
+            v => runtimeSettings.sphereResetJitter = v,
+            tooltip: "Random +/- offset added when the ball is reset to the hand midpoint, so overlapping balls don't reset to exactly the same spot."
         );
     }
 
@@ -653,13 +704,15 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Particle Initialization Delay",
             () => runtimeSettings.particleInitializationDelay,
-            v => runtimeSettings.particleInitializationDelay = v
+            v => runtimeSettings.particleInitializationDelay = v,
+            tooltip: "The amount of time it takes for the particle initialization animation to play once a new player is added to the scene."
         );
         CreateFloatField(
             group,
             "Initialization Reset Delay",
             () => runtimeSettings.initializationResetDelay,
-            v => runtimeSettings.initializationResetDelay = v
+            v => runtimeSettings.initializationResetDelay = v,
+            tooltip: "Seconds a hand-state change must persist before it re-triggers the hand open/close animation, preventing flicker from noisy Kinect hand states."
         );
         CreateSliderField(
             group,
@@ -667,43 +720,50 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.initializationSpeed,
             v => runtimeSettings.initializationSpeed = v,
             0f,
-            1f
+            1f,
+            tooltip: "Speed of the hand opening animation during initialization. Lower values = slower animation."
         );
         CreateFloatField(
             group,
             "Single Hand Open Threshold",
             () => runtimeSettings.singleHandOpenThreshold,
-            v => runtimeSettings.singleHandOpenThreshold = v
+            v => runtimeSettings.singleHandOpenThreshold = v,
+            tooltip: "Minimum time in single-hand-open state before the final push uses that hand's position. Accounts for slight timing discrepancies with real Kinect users."
         );
         CreateFloatField(
             group,
             "Single Hand Force Lerp Duration",
             () => runtimeSettings.singleHandForceLerpDuration,
-            v => runtimeSettings.singleHandForceLerpDuration = v
+            v => runtimeSettings.singleHandForceLerpDuration = v,
+            tooltip: "Seconds to blend the push force from Single Hand Open Force Damper back to full strength after the second hand opens."
         );
         CreateFloatField(
             group,
             "Metaball Radius Animation Duration",
             () => runtimeSettings.metaballRadiusAnimationDuration,
-            v => runtimeSettings.metaballRadiusAnimationDuration = v
+            v => runtimeSettings.metaballRadiusAnimationDuration = v,
+            tooltip: "Seconds for the metaball radius to animate from its start size to full size when a player initializes."
         );
         CreateFloatField(
             group,
             "Metaball Radius Animation Start Size (×s)",
             () => runtimeSettings.metaballRadiusAnimationStartSize,
-            v => runtimeSettings.metaballRadiusAnimationStartSize = v
+            v => runtimeSettings.metaballRadiusAnimationStartSize = v,
+            tooltip: "Starting radius for the metaball grow-in animation when a player initializes."
         );
         CreateCurveField(
             group,
             "Metaball Radius Animation Curve",
             () => runtimeSettings.metaballRadiusAnimationCurve,
-            v => runtimeSettings.metaballRadiusAnimationCurve = v
+            v => runtimeSettings.metaballRadiusAnimationCurve = v,
+            tooltip: "Easing curve for the metaball grow-in (X: 0-1 normalized time, Y: 0-1 progress from start size to full size)."
         );
         CreateFloatField(
             group,
             "Body Spawn Size (×s)",
             () => runtimeSettings.bodySpawnSize,
-            v => runtimeSettings.bodySpawnSize = v
+            v => runtimeSettings.bodySpawnSize = v,
+            tooltip: "Particle size of the BodyEffects.vfx spawn flash on VFX_Body."
         );
     }
 
@@ -1235,19 +1295,22 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Custom Colors",
             () => runtimeSettings.customColors,
-            v => runtimeSettings.customColors = v
+            v => runtimeSettings.customColors = v,
+            tooltip: "Assign each new player a color from the custom palette (set in the SceneController inspector) instead of the default gradient."
         );
         CreateToggleField(
             group,
             "Draw Skeleton",
             () => runtimeSettings.drawSkeleton,
-            v => runtimeSettings.drawSkeleton = v
+            v => runtimeSettings.drawSkeleton = v,
+            tooltip: "Draw line-renderer bones between tracked Kinect joints for each player."
         );
         CreateToggleField(
             group,
             "Use Tracking State Colors",
             () => runtimeSettings.useTrackingStateColors,
-            v => runtimeSettings.useTrackingStateColors = v
+            v => runtimeSettings.useTrackingStateColors = v,
+            tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color. Only applies when Draw Skeleton is on."
         );
     }
 
@@ -1259,55 +1322,64 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Dummy Only Mode",
             () => runtimeSettings.dummyOnlyMode,
-            v => runtimeSettings.dummyOnlyMode = v
+            v => runtimeSettings.dummyOnlyMode = v,
+            tooltip: "Skip the Kinect entirely and drive the scene with dummy players only. For development without a sensor."
         );
         CreateToggleField(
             group,
             "Show Sphere Mesh On Hand Collision",
             () => runtimeSettings.showSphereMeshOnHandCollision,
-            v => runtimeSettings.showSphereMeshOnHandCollision = v
+            v => runtimeSettings.showSphereMeshOnHandCollision = v,
+            tooltip: "Temporarily show the physics sphere mesh whenever a hand's scaling ray hits the ball, to visualize the grow/shrink hit test."
         );
         CreateToggleField(
             group,
             "Always Show Sphere Mesh",
             () => runtimeSettings.alwaysShowSphereMesh,
-            v => runtimeSettings.alwaysShowSphereMesh = v
+            v => runtimeSettings.alwaysShowSphereMesh = v,
+            tooltip: "When enabled, the sphere mesh is always visible regardless of hand collision state."
         );
         CreateToggleField(
             group,
             "Show Metaball Mesh",
             () => runtimeSettings.showMetaballMesh,
-            v => runtimeSettings.showMetaballMesh = v
+            v => runtimeSettings.showMetaballMesh = v,
+            tooltip: "When enabled, the metaball mesh renderer is visible for debugging."
         );
         CreateToggleField(
             group,
             "Show Point Cloud",
             () => runtimeSettings.showPointCloud,
-            v => runtimeSettings.showPointCloud = v
+            v => runtimeSettings.showPointCloud = v,
+            tooltip: "When enabled, the Kinect depth point cloud (body occlusion geometry) is rendered visibly."
         );
         CreateToggleField(
             group,
             "Show Metaball Bounds",
             () => runtimeSettings.showMetaballBounds,
-            v => runtimeSettings.showMetaballBounds = v
+            v => runtimeSettings.showMetaballBounds = v,
+            tooltip: "When enabled, the metaball volume's bounding box is drawn as a wireframe."
         );
         CreateToggleField(
             group,
             "Show Attraction Radius",
             () => runtimeSettings.showAttractionRadius,
-            v => runtimeSettings.showAttractionRadius = v
+            v => runtimeSettings.showAttractionRadius = v,
+            tooltip: "Show a sprite around each ball indicating its gravity attraction radius."
         );
         CreateToggleField(
             group,
             "Show Hand Trail Distorters",
             () => runtimeSettings.showHandTrailDistorters,
-            v => runtimeSettings.showHandTrailDistorters = v
+            v => runtimeSettings.showHandTrailDistorters = v,
+            tooltip: "Render the TD1/TD2 trail distorter debug spheres that orbit each hand and shape the hand particles."
         );
         CreateToggleField(
             group,
             "Show Secondary Attractor",
             () => runtimeSettings.showSecondaryAttractor,
-            v => runtimeSettings.showSecondaryAttractor = v
+            v => runtimeSettings.showSecondaryAttractor = v,
+            tooltip: "Render the secondary attractor debug sphere on each hand that the hand particles conform to."
         );
     }
 
@@ -1326,11 +1398,62 @@ public class InGameSettingsMenu : MonoBehaviour
         return group;
     }
 
+    // ---- Tooltips ----
+
+    private void AttachTooltip(VisualElement target, string tooltip)
+    {
+        if (string.IsNullOrEmpty(tooltip))
+            return;
+
+        target.RegisterCallback<PointerEnterEvent>(evt => ShowTooltip(tooltip, evt.position));
+        target.RegisterCallback<PointerMoveEvent>(evt => MoveTooltip(evt.position));
+        target.RegisterCallback<PointerLeaveEvent>(_ => HideTooltip());
+    }
+
+    private void ShowTooltip(string text, Vector2 panelPosition)
+    {
+        if (tooltipElement == null)
+            return;
+        tooltipElement.text = text;
+        tooltipElement.style.display = DisplayStyle.Flex;
+        tooltipElement.BringToFront();
+        MoveTooltip(panelPosition);
+    }
+
+    private void MoveTooltip(Vector2 panelPosition)
+    {
+        if (tooltipElement == null || tooltipElement.style.display == DisplayStyle.None)
+            return;
+
+        const float offset = 16f;
+        var root = uiDocument.rootVisualElement;
+        float x = panelPosition.x + offset;
+        float y = panelPosition.y + offset;
+
+        // Keep the popup inside the panel once its size is known.
+        float w = tooltipElement.resolvedStyle.width;
+        float h = tooltipElement.resolvedStyle.height;
+        if (!float.IsNaN(w) && w > 0 && x + w > root.resolvedStyle.width)
+            x = Mathf.Max(0f, panelPosition.x - w - offset);
+        if (!float.IsNaN(h) && h > 0 && y + h > root.resolvedStyle.height)
+            y = Mathf.Max(0f, panelPosition.y - h - offset);
+
+        tooltipElement.style.left = x;
+        tooltipElement.style.top = y;
+    }
+
+    private void HideTooltip()
+    {
+        if (tooltipElement != null)
+            tooltipElement.style.display = DisplayStyle.None;
+    }
+
     private void CreateFloatField(
         VisualElement parent,
         string label,
         Func<float> getter,
-        Action<float> setter
+        Action<float> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1338,6 +1461,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var field = new FloatField();
         field.name = label;
@@ -1360,7 +1484,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<int> getter,
-        Action<int> setter
+        Action<int> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1368,6 +1493,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var field = new IntegerField();
         field.name = label;
@@ -1390,7 +1516,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<Vector2> getter,
-        Action<Vector2> setter
+        Action<Vector2> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1398,6 +1525,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var field = new Vector2Field();
         field.name = label;
@@ -1420,7 +1548,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<Vector3> getter,
-        Action<Vector3> setter
+        Action<Vector3> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1428,6 +1557,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var field = new Vector3Field();
         field.name = label;
@@ -1452,7 +1582,8 @@ public class InGameSettingsMenu : MonoBehaviour
         Func<float> getter,
         Action<float> setter,
         float min,
-        float max
+        float max,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1460,6 +1591,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var inputContainer = new VisualElement();
         inputContainer.style.flexDirection = FlexDirection.Row;
@@ -1498,7 +1630,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<bool> getter,
-        Action<bool> setter
+        Action<bool> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1506,6 +1639,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var toggle = new Toggle();
         toggle.AddToClassList("toggle");
@@ -1527,7 +1661,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<AnimationCurve> getter,
-        Action<AnimationCurve> setter
+        Action<AnimationCurve> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1535,6 +1670,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         // Use a regular VisualElement with a CPU-rendered Texture2D instead of
         // IMGUIContainer + GL calls. GL.LoadPixelMatrix() always uses screen coordinates
@@ -1696,7 +1832,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<float[]> getter,
-        Action<float[]> setter
+        Action<float[]> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1704,6 +1841,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var arrayContainer = new VisualElement();
         arrayContainer.AddToClassList("array-container");
