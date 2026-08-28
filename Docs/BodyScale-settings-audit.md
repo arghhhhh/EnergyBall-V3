@@ -122,7 +122,7 @@ values (use the override).
 | exp 1 (float) | base @1× |
 |---|---|
 | `spawnSphereRadius` 0.06→0.012 · `tdRadius` 0.5→0.1 · `tdStickDistance` 0.1→0.02 · `saStickDistance` 0.1→0.02 · `mainStickDistance` 0.1→0.02 · `saMinRadius` 0→0 · `noiseScale` **0.1**→0.02 · `cHatSize` 0.025→0.005 · `oHatSize` 0.02→0.004 · `oHatNoiseAmp` 0.04→0.008 · `lifetimeRemapMaxDist` 3→0.6 · `spawnVeloSpread` 0.5→0.1 · `saAttractionSpeed` 4.75→0.95 · `saAttractionForce` 50→10 · `tdAttractionForce` 10→2 · `tdAttractionSpeed` 200→40 · `mainAttractionSpeed` 4.75→0.95 · `mainAttractionForce` 215→43 · `mainStickForce` 2→0.4 · `seekStrength` 5→1 · `tdStickForce` 5→1 · `saStickForce` 5→1 · `turbulenceIntensity` 5→1 · `cHatNoiseAmp` 5→1 · `cHatNoiseYScroll` 0.4→0.08 · `oHatNoiseYScroll` 1→0.2 · `cHatSpawnVeloSphereRadius` 5→1 · `snareSpawnVeloSphereRadius` 1→0.2 · `tdWanderAmount` 0.3→0.06 | |
-| **exp 1 (Vector2)**: `sizeRange` (0.04,0.07)→(0.008,0.014) · `snareSizeRange` (0.08,0.15)→(0.016,0.03) · `snareRadiusRandRange` (−0.1,0.2)→(−0.02,0.04); **(Vector3)** `boundsPadding` (0,0,0) | |
+| **exp 1 (Vector2)**: `sizeRange` (0.04,0.07)→(0.008,0.014) · `snareSizeRange` (0.08,0.15)→(0.016,0.03) · `snareRadiusRandRange` (−0.1,0.2)→(−0.02,0.04) | |
 | **exp −1**: `noiseFrequency` **0.9**→4.5 · `turbulenceFrequency` 1→5 · `cHatNoiseFreq` 4→20 · `oHatNoiseFreq` 2→10 · `lengthScaler` 0.25→1.25 | |
 | **exp 0**: `spawnRate` 1500 (int) · `noiseRoughness` **0.5** · `noiseOctaves` **1** (int) · `minStretchLength` 0.01 | |
 

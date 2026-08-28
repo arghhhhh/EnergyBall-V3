@@ -26,7 +26,6 @@ links to distinguish genuinely inline values from runtime-driven ones.
 | `noiseScale` (exposed, curl amplitude) | op94 `CurlNoise` `amplitude` → Output(ctx16) block0 `\|Add\|_Position` | 0.8 | × s |
 | Secondary Attractor `Sphere.radius` (inline) | Update(ctx2) block5 | 1.0 | none — author-exempt, leave as is |
 | Trigger sphere base `sphere.radius` (inline) | Update(ctx2) block9 `CollisionShape\|Trigger Sphere` (transform.scale is runtime-driven separately) | 0.5 | × s |
-| `boundsPadding` (exposed, Vector3) | wired to the `boundsPadding` context slot of all four Init contexts (ctx1/ctx4/ctx8/ctx13) | (0,0,0) (inert) | × s (all components) |
 | `cHatSize` (exposed) | Init(ctx4) block3 `\|Set\|_Size` | 0.025 | × s |
 | `oHatSize` (exposed) | Init(ctx8) block1 `\|Set\|_Size` | 0.02 | × s |
 | `snareSizeRange` (exposed, Vector2) | Init(ctx13) block1 `\|Multiply\|_Size\|Random Uniform` A/B | (0.08, 0.15) | × s (both components) |

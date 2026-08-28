@@ -34,9 +34,36 @@ public class HandVfxSettings
     [Tooltip("Hand-to-ball distance at which particle lifetime hits its max (m at 1x).")]
     public float lifetimeRemapMaxDist = 0.6f;
 
-    [BodyScaled(1), VfxProperty("boundsPadding")]
-    [Tooltip("Extra padding on the particle system bounds (m at 1x).")]
-    public Vector3 boundsPadding = Vector3.zero;
+    [VfxProperty("lifeRange")]
+    [Tooltip(
+        "Particle lifetime range (s) at hand-to-ball distance 0 -> lifetimeRemapMaxDist. "
+            + "Blended toward (0.25, 1) as closeProgress rises. Time - never scaled."
+    )]
+    public Vector2 lifeRange = new(1f, 2f);
+
+    [BodyScaled(-1), VfxProperty("lengthScaler")]
+    [Tooltip(
+        "Velocity to stretch multiplier (s/m at 1x; converts a world velocity into the "
+            + "dimensionless _Scale.y)."
+    )]
+    public float lengthScaler = 1.25f;
+
+    [VfxProperty("minStretchLength")]
+    [Tooltip("Floor on the dimensionless _Scale.y stretch multiplier.")]
+    public float minStretchLength = 0.01f;
+
+    [Header("Collision")]
+    [VfxProperty("vfxSphereCollisionScaleMult")]
+    [Tooltip(
+        "Multiplier on the SDF collision shape size relative to vfxSphere (ratio - never scaled)."
+    )]
+    public float vfxSphereCollisionScaleMult = 0.93f;
+
+    [VfxProperty("collisionDetectionScaleMult")]
+    [Tooltip(
+        "Multiplier on the collision-trigger sphere scale relative to vfxSphere (ratio - never scaled)."
+    )]
+    public float collisionDetectionScaleMult = 1.25f;
 
     [Header("Main Attractor")]
     [BodyScaled(1), VfxProperty("mainAttractionSpeed")]
@@ -54,6 +81,12 @@ public class HandVfxSettings
     [BodyScaled(1), VfxProperty("mainStickForce")]
     [Tooltip("ConformToSDF stick acceleration (x s).")]
     public float mainStickForce = 0.4f;
+
+    [VfxProperty("tangentialDamping")]
+    [Tooltip(
+        "Rate (1/s) at which tangential velocity is damped on collision; min(rate x dt, 1) blend. Never scaled."
+    )]
+    public float tangentialDamping = 5f;
 
     [BodyScaled(1), VfxProperty("seekStrength")]
     [Tooltip("Heat-seeking steering velocity added toward the ball (m/s at 1x).")]
@@ -135,18 +168,6 @@ public class HandVfxSettings
     [BodyScaled(-1), VfxProperty("turbulenceFrequency")]
     [Tooltip("Turbulence block spatial frequency (1/m at 1x).")]
     public float turbulenceFrequency = 5f;
-
-    [Header("Stretch")]
-    [BodyScaled(-1), VfxProperty("lengthScaler")]
-    [Tooltip(
-        "Velocity to stretch multiplier (s/m at 1x; converts a world velocity into the "
-            + "dimensionless _Scale.y)."
-    )]
-    public float lengthScaler = 1.25f;
-
-    [VfxProperty("minStretchLength")]
-    [Tooltip("Floor on the dimensionless _Scale.y stretch multiplier.")]
-    public float minStretchLength = 0.01f;
 
     [Header("Bursts (CHat/OHat)")]
     [BodyScaled(1), VfxProperty("cHatSize")]

@@ -319,11 +319,11 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateMiscellaneousGroup(sceneSettingsPanel);
         CreateAnimationGroup(sceneSettingsPanel);
         CreateHandVfxSpawnGroup(sceneSettingsPanel);
+        CreateHandVfxCollisionGroup(sceneSettingsPanel);
         CreateHandVfxMainAttractorGroup(sceneSettingsPanel);
         CreateHandVfxTrailDistortersGroup(sceneSettingsPanel);
         CreateHandVfxSecondaryAttractorGroup(sceneSettingsPanel);
         CreateHandVfxNoiseGroup(sceneSettingsPanel);
-        CreateHandVfxStretchGroup(sceneSettingsPanel);
         CreateHandVfxBurstsGroup(sceneSettingsPanel);
         CreateHandVfxSnareGroup(sceneSettingsPanel);
         CreateStyleGroup(sceneSettingsPanel);
@@ -745,11 +745,41 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.handVfx.lifetimeRemapMaxDist,
             v => runtimeSettings.handVfx.lifetimeRemapMaxDist = v
         );
-        CreateVector3Field(
+        CreateVector2Field(
             group,
-            "Bounds Padding (×s)",
-            () => runtimeSettings.handVfx.boundsPadding,
-            v => runtimeSettings.handVfx.boundsPadding = v
+            "Life Range (s)",
+            () => runtimeSettings.handVfx.lifeRange,
+            v => runtimeSettings.handVfx.lifeRange = v
+        );
+        CreateFloatField(
+            group,
+            "Length Scaler (×1/s)",
+            () => runtimeSettings.handVfx.lengthScaler,
+            v => runtimeSettings.handVfx.lengthScaler = v
+        );
+        CreateFloatField(
+            group,
+            "Min Stretch Length",
+            () => runtimeSettings.handVfx.minStretchLength,
+            v => runtimeSettings.handVfx.minStretchLength = v
+        );
+    }
+
+    private void CreateHandVfxCollisionGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Collision", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Sphere Collision Scale Mult",
+            () => runtimeSettings.handVfx.vfxSphereCollisionScaleMult,
+            v => runtimeSettings.handVfx.vfxSphereCollisionScaleMult = v
+        );
+        CreateFloatField(
+            group,
+            "Collision Detection Scale Mult",
+            () => runtimeSettings.handVfx.collisionDetectionScaleMult,
+            v => runtimeSettings.handVfx.collisionDetectionScaleMult = v
         );
     }
 
@@ -780,6 +810,12 @@ public class InGameSettingsMenu : MonoBehaviour
             "Main Stick Force (×s)",
             () => runtimeSettings.handVfx.mainStickForce,
             v => runtimeSettings.handVfx.mainStickForce = v
+        );
+        CreateFloatField(
+            group,
+            "Tangential Damping (1/s)",
+            () => runtimeSettings.handVfx.tangentialDamping,
+            v => runtimeSettings.handVfx.tangentialDamping = v
         );
         CreateFloatField(
             group,
@@ -906,24 +942,6 @@ public class InGameSettingsMenu : MonoBehaviour
             "Turbulence Frequency (×1/s)",
             () => runtimeSettings.handVfx.turbulenceFrequency,
             v => runtimeSettings.handVfx.turbulenceFrequency = v
-        );
-    }
-
-    private void CreateHandVfxStretchGroup(ScrollView parentContainer)
-    {
-        var group = CreateGroup("Hand VFX - Stretch", parentContainer);
-
-        CreateFloatField(
-            group,
-            "Length Scaler (×1/s)",
-            () => runtimeSettings.handVfx.lengthScaler,
-            v => runtimeSettings.handVfx.lengthScaler = v
-        );
-        CreateFloatField(
-            group,
-            "Min Stretch Length",
-            () => runtimeSettings.handVfx.minStretchLength,
-            v => runtimeSettings.handVfx.minStretchLength = v
         );
     }
 

@@ -165,11 +165,6 @@
             "y": 0.014000000432133675
         },
         "lifetimeRemapMaxDist": 0.6000000238418579,
-        "boundsPadding": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0
-        },
         "mainAttractionSpeed": 0.949999988079071,
         "mainAttractionForce": 43.0,
         "mainStickDistance": 0.019999999552965165,
