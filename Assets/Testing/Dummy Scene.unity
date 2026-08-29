@@ -898,11 +898,16 @@ MonoBehaviour:
     spawnVeloSpread: 0.1
     sizeRange: {x: 0.008, y: 0.014}
     lifetimeRemapMaxDist: 0.6
-    boundsPadding: {x: 0, y: 0, z: 0}
+    lifeRange: {x: 1, y: 2}
+    lengthScaler: 1.25
+    minStretchLength: 0.01
+    vfxSphereCollisionScaleMult: 0.93
+    collisionDetectionScaleMult: 1.25
     mainAttractionSpeed: 0.95
     mainAttractionForce: 43
     mainStickDistance: 0.02
     mainStickForce: 0.4
+    tangentialDamping: 5
     seekStrength: 1
     tdRadius: 0.1
     tdStickDistance: 0.02
@@ -921,8 +926,6 @@ MonoBehaviour:
     noiseOctaves: 1
     turbulenceIntensity: 1
     turbulenceFrequency: 5
-    lengthScaler: 1.25
-    minStretchLength: 0.01
     cHatSize: 0.005
     cHatNoiseAmp: 1
     cHatNoiseFreq: 20

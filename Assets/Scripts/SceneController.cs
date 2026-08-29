@@ -1401,11 +1401,16 @@ public class SceneController : MonoBehaviour
             return;
         }
 
+        // Only dirty the scene when the restore actually changes a twin - a play session
+        // that ends with the values it started with must leave the scene clean.
+        string before = CanonicalTwinsJson();
         if (markSceneDirty)
             UnityEditor.Undo.RecordObject(this, "Restore settings from working set");
 
         CopyRuntimeToInspector(file.settings);
-        editModeTwinSnapshots[sceneName] = CanonicalTwinsJson();
+        string after = CanonicalTwinsJson();
+        editModeTwinSnapshots[sceneName] = after;
+        bool twinsChanged = after != before;
 
         if (volumeController != null)
         {
@@ -1421,7 +1426,7 @@ public class SceneController : MonoBehaviour
             volumeController.ApplyCurrentSettings(file.settings);
         }
 
-        if (markSceneDirty)
+        if (markSceneDirty && twinsChanged)
         {
             UnityEditor.EditorUtility.SetDirty(this);
             UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
