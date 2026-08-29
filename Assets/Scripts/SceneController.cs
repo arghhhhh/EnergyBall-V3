@@ -427,6 +427,14 @@ public class SceneController : MonoBehaviour
 
     private void OnEnable()
     {
+#if UNITY_EDITOR
+        // Edit mode (scene open / domain reload): show the working set in the inspector.
+        if (!Application.isPlaying && !editModeValidateQueued)
+        {
+            editModeValidateQueued = true;
+            UnityEditor.EditorApplication.delayCall += EditModeValidate;
+        }
+#endif
         // Actions.OnPlayerAdded += AddPlayer;
         // Actions.OnPlayerRemoved += RemovePlayer;
         Actions.OnDummyAdded += InitializeNewDummy;
@@ -1252,15 +1260,171 @@ public class SceneController : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // ---- Working-set sync for the inspector twins (editor only) ----
+    //
+    // Play mode: inspector edits flow to the menu, which owns the working set.
+    // Edit mode: a genuine inspector edit is written straight into the working set, and the
+    // first time this object is seen after a domain reload / scene open (or after play mode
+    // exits, when Unity has reverted the twins) the working set is copied back INTO the twins,
+    // so the inspector always shows the latest values wherever they were changed.
+    //
+    // OnValidate also fires on deserialization, so a per-scene snapshot of the twins tells a
+    // real edit apart from Unity re-loading the serialized (possibly stale) values.
+
+    private static readonly Dictionary<string, string> editModeTwinSnapshots = new();
+    private static bool restorePendingAfterPlay;
+    private bool editModeValidateQueued;
+
+    [UnityEditor.InitializeOnLoadMethod]
+    private static void RegisterPlayModeHook()
+    {
+        UnityEditor.EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
+        UnityEditor.EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;
+    }
+
+    private static void OnEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+    {
+        if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+        {
+            // Ignore the OnValidate storm while Unity reverts the scene.
+            restorePendingAfterPlay = true;
+        }
+        else if (state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+        {
+            // Two delay calls: let Unity finish restoring scene objects first.
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    var controller = FindFirstObjectByType<SceneController>();
+                    if (controller != null)
+                        controller.RestoreInspectorFromWorkingSet(markSceneDirty: true);
+                    restorePendingAfterPlay = false;
+                };
+            };
+        }
+    }
+
     /// <summary>
-    /// Called when inspector values change
+    /// Called when inspector values change (and on deserialization).
     /// </summary>
     private void OnValidate()
     {
-        if (Application.isPlaying && runtimeSettings != null)
+        if (Application.isPlaying)
         {
-            // Sync inspector changes to runtime settings
-            SyncInspectorToRuntime();
+            if (runtimeSettings != null)
+            {
+                // Sync inspector changes to runtime settings (the menu persists the working set)
+                SyncInspectorToRuntime();
+            }
+            return;
+        }
+
+        if (
+            restorePendingAfterPlay
+            || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode
+            || UnityEditor.EditorApplication.isCompiling
+            || UnityEditor.EditorApplication.isUpdating
+            || editModeValidateQueued
+        )
+            return;
+
+        // OnValidate must not touch other objects/assets - defer.
+        editModeValidateQueued = true;
+        UnityEditor.EditorApplication.delayCall += EditModeValidate;
+    }
+
+    private void EditModeValidate()
+    {
+        editModeValidateQueued = false;
+        if (this == null || Application.isPlaying || restorePendingAfterPlay)
+            return;
+
+        string sceneName = gameObject.scene.name;
+        string twinsJson = CanonicalTwinsJson();
+
+        if (!editModeTwinSnapshots.TryGetValue(sceneName, out string known))
+        {
+            // First sight since domain reload / scene open: the working set is newer than the
+            // serialized scene. Show it in the inspector (without dirtying the scene yet).
+            RestoreInspectorFromWorkingSet(markSceneDirty: false);
+            return;
+        }
+
+        if (twinsJson == known)
+            return; // deserialization noise, not an edit
+
+        // Genuine inspector edit in edit mode -> it is the newest state.
+        WriteInspectorToWorkingSet();
+        editModeTwinSnapshots[sceneName] = twinsJson;
+    }
+
+    private string CanonicalTwinsJson()
+    {
+        var twins = new RuntimeSceneSettings();
+        CopyInspectorToRuntime(twins);
+        return JsonUtility.ToJson(twins);
+    }
+
+    /// <summary>
+    /// Overlays the inspector (scene) values onto the working set, preserving its post-processing
+    /// slice and profile names. Seeds a new working set when none exists.
+    /// </summary>
+    private void WriteInspectorToWorkingSet()
+    {
+        string sceneName = gameObject.scene.name;
+        var file = SettingsWorkingSet.Load(sceneName);
+        RuntimeSceneSettings settings = file?.settings ?? new RuntimeSceneSettings();
+        CopyInspectorToRuntime(settings);
+
+        string sceneProfile =
+            file?.sceneProfileName
+            ?? PlayerPrefs.GetString($"LastUsedSceneProfile_{sceneName}", "");
+        string ppProfile =
+            file?.postProcessingProfileName
+            ?? PlayerPrefs.GetString($"LastUsedPostProcessingProfile_{sceneName}", "");
+        SettingsWorkingSet.Save(sceneName, settings, sceneProfile, ppProfile);
+    }
+
+    /// <summary>
+    /// Copies the working set into the inspector twins (and the Volume Profile asset). When no
+    /// working set exists the twins seed one instead.
+    /// </summary>
+    private void RestoreInspectorFromWorkingSet(bool markSceneDirty)
+    {
+        string sceneName = gameObject.scene.name;
+        var file = SettingsWorkingSet.Load(sceneName);
+        if (file == null)
+        {
+            WriteInspectorToWorkingSet();
+            editModeTwinSnapshots[sceneName] = CanonicalTwinsJson();
+            return;
+        }
+
+        if (markSceneDirty)
+            UnityEditor.Undo.RecordObject(this, "Restore settings from working set");
+
+        CopyRuntimeToInspector(file.settings);
+        editModeTwinSnapshots[sceneName] = CanonicalTwinsJson();
+
+        if (volumeController != null)
+        {
+            if (
+                markSceneDirty
+                && volumeController.TryGetComponent(out UnityEngine.Rendering.Volume vol)
+                && vol.profile != null
+            )
+                UnityEditor.Undo.RecordObject(
+                    vol.profile,
+                    "Restore post-processing from working set"
+                );
+            volumeController.ApplyCurrentSettings(file.settings);
+        }
+
+        if (markSceneDirty)
+        {
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
         }
     }
 #endif

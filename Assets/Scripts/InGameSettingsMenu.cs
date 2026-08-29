@@ -40,9 +40,20 @@ public class InGameSettingsMenu : MonoBehaviour
         postProcessingTab;
 
     private RuntimeSceneSettings runtimeSettings;
-    private RuntimeSceneSettings originalSettings; // Backup for canceling changes
     private string currentSceneProfilePath = "";
     private string currentPostProcessingProfilePath = "";
+
+    // Dirty tracking: canonical JSON of the scene / PP slice as it was when the active profile
+    // was last loaded or saved. Dirty = current canonical JSON differs from this.
+    private string sceneBaselineJson = "";
+    private string postProcessingBaselineJson = "";
+    private bool isSceneDirty;
+    private bool isPostProcessingDirty;
+    private Label sceneDirtyLabel;
+    private Label postProcessingDirtyLabel;
+
+    // True when Start() restored the working set - suppresses the last-used-profile auto-load.
+    private bool restoredFromWorkingSet;
     private string sceneProfilesDirectory;
     private string postProcessingProfilesDirectory;
     private string lastUsedSceneProfileKey = "LastUsedSceneProfile";
@@ -100,9 +111,26 @@ public class InGameSettingsMenu : MonoBehaviour
         InitializeRuntimeSettings();
         SetupUI();
 
+        // The working set (latest values from anywhere) wins over the last-used profile.
+        restoredFromWorkingSet = TryRestoreWorkingSet();
+
         RefreshSceneProfiles();
         RefreshPostProcessingProfiles();
         CreateSettingsUI();
+
+        if (restoredFromWorkingSet)
+        {
+            // Push the restored values to the controller (inspector twins, effective settings,
+            // volume) the same way a menu edit would.
+            NotifySettingsChanged();
+        }
+        else
+        {
+            // Nothing restored: the profile auto-load (or the inspector seed) is the working set now.
+            UpdateDirtyState();
+            SaveWorkingSet();
+        }
+        UpdateDirtyIndicators();
     }
 
     /// <summary>
@@ -159,19 +187,14 @@ public class InGameSettingsMenu : MonoBehaviour
         if (Controller != null)
         {
             // Get settings from SceneController inspector values
-            runtimeSettings = new RuntimeSceneSettings();
-            Controller.CopyInspectorToRuntime(runtimeSettings);
-            originalSettings = runtimeSettings.DeepCopy();
-
-            // Subscribe to runtime settings changes
-            runtimeSettings.OnAnyDebuggingSettingChanged += () =>
-                OnSettingsChanged?.Invoke(runtimeSettings);
+            var seed = new RuntimeSceneSettings();
+            Controller.CopyInspectorToRuntime(seed);
+            SetRuntimeSettings(seed);
         }
         else
         {
             // Create default runtime settings if controller is not available
-            runtimeSettings = new RuntimeSceneSettings();
-            originalSettings = runtimeSettings.DeepCopy();
+            SetRuntimeSettings(new RuntimeSceneSettings());
         }
     }
 
@@ -215,6 +238,7 @@ public class InGameSettingsMenu : MonoBehaviour
         if (sceneTabContent != null)
         {
             sceneProfileDropdown = sceneTabContent.Q<DropdownField>("SceneProfileDropdown");
+            sceneDirtyLabel = sceneTabContent.Q<Label>("SceneDirtyLabel");
             sceneLoadButton = sceneTabContent.Q<Button>("SceneLoadButton");
             sceneSaveButton = sceneTabContent.Q<Button>("SceneSaveButton");
             sceneSaveAsButton = sceneTabContent.Q<Button>("SceneSaveAsButton");
@@ -226,6 +250,9 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             postProcessingProfileDropdown = postProcessingTabContent.Q<DropdownField>(
                 "PostProcessingProfileDropdown"
+            );
+            postProcessingDirtyLabel = postProcessingTabContent.Q<Label>(
+                "PostProcessingDirtyLabel"
             );
             postProcessingLoadButton = postProcessingTabContent.Q<Button>(
                 "PostProcessingLoadButton"
@@ -247,7 +274,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Scene tab callbacks
         if (sceneLoadButton != null)
-            sceneLoadButton.clicked += () => LoadSelectedProfile("scene");
+            sceneLoadButton.clicked += () => RequestLoadSelectedProfile(TabType.Scene);
         if (sceneSaveButton != null)
             sceneSaveButton.clicked += () => SaveCurrentProfile(TabType.Scene);
         if (sceneSaveAsButton != null)
@@ -255,7 +282,8 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Post-processing tab callbacks
         if (postProcessingLoadButton != null)
-            postProcessingLoadButton.clicked += () => LoadSelectedProfile("postprocessing");
+            postProcessingLoadButton.clicked += () =>
+                RequestLoadSelectedProfile(TabType.PostProcessing);
         if (postProcessingSaveButton != null)
             postProcessingSaveButton.clicked += () => SaveCurrentProfile(TabType.PostProcessing);
         if (postProcessingSaveAsButton != null)
@@ -271,7 +299,7 @@ public class InGameSettingsMenu : MonoBehaviour
             {
                 if (!string.IsNullOrEmpty(evt.newValue))
                 {
-                    LoadSelectedProfile("scene");
+                    RequestLoadSelectedProfile(TabType.Scene, evt.previousValue);
                 }
             });
         }
@@ -282,7 +310,7 @@ public class InGameSettingsMenu : MonoBehaviour
             {
                 if (!string.IsNullOrEmpty(evt.newValue))
                 {
-                    LoadSelectedProfile("postprocessing");
+                    RequestLoadSelectedProfile(TabType.PostProcessing, evt.previousValue);
                 }
             });
         }
@@ -1470,7 +1498,7 @@ public class InGameSettingsMenu : MonoBehaviour
         field.RegisterValueChangedCallback(evt =>
         {
             setter(evt.newValue);
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         row.Add(labelElement);
@@ -1502,7 +1530,7 @@ public class InGameSettingsMenu : MonoBehaviour
         field.RegisterValueChangedCallback(evt =>
         {
             setter(evt.newValue);
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         row.Add(labelElement);
@@ -1534,7 +1562,7 @@ public class InGameSettingsMenu : MonoBehaviour
         field.RegisterValueChangedCallback(evt =>
         {
             setter(evt.newValue);
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         row.Add(labelElement);
@@ -1566,7 +1594,7 @@ public class InGameSettingsMenu : MonoBehaviour
         field.RegisterValueChangedCallback(evt =>
         {
             setter(evt.newValue);
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         row.Add(labelElement);
@@ -1612,7 +1640,7 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             setter(evt.newValue);
             valueLabel.text = $"{evt.newValue:F2}";
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         inputContainer.Add(slider);
@@ -1647,7 +1675,7 @@ public class InGameSettingsMenu : MonoBehaviour
         toggle.RegisterValueChangedCallback(evt =>
         {
             setter(evt.newValue);
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         row.Add(labelElement);
@@ -1733,7 +1761,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 changedCurve =>
                 {
                     setter(changedCurve);
-                    OnSettingsChanged?.Invoke(runtimeSettings);
+                    NotifySettingsChanged();
                 }
             );
         });
@@ -1921,7 +1949,7 @@ public class InGameSettingsMenu : MonoBehaviour
         newArray[newArray.Length - 1] = 1f;
         setter(newArray);
         RefreshFloatArray(container, newArray, setter, collapseButton, countLabel);
-        OnSettingsChanged?.Invoke(runtimeSettings);
+        NotifySettingsChanged();
     }
 
     private void RefreshFloatArray(
@@ -1952,7 +1980,7 @@ public class InGameSettingsMenu : MonoBehaviour
             {
                 array[index] = evt.newValue;
                 setter(array);
-                OnSettingsChanged?.Invoke(runtimeSettings);
+                NotifySettingsChanged();
             });
 
             var removeButton = new Button(() =>
@@ -1962,7 +1990,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 Array.Copy(array, index + 1, newArray, index, array.Length - index - 1);
                 setter(newArray);
                 RefreshFloatArray(container, newArray, setter, collapseButton, countLabel);
-                OnSettingsChanged?.Invoke(runtimeSettings);
+                NotifySettingsChanged();
             });
             removeButton.text = "-";
             removeButton.AddToClassList("array-button");
@@ -2036,6 +2064,15 @@ public class InGameSettingsMenu : MonoBehaviour
         if (isRefreshingSuppressed)
             return;
 
+        // Working set restored: just point the dropdown at the profile it came from.
+        if (restoredFromWorkingSet)
+        {
+            string name = Path.GetFileNameWithoutExtension(currentSceneProfilePath ?? "");
+            if (!string.IsNullOrEmpty(name) && profileFiles.Contains(name))
+                sceneProfileDropdown.SetValueWithoutNotify(name);
+            return;
+        }
+
         // Try to restore last used scene profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedSceneProfileKey, "");
 
@@ -2072,6 +2109,18 @@ public class InGameSettingsMenu : MonoBehaviour
             .ToList();
 
         postProcessingProfileDropdown.choices = profileFiles;
+
+        if (isRefreshingSuppressed)
+            return;
+
+        // Working set restored: just point the dropdown at the profile it came from.
+        if (restoredFromWorkingSet)
+        {
+            string name = Path.GetFileNameWithoutExtension(currentPostProcessingProfilePath ?? "");
+            if (!string.IsNullOrEmpty(name) && profileFiles.Contains(name))
+                postProcessingProfileDropdown.SetValueWithoutNotify(name);
+            return;
+        }
 
         // Try to restore last used post-processing profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedPostProcessingProfileKey, "");
@@ -2155,6 +2204,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 // Load only scene settings, keep current post-processing settings
                 MergeSceneSettings(loadedSettings);
                 currentSceneProfilePath = path;
+                sceneBaselineJson = CanonicalSceneJson(runtimeSettings);
 
                 // Save as last used scene profile
                 string profileName = Path.GetFileNameWithoutExtension(path);
@@ -2166,6 +2216,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 // Load only post-processing settings, keep current scene settings
                 MergePostProcessingSettings(loadedSettings);
                 currentPostProcessingProfilePath = path;
+                postProcessingBaselineJson = CanonicalPostProcessingJson(runtimeSettings);
 
                 // Save as last used post-processing profile
                 string profileName = Path.GetFileNameWithoutExtension(path);
@@ -2177,15 +2228,10 @@ public class InGameSettingsMenu : MonoBehaviour
                 {
                     Controller.volumeController.ApplyCurrentSettings(runtimeSettings);
                 }
-
-#if UNITY_EDITOR
-                // Save post-processing settings to persist to edit mode after play mode stops
-                VolumeController.OnProfileSaved(runtimeSettings);
-#endif
             }
 
             RefreshUI();
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         }
         catch (Exception e)
         {
@@ -2772,15 +2818,19 @@ public class InGameSettingsMenu : MonoBehaviour
                 {
                     Controller.volumeController.ApplyCurrentSettings(runtimeSettings);
                 }
-
-#if UNITY_EDITOR
-                // Save post-processing settings to persist to edit mode after play mode stops
-                VolumeController.OnProfileSaved(runtimeSettings);
-#endif
             }
 
             var json = JsonUtility.ToJson(settingsToSave, true);
             File.WriteAllText(path, json);
+
+            // The saved profile is the new baseline for this tab.
+            if (tabType == TabType.Scene)
+                sceneBaselineJson = CanonicalSceneJson(runtimeSettings);
+            else
+                postProcessingBaselineJson = CanonicalPostProcessingJson(runtimeSettings);
+            UpdateDirtyState();
+            UpdateDirtyIndicators();
+            SaveWorkingSet();
         }
         catch (Exception e)
         {
@@ -2801,13 +2851,342 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         if (newSettings != null)
         {
-            runtimeSettings = newSettings.DeepCopy();
+            SetRuntimeSettings(newSettings.DeepCopy());
 
             // Only refresh UI if the panels are initialized (Start() has been called)
             if (sceneSettingsPanel != null && postProcessingPanel != null)
             {
                 RefreshUI();
+                UpdateDirtyState();
+                UpdateDirtyIndicators();
+                SaveWorkingSet();
             }
         }
+    }
+
+    // ---- Working set / dirty tracking ----
+
+    private string ActiveSceneName =>
+        UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+    private string CurrentSceneProfileName =>
+        string.IsNullOrEmpty(currentSceneProfilePath)
+            ? ""
+            : Path.GetFileNameWithoutExtension(currentSceneProfilePath);
+
+    private string CurrentPostProcessingProfileName =>
+        string.IsNullOrEmpty(currentPostProcessingProfilePath)
+            ? ""
+            : Path.GetFileNameWithoutExtension(currentPostProcessingProfilePath);
+
+    /// <summary>
+    /// Replaces the base settings object and keeps the debugging-change subscription attached
+    /// (the old code lost it whenever the object was swapped).
+    /// </summary>
+    private void SetRuntimeSettings(RuntimeSceneSettings settings)
+    {
+        if (runtimeSettings != null)
+            runtimeSettings.OnAnyDebuggingSettingChanged -= OnDebuggingSettingChanged;
+        runtimeSettings = settings;
+        if (runtimeSettings != null)
+            runtimeSettings.OnAnyDebuggingSettingChanged += OnDebuggingSettingChanged;
+    }
+
+    private void OnDebuggingSettingChanged() => NotifySettingsChanged();
+
+    /// <summary>
+    /// Single exit point for "the settings changed": persists the working set, refreshes the
+    /// dirty markers and raises <see cref="OnSettingsChanged"/> for the controller.
+    /// </summary>
+    private void NotifySettingsChanged()
+    {
+        UpdateDirtyState();
+        UpdateDirtyIndicators();
+        SaveWorkingSet();
+        OnSettingsChanged?.Invoke(runtimeSettings);
+    }
+
+    private void SaveWorkingSet()
+    {
+        if (runtimeSettings == null)
+            return;
+        SettingsWorkingSet.Save(
+            ActiveSceneName,
+            runtimeSettings,
+            CurrentSceneProfileName,
+            CurrentPostProcessingProfileName
+        );
+    }
+
+    /// <summary>
+    /// Loads the working set for this scene into <see cref="runtimeSettings"/> and rebuilds the
+    /// dirty baselines from the profiles it names. Returns false when there is none.
+    /// </summary>
+    private bool TryRestoreWorkingSet()
+    {
+        var file = SettingsWorkingSet.Load(ActiveSceneName);
+        if (file == null)
+            return false;
+
+        SetRuntimeSettings(file.settings.DeepCopy());
+
+        currentSceneProfilePath = ResolveProfilePath(sceneProfilesDirectory, file.sceneProfileName);
+        currentPostProcessingProfilePath = ResolveProfilePath(
+            postProcessingProfilesDirectory,
+            file.postProcessingProfileName
+        );
+        sceneBaselineJson = ComputeProfileBaseline(currentSceneProfilePath, ProfileType.Scene);
+        postProcessingBaselineJson = ComputeProfileBaseline(
+            currentPostProcessingProfilePath,
+            ProfileType.PostProcessing
+        );
+
+        // Keep the last-used keys in step so a missing working set still falls back sensibly.
+        if (!string.IsNullOrEmpty(currentSceneProfilePath))
+            PlayerPrefs.SetString(lastUsedSceneProfileKey, file.sceneProfileName);
+        if (!string.IsNullOrEmpty(currentPostProcessingProfilePath))
+            PlayerPrefs.SetString(lastUsedPostProcessingProfileKey, file.postProcessingProfileName);
+        PlayerPrefs.Save();
+
+        Debug.Log(
+            $"[InGameSettingsMenu] Restored working set for '{ActiveSceneName}' "
+                + $"(scene profile '{file.sceneProfileName}', PP profile '{file.postProcessingProfileName}', saved {file.savedAtUtc})."
+        );
+        return true;
+    }
+
+    private static string ResolveProfilePath(string directory, string profileName)
+    {
+        if (string.IsNullOrEmpty(profileName))
+            return "";
+        string path = Path.Combine(directory, profileName + ".json");
+        return File.Exists(path) ? path : "";
+    }
+
+    /// <summary>
+    /// Canonical JSON of the given profile file as it would look once merged - i.e. exactly what
+    /// a fresh load of it would produce - without disturbing the live settings.
+    /// </summary>
+    private string ComputeProfileBaseline(string path, ProfileType profileType)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            return "";
+        try
+        {
+            string json = File.ReadAllText(path);
+            var loaded = JsonUtility.FromJson<RuntimeSceneSettings>(json);
+            if (
+                profileType == ProfileType.Scene
+                && loaded.settingsVersion < RuntimeSceneSettings.CurrentSettingsVersion
+            )
+            {
+                BodyScaling.ConvertLegacyProfileInPlace(loaded, json);
+            }
+
+            // Merge into a scratch copy so the merge code stays the single source of truth.
+            var live = runtimeSettings;
+            runtimeSettings = live.DeepCopy();
+            string baseline;
+            if (profileType == ProfileType.Scene)
+            {
+                MergeSceneSettings(loaded);
+                baseline = CanonicalSceneJson(runtimeSettings);
+            }
+            else
+            {
+                MergePostProcessingSettings(loaded);
+                baseline = CanonicalPostProcessingJson(runtimeSettings);
+            }
+            runtimeSettings = live;
+            return baseline;
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[InGameSettingsMenu] Could not read baseline '{path}': {e.Message}");
+            return "";
+        }
+    }
+
+    private string CanonicalSceneJson(RuntimeSceneSettings source)
+    {
+        var clean = new RuntimeSceneSettings();
+        CopySceneSettings(source, clean);
+        return JsonUtility.ToJson(clean);
+    }
+
+    private string CanonicalPostProcessingJson(RuntimeSceneSettings source)
+    {
+        var clean = new RuntimeSceneSettings();
+        CopyPostProcessingSettings(source, clean);
+        return JsonUtility.ToJson(clean);
+    }
+
+    private void UpdateDirtyState()
+    {
+        if (runtimeSettings == null)
+            return;
+        isSceneDirty =
+            string.IsNullOrEmpty(currentSceneProfilePath)
+            || CanonicalSceneJson(runtimeSettings) != sceneBaselineJson;
+        isPostProcessingDirty =
+            string.IsNullOrEmpty(currentPostProcessingProfilePath)
+            || CanonicalPostProcessingJson(runtimeSettings) != postProcessingBaselineJson;
+    }
+
+    private void UpdateDirtyIndicators()
+    {
+        SetDirtyLabel(sceneDirtyLabel, isSceneDirty, currentSceneProfilePath);
+        SetDirtyLabel(
+            postProcessingDirtyLabel,
+            isPostProcessingDirty,
+            currentPostProcessingProfilePath
+        );
+        if (sceneTab != null)
+            sceneTab.text = isSceneDirty ? "Scene *" : "Scene";
+        if (postProcessingTab != null)
+            postProcessingTab.text = isPostProcessingDirty
+                ? "Post Processing *"
+                : "Post Processing";
+    }
+
+    private static void SetDirtyLabel(Label label, bool dirty, string profilePath)
+    {
+        if (label == null)
+            return;
+        label.style.display = dirty ? DisplayStyle.Flex : DisplayStyle.None;
+        label.text = string.IsNullOrEmpty(profilePath) ? "Unsaved (no profile)" : "Unsaved changes";
+    }
+
+    public bool IsSceneDirty => isSceneDirty;
+    public bool IsPostProcessingDirty => isPostProcessingDirty;
+
+    /// <summary>
+    /// Load the dropdown's profile, asking first when the tab has unsaved changes.
+    /// <paramref name="previousDropdownValue"/> is restored on cancel (dropdown-driven loads).
+    /// </summary>
+    private void RequestLoadSelectedProfile(TabType tabType, string previousDropdownValue = null)
+    {
+        bool dirty = tabType == TabType.Scene ? isSceneDirty : isPostProcessingDirty;
+        string tabKey = tabType == TabType.Scene ? "scene" : "postprocessing";
+        if (!dirty)
+        {
+            LoadSelectedProfile(tabKey);
+            return;
+        }
+
+        string activeName =
+            tabType == TabType.Scene ? CurrentSceneProfileName : CurrentPostProcessingProfileName;
+        string message = string.IsNullOrEmpty(activeName)
+            ? "The current settings have not been saved to a profile. Loading will discard them."
+            : $"'{activeName}' has unsaved changes. Loading will discard them.";
+
+        ShowConfirmDialog(
+            "Discard unsaved changes?",
+            message,
+            "Discard & Load",
+            onConfirm: () => LoadSelectedProfile(tabKey),
+            onCancel: () =>
+            {
+                if (previousDropdownValue == null)
+                    return;
+                var dropdown =
+                    tabType == TabType.Scene ? sceneProfileDropdown : postProcessingProfileDropdown;
+                dropdown?.SetValueWithoutNotify(previousDropdownValue);
+            }
+        );
+    }
+
+    private void ShowConfirmDialog(
+        string titleText,
+        string messageText,
+        string confirmText,
+        Action onConfirm,
+        Action onCancel
+    )
+    {
+        isModalOpen = true;
+
+        var modal = new VisualElement();
+        modal.style.position = Position.Absolute;
+        modal.style.left = 0;
+        modal.style.top = 0;
+        modal.style.right = 0;
+        modal.style.bottom = 0;
+        modal.style.backgroundColor = new Color(0, 0, 0, 0.8f);
+        modal.style.alignItems = Align.Center;
+        modal.style.justifyContent = Justify.Center;
+
+        var panel = new VisualElement();
+        panel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+        panel.style.borderTopWidth = 2;
+        panel.style.borderBottomWidth = 2;
+        panel.style.borderLeftWidth = 2;
+        panel.style.borderRightWidth = 2;
+        panel.style.borderTopColor = Color.gray;
+        panel.style.borderBottomColor = Color.gray;
+        panel.style.borderLeftColor = Color.gray;
+        panel.style.borderRightColor = Color.gray;
+        panel.style.paddingTop = 20;
+        panel.style.paddingBottom = 20;
+        panel.style.paddingLeft = 20;
+        panel.style.paddingRight = 20;
+        panel.style.width = 440;
+
+        var title = new Label(titleText);
+        title.style.fontSize = 18;
+        title.style.color = Color.white;
+        title.style.marginBottom = 10;
+        panel.Add(title);
+
+        var message = new Label(messageText);
+        message.style.color = new Color(0.85f, 0.85f, 0.85f);
+        message.style.whiteSpace = WhiteSpace.Normal;
+        message.style.marginBottom = 15;
+        panel.Add(message);
+
+        var buttons = new VisualElement();
+        buttons.style.flexDirection = FlexDirection.Row;
+        buttons.style.justifyContent = Justify.Center;
+
+        void Close()
+        {
+            settingsPanel.Remove(modal);
+            isModalOpen = false;
+        }
+
+        var confirm = new Button(() =>
+        {
+            Close();
+            onConfirm?.Invoke();
+        });
+        confirm.text = confirmText;
+        confirm.style.marginRight = 10;
+        confirm.style.paddingLeft = 15;
+        confirm.style.paddingRight = 15;
+
+        var cancel = new Button(() =>
+        {
+            Close();
+            onCancel?.Invoke();
+        });
+        cancel.text = "Cancel";
+        cancel.style.paddingLeft = 15;
+        cancel.style.paddingRight = 15;
+
+        buttons.Add(confirm);
+        buttons.Add(cancel);
+        panel.Add(buttons);
+        modal.Add(panel);
+        settingsPanel.Add(modal);
+
+        modal.RegisterCallback<KeyDownEvent>(evt =>
+        {
+            if (evt.keyCode == KeyCode.Escape)
+            {
+                Close();
+                onCancel?.Invoke();
+            }
+        });
+        cancel.Focus();
     }
 }

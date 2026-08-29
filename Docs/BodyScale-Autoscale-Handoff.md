@@ -60,6 +60,38 @@ menu / inspector / profile  ──►  runtimeSettings (BASE)
   well under a millisecond, accepted rather than adding any per-frame path.
 - `bodyScale` itself is never scaled; zero/negative bodyScale is treated as 1.
 
+### Persistence: the working set (added 2026-08-29)
+
+`SettingsWorkingSet.cs` keeps one **latest** copy of the base settings per scene at
+`Application.persistentDataPath/SettingsWorkingSet/<scene>.json` (persistentDataPath, not
+StreamingAssets - builds can write it). It records the scene / PP profile names it was
+derived from. Writers:
+
+- `InGameSettingsMenu.NotifySettingsChanged()` - the single exit point for every menu
+  edit, profile load/save and inspector-in-play sync (`UpdateSettingsFromInspector`).
+- `SceneController.EditModeValidate()` (editor, edit mode) - a genuine inspector edit
+  overlays the scene slice onto the working set (PP slice + profile names preserved).
+  A per-scene snapshot of the twins distinguishes real edits from `OnValidate`
+  firing on deserialization.
+
+Readers:
+
+- `InGameSettingsMenu.Start()` → `TryRestoreWorkingSet()` - wins over the last-used
+  profile auto-load (which is now only the fallback when no working set exists).
+- `SceneController` editor hook (`playModeStateChanged`): on `EnteredEditMode`, after
+  Unity has reverted the scene, `RestoreInspectorFromWorkingSet(markSceneDirty: true)`
+  writes the working set into the twins (Undo-recorded, scene marked dirty) and applies
+  the PP slice to the Volume Profile asset via `VolumeController.ApplyCurrentSettings`
+  (which resolves its overrides lazily so it works in edit mode). `OnEnable` in edit
+  mode does the same without dirtying, so a freshly opened scene shows the latest values.
+
+Dirty tracking: canonical JSON of the scene / PP slice (`CopySceneSettings` /
+`CopyPostProcessingSettings` into a fresh object) captured at load/save is the baseline;
+dirty = current canonical JSON differs. The menu shows an "Unsaved changes" badge next
+to the dropdown and a `*` on the tab, and `RequestLoadSelectedProfile` shows a
+discard-confirm modal before a load throws unsaved changes away. The old
+`VolumeController` SessionState machinery and the menu's unused `originalSettings` are gone.
+
 ## `PlayerScaleApplier` (called from `InitializeNewPlayer`, `InitializeNewDummy`, `RebuildEffectiveSettings`)
 
 - `ApplyHandVfx`: iterates the static `[VfxProperty]` table (FieldInfo + graph name

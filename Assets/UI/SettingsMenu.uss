@@ -36,6 +36,20 @@
     margin-bottom: 15px;
 }
 
+.profile-dirty-label {
+    align-self: center;
+    margin-left: 8px;
+    margin-right: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: rgba(200, 120, 30, 0.35);
+    border-width: 1px;
+    border-color: rgb(220, 140, 40);
+    color: rgb(255, 210, 150);
+    font-size: 12px;
+    -unity-font-style: italic;
+}
+
 .profile-button {
     padding: 5px 10px;
     background-color: rgb(50, 50, 50);

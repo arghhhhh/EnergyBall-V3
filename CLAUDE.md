@@ -121,6 +121,14 @@ following the existing pattern:
 - Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
   animation-curve presets in `Assets/StreamingAssets/CurvePresets/`, edited via the
   `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor.
+- **Working set** (`SettingsWorkingSet.cs`): the single latest copy of the settings,
+  per scene, at `Application.persistentDataPath/SettingsWorkingSet/<scene>.json`.
+  Every change writes it (menu edits, profile loads, inspector edits in play AND edit
+  mode), so the most recent change always wins: play start restores it instead of
+  auto-loading the last-used profile, and on play exit `SceneController`'s editor hook
+  copies it back into the inspector twins (dirtying the scene) and the Volume Profile
+  asset. The menu shows "Unsaved changes" / `Scene *` when the working set differs
+  from its profile and asks before a load discards it. No SessionState anywhere.
 - Full design/decisions: `Docs/BodyScale-Autoscale-Handoff.md`; exponent derivation:
   `Docs/BodyScale-settings-audit.md`, `Docs/HandEffects-scale-audit.md`.
 

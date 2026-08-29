@@ -15,6 +15,7 @@
             <ui:VisualElement name="SceneTabContent" class="tab-panel active">
                 <ui:VisualElement name="SceneProfileControls" class="profile-controls">
                     <ui:DropdownField name="SceneProfileDropdown" style="flex-grow: 1;" />
+                    <ui:Label name="SceneDirtyLabel" text="Unsaved changes" class="profile-dirty-label" style="display: none;" />
                     <ui:Button text="Load" name="SceneLoadButton" class="profile-button" />
                     <ui:Button text="Save" name="SceneSaveButton" class="profile-button" />
                     <ui:Button text="Save As..." name="SceneSaveAsButton" class="profile-button" />
@@ -27,6 +28,7 @@
             <ui:VisualElement name="PostProcessingTabContent" class="tab-panel">
                 <ui:VisualElement name="PostProcessingProfileControls" class="profile-controls">
                     <ui:DropdownField name="PostProcessingProfileDropdown" style="flex-grow: 1;" />
+                    <ui:Label name="PostProcessingDirtyLabel" text="Unsaved changes" class="profile-dirty-label" style="display: none;" />
                     <ui:Button text="Load" name="PostProcessingLoadButton" class="profile-button" />
                     <ui:Button text="Save" name="PostProcessingSaveButton" class="profile-button" />
                     <ui:Button text="Save As..." name="PostProcessingSaveAsButton" class="profile-button" />
