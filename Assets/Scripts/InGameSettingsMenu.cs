@@ -907,6 +907,13 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
+            "Tangential Damping Cutoff",
+            () => runtimeSettings.handVfx.tangentialDampingCutoff,
+            v => runtimeSettings.handVfx.tangentialDampingCutoff = v,
+            tooltip: "Where tangential damping switches on, as a multiple of the vfxSphere's size. 1 = at its surface, 1.4 = 40% beyond it, below 1 also damps inside the sphere. Closer particles are left alone."
+        );
+        CreateFloatField(
+            group,
             "Seek Strength (×s)",
             () => runtimeSettings.handVfx.seekStrength,
             v => runtimeSettings.handVfx.seekStrength = v

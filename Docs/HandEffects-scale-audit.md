@@ -81,6 +81,7 @@ links to distinguish genuinely inline values from runtime-driven ones.
 | `collisionDetectionScaleMult` | exposed | 1.25 | ratio on runtime `vfxSphere.scale` |
 | `lifeRange` | exposed | {1,2} | **orphaned — no consumers found**; time-domain |
 | `tangentialDamping` | op128 `× deltaTime` | 5 | per-second decay |
+| `tangentialDampingCutoff` | exposed → `÷ 2 × vfxSphere.scale.x` → Cone Tangential Damping HLSL gate | 1.4 | ratio on runtime `vfxSphere.scale` (1 = sphere surface) |
 | `playerAuraBase` | exposed Gradient | — | color |
 | Box collision `Bounce`/`Friction`/`LifetimeLoss` | Update(ctx2) block0 | 0/0/1 | dimensionless |
 | SDF collision `Bounce`/`Friction`/`LifetimeLoss` | Update(ctx2) block7 | 0.1/0/0 | dimensionless |
@@ -105,7 +106,7 @@ play-bounds box (block0) size = `sdfScale` × inline factor, center z =
 vfxSphereCollisionScaleMult`, center from `vfxSphere.position`; trigger
 sphere (block9) transform scale = `vfxSphere.scale ×
 collisionDetectionScaleMult`; tangential-damping threshold =
-`vfxSphere.x × 0.5`.
+`vfxSphere.scale.x × tangentialDampingCutoff / 2`.
 
 ---
 

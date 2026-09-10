@@ -88,6 +88,12 @@ public class HandVfxSettings
     )]
     public float tangentialDamping = 5f;
 
+    [VfxProperty("tangentialDampingCutoff")]
+    [Tooltip(
+        "Where tangential damping switches on, as a multiple of the vfxSphere's size. 1 = at its surface, 1.4 = 40% beyond it, below 1 also damps inside the sphere. Closer particles are left alone (ratio - never scaled)."
+    )]
+    public float tangentialDampingCutoff = 1.4f;
+
     [BodyScaled(1), VfxProperty("seekStrength")]
     [Tooltip("Heat-seeking steering velocity added toward the ball (m/s at 1x).")]
     public float seekStrength = 1f;
