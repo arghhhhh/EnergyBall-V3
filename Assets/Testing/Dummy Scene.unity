@@ -849,7 +849,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64e0a8cbe467405488d02a1bef548523, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  g: 0.48
+  g: 0.4
   maxTowardsForce: 0.39999998
   maxAwayFromForce: 1
   gravityForceDamper: 0.95
@@ -895,7 +895,7 @@ MonoBehaviour:
   handVfx:
     spawnRate: 1500
     spawnSphereRadius: 0.012
-    spawnVeloSpread: 0.1
+    spawnVeloSpread: 0.5
     sizeRange: {x: 0.008, y: 0.014}
     lifetimeRemapMaxDist: 0.6
     lifeRange: {x: 1, y: 2}
@@ -908,6 +908,31 @@ MonoBehaviour:
     mainStickDistance: 0.02
     mainStickForce: 0.4
     tangentialDamping: 5
+    tangentialDampingFade: {x: 1, y: 1.5}
+    tangentialDampingFadeCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     seekStrength: 1
     tdRadius: 0.1
     tdStickDistance: 0.02
@@ -935,7 +960,7 @@ MonoBehaviour:
     oHatNoiseAmp: 0.008
     oHatNoiseFreq: 10
     oHatNoiseYScroll: 0.2
-    snareSizeRange: {x: 0.016, y: 0.03}
+    snareSizeRange: {x: 0.016, y: 0.02}
     snareRadiusRandRange: {x: -0.02, y: 0.04}
     snareSpawnVeloSphereRadius: 0.2
   projectiveAlignment: 1

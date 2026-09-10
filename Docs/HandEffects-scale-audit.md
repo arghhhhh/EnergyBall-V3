@@ -82,7 +82,7 @@ links to distinguish genuinely inline values from runtime-driven ones.
 | `lifeRange` | exposed | {1,2} | **orphaned — no consumers found**; time-domain |
 | `tangentialDamping` | op128 `× deltaTime` | 5 | per-second decay |
 | `tangentialDampingFade` | exposed Vector2 → Remap old range of `distance / (vfxSphere.scale.x × 0.5)` → 0..1 | {1, 1.6} | ratio on runtime `vfxSphere.scale` (1 = sphere surface); x = start, y = end |
-| `tangentialDampingFadeCurve` | exposed curve → Sample Curve over the remapped 0..1 → Cone Tangential Damping HLSL `params.w` weight | linear 0→1 | normalized curve |
+| `tangentialDampingFadeCurve` | exposed curve → Sample Curve over the remapped 0..1 → multiplies `min(tangentialDamping × dt, 1)` → negated × Missing Tangential Velocity HLSL output | linear 0→1 | normalized curve |
 | `playerAuraBase` | exposed Gradient | — | color |
 | Box collision `Bounce`/`Friction`/`LifetimeLoss` | Update(ctx2) block0 | 0/0/1 | dimensionless |
 | SDF collision `Bounce`/`Friction`/`LifetimeLoss` | Update(ctx2) block7 | 0.1/0/0 | dimensionless |
