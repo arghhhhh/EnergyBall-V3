@@ -52,7 +52,7 @@ public float boundaryOutwardDrag = 50f;
 
 `[BodyScaled]` supports `float`, `Vector2` and `Vector3` fields.
 
-**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`; the PP copy sets `destination.handVfx = new HandVfxSettings()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching `CreateHandVfx*Group` in the menu. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write.
+**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`; the PP copy sets `destination.handVfx = new HandVfxSettings()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching `CreateHandVfx*Group` in the menu. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write (`float`, `int`, `Vector2`, `Vector3`, `AnimationCurve`). Curves in `HandVfxSettings` must be copied by keys in its `DeepCopy()`.
 
 **For properties with change notifications:**
 

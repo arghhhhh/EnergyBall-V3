@@ -48,6 +48,7 @@ public class PlayerScaleApplier
                 && t != typeof(int)
                 && t != typeof(Vector2)
                 && t != typeof(Vector3)
+                && t != typeof(AnimationCurve)
             )
             {
                 Debug.LogError(
@@ -150,6 +151,13 @@ public class PlayerScaleApplier
                     vfx.SetVector3(e.Id, (Vector3)e.Field.GetValue(handVfx));
                 else
                     WarnMissingOnce(vfx, e.Name, "Vector3");
+            }
+            else if (t == typeof(AnimationCurve))
+            {
+                if (vfx.HasAnimationCurve(e.Id))
+                    vfx.SetAnimationCurve(e.Id, (AnimationCurve)e.Field.GetValue(handVfx));
+                else
+                    WarnMissingOnce(vfx, e.Name, "AnimationCurve");
             }
         }
     }

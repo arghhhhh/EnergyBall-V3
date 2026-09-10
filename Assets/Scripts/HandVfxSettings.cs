@@ -88,11 +88,17 @@ public class HandVfxSettings
     )]
     public float tangentialDamping = 5f;
 
-    [VfxProperty("tangentialDampingCutoff")]
+    [VfxProperty("tangentialDampingFade")]
     [Tooltip(
-        "Where tangential damping switches on, as a multiple of the vfxSphere's size. 1 = at its surface, 1.4 = 40% beyond it, below 1 also damps inside the sphere. Closer particles are left alone (ratio - never scaled)."
+        "Distance range over which tangential damping fades in, as multiples of the vfxSphere's size (1 = its surface). x = start (no damping closer than this), y = end (full damping beyond). Ratio - never scaled."
     )]
-    public float tangentialDampingCutoff = 1.4f;
+    public Vector2 tangentialDampingFade = new Vector2(1f, 1.6f);
+
+    [VfxProperty("tangentialDampingFadeCurve")]
+    [Tooltip(
+        "Damping weight across the fade range. X 0 = fade start, X 1 = fade end (remapped, so the shape is independent of the distances). Y = fraction of tangential damping applied."
+    )]
+    public AnimationCurve tangentialDampingFadeCurve = AnimationCurve.Linear(0, 0, 1, 1);
 
     [BodyScaled(1), VfxProperty("seekStrength")]
     [Tooltip("Heat-seeking steering velocity added toward the ball (m/s at 1x).")]
@@ -227,7 +233,9 @@ public class HandVfxSettings
 
     public HandVfxSettings DeepCopy()
     {
-        // Every field is a value type, so a member-wise copy is already deep.
-        return (HandVfxSettings)MemberwiseClone();
+        // Every field is a value type except the curves, which must be copied by keys.
+        var copy = (HandVfxSettings)MemberwiseClone();
+        copy.tangentialDampingFadeCurve = new AnimationCurve(tangentialDampingFadeCurve.keys);
+        return copy;
     }
 }

@@ -905,12 +905,19 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.handVfx.tangentialDamping,
             v => runtimeSettings.handVfx.tangentialDamping = v
         );
-        CreateFloatField(
+        CreateVector2Field(
             group,
-            "Tangential Damping Cutoff",
-            () => runtimeSettings.handVfx.tangentialDampingCutoff,
-            v => runtimeSettings.handVfx.tangentialDampingCutoff = v,
-            tooltip: "Where tangential damping switches on, as a multiple of the vfxSphere's size. 1 = at its surface, 1.4 = 40% beyond it, below 1 also damps inside the sphere. Closer particles are left alone."
+            "Tangential Damping Fade",
+            () => runtimeSettings.handVfx.tangentialDampingFade,
+            v => runtimeSettings.handVfx.tangentialDampingFade = v,
+            tooltip: "Distance range over which tangential damping fades in, as multiples of the vfxSphere's size (1 = its surface). X = start (no damping closer than this), Y = end (full damping beyond)."
+        );
+        CreateCurveField(
+            group,
+            "Tangential Damping Fade Curve",
+            () => runtimeSettings.handVfx.tangentialDampingFadeCurve,
+            v => runtimeSettings.handVfx.tangentialDampingFadeCurve = v,
+            tooltip: "Damping weight across the fade range. X 0 = fade start, X 1 = fade end (remapped, so the shape is independent of the distances). Y = fraction of tangential damping applied."
         );
         CreateFloatField(
             group,
