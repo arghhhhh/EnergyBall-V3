@@ -129,8 +129,9 @@ following the existing pattern:
   copies it back into the inspector twins (dirtying the scene) and the Volume Profile
   asset. The menu shows "Unsaved changes" / `Scene *` when the working set differs
   from its profile and asks before a load discards it. No SessionState anywhere.
-- Full design/decisions: `Docs/BodyScale-Autoscale-Handoff.md`; exponent derivation:
-  `Docs/BodyScale-settings-audit.md`, `Docs/HandEffects-scale-audit.md`.
+- Why the exponents are what they are, the HandEffects.vfx scaling rules (Conform,
+  noise, Turbulence, the intentional `÷ 5`) and the gotchas: `Docs/BodyScale.md`.
+  How to add a setting end to end: `Docs/In-Game Menu/Adding-New-Settings-To-Menu.md`.
 
 ### Dummy players (dev without a Kinect)
 `DummySceneControl.cs`, `DummyHandController.cs`, `DummyTransformer.cs` plus

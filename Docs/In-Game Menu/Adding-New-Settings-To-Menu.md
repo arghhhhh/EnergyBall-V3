@@ -10,7 +10,7 @@ The settings menu system uses `RuntimeSceneSettings` as the central data class. 
 
 **Base vs. effective values.** Everything the menu, the `SceneController` inspector and the JSON profiles hold is a _base_ value at `bodyScale = 1`. `SceneController.RebuildEffectiveSettings()` derives the object consumers read (`CurrentSettings` / `GetRuntimeSettings()`) as `base × bodyScale^exp` via `BodyScaling.CreateEffective`. So:
 
-- **If the new setting has a dimension** (a length, velocity, per-frame displacement, rigidbody force, spatial frequency), put `[BodyScaled(exp)]` on the `RuntimeSceneSettings` field and store the **1× value**. Exponents: lengths / velocities / per-frame displacements `1`; rigidbody forces (`AddForce`) `2` (mass ∝ s); spatial frequencies `-1`. Time, ratios, rates, curves, bools and counts get no attribute. See `Docs/BodyScale-settings-audit.md` for the derivation and worked examples.
+- **If the new setting has a dimension** (a length, velocity, per-frame displacement, rigidbody force, spatial frequency), put `[BodyScaled(exp)]` on the `RuntimeSceneSettings` field and store the **1× value**. Exponents: lengths / velocities / per-frame displacements `1`; rigidbody forces (`AddForce`) `2` (mass ∝ s); spatial frequencies `-1`. Time, ratios, rates, curves, bools and counts get no attribute. See `Docs/BodyScale.md` for the derivation and the VFX-specific rules.
 - Append the unit hint to the menu label by hand: `"Push Force (×s²)"`, `"TD Radius (×s)"`, `"Noise Frequency (×1/s)"`.
 - Consumers never rescale anything themselves — they just read the effective object.
 

@@ -8,7 +8,7 @@ using UnityEngine;
 /// <see cref="VfxPropertyAttribute"/>. Nested inside <see cref="RuntimeSceneSettings"/>
 /// as <c>handVfx</c> and copied as one object at every plumbing site.
 /// The [Header] group names match the in-game menu groups. Per-value rules are
-/// derived in Docs/HandEffects-scale-audit.md.
+/// derived in Docs/BodyScale.md.
 /// </summary>
 [Serializable]
 public class HandVfxSettings
