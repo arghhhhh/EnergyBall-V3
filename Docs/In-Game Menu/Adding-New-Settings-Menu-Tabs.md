@@ -419,7 +419,7 @@ private void LoadProfile(string path, ProfileType profileType)
         PlayerPrefs.Save();
         
         // Add any special handling for your tab here
-        // (like VolumeController.OnProfileSaved for post-processing)
+        // (e.g. pushing post-processing values to the VolumeController)
     }
     
     // Existing RefreshUI() and OnSettingsChanged calls...

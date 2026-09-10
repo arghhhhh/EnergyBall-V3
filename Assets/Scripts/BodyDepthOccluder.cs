@@ -22,7 +22,8 @@ public class BodyDepthOccluder : MonoBehaviour
     public Shader occluderShader;
 
     [Tooltip(
-        "Push occluder slightly away from camera (meters) to avoid z-fighting with particles at body depth."
+        "Push occluder slightly away from camera to avoid z-fighting with particles at body depth. "
+            + "World units at bodyScale 1 (multiplied by bodyScale at runtime)."
     )]
     public float depthBias = 0.0f;
 
@@ -63,8 +64,7 @@ public class BodyDepthOccluder : MonoBehaviour
         bool showPointCloud = false;
         if (SceneController.Instance != null)
         {
-            // GetRuntimeSettings() is the live object the in-game menu mutates
-            // (CurrentSettings can be a stale cached copy).
+            // Effective settings (rebuilt on every settings change).
             var settings = SceneController.Instance.GetRuntimeSettings();
             bodyScale = settings.bodyScale;
             showPointCloud = settings.showPointCloud;
@@ -74,7 +74,8 @@ public class BodyDepthOccluder : MonoBehaviour
         // float-backed, and SetInteger writes a separate integer slot that the
         // ColorMask [_ColorMask] state binding never reads.
         _material.SetInt("_ColorMask", showPointCloud ? 15 : 0);
-        _material.SetFloat("_DepthBias", depthBias);
+        // depthBias is a world-unit bias authored at 1x; minDepth is Kinect meters (pre-scale).
+        _material.SetFloat("_DepthBias", depthBias * bodyScale);
         _material.SetFloat("_MinDepth", minDepth);
         _material.SetFloat("_BodiesOnly", bodiesOnly ? 1f : 0f);
     }

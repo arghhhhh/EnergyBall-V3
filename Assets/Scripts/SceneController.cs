@@ -13,22 +13,25 @@ public class SceneController : MonoBehaviour
     public static SceneController Instance { get; private set; } // singleton pattern
     #region Inspector Settings
     [BoxGroup("Gravity Attraction")]
-    public float g = 9.81f;
+    [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
+    public float g = 0.48f;
 
     [BoxGroup("Gravity Attraction")]
-    public float maxTowardsForce = 10f;
+    [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
+    public float maxTowardsForce = 0.4f;
 
     [BoxGroup("Gravity Attraction")]
-    public float maxAwayFromForce = 10f;
+    [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
+    public float maxAwayFromForce = 1f;
 
     [BoxGroup("Gravity Attraction")]
     public float gravityForceDamper = 1f;
 
     [BoxGroup("Gravity Attraction")]
-    public float stopGravityDistance = 0.1f;
+    public float stopGravityDistance = 0.024f;
 
     [BoxGroup("Gravity Attraction")]
-    public float stopMovingDistance = 0.05f;
+    public float stopMovingDistance = 0.01f;
 
     [BoxGroup("Gravity Attraction")]
     public float stopVelocity = 0.1f;
@@ -40,16 +43,14 @@ public class SceneController : MonoBehaviour
     public float singleHandOpenForceDamper = 1f;
 
     [BoxGroup("Boundary Drag")]
-    [Tooltip(
-        "Multiplier for max distance calculation. Max distance = this * (longest grid side / 2)."
-    )]
-    public float addedBoundaryDistance = 1.5f;
+    [Tooltip("Distance added to the grid extents to get the boundary (world units at 1x).")]
+    public float addedBoundaryDistance = 0.26f;
 
     [BoxGroup("Boundary Drag")]
     [Tooltip(
-        "Drag applied to stop the sphere when moving away from hands while past the boundary. Set to 0 to disable."
+        "Drag applied to stop the sphere when moving away from hands while past the boundary. Set to 0 to disable. Base at 1x (scaled x s)."
     )]
-    public float boundaryOutwardDrag = 50f;
+    public float boundaryOutwardDrag = 4f;
 
     [BoxGroup("Boundary Drag")]
     [Tooltip(
@@ -58,21 +59,22 @@ public class SceneController : MonoBehaviour
     public float outOfBoundsResetDelay = 3f;
 
     [BoxGroup("Hands Attraction")]
-    public float pushForce = 5f;
+    [Tooltip("Rigidbody push force toward the hands. Base at 1x (scaled x s^2 at runtime).")]
+    public float pushForce = 2.8f;
 
     [BoxGroup("Hands Attraction")]
     [Tooltip(
         "How far the ball's push target is pulled toward the camera when the hands sit at torso "
             + "depth, so the ball isn't occluded by the player's own body. 0 disables."
     )]
-    public float torsoMaxForwardOffset = 0.75f;
+    public float torsoMaxForwardOffset = 0.2f;
 
     [BoxGroup("Hands Attraction")]
     [Tooltip(
         "How far (in z) the hands must be from the torso plane, forward or backward, for the "
             + "torso forward offset to fade to zero."
     )]
-    public float torsoOffsetFalloffDistance = 1.5f;
+    public float torsoOffsetFalloffDistance = 0.4f;
 
     [BoxGroup("Hands Attraction")]
     public float minDrag = 0.1f;
@@ -81,7 +83,7 @@ public class SceneController : MonoBehaviour
     public float maxDrag = 5f;
 
     [BoxGroup("Hands Attraction")]
-    public float alignmentVectorStrengthScaler = 1f;
+    public float alignmentVectorStrengthScaler = 0.07f;
 
     [BoxGroup("Hands Attraction")]
     public float handPushScaler = 1f;
@@ -91,7 +93,7 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Hands Attraction")]
     [ShowIf("prayToActivate")]
-    public float prayToActivateDistance = 0.65f;
+    public float prayToActivateDistance = 0.14f;
 
     [BoxGroup("Intrinsic Pulsation")]
     [Range(0, 10f)]
@@ -111,12 +113,12 @@ public class SceneController : MonoBehaviour
     public bool singleHandScaling = true;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The minimum size that the vfx body can scale down to.")]
-    public float minimumUnscaledSize = 0.5f;
+    [Tooltip("The minimum size that the vfx body can scale down to (base at 1x).")]
+    public float minimumUnscaledSize = 0.3f;
 
     [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The maximum size that the vfx body can scale up to.")]
-    public float maximumUnscaledSize = 3.0f;
+    [Tooltip("The maximum size that the vfx body can scale up to (base at 1x).")]
+    public float maximumUnscaledSize = 0.6f;
 
     [BoxGroup("Movement-Based Pulsation")]
     [Range(0.0001f, 5f)]
@@ -124,6 +126,13 @@ public class SceneController : MonoBehaviour
         "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
     )]
     public float minHandDisplacementPerFrame = 0.01f;
+
+    [BoxGroup("Movement-Based Pulsation")]
+    [Tooltip(
+        "Hand-velocity sanity gate for movement-based scaling: frames where a hand moves faster "
+            + "than this (world units/s at 1x) are ignored as tracking glitches."
+    )]
+    public float maxHandVelocity = 3.0f;
 
     [BoxGroup("Movement-Based Pulsation")]
     [Tooltip("An overall damper for the movement-based pulsation scaling.")]
@@ -134,26 +143,40 @@ public class SceneController : MonoBehaviour
     public float mergeSizeScalerDamper = 1f;
 
     [BoxGroup("Miscellaneous")]
-    public float maxDistanceBetweenHands = 2f;
+    public float maxDistanceBetweenHands = 1.6f;
 
     [BoxGroup("Miscellaneous")]
-    public float baseZDepth = 5f;
+    public float baseZDepth = 2f;
 
     [BoxGroup("Miscellaneous")]
     [Tooltip(
-        "World size of one marching-cubes voxel; the metaball volume spans 64x32x64 voxels. "
-            + "Scale together with bodyScale so the ball spans enough voxels to stay smooth."
+        "World size of one marching-cubes voxel at 1x; the metaball volume spans 64x32x64 voxels. "
+            + "Scales with bodyScale automatically."
     )]
-    public float gridScale = 0.3f;
+    public float gridScale = 0.06f;
 
     [BoxGroup("Miscellaneous")]
-    public float defaultUnscaledSize = 1f;
+    public float defaultUnscaledSize = 0.5f;
 
     [BoxGroup("Miscellaneous")]
+    [Tooltip(
+        "World scale of the Kinect space. All dimensioned settings are stored at 1x and derived "
+            + "x bodyScale^exp at runtime (see BodyScaling)."
+    )]
     public float bodyScale = 1f;
 
     [BoxGroup("Miscellaneous")]
-    public float maxDistanceFromCamera = 10f;
+    public float maxDistanceFromCamera = 2.6f;
+
+    [BoxGroup("Miscellaneous")]
+    [Tooltip(
+        "Random +/- jitter (world units at 1x) added when the sphere is reset to the hand midpoint."
+    )]
+    public float sphereResetJitter = 0.1f;
+
+    [BoxGroup("Hand VFX")]
+    [Tooltip("Per-hand HandEffects.vfx values (base at 1x). See HandVfxSettings.")]
+    public HandVfxSettings handVfx = new();
 
     [BoxGroup("Camera Feed Alignment")]
     [Tooltip(
@@ -221,8 +244,12 @@ public class SceneController : MonoBehaviour
     public float metaballRadiusAnimationDuration = 2f;
 
     [BoxGroup("Animation")]
-    [Tooltip("The starting radius for the metaball animation during initialization.")]
-    public float metaballRadiusAnimationStartSize = 0.1f;
+    [Tooltip("The starting radius for the metaball animation during initialization (base at 1x).")]
+    public float metaballRadiusAnimationStartSize = 0.02f;
+
+    [BoxGroup("Animation")]
+    [Tooltip("Particle size of the BodyEffects.vfx spawn flash on VFX_Body (world units at 1x).")]
+    public float bodySpawnSize = 0.2f;
 
     [BoxGroup("Animation")]
     [Tooltip(
@@ -334,13 +361,19 @@ public class SceneController : MonoBehaviour
     [Header("Runtime Settings")]
     public InGameSettingsMenu settingsMenu;
     public VolumeController volumeController;
+
+    // BASE settings (what the menu / inspector / profiles hold, at bodyScale = 1).
     private RuntimeSceneSettings runtimeSettings;
-    private RuntimeSceneSettings cachedCurrentSettings; // Cache for current settings
+
+    // EFFECTIVE settings (base x bodyScale^exp) - the only object consumers read.
+    // Rebuilt by RebuildEffectiveSettings() on every settings change; never per frame.
+    private RuntimeSceneSettings cachedCurrentSettings;
     GravityForce gravityForceController;
     HandForce handForceController;
     HandEffects handEffectsController;
     BoundaryForce boundaryForceController;
     PlayerScaler playerScaleController;
+    PlayerScaleApplier playerScaleApplier;
 
     [SerializeField]
     [Tooltip(
@@ -394,6 +427,14 @@ public class SceneController : MonoBehaviour
 
     private void OnEnable()
     {
+#if UNITY_EDITOR
+        // Edit mode (scene open / domain reload): show the working set in the inspector.
+        if (!Application.isPlaying && !editModeValidateQueued)
+        {
+            editModeValidateQueued = true;
+            UnityEditor.EditorApplication.delayCall += EditModeValidate;
+        }
+#endif
         // Actions.OnPlayerAdded += AddPlayer;
         // Actions.OnPlayerRemoved += RemovePlayer;
         Actions.OnDummyAdded += InitializeNewDummy;
@@ -449,6 +490,7 @@ public class SceneController : MonoBehaviour
         handEffectsController = new();
         boundaryForceController = new();
         playerScaleController = new();
+        playerScaleApplier = new();
         if (metaballsToSDF == null)
         {
             // Backward compatible: same GameObject first, then anywhere in the scene
@@ -476,7 +518,7 @@ public class SceneController : MonoBehaviour
         if (runtimeSettings != null)
         {
             CopyInspectorToRuntime(runtimeSettings);
-            cachedCurrentSettings = GetCurrentSettings();
+            RebuildEffectiveSettings();
         }
         // transform.position = new Vector3(transform.position.x, transform.position.y, cachedCurrentSettings.baseZDepth);
 
@@ -533,6 +575,7 @@ public class SceneController : MonoBehaviour
             dummies[dummy.userId] = dummy.gameObject;
             players[dummy.userId] = dummy.gameObject;
 
+            playerScaleApplier.Apply(dummy, CurrentSettings);
             UpdatePlayerDebuggingVisuals(dummy);
 
             // debugText.text = $"userId: {userId}\nunscaledSize: {dummy.unscaledSize.x}\nplayer: {players[userId].name}";
@@ -553,6 +596,7 @@ public class SceneController : MonoBehaviour
                 ChoosePlayerColor(playerConstructor);
             }
 
+            playerScaleApplier.Apply(playerConstructor, CurrentSettings);
             UpdatePlayerDebuggingVisuals(playerConstructor);
         }
 
@@ -925,16 +969,53 @@ public class SceneController : MonoBehaviour
     }
 
     #region Settings Management
-    private RuntimeSceneSettings GetCurrentSettings()
+    /// <summary>
+    /// The EFFECTIVE settings (base x bodyScale^exp) that all consumers read. Data flows one
+    /// way: menu/inspector -> base (runtimeSettings) -> effective (this) -> consumers. Never
+    /// write into this object; mutate the base and let OnSettingsChanged trigger a rebuild.
+    /// </summary>
+    public RuntimeSceneSettings CurrentSettings
     {
-        return runtimeSettings ?? (settingsMenu?.GetCurrentSettings()) ?? CreateFallbackSettings();
+        get
+        {
+            if (cachedCurrentSettings == null)
+            {
+                RebuildEffectiveSettings();
+            }
+            return cachedCurrentSettings;
+        }
     }
 
     /// <summary>
-    /// Gets the current cached settings. Use this instead of GetCurrentSettings() for performance.
+    /// Derives the effective settings from the base object and pushes the per-player scale
+    /// step to every live player. Allocates (DeepCopy) - called only on settings change.
     /// </summary>
-    public RuntimeSceneSettings CurrentSettings =>
-        cachedCurrentSettings ?? (cachedCurrentSettings = GetCurrentSettings());
+    private void RebuildEffectiveSettings()
+    {
+        runtimeSettings ??= CreateFallbackSettings();
+        float previousBodyScale =
+            cachedCurrentSettings != null ? cachedCurrentSettings.bodyScale : 0f;
+        cachedCurrentSettings = BodyScaling.CreateEffective(runtimeSettings);
+
+        if (playerScaleApplier == null)
+            return;
+
+        // bodyScale changed while players are alive: rescale their length-valued state
+        // (ball size/position) so the invariant holds for the running session too.
+        float newBodyScale = cachedCurrentSettings.bodyScale;
+        if (
+            previousBodyScale > 0f
+            && newBodyScale > 0f
+            && !Mathf.Approximately(previousBodyScale, newBodyScale)
+        )
+        {
+            playerScaleApplier.RescaleLiveStateAll(
+                players.Values,
+                newBodyScale / previousBodyScale
+            );
+        }
+        playerScaleApplier.ApplyToAll(players.Values, cachedCurrentSettings);
+    }
 
     private RuntimeSceneSettings CreateFallbackSettings()
     {
@@ -948,6 +1029,9 @@ public class SceneController : MonoBehaviour
     /// </summary>
     public void CopyInspectorToRuntime(RuntimeSceneSettings target)
     {
+        // Inspector values are base values at bodyScale = 1
+        target.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
+
         // Gravity Attraction
         target.g = g;
         target.maxTowardsForce = maxTowardsForce;
@@ -989,6 +1073,7 @@ public class SceneController : MonoBehaviour
         target.minimumUnscaledSize = minimumUnscaledSize;
         target.maximumUnscaledSize = maximumUnscaledSize;
         target.minHandDisplacementPerFrame = minHandDisplacementPerFrame;
+        target.maxHandVelocity = maxHandVelocity;
         target.distanceDamper = new AnimationCurve(distanceDamper.keys);
         target.pulseScaleDamper = pulseScaleDamper;
 
@@ -1000,6 +1085,10 @@ public class SceneController : MonoBehaviour
         target.defaultUnscaledSize = defaultUnscaledSize;
         target.bodyScale = bodyScale;
         target.maxDistanceFromCamera = maxDistanceFromCamera;
+        target.sphereResetJitter = sphereResetJitter;
+
+        // Hand VFX (nested group, copied as one object)
+        target.handVfx = handVfx != null ? handVfx.DeepCopy() : new HandVfxSettings();
 
         // Animation
         target.particleInitializationDelay = particleInitializationDelay;
@@ -1009,6 +1098,7 @@ public class SceneController : MonoBehaviour
         target.initializationSpeed = initializationSpeed;
         target.metaballRadiusAnimationDuration = metaballRadiusAnimationDuration;
         target.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;
+        target.bodySpawnSize = bodySpawnSize;
         target.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
 
         // Debugging
@@ -1028,7 +1118,7 @@ public class SceneController : MonoBehaviour
     /// <summary>
     /// Copy runtime settings back to inspector values
     /// </summary>
-    private void CopyRuntimeToInspector(RuntimeSceneSettings source)
+    public void CopyRuntimeToInspector(RuntimeSceneSettings source)
     {
         // Gravity Attraction
         g = source.g;
@@ -1071,6 +1161,7 @@ public class SceneController : MonoBehaviour
         minimumUnscaledSize = source.minimumUnscaledSize;
         maximumUnscaledSize = source.maximumUnscaledSize;
         minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
+        maxHandVelocity = source.maxHandVelocity;
         distanceDamper = new AnimationCurve(source.distanceDamper.keys);
         pulseScaleDamper = source.pulseScaleDamper;
 
@@ -1082,6 +1173,10 @@ public class SceneController : MonoBehaviour
         defaultUnscaledSize = source.defaultUnscaledSize;
         bodyScale = source.bodyScale;
         maxDistanceFromCamera = source.maxDistanceFromCamera;
+        sphereResetJitter = source.sphereResetJitter;
+
+        // Hand VFX (nested group, copied as one object)
+        handVfx = source.handVfx != null ? source.handVfx.DeepCopy() : new HandVfxSettings();
 
         // Animation
         particleInitializationDelay = source.particleInitializationDelay;
@@ -1091,6 +1186,7 @@ public class SceneController : MonoBehaviour
         initializationSpeed = source.initializationSpeed;
         metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
+        bodySpawnSize = source.bodySpawnSize;
         metaballRadiusAnimationCurve = new AnimationCurve(source.metaballRadiusAnimationCurve.keys);
 
         // Debugging
@@ -1115,7 +1211,7 @@ public class SceneController : MonoBehaviour
         if (runtimeSettings != null)
         {
             CopyInspectorToRuntime(runtimeSettings);
-            cachedCurrentSettings = GetCurrentSettings();
+            RebuildEffectiveSettings();
             UpdateAllPlayersDebuggingVisuals();
 
             // Update the settings menu UI to reflect inspector changes
@@ -1136,8 +1232,8 @@ public class SceneController : MonoBehaviour
     {
         runtimeSettings = newSettings;
 
-        // Update cached settings
-        cachedCurrentSettings = GetCurrentSettings();
+        // Derive the effective settings and push the per-player scale step
+        RebuildEffectiveSettings();
 
         // Copy runtime settings back to inspector for synchronization
         CopyRuntimeToInspector(newSettings);
@@ -1164,15 +1260,176 @@ public class SceneController : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // ---- Working-set sync for the inspector twins (editor only) ----
+    //
+    // Play mode: inspector edits flow to the menu, which owns the working set.
+    // Edit mode: a genuine inspector edit is written straight into the working set, and the
+    // first time this object is seen after a domain reload / scene open (or after play mode
+    // exits, when Unity has reverted the twins) the working set is copied back INTO the twins,
+    // so the inspector always shows the latest values wherever they were changed.
+    //
+    // OnValidate also fires on deserialization, so a per-scene snapshot of the twins tells a
+    // real edit apart from Unity re-loading the serialized (possibly stale) values.
+
+    private static readonly Dictionary<string, string> editModeTwinSnapshots = new();
+    private static bool restorePendingAfterPlay;
+    private bool editModeValidateQueued;
+
+    [UnityEditor.InitializeOnLoadMethod]
+    private static void RegisterPlayModeHook()
+    {
+        UnityEditor.EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
+        UnityEditor.EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;
+    }
+
+    private static void OnEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+    {
+        if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+        {
+            // Ignore the OnValidate storm while Unity reverts the scene.
+            restorePendingAfterPlay = true;
+        }
+        else if (state == UnityEditor.PlayModeStateChange.EnteredEditMode)
+        {
+            // Two delay calls: let Unity finish restoring scene objects first.
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    var controller = FindFirstObjectByType<SceneController>();
+                    if (controller != null)
+                        controller.RestoreInspectorFromWorkingSet(markSceneDirty: true);
+                    restorePendingAfterPlay = false;
+                };
+            };
+        }
+    }
+
     /// <summary>
-    /// Called when inspector values change
+    /// Called when inspector values change (and on deserialization).
     /// </summary>
     private void OnValidate()
     {
-        if (Application.isPlaying && runtimeSettings != null)
+        if (Application.isPlaying)
         {
-            // Sync inspector changes to runtime settings
-            SyncInspectorToRuntime();
+            if (runtimeSettings != null)
+            {
+                // Sync inspector changes to runtime settings (the menu persists the working set)
+                SyncInspectorToRuntime();
+            }
+            return;
+        }
+
+        if (
+            restorePendingAfterPlay
+            || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode
+            || UnityEditor.EditorApplication.isCompiling
+            || UnityEditor.EditorApplication.isUpdating
+            || editModeValidateQueued
+        )
+            return;
+
+        // OnValidate must not touch other objects/assets - defer.
+        editModeValidateQueued = true;
+        UnityEditor.EditorApplication.delayCall += EditModeValidate;
+    }
+
+    private void EditModeValidate()
+    {
+        editModeValidateQueued = false;
+        if (this == null || Application.isPlaying || restorePendingAfterPlay)
+            return;
+
+        string sceneName = gameObject.scene.name;
+        string twinsJson = CanonicalTwinsJson();
+
+        if (!editModeTwinSnapshots.TryGetValue(sceneName, out string known))
+        {
+            // First sight since domain reload / scene open: the working set is newer than the
+            // serialized scene. Show it in the inspector (without dirtying the scene yet).
+            RestoreInspectorFromWorkingSet(markSceneDirty: false);
+            return;
+        }
+
+        if (twinsJson == known)
+            return; // deserialization noise, not an edit
+
+        // Genuine inspector edit in edit mode -> it is the newest state.
+        WriteInspectorToWorkingSet();
+        editModeTwinSnapshots[sceneName] = twinsJson;
+    }
+
+    private string CanonicalTwinsJson()
+    {
+        var twins = new RuntimeSceneSettings();
+        CopyInspectorToRuntime(twins);
+        return JsonUtility.ToJson(twins);
+    }
+
+    /// <summary>
+    /// Overlays the inspector (scene) values onto the working set, preserving its post-processing
+    /// slice and profile names. Seeds a new working set when none exists.
+    /// </summary>
+    private void WriteInspectorToWorkingSet()
+    {
+        string sceneName = gameObject.scene.name;
+        var file = SettingsWorkingSet.Load(sceneName);
+        RuntimeSceneSettings settings = file?.settings ?? new RuntimeSceneSettings();
+        CopyInspectorToRuntime(settings);
+
+        string sceneProfile =
+            file?.sceneProfileName
+            ?? PlayerPrefs.GetString($"LastUsedSceneProfile_{sceneName}", "");
+        string ppProfile =
+            file?.postProcessingProfileName
+            ?? PlayerPrefs.GetString($"LastUsedPostProcessingProfile_{sceneName}", "");
+        SettingsWorkingSet.Save(sceneName, settings, sceneProfile, ppProfile);
+    }
+
+    /// <summary>
+    /// Copies the working set into the inspector twins (and the Volume Profile asset). When no
+    /// working set exists the twins seed one instead.
+    /// </summary>
+    private void RestoreInspectorFromWorkingSet(bool markSceneDirty)
+    {
+        string sceneName = gameObject.scene.name;
+        var file = SettingsWorkingSet.Load(sceneName);
+        if (file == null)
+        {
+            WriteInspectorToWorkingSet();
+            editModeTwinSnapshots[sceneName] = CanonicalTwinsJson();
+            return;
+        }
+
+        // Only dirty the scene when the restore actually changes a twin - a play session
+        // that ends with the values it started with must leave the scene clean.
+        string before = CanonicalTwinsJson();
+        if (markSceneDirty)
+            UnityEditor.Undo.RecordObject(this, "Restore settings from working set");
+
+        CopyRuntimeToInspector(file.settings);
+        string after = CanonicalTwinsJson();
+        editModeTwinSnapshots[sceneName] = after;
+        bool twinsChanged = after != before;
+
+        if (volumeController != null)
+        {
+            if (
+                markSceneDirty
+                && volumeController.TryGetComponent(out UnityEngine.Rendering.Volume vol)
+                && vol.profile != null
+            )
+                UnityEditor.Undo.RecordObject(
+                    vol.profile,
+                    "Restore post-processing from working set"
+                );
+            volumeController.ApplyCurrentSettings(file.settings);
+        }
+
+        if (markSceneDirty && twinsChanged)
+        {
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene);
         }
     }
 #endif

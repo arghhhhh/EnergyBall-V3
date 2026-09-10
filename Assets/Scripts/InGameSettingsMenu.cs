@@ -40,9 +40,20 @@ public class InGameSettingsMenu : MonoBehaviour
         postProcessingTab;
 
     private RuntimeSceneSettings runtimeSettings;
-    private RuntimeSceneSettings originalSettings; // Backup for canceling changes
     private string currentSceneProfilePath = "";
     private string currentPostProcessingProfilePath = "";
+
+    // Dirty tracking: canonical JSON of the scene / PP slice as it was when the active profile
+    // was last loaded or saved. Dirty = current canonical JSON differs from this.
+    private string sceneBaselineJson = "";
+    private string postProcessingBaselineJson = "";
+    private bool isSceneDirty;
+    private bool isPostProcessingDirty;
+    private Label sceneDirtyLabel;
+    private Label postProcessingDirtyLabel;
+
+    // True when Start() restored the working set - suppresses the last-used-profile auto-load.
+    private bool restoredFromWorkingSet;
     private string sceneProfilesDirectory;
     private string postProcessingProfilesDirectory;
     private string lastUsedSceneProfileKey = "LastUsedSceneProfile";
@@ -53,6 +64,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private readonly List<Texture2D> curveTextures = new();
     private bool isModalOpen = false;
     private VisualElement curveEditorBlocker;
+    private Label tooltipElement;
 
     public event Action<RuntimeSceneSettings> OnSettingsChanged;
 
@@ -99,9 +111,26 @@ public class InGameSettingsMenu : MonoBehaviour
         InitializeRuntimeSettings();
         SetupUI();
 
+        // The working set (latest values from anywhere) wins over the last-used profile.
+        restoredFromWorkingSet = TryRestoreWorkingSet();
+
         RefreshSceneProfiles();
         RefreshPostProcessingProfiles();
         CreateSettingsUI();
+
+        if (restoredFromWorkingSet)
+        {
+            // Push the restored values to the controller (inspector twins, effective settings,
+            // volume) the same way a menu edit would.
+            NotifySettingsChanged();
+        }
+        else
+        {
+            // Nothing restored: the profile auto-load (or the inspector seed) is the working set now.
+            UpdateDirtyState();
+            SaveWorkingSet();
+        }
+        UpdateDirtyIndicators();
     }
 
     /// <summary>
@@ -158,19 +187,14 @@ public class InGameSettingsMenu : MonoBehaviour
         if (Controller != null)
         {
             // Get settings from SceneController inspector values
-            runtimeSettings = new RuntimeSceneSettings();
-            Controller.CopyInspectorToRuntime(runtimeSettings);
-            originalSettings = runtimeSettings.DeepCopy();
-
-            // Subscribe to runtime settings changes
-            runtimeSettings.OnAnyDebuggingSettingChanged += () =>
-                OnSettingsChanged?.Invoke(runtimeSettings);
+            var seed = new RuntimeSceneSettings();
+            Controller.CopyInspectorToRuntime(seed);
+            SetRuntimeSettings(seed);
         }
         else
         {
             // Create default runtime settings if controller is not available
-            runtimeSettings = new RuntimeSceneSettings();
-            originalSettings = runtimeSettings.DeepCopy();
+            SetRuntimeSettings(new RuntimeSceneSettings());
         }
     }
 
@@ -196,6 +220,15 @@ public class InGameSettingsMenu : MonoBehaviour
         curveEditorBlocker.style.display = DisplayStyle.None;
         root.Add(curveEditorBlocker);
 
+        // Runtime tooltip popup. UI Toolkit's built-in VisualElement.tooltip only renders
+        // inside the Editor, so hover descriptions are drawn with this shared label.
+        tooltipElement = new Label();
+        tooltipElement.AddToClassList("setting-tooltip");
+        tooltipElement.pickingMode = PickingMode.Ignore;
+        tooltipElement.style.position = Position.Absolute;
+        tooltipElement.style.display = DisplayStyle.None;
+        root.Add(tooltipElement);
+
         settingsPanel = root.Q<VisualElement>("SettingsPanel");
         sceneSettingsPanel = root.Q<ScrollView>("SceneSettingsPanel");
         postProcessingPanel = root.Q<ScrollView>("PostProcessingPanel");
@@ -205,6 +238,7 @@ public class InGameSettingsMenu : MonoBehaviour
         if (sceneTabContent != null)
         {
             sceneProfileDropdown = sceneTabContent.Q<DropdownField>("SceneProfileDropdown");
+            sceneDirtyLabel = sceneTabContent.Q<Label>("SceneDirtyLabel");
             sceneLoadButton = sceneTabContent.Q<Button>("SceneLoadButton");
             sceneSaveButton = sceneTabContent.Q<Button>("SceneSaveButton");
             sceneSaveAsButton = sceneTabContent.Q<Button>("SceneSaveAsButton");
@@ -216,6 +250,9 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             postProcessingProfileDropdown = postProcessingTabContent.Q<DropdownField>(
                 "PostProcessingProfileDropdown"
+            );
+            postProcessingDirtyLabel = postProcessingTabContent.Q<Label>(
+                "PostProcessingDirtyLabel"
             );
             postProcessingLoadButton = postProcessingTabContent.Q<Button>(
                 "PostProcessingLoadButton"
@@ -237,7 +274,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Scene tab callbacks
         if (sceneLoadButton != null)
-            sceneLoadButton.clicked += () => LoadSelectedProfile("scene");
+            sceneLoadButton.clicked += () => RequestLoadSelectedProfile(TabType.Scene);
         if (sceneSaveButton != null)
             sceneSaveButton.clicked += () => SaveCurrentProfile(TabType.Scene);
         if (sceneSaveAsButton != null)
@@ -245,7 +282,8 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Post-processing tab callbacks
         if (postProcessingLoadButton != null)
-            postProcessingLoadButton.clicked += () => LoadSelectedProfile("postprocessing");
+            postProcessingLoadButton.clicked += () =>
+                RequestLoadSelectedProfile(TabType.PostProcessing);
         if (postProcessingSaveButton != null)
             postProcessingSaveButton.clicked += () => SaveCurrentProfile(TabType.PostProcessing);
         if (postProcessingSaveAsButton != null)
@@ -261,7 +299,7 @@ public class InGameSettingsMenu : MonoBehaviour
             {
                 if (!string.IsNullOrEmpty(evt.newValue))
                 {
-                    LoadSelectedProfile("scene");
+                    RequestLoadSelectedProfile(TabType.Scene, evt.previousValue);
                 }
             });
         }
@@ -272,7 +310,7 @@ public class InGameSettingsMenu : MonoBehaviour
             {
                 if (!string.IsNullOrEmpty(evt.newValue))
                 {
-                    LoadSelectedProfile("postprocessing");
+                    RequestLoadSelectedProfile(TabType.PostProcessing, evt.previousValue);
                 }
             });
         }
@@ -318,6 +356,14 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateMovementPulsationGroup(sceneSettingsPanel);
         CreateMiscellaneousGroup(sceneSettingsPanel);
         CreateAnimationGroup(sceneSettingsPanel);
+        CreateHandVfxSpawnGroup(sceneSettingsPanel);
+        CreateHandVfxCollisionGroup(sceneSettingsPanel);
+        CreateHandVfxMainAttractorGroup(sceneSettingsPanel);
+        CreateHandVfxTrailDistortersGroup(sceneSettingsPanel);
+        CreateHandVfxSecondaryAttractorGroup(sceneSettingsPanel);
+        CreateHandVfxNoiseGroup(sceneSettingsPanel);
+        CreateHandVfxBurstsGroup(sceneSettingsPanel);
+        CreateHandVfxSnareGroup(sceneSettingsPanel);
         CreateStyleGroup(sceneSettingsPanel);
         CreateDebuggingGroup(sceneSettingsPanel);
     }
@@ -353,48 +399,55 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = CreateGroup("Gravity Attraction", parentContainer);
 
-        CreateFloatField(group, "G", () => runtimeSettings.g, v => runtimeSettings.g = v);
+        CreateFloatField(group, "G (×s²)", () => runtimeSettings.g, v => runtimeSettings.g = v);
         CreateFloatField(
             group,
-            "Max Towards Force",
+            "Max Towards Force (×s²)",
             () => runtimeSettings.maxTowardsForce,
-            v => runtimeSettings.maxTowardsForce = v
+            v => runtimeSettings.maxTowardsForce = v,
+            tooltip: "Cap on the pairwise gravity force (G*m1*m2/r^2) while two balls are moving toward each other. Keeps close balls from slamming together."
         );
         CreateFloatField(
             group,
-            "Max Away Force",
+            "Max Away Force (×s²)",
             () => runtimeSettings.maxAwayFromForce,
-            v => runtimeSettings.maxAwayFromForce = v
+            v => runtimeSettings.maxAwayFromForce = v,
+            tooltip: "Cap on the pairwise gravity force while two balls are moving apart. Setting it above Max Towards Force lets gravity resist separation more than it accelerates approach."
         );
         CreateFloatField(
             group,
             "Gravity Force Damper",
             () => runtimeSettings.gravityForceDamper,
-            v => runtimeSettings.gravityForceDamper = v
+            v => runtimeSettings.gravityForceDamper = v,
+            tooltip: "Multiplier applied to Max Towards Force when that cap kicks in. Below 1 softens the final approach; 1 = no extra damping."
         );
         CreateFloatField(
             group,
-            "Stop Gravity Distance",
+            "Stop Gravity Distance (×s)",
             () => runtimeSettings.stopGravityDistance,
-            v => runtimeSettings.stopGravityDistance = v
+            v => runtimeSettings.stopGravityDistance = v,
+            tooltip: "Center-to-center distance below which gravity stops being applied. Inside this range the balls coast (or get stopped, see Stop Moving Distance)."
         );
         CreateFloatField(
             group,
-            "Stop Moving Distance",
+            "Stop Moving Distance (×s)",
             () => runtimeSettings.stopMovingDistance,
-            v => runtimeSettings.stopMovingDistance = v
+            v => runtimeSettings.stopMovingDistance = v,
+            tooltip: "Within this center-to-center distance, if the balls' relative speed is below Stop Velocity, a counter-force cancels their motion so they settle side by side."
         );
         CreateFloatField(
             group,
-            "Stop Velocity",
+            "Stop Velocity (×s)",
             () => runtimeSettings.stopVelocity,
-            v => runtimeSettings.stopVelocity = v
+            v => runtimeSettings.stopVelocity = v,
+            tooltip: "Relative speed threshold for the settle-in-place behavior. Balls closer than Stop Moving Distance and slower than this are brought to rest."
         );
         CreateFloatField(
             group,
             "Attraction Radius Multiplier",
             () => runtimeSettings.attractionRadiusMultiplier,
-            v => runtimeSettings.attractionRadiusMultiplier = v
+            v => runtimeSettings.attractionRadiusMultiplier = v,
+            tooltip: "Scales each ball's attraction radius (relative to its current diameter). Gravity only starts once another ball's body enters this radius. Also sizes the debug radius sprite."
         );
     }
 
@@ -406,74 +459,86 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Force To Middle",
             () => runtimeSettings.forceToMiddle,
-            v => runtimeSettings.forceToMiddle = v
+            v => runtimeSettings.forceToMiddle = v,
+            tooltip: "Curve of push-force strength vs. how close the ball is to its target. X: 0 = ball is Max Distance Between Hands away, 1 = ball is at the target. Y multiplies Push Force."
         );
         CreateFloatField(
             group,
             "Single Hand Open Force Damper",
             () => runtimeSettings.singleHandOpenForceDamper,
-            v => runtimeSettings.singleHandOpenForceDamper = v
+            v => runtimeSettings.singleHandOpenForceDamper = v,
+            tooltip: "Multiplier on Push Force while only one hand is open (0-1). Lets one-handed steering be gentler than two-handed."
         );
         CreateFloatField(
             group,
-            "Push Force",
+            "Push Force (×s²)",
             () => runtimeSettings.pushForce,
-            v => runtimeSettings.pushForce = v
+            v => runtimeSettings.pushForce = v,
+            tooltip: "Base rigidbody force driving the ball toward the hand target (midpoint of both hands, or the single open hand). Everything else in this group multiplies it."
         );
         CreateFloatField(
             group,
-            "Torso Max Forward Offset",
+            "Torso Max Forward Offset (×s)",
             () => runtimeSettings.torsoMaxForwardOffset,
-            v => runtimeSettings.torsoMaxForwardOffset = v
+            v => runtimeSettings.torsoMaxForwardOffset = v,
+            tooltip: "How far the ball's push target is pulled toward the camera when the hands sit at torso depth. 0 disables."
         );
         CreateFloatField(
             group,
-            "Torso Offset Falloff Distance",
+            "Torso Offset Falloff Distance (×s)",
             () => runtimeSettings.torsoOffsetFalloffDistance,
-            v => runtimeSettings.torsoOffsetFalloffDistance = v
+            v => runtimeSettings.torsoOffsetFalloffDistance = v,
+            tooltip: "Hand-to-torso z distance at which the torso forward offset fades to zero."
         );
         CreateFloatField(
             group,
             "Min Drag",
             () => runtimeSettings.minDrag,
-            v => runtimeSettings.minDrag = v
+            v => runtimeSettings.minDrag = v,
+            tooltip: "Rigidbody linear damping when the ball is far from the hand target (at Max Distance Between Hands). Lower = ball keeps its momentum longer."
         );
         CreateFloatField(
             group,
             "Max Drag",
             () => runtimeSettings.maxDrag,
-            v => runtimeSettings.maxDrag = v
+            v => runtimeSettings.maxDrag = v,
+            tooltip: "Rigidbody linear damping when the ball is right at the hand target. Higher = ball settles quickly instead of overshooting."
         );
 
         CreateCurveField(
             group,
             "Alignment Vector Strength",
             () => runtimeSettings.alignmentVectorStrength,
-            v => runtimeSettings.alignmentVectorStrength = v
+            v => runtimeSettings.alignmentVectorStrength = v,
+            tooltip: "Curve of how far the target is offset along the direction the hands point (wrist to fingertip). X: 0 = hands together, 1 = hands at Max Distance Between Hands. Y multiplies the scaler below."
         );
         CreateFloatField(
             group,
-            "Alignment Vector Strength Scaler",
+            "Alignment Vector Strength Scaler (×s)",
             () => runtimeSettings.alignmentVectorStrengthScaler,
-            v => runtimeSettings.alignmentVectorStrengthScaler = v
+            v => runtimeSettings.alignmentVectorStrengthScaler = v,
+            tooltip: "Max distance the hand target is pushed along the hands' pointing direction. Lets players aim the ball by tilting their hands rather than only by moving them."
         );
         CreateFloatField(
             group,
             "Hand Push Scaler",
             () => runtimeSettings.handPushScaler,
-            v => runtimeSettings.handPushScaler = v
+            v => runtimeSettings.handPushScaler = v,
+            tooltip: "Extra multiplier on the push force applied while both hands are closed (the final flick that sends the ball off). Drag is set to 0 during this push."
         );
         CreateToggleField(
             group,
             "Pray To Activate",
             () => runtimeSettings.prayToActivate,
-            v => runtimeSettings.prayToActivate = v
+            v => runtimeSettings.prayToActivate = v,
+            tooltip: "When enabled, players must bring their hands together to initialize. When disabled, players start initialized."
         );
         CreateFloatField(
             group,
-            "Pray To Activate Distance",
+            "Pray To Activate Distance (×s)",
             () => runtimeSettings.prayToActivateDistance,
-            v => runtimeSettings.prayToActivateDistance = v
+            v => runtimeSettings.prayToActivateDistance = v,
+            tooltip: "The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled."
         );
     }
 
@@ -483,21 +548,24 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Boundary Distance Multiplier",
+            "Added Boundary Distance (×s)",
             () => runtimeSettings.addedBoundaryDistance,
-            v => runtimeSettings.addedBoundaryDistance = v
+            v => runtimeSettings.addedBoundaryDistance = v,
+            tooltip: "Margin added around the metaball grid to define the play boundary. Beyond it Boundary Outward Drag engages and the ball becomes eligible for reset."
         );
         CreateFloatField(
             group,
-            "Boundary Outward Drag",
+            "Boundary Outward Drag (×s)",
             () => runtimeSettings.boundaryOutwardDrag,
-            v => runtimeSettings.boundaryOutwardDrag = v
+            v => runtimeSettings.boundaryOutwardDrag = v,
+            tooltip: "Drag that opposes the ball while it is past the boundary and moving away from the hands. 0 disables."
         );
         CreateFloatField(
             group,
             "Out Of Bounds Reset Delay",
             () => runtimeSettings.outOfBoundsResetDelay,
-            v => runtimeSettings.outOfBoundsResetDelay = v
+            v => runtimeSettings.outOfBoundsResetDelay = v,
+            tooltip: "Seconds the ball must stay out of bounds before opening both hands snaps it back to the hand midpoint (plus Sphere Reset Jitter)."
         );
     }
 
@@ -511,25 +579,29 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.pulseAmount,
             v => runtimeSettings.pulseAmount = v,
             0f,
-            10f
+            10f,
+            tooltip: "Amplitude of the idle 'breathing' size wobble, as a fraction of the ball's size (value/10). 0 disables intrinsic pulsation."
         );
         CreateFloatField(
             group,
             "Pulse Speed",
             () => runtimeSettings.pulseSpeed,
-            v => runtimeSettings.pulseSpeed = v
+            v => runtimeSettings.pulseSpeed = v,
+            tooltip: "Time multiplier for the breathing wobble. Higher = faster oscillation."
         );
         CreateFloatField(
             group,
             "Graph Limit",
             () => runtimeSettings.graphLimit,
-            v => runtimeSettings.graphLimit = v
+            v => runtimeSettings.graphLimit = v,
+            tooltip: "Expected peak of the summed sine waves, used to normalize the wobble into 0..Pulse Amount. Roughly the number of Pulse Frequencies entries; lower values clip, higher values flatten the pulse."
         );
         CreateFloatArrayField(
             group,
             "Pulse Frequencies",
             () => runtimeSettings.pulseFreqs,
-            v => runtimeSettings.pulseFreqs = v
+            v => runtimeSettings.pulseFreqs = v,
+            tooltip: "Frequencies of the sine waves summed to make the breathing wobble (y = sin(f1*t) + sin(f2*t) + ...). Mixed, non-integer values give a less regular pulse."
         );
     }
 
@@ -541,33 +613,52 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Single Hand Scaling",
             () => runtimeSettings.singleHandScaling,
-            v => runtimeSettings.singleHandScaling = v
+            v => runtimeSettings.singleHandScaling = v,
+            tooltip: "Allow scaling to occur with only one hand's velocity."
         );
         CreateFloatField(
             group,
-            "Minimum Unscaled Size",
+            "Minimum Unscaled Size (×s)",
             () => runtimeSettings.minimumUnscaledSize,
-            v => runtimeSettings.minimumUnscaledSize = v
+            v => runtimeSettings.minimumUnscaledSize = v,
+            tooltip: "The minimum size that the vfx body can scale down to."
+        );
+        CreateFloatField(
+            group,
+            "Maximum Unscaled Size (×s)",
+            () => runtimeSettings.maximumUnscaledSize,
+            v => runtimeSettings.maximumUnscaledSize = v,
+            tooltip: "The maximum size that the vfx body can scale up to."
+        );
+        CreateFloatField(
+            group,
+            "Max Hand Velocity (×s)",
+            () => runtimeSettings.maxHandVelocity,
+            v => runtimeSettings.maxHandVelocity = v,
+            tooltip: "Hand-velocity sanity gate for movement-based scaling: frames where a hand moves faster than this are ignored as tracking glitches."
         );
         CreateSliderField(
             group,
-            "Min Hand Displacement Per Frame",
+            "Min Hand Displacement Per Frame (×s)",
             () => runtimeSettings.minHandDisplacementPerFrame,
             v => runtimeSettings.minHandDisplacementPerFrame = v,
             0.0001f,
-            5f
+            5f,
+            tooltip: "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
         );
         CreateCurveField(
             group,
             "Distance Damper",
             () => runtimeSettings.distanceDamper,
-            v => runtimeSettings.distanceDamper = v
+            v => runtimeSettings.distanceDamper = v,
+            tooltip: "Curve scaling the grow/shrink effect by hand separation. X: 0 = hands at Max Distance Between Hands, 1 = hands together. Y multiplies the scale change, so hands close to the ball have more effect."
         );
         CreateFloatField(
             group,
             "Pulse Scale Damper",
             () => runtimeSettings.pulseScaleDamper,
-            v => runtimeSettings.pulseScaleDamper = v
+            v => runtimeSettings.pulseScaleDamper = v,
+            tooltip: "An overall damper for the movement-based pulsation scaling."
         );
     }
 
@@ -579,43 +670,57 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Merge Size Scaler Damper",
             () => runtimeSettings.mergeSizeScalerDamper,
-            v => runtimeSettings.mergeSizeScalerDamper = v
+            v => runtimeSettings.mergeSizeScalerDamper = v,
+            tooltip: "A damper for the scaling that occurs when multiple bodies merge together."
         );
         CreateFloatField(
             group,
-            "Max Distance Between Hands",
+            "Max Distance Between Hands (×s)",
             () => runtimeSettings.maxDistanceBetweenHands,
-            v => runtimeSettings.maxDistanceBetweenHands = v
+            v => runtimeSettings.maxDistanceBetweenHands = v,
+            tooltip: "Reference hand separation used to normalize several curves (Force To Middle, Alignment Vector Strength, Distance Damper) and the drag remap. Distances beyond it are clamped."
         );
         CreateFloatField(
             group,
-            "Base Z Depth",
+            "Base Z Depth (×s)",
             () => runtimeSettings.baseZDepth,
-            v => runtimeSettings.baseZDepth = v
+            v => runtimeSettings.baseZDepth = v,
+            tooltip: "World-space depth of the play volume: the metaball grid, boundary and Kinect joints are all placed at this Z. Also sent to the hand VFX."
         );
         CreateFloatField(
             group,
-            "Grid Scale",
+            "Grid Scale (×s)",
             () => runtimeSettings.gridScale,
-            v => runtimeSettings.gridScale = v
+            v => runtimeSettings.gridScale = v,
+            tooltip: "World size of one marching-cubes voxel (volume = 64x32x64 voxels). Scales with bodyScale."
         );
         CreateFloatField(
             group,
-            "Default Unscaled Size",
+            "Default Unscaled Size (×s)",
             () => runtimeSettings.defaultUnscaledSize,
-            v => runtimeSettings.defaultUnscaledSize = v
+            v => runtimeSettings.defaultUnscaledSize = v,
+            tooltip: "Starting diameter of a new player's ball before any pulsation, growing or shrinking is applied."
         );
         CreateFloatField(
             group,
             "Body Scale",
             () => runtimeSettings.bodyScale,
-            v => runtimeSettings.bodyScale = v
+            v => runtimeSettings.bodyScale = v,
+            tooltip: "World scale of the Kinect space. Every setting marked (×s), (×s²) or (×1/s) is stored at 1x and multiplied by this at runtime, so changing it alone keeps gameplay and look identical relative to the body."
         );
         CreateFloatField(
             group,
-            "Max Distance From Camera",
+            "Max Distance From Camera (×s)",
             () => runtimeSettings.maxDistanceFromCamera,
-            v => runtimeSettings.maxDistanceFromCamera = v
+            v => runtimeSettings.maxDistanceFromCamera = v,
+            tooltip: "If a player's hands are tracked farther from the camera than this, they are treated as closed and their colliders/skeleton lines are disabled (filters people far in the background)."
+        );
+        CreateFloatField(
+            group,
+            "Sphere Reset Jitter (×s)",
+            () => runtimeSettings.sphereResetJitter,
+            v => runtimeSettings.sphereResetJitter = v,
+            tooltip: "Random +/- offset added when the ball is reset to the hand midpoint, so overlapping balls don't reset to exactly the same spot."
         );
     }
 
@@ -627,13 +732,15 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Particle Initialization Delay",
             () => runtimeSettings.particleInitializationDelay,
-            v => runtimeSettings.particleInitializationDelay = v
+            v => runtimeSettings.particleInitializationDelay = v,
+            tooltip: "The amount of time it takes for the particle initialization animation to play once a new player is added to the scene."
         );
         CreateFloatField(
             group,
             "Initialization Reset Delay",
             () => runtimeSettings.initializationResetDelay,
-            v => runtimeSettings.initializationResetDelay = v
+            v => runtimeSettings.initializationResetDelay = v,
+            tooltip: "Seconds a hand-state change must persist before it re-triggers the hand open/close animation, preventing flicker from noisy Kinect hand states."
         );
         CreateSliderField(
             group,
@@ -641,37 +748,372 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.initializationSpeed,
             v => runtimeSettings.initializationSpeed = v,
             0f,
-            1f
+            1f,
+            tooltip: "Speed of the hand opening animation during initialization. Lower values = slower animation."
         );
         CreateFloatField(
             group,
             "Single Hand Open Threshold",
             () => runtimeSettings.singleHandOpenThreshold,
-            v => runtimeSettings.singleHandOpenThreshold = v
+            v => runtimeSettings.singleHandOpenThreshold = v,
+            tooltip: "Minimum time in single-hand-open state before the final push uses that hand's position. Accounts for slight timing discrepancies with real Kinect users."
         );
         CreateFloatField(
             group,
             "Single Hand Force Lerp Duration",
             () => runtimeSettings.singleHandForceLerpDuration,
-            v => runtimeSettings.singleHandForceLerpDuration = v
+            v => runtimeSettings.singleHandForceLerpDuration = v,
+            tooltip: "Seconds to blend the push force from Single Hand Open Force Damper back to full strength after the second hand opens."
         );
         CreateFloatField(
             group,
             "Metaball Radius Animation Duration",
             () => runtimeSettings.metaballRadiusAnimationDuration,
-            v => runtimeSettings.metaballRadiusAnimationDuration = v
+            v => runtimeSettings.metaballRadiusAnimationDuration = v,
+            tooltip: "Seconds for the metaball radius to animate from its start size to full size when a player initializes."
         );
         CreateFloatField(
             group,
-            "Metaball Radius Animation Start Size",
+            "Metaball Radius Animation Start Size (×s)",
             () => runtimeSettings.metaballRadiusAnimationStartSize,
-            v => runtimeSettings.metaballRadiusAnimationStartSize = v
+            v => runtimeSettings.metaballRadiusAnimationStartSize = v,
+            tooltip: "Starting radius for the metaball grow-in animation when a player initializes."
         );
         CreateCurveField(
             group,
             "Metaball Radius Animation Curve",
             () => runtimeSettings.metaballRadiusAnimationCurve,
-            v => runtimeSettings.metaballRadiusAnimationCurve = v
+            v => runtimeSettings.metaballRadiusAnimationCurve = v,
+            tooltip: "Easing curve for the metaball grow-in (X: 0-1 normalized time, Y: 0-1 progress from start size to full size)."
+        );
+        CreateFloatField(
+            group,
+            "Body Spawn Size (×s)",
+            () => runtimeSettings.bodySpawnSize,
+            v => runtimeSettings.bodySpawnSize = v,
+            tooltip: "Particle size of the BodyEffects.vfx spawn flash on VFX_Body."
+        );
+    }
+
+    // ---- Hand VFX (HandVfxSettings, nested in the scene profile as "handVfx") ----
+    // Group names mirror the [Header]s in HandVfxSettings. Every dimensioned row shows the
+    // base value with a unit hint; the effective value is base × bodyScale^exp.
+
+    private void CreateHandVfxSpawnGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Spawn & Size", parentContainer);
+
+        CreateIntField(
+            group,
+            "Spawn Rate",
+            () => runtimeSettings.handVfx.spawnRate,
+            v => runtimeSettings.handVfx.spawnRate = v
+        );
+        CreateFloatField(
+            group,
+            "Spawn Sphere Radius (×s)",
+            () => runtimeSettings.handVfx.spawnSphereRadius,
+            v => runtimeSettings.handVfx.spawnSphereRadius = v
+        );
+        CreateFloatField(
+            group,
+            "Spawn Velocity Spread (×s)",
+            () => runtimeSettings.handVfx.spawnVeloSpread,
+            v => runtimeSettings.handVfx.spawnVeloSpread = v
+        );
+        CreateVector2Field(
+            group,
+            "Size Range (×s)",
+            () => runtimeSettings.handVfx.sizeRange,
+            v => runtimeSettings.handVfx.sizeRange = v
+        );
+        CreateFloatField(
+            group,
+            "Lifetime Remap Max Dist (×s)",
+            () => runtimeSettings.handVfx.lifetimeRemapMaxDist,
+            v => runtimeSettings.handVfx.lifetimeRemapMaxDist = v
+        );
+        CreateVector2Field(
+            group,
+            "Life Range (s)",
+            () => runtimeSettings.handVfx.lifeRange,
+            v => runtimeSettings.handVfx.lifeRange = v
+        );
+        CreateFloatField(
+            group,
+            "Length Scaler (×1/s)",
+            () => runtimeSettings.handVfx.lengthScaler,
+            v => runtimeSettings.handVfx.lengthScaler = v
+        );
+        CreateFloatField(
+            group,
+            "Min Stretch Length",
+            () => runtimeSettings.handVfx.minStretchLength,
+            v => runtimeSettings.handVfx.minStretchLength = v
+        );
+    }
+
+    private void CreateHandVfxCollisionGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Collision", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Sphere Collision Scale Mult",
+            () => runtimeSettings.handVfx.vfxSphereCollisionScaleMult,
+            v => runtimeSettings.handVfx.vfxSphereCollisionScaleMult = v
+        );
+        CreateFloatField(
+            group,
+            "Collision Detection Scale Mult",
+            () => runtimeSettings.handVfx.collisionDetectionScaleMult,
+            v => runtimeSettings.handVfx.collisionDetectionScaleMult = v
+        );
+    }
+
+    private void CreateHandVfxMainAttractorGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Main Attractor", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Main Attraction Speed (×s)",
+            () => runtimeSettings.handVfx.mainAttractionSpeed,
+            v => runtimeSettings.handVfx.mainAttractionSpeed = v
+        );
+        CreateFloatField(
+            group,
+            "Main Attraction Force (×s)",
+            () => runtimeSettings.handVfx.mainAttractionForce,
+            v => runtimeSettings.handVfx.mainAttractionForce = v
+        );
+        CreateFloatField(
+            group,
+            "Main Stick Distance (×s)",
+            () => runtimeSettings.handVfx.mainStickDistance,
+            v => runtimeSettings.handVfx.mainStickDistance = v
+        );
+        CreateFloatField(
+            group,
+            "Main Stick Force (×s)",
+            () => runtimeSettings.handVfx.mainStickForce,
+            v => runtimeSettings.handVfx.mainStickForce = v
+        );
+        CreateFloatField(
+            group,
+            "Tangential Damping (1/s)",
+            () => runtimeSettings.handVfx.tangentialDamping,
+            v => runtimeSettings.handVfx.tangentialDamping = v
+        );
+        CreateFloatField(
+            group,
+            "Seek Strength (×s)",
+            () => runtimeSettings.handVfx.seekStrength,
+            v => runtimeSettings.handVfx.seekStrength = v
+        );
+    }
+
+    private void CreateHandVfxTrailDistortersGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Trail Distorters", parentContainer);
+
+        CreateFloatField(
+            group,
+            "TD Radius (×s)",
+            () => runtimeSettings.handVfx.tdRadius,
+            v => runtimeSettings.handVfx.tdRadius = v
+        );
+        CreateFloatField(
+            group,
+            "TD Stick Distance (×s)",
+            () => runtimeSettings.handVfx.tdStickDistance,
+            v => runtimeSettings.handVfx.tdStickDistance = v
+        );
+        CreateFloatField(
+            group,
+            "TD Stick Force (×s)",
+            () => runtimeSettings.handVfx.tdStickForce,
+            v => runtimeSettings.handVfx.tdStickForce = v
+        );
+        CreateFloatField(
+            group,
+            "TD Attraction Force (×s)",
+            () => runtimeSettings.handVfx.tdAttractionForce,
+            v => runtimeSettings.handVfx.tdAttractionForce = v
+        );
+        CreateFloatField(
+            group,
+            "TD Attraction Speed (×s)",
+            () => runtimeSettings.handVfx.tdAttractionSpeed,
+            v => runtimeSettings.handVfx.tdAttractionSpeed = v
+        );
+        CreateFloatField(
+            group,
+            "TD Wander Amount (×s)",
+            () => runtimeSettings.handVfx.tdWanderAmount,
+            v => runtimeSettings.handVfx.tdWanderAmount = v
+        );
+    }
+
+    private void CreateHandVfxSecondaryAttractorGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Secondary Attractor", parentContainer);
+
+        CreateFloatField(
+            group,
+            "SA Attraction Speed (×s)",
+            () => runtimeSettings.handVfx.saAttractionSpeed,
+            v => runtimeSettings.handVfx.saAttractionSpeed = v
+        );
+        CreateFloatField(
+            group,
+            "SA Attraction Force (×s)",
+            () => runtimeSettings.handVfx.saAttractionForce,
+            v => runtimeSettings.handVfx.saAttractionForce = v
+        );
+        CreateFloatField(
+            group,
+            "SA Stick Distance (×s)",
+            () => runtimeSettings.handVfx.saStickDistance,
+            v => runtimeSettings.handVfx.saStickDistance = v
+        );
+        CreateFloatField(
+            group,
+            "SA Stick Force (×s)",
+            () => runtimeSettings.handVfx.saStickForce,
+            v => runtimeSettings.handVfx.saStickForce = v
+        );
+        CreateFloatField(
+            group,
+            "SA Min Radius (×s)",
+            () => runtimeSettings.handVfx.saMinRadius,
+            v => runtimeSettings.handVfx.saMinRadius = v
+        );
+    }
+
+    private void CreateHandVfxNoiseGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Noise & Turbulence", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Noise Scale (×s)",
+            () => runtimeSettings.handVfx.noiseScale,
+            v => runtimeSettings.handVfx.noiseScale = v
+        );
+        CreateFloatField(
+            group,
+            "Noise Frequency (×1/s)",
+            () => runtimeSettings.handVfx.noiseFrequency,
+            v => runtimeSettings.handVfx.noiseFrequency = v
+        );
+        CreateFloatField(
+            group,
+            "Noise Roughness",
+            () => runtimeSettings.handVfx.noiseRoughness,
+            v => runtimeSettings.handVfx.noiseRoughness = v
+        );
+        CreateIntField(
+            group,
+            "Noise Octaves",
+            () => runtimeSettings.handVfx.noiseOctaves,
+            v => runtimeSettings.handVfx.noiseOctaves = v
+        );
+        CreateFloatField(
+            group,
+            "Turbulence Intensity (×s)",
+            () => runtimeSettings.handVfx.turbulenceIntensity,
+            v => runtimeSettings.handVfx.turbulenceIntensity = v
+        );
+        CreateFloatField(
+            group,
+            "Turbulence Frequency (×1/s)",
+            () => runtimeSettings.handVfx.turbulenceFrequency,
+            v => runtimeSettings.handVfx.turbulenceFrequency = v
+        );
+    }
+
+    private void CreateHandVfxBurstsGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Bursts (CHat/OHat)", parentContainer);
+
+        CreateFloatField(
+            group,
+            "CHat Size (×s)",
+            () => runtimeSettings.handVfx.cHatSize,
+            v => runtimeSettings.handVfx.cHatSize = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Noise Amp (×s)",
+            () => runtimeSettings.handVfx.cHatNoiseAmp,
+            v => runtimeSettings.handVfx.cHatNoiseAmp = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Noise Freq (×1/s)",
+            () => runtimeSettings.handVfx.cHatNoiseFreq,
+            v => runtimeSettings.handVfx.cHatNoiseFreq = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Noise Y Scroll (×s)",
+            () => runtimeSettings.handVfx.cHatNoiseYScroll,
+            v => runtimeSettings.handVfx.cHatNoiseYScroll = v
+        );
+        CreateFloatField(
+            group,
+            "CHat Spawn Velo Sphere Radius (×s)",
+            () => runtimeSettings.handVfx.cHatSpawnVeloSphereRadius,
+            v => runtimeSettings.handVfx.cHatSpawnVeloSphereRadius = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Size (×s)",
+            () => runtimeSettings.handVfx.oHatSize,
+            v => runtimeSettings.handVfx.oHatSize = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Noise Amp (×s)",
+            () => runtimeSettings.handVfx.oHatNoiseAmp,
+            v => runtimeSettings.handVfx.oHatNoiseAmp = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Noise Freq (×1/s)",
+            () => runtimeSettings.handVfx.oHatNoiseFreq,
+            v => runtimeSettings.handVfx.oHatNoiseFreq = v
+        );
+        CreateFloatField(
+            group,
+            "OHat Noise Y Scroll (×s)",
+            () => runtimeSettings.handVfx.oHatNoiseYScroll,
+            v => runtimeSettings.handVfx.oHatNoiseYScroll = v
+        );
+    }
+
+    private void CreateHandVfxSnareGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Snare", parentContainer);
+
+        CreateVector2Field(
+            group,
+            "Snare Size Range (×s)",
+            () => runtimeSettings.handVfx.snareSizeRange,
+            v => runtimeSettings.handVfx.snareSizeRange = v
+        );
+        CreateVector2Field(
+            group,
+            "Snare Radius Rand Range (×s)",
+            () => runtimeSettings.handVfx.snareRadiusRandRange,
+            v => runtimeSettings.handVfx.snareRadiusRandRange = v
+        );
+        CreateFloatField(
+            group,
+            "Snare Spawn Velo Sphere Radius (×s)",
+            () => runtimeSettings.handVfx.snareSpawnVeloSphereRadius,
+            v => runtimeSettings.handVfx.snareSpawnVeloSphereRadius = v
         );
     }
 
@@ -881,19 +1323,22 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Custom Colors",
             () => runtimeSettings.customColors,
-            v => runtimeSettings.customColors = v
+            v => runtimeSettings.customColors = v,
+            tooltip: "Assign each new player a color from the custom palette (set in the SceneController inspector) instead of the default gradient."
         );
         CreateToggleField(
             group,
             "Draw Skeleton",
             () => runtimeSettings.drawSkeleton,
-            v => runtimeSettings.drawSkeleton = v
+            v => runtimeSettings.drawSkeleton = v,
+            tooltip: "Draw line-renderer bones between tracked Kinect joints for each player."
         );
         CreateToggleField(
             group,
             "Use Tracking State Colors",
             () => runtimeSettings.useTrackingStateColors,
-            v => runtimeSettings.useTrackingStateColors = v
+            v => runtimeSettings.useTrackingStateColors = v,
+            tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color. Only applies when Draw Skeleton is on."
         );
     }
 
@@ -905,55 +1350,64 @@ public class InGameSettingsMenu : MonoBehaviour
             group,
             "Dummy Only Mode",
             () => runtimeSettings.dummyOnlyMode,
-            v => runtimeSettings.dummyOnlyMode = v
+            v => runtimeSettings.dummyOnlyMode = v,
+            tooltip: "Skip the Kinect entirely and drive the scene with dummy players only. For development without a sensor."
         );
         CreateToggleField(
             group,
             "Show Sphere Mesh On Hand Collision",
             () => runtimeSettings.showSphereMeshOnHandCollision,
-            v => runtimeSettings.showSphereMeshOnHandCollision = v
+            v => runtimeSettings.showSphereMeshOnHandCollision = v,
+            tooltip: "Temporarily show the physics sphere mesh whenever a hand's scaling ray hits the ball, to visualize the grow/shrink hit test."
         );
         CreateToggleField(
             group,
             "Always Show Sphere Mesh",
             () => runtimeSettings.alwaysShowSphereMesh,
-            v => runtimeSettings.alwaysShowSphereMesh = v
+            v => runtimeSettings.alwaysShowSphereMesh = v,
+            tooltip: "When enabled, the sphere mesh is always visible regardless of hand collision state."
         );
         CreateToggleField(
             group,
             "Show Metaball Mesh",
             () => runtimeSettings.showMetaballMesh,
-            v => runtimeSettings.showMetaballMesh = v
+            v => runtimeSettings.showMetaballMesh = v,
+            tooltip: "When enabled, the metaball mesh renderer is visible for debugging."
         );
         CreateToggleField(
             group,
             "Show Point Cloud",
             () => runtimeSettings.showPointCloud,
-            v => runtimeSettings.showPointCloud = v
+            v => runtimeSettings.showPointCloud = v,
+            tooltip: "When enabled, the Kinect depth point cloud (body occlusion geometry) is rendered visibly."
         );
         CreateToggleField(
             group,
             "Show Metaball Bounds",
             () => runtimeSettings.showMetaballBounds,
-            v => runtimeSettings.showMetaballBounds = v
+            v => runtimeSettings.showMetaballBounds = v,
+            tooltip: "When enabled, the metaball volume's bounding box is drawn as a wireframe."
         );
         CreateToggleField(
             group,
             "Show Attraction Radius",
             () => runtimeSettings.showAttractionRadius,
-            v => runtimeSettings.showAttractionRadius = v
+            v => runtimeSettings.showAttractionRadius = v,
+            tooltip: "Show a sprite around each ball indicating its gravity attraction radius."
         );
         CreateToggleField(
             group,
             "Show Hand Trail Distorters",
             () => runtimeSettings.showHandTrailDistorters,
-            v => runtimeSettings.showHandTrailDistorters = v
+            v => runtimeSettings.showHandTrailDistorters = v,
+            tooltip: "Render the TD1/TD2 trail distorter debug spheres that orbit each hand and shape the hand particles."
         );
         CreateToggleField(
             group,
             "Show Secondary Attractor",
             () => runtimeSettings.showSecondaryAttractor,
-            v => runtimeSettings.showSecondaryAttractor = v
+            v => runtimeSettings.showSecondaryAttractor = v,
+            tooltip: "Render the secondary attractor debug sphere on each hand that the hand particles conform to."
         );
     }
 
@@ -972,11 +1426,62 @@ public class InGameSettingsMenu : MonoBehaviour
         return group;
     }
 
+    // ---- Tooltips ----
+
+    private void AttachTooltip(VisualElement target, string tooltip)
+    {
+        if (string.IsNullOrEmpty(tooltip))
+            return;
+
+        target.RegisterCallback<PointerEnterEvent>(evt => ShowTooltip(tooltip, evt.position));
+        target.RegisterCallback<PointerMoveEvent>(evt => MoveTooltip(evt.position));
+        target.RegisterCallback<PointerLeaveEvent>(_ => HideTooltip());
+    }
+
+    private void ShowTooltip(string text, Vector2 panelPosition)
+    {
+        if (tooltipElement == null)
+            return;
+        tooltipElement.text = text;
+        tooltipElement.style.display = DisplayStyle.Flex;
+        tooltipElement.BringToFront();
+        MoveTooltip(panelPosition);
+    }
+
+    private void MoveTooltip(Vector2 panelPosition)
+    {
+        if (tooltipElement == null || tooltipElement.style.display == DisplayStyle.None)
+            return;
+
+        const float offset = 16f;
+        var root = uiDocument.rootVisualElement;
+        float x = panelPosition.x + offset;
+        float y = panelPosition.y + offset;
+
+        // Keep the popup inside the panel once its size is known.
+        float w = tooltipElement.resolvedStyle.width;
+        float h = tooltipElement.resolvedStyle.height;
+        if (!float.IsNaN(w) && w > 0 && x + w > root.resolvedStyle.width)
+            x = Mathf.Max(0f, panelPosition.x - w - offset);
+        if (!float.IsNaN(h) && h > 0 && y + h > root.resolvedStyle.height)
+            y = Mathf.Max(0f, panelPosition.y - h - offset);
+
+        tooltipElement.style.left = x;
+        tooltipElement.style.top = y;
+    }
+
+    private void HideTooltip()
+    {
+        if (tooltipElement != null)
+            tooltipElement.style.display = DisplayStyle.None;
+    }
+
     private void CreateFloatField(
         VisualElement parent,
         string label,
         Func<float> getter,
-        Action<float> setter
+        Action<float> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -984,14 +1489,112 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var field = new FloatField();
+        field.name = label;
         field.AddToClassList("setting-input");
         field.value = getter();
         field.RegisterValueChangedCallback(evt =>
         {
             setter(evt.newValue);
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
+        });
+
+        row.Add(labelElement);
+        row.Add(field);
+        parent.Add(row);
+
+        settingElements[label] = field;
+    }
+
+    private void CreateIntField(
+        VisualElement parent,
+        string label,
+        Func<int> getter,
+        Action<int> setter,
+        string tooltip = null
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
+
+        var field = new IntegerField();
+        field.name = label;
+        field.AddToClassList("setting-input");
+        field.value = getter();
+        field.RegisterValueChangedCallback(evt =>
+        {
+            setter(evt.newValue);
+            NotifySettingsChanged();
+        });
+
+        row.Add(labelElement);
+        row.Add(field);
+        parent.Add(row);
+
+        settingElements[label] = field;
+    }
+
+    private void CreateVector2Field(
+        VisualElement parent,
+        string label,
+        Func<Vector2> getter,
+        Action<Vector2> setter,
+        string tooltip = null
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
+
+        var field = new Vector2Field();
+        field.name = label;
+        field.AddToClassList("setting-input");
+        field.value = getter();
+        field.RegisterValueChangedCallback(evt =>
+        {
+            setter(evt.newValue);
+            NotifySettingsChanged();
+        });
+
+        row.Add(labelElement);
+        row.Add(field);
+        parent.Add(row);
+
+        settingElements[label] = field;
+    }
+
+    private void CreateVector3Field(
+        VisualElement parent,
+        string label,
+        Func<Vector3> getter,
+        Action<Vector3> setter,
+        string tooltip = null
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
+
+        var field = new Vector3Field();
+        field.name = label;
+        field.AddToClassList("setting-input");
+        field.value = getter();
+        field.RegisterValueChangedCallback(evt =>
+        {
+            setter(evt.newValue);
+            NotifySettingsChanged();
         });
 
         row.Add(labelElement);
@@ -1007,7 +1610,8 @@ public class InGameSettingsMenu : MonoBehaviour
         Func<float> getter,
         Action<float> setter,
         float min,
-        float max
+        float max,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1015,6 +1619,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var inputContainer = new VisualElement();
         inputContainer.style.flexDirection = FlexDirection.Row;
@@ -1035,7 +1640,7 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             setter(evt.newValue);
             valueLabel.text = $"{evt.newValue:F2}";
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         inputContainer.Add(slider);
@@ -1053,7 +1658,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<bool> getter,
-        Action<bool> setter
+        Action<bool> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1061,6 +1667,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var toggle = new Toggle();
         toggle.AddToClassList("toggle");
@@ -1068,7 +1675,7 @@ public class InGameSettingsMenu : MonoBehaviour
         toggle.RegisterValueChangedCallback(evt =>
         {
             setter(evt.newValue);
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         });
 
         row.Add(labelElement);
@@ -1082,7 +1689,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<AnimationCurve> getter,
-        Action<AnimationCurve> setter
+        Action<AnimationCurve> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1090,6 +1698,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         // Use a regular VisualElement with a CPU-rendered Texture2D instead of
         // IMGUIContainer + GL calls. GL.LoadPixelMatrix() always uses screen coordinates
@@ -1152,7 +1761,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 changedCurve =>
                 {
                     setter(changedCurve);
-                    OnSettingsChanged?.Invoke(runtimeSettings);
+                    NotifySettingsChanged();
                 }
             );
         });
@@ -1251,7 +1860,8 @@ public class InGameSettingsMenu : MonoBehaviour
         VisualElement parent,
         string label,
         Func<float[]> getter,
-        Action<float[]> setter
+        Action<float[]> setter,
+        string tooltip = null
     )
     {
         var row = new VisualElement();
@@ -1259,6 +1869,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var labelElement = new Label(label);
         labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
 
         var arrayContainer = new VisualElement();
         arrayContainer.AddToClassList("array-container");
@@ -1338,7 +1949,7 @@ public class InGameSettingsMenu : MonoBehaviour
         newArray[newArray.Length - 1] = 1f;
         setter(newArray);
         RefreshFloatArray(container, newArray, setter, collapseButton, countLabel);
-        OnSettingsChanged?.Invoke(runtimeSettings);
+        NotifySettingsChanged();
     }
 
     private void RefreshFloatArray(
@@ -1369,7 +1980,7 @@ public class InGameSettingsMenu : MonoBehaviour
             {
                 array[index] = evt.newValue;
                 setter(array);
-                OnSettingsChanged?.Invoke(runtimeSettings);
+                NotifySettingsChanged();
             });
 
             var removeButton = new Button(() =>
@@ -1379,7 +1990,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 Array.Copy(array, index + 1, newArray, index, array.Length - index - 1);
                 setter(newArray);
                 RefreshFloatArray(container, newArray, setter, collapseButton, countLabel);
-                OnSettingsChanged?.Invoke(runtimeSettings);
+                NotifySettingsChanged();
             });
             removeButton.text = "-";
             removeButton.AddToClassList("array-button");
@@ -1453,6 +2064,15 @@ public class InGameSettingsMenu : MonoBehaviour
         if (isRefreshingSuppressed)
             return;
 
+        // Working set restored: just point the dropdown at the profile it came from.
+        if (restoredFromWorkingSet)
+        {
+            string name = Path.GetFileNameWithoutExtension(currentSceneProfilePath ?? "");
+            if (!string.IsNullOrEmpty(name) && profileFiles.Contains(name))
+                sceneProfileDropdown.SetValueWithoutNotify(name);
+            return;
+        }
+
         // Try to restore last used scene profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedSceneProfileKey, "");
 
@@ -1489,6 +2109,18 @@ public class InGameSettingsMenu : MonoBehaviour
             .ToList();
 
         postProcessingProfileDropdown.choices = profileFiles;
+
+        if (isRefreshingSuppressed)
+            return;
+
+        // Working set restored: just point the dropdown at the profile it came from.
+        if (restoredFromWorkingSet)
+        {
+            string name = Path.GetFileNameWithoutExtension(currentPostProcessingProfilePath ?? "");
+            if (!string.IsNullOrEmpty(name) && profileFiles.Contains(name))
+                postProcessingProfileDropdown.SetValueWithoutNotify(name);
+            return;
+        }
 
         // Try to restore last used post-processing profile for this specific scene
         string lastUsedProfile = PlayerPrefs.GetString(lastUsedPostProcessingProfileKey, "");
@@ -1557,9 +2189,22 @@ public class InGameSettingsMenu : MonoBehaviour
             // Merge loaded settings based on profile type
             if (profileType == ProfileType.Scene)
             {
+                // Legacy (version 0) scene files hold effective values tuned at their own
+                // bodyScale - convert to base-at-1x in memory (never written back here).
+                // PP profiles are version 0 too and must NOT be touched.
+                if (loadedSettings.settingsVersion < RuntimeSceneSettings.CurrentSettingsVersion)
+                {
+                    BodyScaling.ConvertLegacyProfileInPlace(loadedSettings, json);
+                    Debug.Log(
+                        $"[InGameSettingsMenu] '{Path.GetFileName(path)}' is a legacy (v0) scene profile - "
+                            + "converted to base values in memory. Save it (or run EnergyBall/Migrate Scene Profiles To Base) to persist."
+                    );
+                }
+
                 // Load only scene settings, keep current post-processing settings
                 MergeSceneSettings(loadedSettings);
                 currentSceneProfilePath = path;
+                sceneBaselineJson = CanonicalSceneJson(runtimeSettings);
 
                 // Save as last used scene profile
                 string profileName = Path.GetFileNameWithoutExtension(path);
@@ -1571,6 +2216,7 @@ public class InGameSettingsMenu : MonoBehaviour
                 // Load only post-processing settings, keep current scene settings
                 MergePostProcessingSettings(loadedSettings);
                 currentPostProcessingProfilePath = path;
+                postProcessingBaselineJson = CanonicalPostProcessingJson(runtimeSettings);
 
                 // Save as last used post-processing profile
                 string profileName = Path.GetFileNameWithoutExtension(path);
@@ -1582,15 +2228,10 @@ public class InGameSettingsMenu : MonoBehaviour
                 {
                     Controller.volumeController.ApplyCurrentSettings(runtimeSettings);
                 }
-
-#if UNITY_EDITOR
-                // Save post-processing settings to persist to edit mode after play mode stops
-                VolumeController.OnProfileSaved(runtimeSettings);
-#endif
             }
 
             RefreshUI();
-            OnSettingsChanged?.Invoke(runtimeSettings);
+            NotifySettingsChanged();
         }
         catch (Exception e)
         {
@@ -1602,6 +2243,7 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         // Copy only non-post-processing settings from loaded profile
         // Keep the current post-processing settings intact
+        runtimeSettings.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
 
         // Gravity and Force settings
         runtimeSettings.g = loadedSettings.g;
@@ -1651,6 +2293,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.minimumUnscaledSize = loadedSettings.minimumUnscaledSize;
         runtimeSettings.maximumUnscaledSize = loadedSettings.maximumUnscaledSize;
         runtimeSettings.minHandDisplacementPerFrame = loadedSettings.minHandDisplacementPerFrame;
+        runtimeSettings.maxHandVelocity = loadedSettings.maxHandVelocity;
         if (loadedSettings.distanceDamper != null && loadedSettings.distanceDamper.length > 0)
             runtimeSettings.distanceDamper = new AnimationCurve(loadedSettings.distanceDamper.keys);
         runtimeSettings.pulseScaleDamper = loadedSettings.pulseScaleDamper;
@@ -1661,6 +2304,13 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.defaultUnscaledSize = loadedSettings.defaultUnscaledSize;
         runtimeSettings.bodyScale = loadedSettings.bodyScale;
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
+        runtimeSettings.sphereResetJitter = loadedSettings.sphereResetJitter;
+
+        // Hand VFX (nested group, copied as one object; old files without the key get C# defaults)
+        runtimeSettings.handVfx =
+            loadedSettings.handVfx != null
+                ? loadedSettings.handVfx.DeepCopy()
+                : new HandVfxSettings();
 
         // Animation
         runtimeSettings.particleInitializationDelay = loadedSettings.particleInitializationDelay;
@@ -1672,6 +2322,7 @@ public class InGameSettingsMenu : MonoBehaviour
             loadedSettings.metaballRadiusAnimationDuration;
         runtimeSettings.metaballRadiusAnimationStartSize =
             loadedSettings.metaballRadiusAnimationStartSize;
+        runtimeSettings.bodySpawnSize = loadedSettings.bodySpawnSize;
         if (
             loadedSettings.metaballRadiusAnimationCurve != null
             && loadedSettings.metaballRadiusAnimationCurve.length > 0
@@ -1739,7 +2390,9 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
     {
-        // Copy only non-post-processing settings to destination
+        // Copy only non-post-processing settings to destination.
+        // Saved scene profiles are always base-at-1x (version 1).
+        destination.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
 
         // Gravity and Force settings
         destination.g = source.g;
@@ -1783,6 +2436,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.minimumUnscaledSize = source.minimumUnscaledSize;
         destination.maximumUnscaledSize = source.maximumUnscaledSize;
         destination.minHandDisplacementPerFrame = source.minHandDisplacementPerFrame;
+        destination.maxHandVelocity = source.maxHandVelocity;
         destination.distanceDamper = new AnimationCurve(source.distanceDamper.keys);
         destination.pulseScaleDamper = source.pulseScaleDamper;
         destination.mergeSizeScalerDamper = source.mergeSizeScalerDamper;
@@ -1792,6 +2446,11 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.defaultUnscaledSize = source.defaultUnscaledSize;
         destination.bodyScale = source.bodyScale;
         destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
+        destination.sphereResetJitter = source.sphereResetJitter;
+
+        // Hand VFX (nested group, copied as one object)
+        destination.handVfx =
+            source.handVfx != null ? source.handVfx.DeepCopy() : new HandVfxSettings();
 
         // Animation
         destination.particleInitializationDelay = source.particleInitializationDelay;
@@ -1801,6 +2460,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = source.initializationSpeed;
         destination.metaballRadiusAnimationDuration = source.metaballRadiusAnimationDuration;
         destination.metaballRadiusAnimationStartSize = source.metaballRadiusAnimationStartSize;
+        destination.bodySpawnSize = source.bodySpawnSize;
         destination.metaballRadiusAnimationCurve = new AnimationCurve(
             source.metaballRadiusAnimationCurve.keys
         );
@@ -1853,6 +2513,7 @@ public class InGameSettingsMenu : MonoBehaviour
     )
     {
         // Copy only post-processing settings to destination
+        destination.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
 
         // Bloom settings
         destination.bloomThreshold = source.bloomThreshold;
@@ -1920,6 +2581,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.minimumUnscaledSize = 0.0f;
         destination.maximumUnscaledSize = 0.0f;
         destination.minHandDisplacementPerFrame = 0.0f;
+        destination.maxHandVelocity = 0.0f;
         destination.distanceDamper = new AnimationCurve();
         destination.pulseScaleDamper = 0.0f;
         destination.mergeSizeScalerDamper = 0.0f;
@@ -1929,6 +2591,10 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.defaultUnscaledSize = 0.0f;
         destination.bodyScale = 0.0f;
         destination.maxDistanceFromCamera = 0.0f;
+        destination.sphereResetJitter = 0.0f;
+        // JsonUtility can't write null for a class field - PP files carry a defaults block
+        // (MergePostProcessingSettings ignores it).
+        destination.handVfx = new HandVfxSettings();
         destination.particleInitializationDelay = 0.0f;
         destination.initializationResetDelay = 0.0f;
         destination.singleHandOpenThreshold = 0.0f;
@@ -1936,6 +2602,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.initializationSpeed = 0.0f;
         destination.metaballRadiusAnimationDuration = 0.0f;
         destination.metaballRadiusAnimationStartSize = 0.0f;
+        destination.bodySpawnSize = 0.0f;
         destination.metaballRadiusAnimationCurve = new AnimationCurve();
         destination.dummyOnlyMode = false;
         destination.drawSkeleton = false;
@@ -2151,15 +2818,19 @@ public class InGameSettingsMenu : MonoBehaviour
                 {
                     Controller.volumeController.ApplyCurrentSettings(runtimeSettings);
                 }
-
-#if UNITY_EDITOR
-                // Save post-processing settings to persist to edit mode after play mode stops
-                VolumeController.OnProfileSaved(runtimeSettings);
-#endif
             }
 
             var json = JsonUtility.ToJson(settingsToSave, true);
             File.WriteAllText(path, json);
+
+            // The saved profile is the new baseline for this tab.
+            if (tabType == TabType.Scene)
+                sceneBaselineJson = CanonicalSceneJson(runtimeSettings);
+            else
+                postProcessingBaselineJson = CanonicalPostProcessingJson(runtimeSettings);
+            UpdateDirtyState();
+            UpdateDirtyIndicators();
+            SaveWorkingSet();
         }
         catch (Exception e)
         {
@@ -2180,13 +2851,342 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         if (newSettings != null)
         {
-            runtimeSettings = newSettings.DeepCopy();
+            SetRuntimeSettings(newSettings.DeepCopy());
 
             // Only refresh UI if the panels are initialized (Start() has been called)
             if (sceneSettingsPanel != null && postProcessingPanel != null)
             {
                 RefreshUI();
+                UpdateDirtyState();
+                UpdateDirtyIndicators();
+                SaveWorkingSet();
             }
         }
+    }
+
+    // ---- Working set / dirty tracking ----
+
+    private string ActiveSceneName =>
+        UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+    private string CurrentSceneProfileName =>
+        string.IsNullOrEmpty(currentSceneProfilePath)
+            ? ""
+            : Path.GetFileNameWithoutExtension(currentSceneProfilePath);
+
+    private string CurrentPostProcessingProfileName =>
+        string.IsNullOrEmpty(currentPostProcessingProfilePath)
+            ? ""
+            : Path.GetFileNameWithoutExtension(currentPostProcessingProfilePath);
+
+    /// <summary>
+    /// Replaces the base settings object and keeps the debugging-change subscription attached
+    /// (the old code lost it whenever the object was swapped).
+    /// </summary>
+    private void SetRuntimeSettings(RuntimeSceneSettings settings)
+    {
+        if (runtimeSettings != null)
+            runtimeSettings.OnAnyDebuggingSettingChanged -= OnDebuggingSettingChanged;
+        runtimeSettings = settings;
+        if (runtimeSettings != null)
+            runtimeSettings.OnAnyDebuggingSettingChanged += OnDebuggingSettingChanged;
+    }
+
+    private void OnDebuggingSettingChanged() => NotifySettingsChanged();
+
+    /// <summary>
+    /// Single exit point for "the settings changed": persists the working set, refreshes the
+    /// dirty markers and raises <see cref="OnSettingsChanged"/> for the controller.
+    /// </summary>
+    private void NotifySettingsChanged()
+    {
+        UpdateDirtyState();
+        UpdateDirtyIndicators();
+        SaveWorkingSet();
+        OnSettingsChanged?.Invoke(runtimeSettings);
+    }
+
+    private void SaveWorkingSet()
+    {
+        if (runtimeSettings == null)
+            return;
+        SettingsWorkingSet.Save(
+            ActiveSceneName,
+            runtimeSettings,
+            CurrentSceneProfileName,
+            CurrentPostProcessingProfileName
+        );
+    }
+
+    /// <summary>
+    /// Loads the working set for this scene into <see cref="runtimeSettings"/> and rebuilds the
+    /// dirty baselines from the profiles it names. Returns false when there is none.
+    /// </summary>
+    private bool TryRestoreWorkingSet()
+    {
+        var file = SettingsWorkingSet.Load(ActiveSceneName);
+        if (file == null)
+            return false;
+
+        SetRuntimeSettings(file.settings.DeepCopy());
+
+        currentSceneProfilePath = ResolveProfilePath(sceneProfilesDirectory, file.sceneProfileName);
+        currentPostProcessingProfilePath = ResolveProfilePath(
+            postProcessingProfilesDirectory,
+            file.postProcessingProfileName
+        );
+        sceneBaselineJson = ComputeProfileBaseline(currentSceneProfilePath, ProfileType.Scene);
+        postProcessingBaselineJson = ComputeProfileBaseline(
+            currentPostProcessingProfilePath,
+            ProfileType.PostProcessing
+        );
+
+        // Keep the last-used keys in step so a missing working set still falls back sensibly.
+        if (!string.IsNullOrEmpty(currentSceneProfilePath))
+            PlayerPrefs.SetString(lastUsedSceneProfileKey, file.sceneProfileName);
+        if (!string.IsNullOrEmpty(currentPostProcessingProfilePath))
+            PlayerPrefs.SetString(lastUsedPostProcessingProfileKey, file.postProcessingProfileName);
+        PlayerPrefs.Save();
+
+        Debug.Log(
+            $"[InGameSettingsMenu] Restored working set for '{ActiveSceneName}' "
+                + $"(scene profile '{file.sceneProfileName}', PP profile '{file.postProcessingProfileName}', saved {file.savedAtUtc})."
+        );
+        return true;
+    }
+
+    private static string ResolveProfilePath(string directory, string profileName)
+    {
+        if (string.IsNullOrEmpty(profileName))
+            return "";
+        string path = Path.Combine(directory, profileName + ".json");
+        return File.Exists(path) ? path : "";
+    }
+
+    /// <summary>
+    /// Canonical JSON of the given profile file as it would look once merged - i.e. exactly what
+    /// a fresh load of it would produce - without disturbing the live settings.
+    /// </summary>
+    private string ComputeProfileBaseline(string path, ProfileType profileType)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            return "";
+        try
+        {
+            string json = File.ReadAllText(path);
+            var loaded = JsonUtility.FromJson<RuntimeSceneSettings>(json);
+            if (
+                profileType == ProfileType.Scene
+                && loaded.settingsVersion < RuntimeSceneSettings.CurrentSettingsVersion
+            )
+            {
+                BodyScaling.ConvertLegacyProfileInPlace(loaded, json);
+            }
+
+            // Merge into a scratch copy so the merge code stays the single source of truth.
+            var live = runtimeSettings;
+            runtimeSettings = live.DeepCopy();
+            string baseline;
+            if (profileType == ProfileType.Scene)
+            {
+                MergeSceneSettings(loaded);
+                baseline = CanonicalSceneJson(runtimeSettings);
+            }
+            else
+            {
+                MergePostProcessingSettings(loaded);
+                baseline = CanonicalPostProcessingJson(runtimeSettings);
+            }
+            runtimeSettings = live;
+            return baseline;
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[InGameSettingsMenu] Could not read baseline '{path}': {e.Message}");
+            return "";
+        }
+    }
+
+    private string CanonicalSceneJson(RuntimeSceneSettings source)
+    {
+        var clean = new RuntimeSceneSettings();
+        CopySceneSettings(source, clean);
+        return JsonUtility.ToJson(clean);
+    }
+
+    private string CanonicalPostProcessingJson(RuntimeSceneSettings source)
+    {
+        var clean = new RuntimeSceneSettings();
+        CopyPostProcessingSettings(source, clean);
+        return JsonUtility.ToJson(clean);
+    }
+
+    private void UpdateDirtyState()
+    {
+        if (runtimeSettings == null)
+            return;
+        isSceneDirty =
+            string.IsNullOrEmpty(currentSceneProfilePath)
+            || CanonicalSceneJson(runtimeSettings) != sceneBaselineJson;
+        isPostProcessingDirty =
+            string.IsNullOrEmpty(currentPostProcessingProfilePath)
+            || CanonicalPostProcessingJson(runtimeSettings) != postProcessingBaselineJson;
+    }
+
+    private void UpdateDirtyIndicators()
+    {
+        SetDirtyLabel(sceneDirtyLabel, isSceneDirty, currentSceneProfilePath);
+        SetDirtyLabel(
+            postProcessingDirtyLabel,
+            isPostProcessingDirty,
+            currentPostProcessingProfilePath
+        );
+        if (sceneTab != null)
+            sceneTab.text = isSceneDirty ? "Scene *" : "Scene";
+        if (postProcessingTab != null)
+            postProcessingTab.text = isPostProcessingDirty
+                ? "Post Processing *"
+                : "Post Processing";
+    }
+
+    private static void SetDirtyLabel(Label label, bool dirty, string profilePath)
+    {
+        if (label == null)
+            return;
+        label.style.display = dirty ? DisplayStyle.Flex : DisplayStyle.None;
+        label.text = string.IsNullOrEmpty(profilePath) ? "Unsaved (no profile)" : "Unsaved changes";
+    }
+
+    public bool IsSceneDirty => isSceneDirty;
+    public bool IsPostProcessingDirty => isPostProcessingDirty;
+
+    /// <summary>
+    /// Load the dropdown's profile, asking first when the tab has unsaved changes.
+    /// <paramref name="previousDropdownValue"/> is restored on cancel (dropdown-driven loads).
+    /// </summary>
+    private void RequestLoadSelectedProfile(TabType tabType, string previousDropdownValue = null)
+    {
+        bool dirty = tabType == TabType.Scene ? isSceneDirty : isPostProcessingDirty;
+        string tabKey = tabType == TabType.Scene ? "scene" : "postprocessing";
+        if (!dirty)
+        {
+            LoadSelectedProfile(tabKey);
+            return;
+        }
+
+        string activeName =
+            tabType == TabType.Scene ? CurrentSceneProfileName : CurrentPostProcessingProfileName;
+        string message = string.IsNullOrEmpty(activeName)
+            ? "The current settings have not been saved to a profile. Loading will discard them."
+            : $"'{activeName}' has unsaved changes. Loading will discard them.";
+
+        ShowConfirmDialog(
+            "Discard unsaved changes?",
+            message,
+            "Discard & Load",
+            onConfirm: () => LoadSelectedProfile(tabKey),
+            onCancel: () =>
+            {
+                if (previousDropdownValue == null)
+                    return;
+                var dropdown =
+                    tabType == TabType.Scene ? sceneProfileDropdown : postProcessingProfileDropdown;
+                dropdown?.SetValueWithoutNotify(previousDropdownValue);
+            }
+        );
+    }
+
+    private void ShowConfirmDialog(
+        string titleText,
+        string messageText,
+        string confirmText,
+        Action onConfirm,
+        Action onCancel
+    )
+    {
+        isModalOpen = true;
+
+        var modal = new VisualElement();
+        modal.style.position = Position.Absolute;
+        modal.style.left = 0;
+        modal.style.top = 0;
+        modal.style.right = 0;
+        modal.style.bottom = 0;
+        modal.style.backgroundColor = new Color(0, 0, 0, 0.8f);
+        modal.style.alignItems = Align.Center;
+        modal.style.justifyContent = Justify.Center;
+
+        var panel = new VisualElement();
+        panel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+        panel.style.borderTopWidth = 2;
+        panel.style.borderBottomWidth = 2;
+        panel.style.borderLeftWidth = 2;
+        panel.style.borderRightWidth = 2;
+        panel.style.borderTopColor = Color.gray;
+        panel.style.borderBottomColor = Color.gray;
+        panel.style.borderLeftColor = Color.gray;
+        panel.style.borderRightColor = Color.gray;
+        panel.style.paddingTop = 20;
+        panel.style.paddingBottom = 20;
+        panel.style.paddingLeft = 20;
+        panel.style.paddingRight = 20;
+        panel.style.width = 440;
+
+        var title = new Label(titleText);
+        title.style.fontSize = 18;
+        title.style.color = Color.white;
+        title.style.marginBottom = 10;
+        panel.Add(title);
+
+        var message = new Label(messageText);
+        message.style.color = new Color(0.85f, 0.85f, 0.85f);
+        message.style.whiteSpace = WhiteSpace.Normal;
+        message.style.marginBottom = 15;
+        panel.Add(message);
+
+        var buttons = new VisualElement();
+        buttons.style.flexDirection = FlexDirection.Row;
+        buttons.style.justifyContent = Justify.Center;
+
+        void Close()
+        {
+            settingsPanel.Remove(modal);
+            isModalOpen = false;
+        }
+
+        var confirm = new Button(() =>
+        {
+            Close();
+            onConfirm?.Invoke();
+        });
+        confirm.text = confirmText;
+        confirm.style.marginRight = 10;
+        confirm.style.paddingLeft = 15;
+        confirm.style.paddingRight = 15;
+
+        var cancel = new Button(() =>
+        {
+            Close();
+            onCancel?.Invoke();
+        });
+        cancel.text = "Cancel";
+        cancel.style.paddingLeft = 15;
+        cancel.style.paddingRight = 15;
+
+        buttons.Add(confirm);
+        buttons.Add(cancel);
+        panel.Add(buttons);
+        modal.Add(panel);
+        settingsPanel.Add(modal);
+
+        modal.RegisterCallback<KeyDownEvent>(evt =>
+        {
+            if (evt.keyCode == KeyCode.Escape)
+            {
+                Close();
+                onCancel?.Invoke();
+            }
+        });
+        cancel.Focus();
     }
 }

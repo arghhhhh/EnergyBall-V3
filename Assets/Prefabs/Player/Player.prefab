@@ -90,6 +90,7 @@ MonoBehaviour:
   rightHandStateChangeTime: 0
   rightHandVfx: {fileID: 7710126860832210582}
   rightHandAnimator: {fileID: 7694435021211117177}
+  bodyVfx: {fileID: 1846043007408142036}
   SpineBase: {fileID: 5989189560902028993}
   SpineMid: {fileID: 1233171391602813728}
   Neck: {fileID: 7748983954631014889}

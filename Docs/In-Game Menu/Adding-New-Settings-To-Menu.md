@@ -6,6 +6,14 @@ This guide explains how to add new settings fields to an existing tab in the in-
 
 The settings menu system uses `RuntimeSceneSettings` as the central data class. Settings are organized into groups within tabs, and changes are persisted through JSON profile files.
 
+**Working set.** Independently of profiles, every change (menu, profile load, inspector in play or edit mode) is written to a per-scene working-set file (`SettingsWorkingSet.cs`, under `Application.persistentDataPath`). It is restored at play start and copied back into the inspector when play stops, so the latest change always sticks; the menu marks the tab dirty (`Scene *`, "Unsaved changes") until you Save. New fields need nothing extra for this - the whole `RuntimeSceneSettings` object is serialized - but **a field missing from `CopySceneSettings` / `CopyPostProcessingSettings` is invisible to dirty tracking and to profiles**, so steps 7-8 matter. Always go through `NotifySettingsChanged()` (never invoke `OnSettingsChanged` directly) so the working set and dirty state stay current.
+
+**Base vs. effective values.** Everything the menu, the `SceneController` inspector and the JSON profiles hold is a _base_ value at `bodyScale = 1`. `SceneController.RebuildEffectiveSettings()` derives the object consumers read (`CurrentSettings` / `GetRuntimeSettings()`) as `base × bodyScale^exp` via `BodyScaling.CreateEffective`. So:
+
+- **If the new setting has a dimension** (a length, velocity, per-frame displacement, rigidbody force, spatial frequency), put `[BodyScaled(exp)]` on the `RuntimeSceneSettings` field and store the **1× value**. Exponents: lengths / velocities / per-frame displacements `1`; rigidbody forces (`AddForce`) `2` (mass ∝ s); spatial frequencies `-1`. Time, ratios, rates, curves, bools and counts get no attribute. See `Docs/BodyScale-settings-audit.md` for the derivation and worked examples.
+- Append the unit hint to the menu label by hand: `"Push Force (×s²)"`, `"TD Radius (×s)"`, `"Noise Frequency (×1/s)"`.
+- Consumers never rescale anything themselves — they just read the effective object.
+
 ## Quick Reference
 
 | Step | File                      | Action                                                           |
@@ -36,9 +44,15 @@ public float boundaryOutwardDrag = 50f;
 **Property Types Supported:**
 
 - `float` - Use `CreateFloatField()` or `CreateSliderField()`
+- `int` - Use `CreateIntField()`
+- `Vector2` / `Vector3` - Use `CreateVector2Field()` / `CreateVector3Field()`
 - `bool` - Use `CreateToggleField()`
 - `float[]` - Use `CreateFloatArrayField()`
 - `AnimationCurve` - Use `CreateCurveField()` (opens the runtime curve editor popup)
+
+`[BodyScaled]` supports `float`, `Vector2` and `Vector3` fields.
+
+**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`; the PP copy sets `destination.handVfx = new HandVfxSettings()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching `CreateHandVfx*Group` in the menu. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write.
 
 **For properties with change notifications:**
 
@@ -141,9 +155,17 @@ private void CreateHandsAttractionGroup(ScrollView parentContainer)
     // Add your new field
     CreateFloatField(group, "My New Setting",
         () => runtimeSettings.myNewSetting,
-        v => runtimeSettings.myNewSetting = v);
+        v => runtimeSettings.myNewSetting = v,
+        tooltip: "One or two sentences on what it does and which direction is 'more'.");
 }
 ```
+
+**Hover tooltips.** Every `Create*Field` helper takes an optional trailing `string tooltip = null`. When set, hovering the setting's label shows a runtime popup (`AttachTooltip` / `ShowTooltip` in `InGameSettingsMenu.cs`, styled by `.setting-tooltip` in `Assets/UI/SettingsMenu.uss`). This is a custom popup because UI Toolkit's built-in `VisualElement.tooltip` only renders inside the Editor. Guidelines:
+
+- Add one for any setting whose effect isn't obvious from the label — physics caps, thresholds, dampers, and especially **curves** (state what X = 0 / X = 1 mean, since several are inverted, e.g. `Force To Middle` X = 1 is "ball at target").
+- Skip it for self-explanatory values (most Hand VFX rows).
+- If the field already has a `[Tooltip]` on `RuntimeSceneSettings`, reuse that text so the inspector and menu agree.
+- Describe the behavior, not the units — the `(×s)` label suffix already covers scaling.
 
 #### Option B: Create a New Group
 
@@ -154,12 +176,14 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
 {
     var group = CreateGroup("Boundary Drag", parentContainer);
 
-    CreateFloatField(group, "Boundary Distance Multiplier",
+    CreateFloatField(group, "Added Boundary Distance (×s)",
         () => runtimeSettings.addedBoundaryDistance,
-        v => runtimeSettings.addedBoundaryDistance = v);
-    CreateFloatField(group, "Boundary Outward Drag",
+        v => runtimeSettings.addedBoundaryDistance = v,
+        tooltip: "Margin added around the metaball grid to define the play boundary.");
+    CreateFloatField(group, "Boundary Outward Drag (×s)",
         () => runtimeSettings.boundaryOutwardDrag,
-        v => runtimeSettings.boundaryOutwardDrag = v);
+        v => runtimeSettings.boundaryOutwardDrag = v,
+        tooltip: "Drag opposing the ball while it is past the boundary and moving away from the hands. 0 disables.");
 }
 ```
 
@@ -252,6 +276,8 @@ destination.myNewPostProcessingSetting = 0.0f;
 
 ## Available UI Field Types
 
+All helpers accept an optional trailing `tooltip:` argument (see step 6). It is omitted below for brevity.
+
 ### Float Field
 
 ```csharp
@@ -341,6 +367,13 @@ target.myCurve = new AnimationCurve(myCurve.keys);
 myCurve = new AnimationCurve(source.myCurve.keys);
 ```
 
+### Int / Vector Fields
+
+```csharp
+CreateIntField(group, "Label", () => runtimeSettings.handVfx.spawnRate, v => runtimeSettings.handVfx.spawnRate = v);
+CreateVector2Field(group, "Label (×s)", () => runtimeSettings.handVfx.sizeRange, v => runtimeSettings.handVfx.sizeRange = v);
+```
+
 ### Testing Checklist (curve-specific)
 
 In addition to the general checklist:
@@ -365,6 +398,7 @@ The settings menu follows this group structure to match the SceneController insp
 - Movement-Based Pulsation
 - Miscellaneous
 - Animation
+- Hand VFX - Spawn & Size / Main Attractor / Trail Distorters / Secondary Attractor / Noise & Turbulence / Stretch / Bursts (CHat/OHat) / Snare (mirror the `[Header]`s in `HandVfxSettings`)
 - Style
 - Debugging
 
@@ -378,6 +412,8 @@ The settings menu follows this group structure to match the SceneController insp
 
 ## Common Pitfalls
 
+0. **Storing an effective value**: a dimensioned field without `[BodyScaled]`, or a `[BodyScaled]` field seeded with a 5×-tuned number, breaks the "change bodyScale, nothing else" invariant. Store the 1× value.
+
 1. **Forgetting DeepCopy()**: Your setting won't be properly copied when backing up/restoring settings.
 
 2. **Missing SceneController updates**: Forgetting to add the inspector field or update `CopyInspectorToRuntime()`/`CopyRuntimeToInspector()` means the setting won't sync between inspector and runtime.
@@ -390,12 +426,15 @@ The settings menu follows this group structure to match the SceneController insp
 
 6. **Wrong tab**: Adding a scene setting to post-processing methods or vice versa.
 
+7. **Tooltip text drift**: if the field has a `[Tooltip]` on `RuntimeSceneSettings` / `SceneController`, keep the menu `tooltip:` in sync (or copy it verbatim) so the inspector and menu don't contradict each other.
+
 ## Testing Checklist
 
 After adding your new setting:
 
 - [ ] Setting appears in the SceneController inspector in the correct BoxGroup
 - [ ] Setting appears in the correct group in the in-game settings UI
+- [ ] Hovering the label shows the tooltip (if one was given)
 - [ ] Changing the value in inspector updates runtime (in play mode)
 - [ ] Changing the value in in-game menu updates inspector
 - [ ] Saving a profile includes the new setting
@@ -460,12 +499,14 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
 {
     var group = CreateGroup("Boundary Drag", parentContainer);
 
-    CreateFloatField(group, "Boundary Distance Multiplier",
+    CreateFloatField(group, "Added Boundary Distance (×s)",
         () => runtimeSettings.addedBoundaryDistance,
-        v => runtimeSettings.addedBoundaryDistance = v);
-    CreateFloatField(group, "Boundary Outward Drag",
+        v => runtimeSettings.addedBoundaryDistance = v,
+        tooltip: "Margin added around the metaball grid to define the play boundary.");
+    CreateFloatField(group, "Boundary Outward Drag (×s)",
         () => runtimeSettings.boundaryOutwardDrag,
-        v => runtimeSettings.boundaryOutwardDrag = v);
+        v => runtimeSettings.boundaryOutwardDrag = v,
+        tooltip: "Drag opposing the ball while it is past the boundary and moving away from the hands. 0 disables.");
 }
 ```
 

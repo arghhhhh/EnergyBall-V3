@@ -4,6 +4,10 @@ using UnityEngine;
 public class DummyHandController : MonoBehaviour
 {
     public GameObject hand;
+
+    [Tooltip(
+        "Per-frame step = speed / 100 world units at bodyScale 1 (multiplied by bodyScale at runtime)."
+    )]
     public float speed = 1f;
     float speedDamper;
     public string upKey = "UpArrow";
@@ -24,21 +28,32 @@ public class DummyHandController : MonoBehaviour
 
     void FixedUpdate()
     {
+        // The step is a per-frame displacement (a length) -> scale with bodyScale so a
+        // dummy hand covers the same fraction of the body per frame at every world scale.
+        float bodyScale = 1f;
+        if (SceneController.Instance != null)
+        {
+            bodyScale = SceneController.Instance.GetRuntimeSettings().bodyScale;
+            if (bodyScale <= 0f)
+                bodyScale = 1f;
+        }
+        float step = speedDamper * bodyScale;
+
         if (Input.GetKey(up))
         {
-            hand.transform.position += speedDamper * transform.up;
+            hand.transform.position += step * transform.up;
         }
         if (Input.GetKey(down))
         {
-            hand.transform.position += -1f * speedDamper * transform.up;
+            hand.transform.position += -1f * step * transform.up;
         }
         if (Input.GetKey(left))
         {
-            hand.transform.position += -1f * speedDamper * transform.right;
+            hand.transform.position += -1f * step * transform.right;
         }
         if (Input.GetKey(right))
         {
-            hand.transform.position += speedDamper * transform.right;
+            hand.transform.position += step * transform.right;
         }
     }
 
