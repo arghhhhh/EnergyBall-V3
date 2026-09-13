@@ -550,6 +550,7 @@ namespace UnityCliBridge.Handlers
                 contexts.Add(new JObject
                 {
                     ["index"] = i,
+                    ["instanceId"] = (ctx as UnityEngine.Object)?.GetInstanceID(),
                     ["contextType"] = ctxType,
                     ["type"] = ctx.GetType().Name,
                     ["name"] = ModelName(ctx),
@@ -573,6 +574,7 @@ namespace UnityCliBridge.Handlers
                 operators.Add(new JObject
                 {
                     ["index"] = i,
+                    ["instanceId"] = (op as UnityEngine.Object)?.GetInstanceID(),
                     ["type"] = op.GetType().Name,
                     ["name"] = ModelName(op),
                     ["position"] = PositionJson(ModelPosition(op)),
@@ -616,6 +618,7 @@ namespace UnityCliBridge.Handlers
                 paramsJson.Add(new JObject
                 {
                     ["index"] = i,
+                    ["instanceId"] = (p as UnityEngine.Object)?.GetInstanceID(),
                     ["type"] = p.GetType().Name,
                     ["parameterType"] = (Prop(p, "type") as Type)?.Name,
                     ["exposedName"] = exposedName,
@@ -623,6 +626,7 @@ namespace UnityCliBridge.Handlers
                     ["isOutput"] = isOutput,
                     ["category"] = category,
                     ["order"] = order,
+                    ["position"] = PositionJson(ModelPosition(p)),
                     ["nodes"] = canvasNodes,
                     ["tooltip"] = tooltip,
                     ["value"] = value,
@@ -680,10 +684,10 @@ namespace UnityCliBridge.Handlers
             try { instancing = InstancingJson(graph); }
             catch { /* resource unavailable — leave null */ }
 
-            // Opt-in Tier-2 oracle: collect per-model validation errors. Off by default to
-            // keep describe cheap; tests that need to assert compile-clean pass includeErrors=true.
-            var includeErrors = parameters?["includeErrors"]?.ToObject<bool>() ?? false;
-            JArray errors = includeErrors ? CollectErrors(graph) : null;
+            // Tier-2 oracle (on by default; pass includeErrors:false to skip): per-model validation
+            // errors (Invalidate tier) + the last compile's errors/exception (Compilation tier).
+            var includeErrors = parameters?["includeErrors"]?.ToObject<bool>() ?? true;
+            JArray errors = includeErrors ? AllErrors(graph, assetPath) : null;
 
             return new JObject
             {
@@ -704,8 +708,21 @@ namespace UnityCliBridge.Handlers
                 ["initialEventName"] = initialEventName,
                 ["instancing"] = instancing,
                 ["template"] = TemplateInfoJson(assetPath),
-                ["errors"] = errors
+                ["errors"] = errors,
+                ["compile"] = LastCompileFor(assetPath),
+                ["layout"] = LayoutJson(graph),
+                ["touched"] = TouchedJson(assetPath, ctxList, opList, paramList)
             };
+        }
+
+        /// <summary>The nodes recorded as touched this session, resolved to describe indices.</summary>
+        private static JObject TouchedJson(string assetPath, List<object> ctxList, List<object> opList, List<object> paramList)
+        {
+            s_Touched.TryGetValue(assetPath, out var set);
+            JArray Idx(List<object> list) => new JArray(list.Select((m, i) => (m, i))
+                .Where(t => set != null && set.Contains((t.m as UnityEngine.Object)?.GetInstanceID() ?? 0))
+                .Select(t => (JToken)t.i));
+            return new JObject { ["contexts"] = Idx(ctxList), ["operators"] = Idx(opList), ["parameters"] = Idx(paramList) };
         }
 
         /// <summary>The graph's blackboard-managed custom attributes (name/type/description).</summary>
@@ -760,32 +777,37 @@ namespace UnityCliBridge.Handlers
                             Visit(block);
                 }
 
-                var errorsField = ErrorReporterType.GetField("m_Errors", AllInstance);
-                var dict = errorsField?.GetValue(reporter) as IDictionary;
-                if (dict == null) return arr;
-                foreach (DictionaryEntry kv in dict)
-                {
-                    var modelName = (kv.Key as UnityEngine.Object)?.name
-                                    ?? kv.Key?.GetType().Name;
-                    var modelType = kv.Key?.GetType().Name;
-                    var list = kv.Value as IEnumerable;
-                    if (list == null) continue;
-                    foreach (var rep in list)
-                    {
-                        arr.Add(new JObject
-                        {
-                            ["model"] = modelName,
-                            ["modelType"] = modelType,
-                            ["type"] = Prop(rep, "type")?.ToString(),
-                            ["error"] = Prop(rep, "error") as string,
-                            ["description"] = Prop(rep, "description") as string
-                        });
-                    }
-                }
+                foreach (var e in ReporterErrorsJson(reporter, "Invalidate")) arr.Add(e);
             }
             catch (Exception ex)
             {
                 arr.Add(new JObject { ["error"] = $"error-collector failed: {ex.Message}" });
+            }
+            return arr;
+        }
+
+        /// <summary>
+        /// Every error the graph currently carries: the Invalidate tier (per-model validation, e.g. HLSL
+        /// parse failures) plus the Compilation tier (what the last import's compiler registered), plus a
+        /// synthetic `CompileException` entry when the last import of this asset threw inside the compiler.
+        /// </summary>
+        private static JArray AllErrors(object graph, string assetPath)
+        {
+            var arr = CollectErrors(graph);
+            foreach (var e in CompileReporterErrors(graph)) arr.Add(e);
+            var last = LastCompileFor(assetPath);
+            var exception = last?["exception"]?.Type == JTokenType.String ? (string)last["exception"] : null;
+            if (!string.IsNullOrEmpty(exception))
+            {
+                arr.Add(new JObject
+                {
+                    ["model"] = null,
+                    ["modelType"] = null,
+                    ["type"] = "Error",
+                    ["error"] = "CompileException",
+                    ["description"] = exception,
+                    ["origin"] = "Compilation"
+                });
             }
             return arr;
         }
@@ -916,9 +938,102 @@ namespace UnityCliBridge.Handlers
         }
 
         /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow.</summary>
+        // ---- Touched tracking -----------------------------------------------------------------
+        //
+        // auto_layout defaults to the systems an agent actually worked on, so the rest of a person's
+        // canvas is left alone. "Worked on" is derived, not declared: every vfx_apply op fingerprints
+        // the graph (settings, values, links — not positions) before and after, and any context,
+        // operator or parameter whose fingerprint appeared or changed is recorded per asset for the
+        // editor session (a domain reload clears it; auto_layout then asks for an explicit scope).
+
+        private static readonly Dictionary<string, HashSet<int>> s_Touched =
+            new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
+        // Nodes that did not exist before an op this session: a system made only of created contexts
+        // is "new" and may be placed in a fresh column; every other system only ever moves vertically.
+        private static readonly Dictionary<string, HashSet<int>> s_Created =
+            new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
+
+        private static HashSet<int> CreatedFor(string assetPath)
+        {
+            if (!s_Created.TryGetValue(assetPath, out var set)) s_Created[assetPath] = set = new HashSet<int>();
+            return set;
+        }
+
+        // Links made FROM a parameter by link_slots this session (parameter instanceId, input slot
+        // instanceId). The node-level layout pass gives each one a parameter canvas node within reach
+        // of its consumer instead of leaving the editor to hang the edge off whichever node comes first.
+        private static readonly Dictionary<string, List<(int paramId, int inSlotId)>> s_NewParamLinks =
+            new Dictionary<string, List<(int paramId, int inSlotId)>>(StringComparer.OrdinalIgnoreCase);
+
+        private static List<(int paramId, int inSlotId)> NewParamLinksFor(string assetPath)
+        {
+            if (!s_NewParamLinks.TryGetValue(assetPath, out var list)) s_NewParamLinks[assetPath] = list = new List<(int, int)>();
+            return list;
+        }
+
+        private static readonly HashSet<string> s_NonTrackedOps = new HashSet<string>
+        { "auto_layout", "compile", "move_node", "group_nodes", "remove_group", "add_sticky_note",
+          "update_sticky_note", "remove_sticky_note", "reorder_sticky_note", "create_subgraph_asset",
+          "create_from_template", "designate_template" };
+
+        /// <summary>instanceId → fingerprint of every context/operator/parameter (layout fields stripped).</summary>
+        private static Dictionary<int, string> Fingerprint(string assetPath)
+        {
+            var result = new Dictionary<int, string>();
+            try
+            {
+                var d = DescribeGraphCore(new JObject { ["assetPath"] = assetPath, ["includeErrors"] = false }) as JObject;
+                if (d == null) return result;
+                foreach (var key in new[] { "contexts", "operators", "parameters" })
+                    foreach (var e in (JArray)d[key])
+                    {
+                        var copy = (JObject)e.DeepClone();
+                        copy.Remove("position"); copy.Remove("index"); copy.Remove("nodes");
+                        int id = copy.Value<int?>("instanceId") ?? 0;
+                        copy.Remove("instanceId");
+                        // Block indices shift when a block is inserted above; a link's identity does not.
+                        if (id != 0)
+                            result[id] = System.Text.RegularExpressions.Regex.Replace(
+                                copy.ToString(Newtonsoft.Json.Formatting.None), "\"blockIndex\":\\d+,?", "");
+                    }
+            }
+            catch { /* tracking is best-effort */ }
+            return result;
+        }
+
+        private static HashSet<int> TouchedFor(string assetPath)
+        {
+            if (!s_Touched.TryGetValue(assetPath, out var set)) s_Touched[assetPath] = set = new HashSet<int>();
+            return set;
+        }
+
         public static object Apply(JObject parameters)
         {
-            try { return ApplyCore(parameters); }
+            s_LastCompile = null;
+            try
+            {
+                var op = parameters?["op"]?.ToString();
+                var assetPath = parameters?["assetPath"]?.ToString();
+                bool track = !string.IsNullOrEmpty(op) && !s_NonTrackedOps.Contains(op) && !string.IsNullOrEmpty(assetPath);
+                Dictionary<int, string> before = track ? Fingerprint(assetPath) : null;
+                var result = ApplyCore(parameters);
+                if (track && result is JObject okResult && okResult["error"] == null)
+                {
+                    var after = Fingerprint(assetPath);
+                    var touched = TouchedFor(assetPath);
+                    var created = CreatedFor(assetPath);
+                    foreach (var kv in after)
+                    {
+                        if (!before.TryGetValue(kv.Key, out var prev)) { touched.Add(kv.Key); created.Add(kv.Key); }
+                        else if (prev != kv.Value) touched.Add(kv.Key);
+                    }
+                }
+                // Every persisted op reports the outcome of the recompile it triggered, so a mutation
+                // that leaves the graph uncompilable is visible in the op's own response.
+                if (result is JObject jo && s_LastCompile != null && jo["compile"] == null)
+                    jo["compile"] = s_LastCompile;
+                return result;
+            }
             catch (Exception ex) { return Fail("vfx_apply", ex); }
         }
 
@@ -956,6 +1071,10 @@ namespace UnityCliBridge.Handlers
                 case "move_block": return MoveBlock(parameters);
                 case "move_node": return MoveNode(parameters);
                 case "group_nodes": return GroupNodes(parameters);
+                case "remove_group": return RemoveGroup(parameters);
+                case "auto_layout": return AutoLayout(parameters);
+                case "compile": return CompileGraph(parameters);
+                case "set_parameter": return SetParameter(parameters);
                 case "duplicate_block": return DuplicateBlock(parameters);
                 case "duplicate_operator": return DuplicateOperator(parameters);
                 case "remove_operator": return RemoveOperator(parameters);
@@ -984,7 +1103,7 @@ namespace UnityCliBridge.Handlers
                 case "insert_template": return InsertTemplate(parameters);
                 case "designate_template": return DesignateTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, remove_block, set_block_enabled, reorder_block, move_block, move_node, group_nodes, duplicate_block, duplicate_operator, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, remove_block, set_block_enabled, reorder_block, move_block, move_node, group_nodes, remove_group, auto_layout, compile, duplicate_block, duplicate_operator, remove_operator, remove_parameter, set_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template" };
             }
         }
 
@@ -1054,27 +1173,183 @@ namespace UnityCliBridge.Handlers
                 if (field == null)
                     throw new Exception(
                         $"Setting '{kv.Key}' not found on '{model.GetType().Name}'. Use vfx_describe_graph to list settings.");
-                object converted;
-                try { converted = kv.Value.ToObject(field.FieldType); }
-                catch (Exception e)
-                {
-                    throw new Exception(
-                        $"Cannot convert value to {field.FieldType.Name} for setting '{kv.Key}': {e.Message}");
-                }
+                // Same coercion as set_block_setting / set_operator_setting / set_context_setting, so an
+                // inline `settings` map accepts enum names, asset paths for Object fields, and the
+                // Custom HLSL function selector — and fails loudly instead of silently skipping.
+                object converted = CoerceSettingValue(field, kv.Value, kv.Key);
                 Call(model, ModelType, "SetSettingValue", kv.Key, converted);
                 applied.Add(kv.Key);
             }
             return applied;
         }
 
-        /// <summary>Mark the graph dirty, write the asset, and reimport so it recompiles.</summary>
-        private static void Persist(object graph, string assetPath)
+        // ---- Compile-outcome capture ------------------------------------------
+        //
+        // Reimporting a .vfx runs the VFX compiler (VFXGraph.OnCompileResource → CompileForImport).
+        // Two failure channels exist and neither reaches a structural describe:
+        //   * graph.errorManager.compileReporter — "Compilation"-origin ReportErrors registered by
+        //     the compiler (e.g. Shader Graph validity failures);
+        //   * a thrown exception inside VFXGraphCompiledData.Compile — caught by the package and
+        //     ONLY Debug.LogError'd ("Unity cannot compile the VisualEffectAsset at path …"), e.g.
+        //     a Custom HLSL operator with > 4 inputs ("An expression can only take up to 4 parent
+        //     expressions").
+        // Persist captures Error/Exception console output for the duration of the import and
+        // combines it with the compile reporter into a `compile` summary that every vfx_apply
+        // response carries, so an op that leaves the graph uncompilable says so immediately.
+
+        private static readonly List<(LogType type, string message)> s_ImportLogs =
+            new List<(LogType, string)>();
+        private static bool s_CapturingImportLogs;
+        private static JObject s_LastCompile;
+        private static readonly Dictionary<string, JObject> s_LastCompileByAsset =
+            new Dictionary<string, JObject>(StringComparer.OrdinalIgnoreCase);
+
+        static VfxGraphHandler()
+        {
+            Application.logMessageReceived += OnLogMessage;
+        }
+
+        private static void OnLogMessage(string message, string stackTrace, LogType type)
+        {
+            if (!s_CapturingImportLogs) return;
+            if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+            lock (s_ImportLogs) s_ImportLogs.Add((type, message));
+        }
+
+        /// <summary>The Error/Exception logs emitted while the last import of this asset ran, as JSON.</summary>
+        private static JArray ImportLogsJson(out string compileException)
+        {
+            compileException = null;
+            var logs = new JArray();
+            lock (s_ImportLogs)
+            {
+                foreach (var (type, message) in s_ImportLogs)
+                {
+                    if (message.IndexOf("cannot compile the VisualEffectAsset", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        // "Unity cannot compile the VisualEffectAsset at path "…" because of the following
+                        // exception:\nSystem.ArgumentException: <reason>\n  at …" → surface the reason line.
+                        var lines = message.Split('\n');
+                        compileException = (lines.Length > 1 ? lines[1] : lines[0]).Trim();
+                    }
+                    logs.Add(new JObject
+                    {
+                        ["type"] = type.ToString(),
+                        ["message"] = message.Length > 800 ? message.Substring(0, 800) + "…" : message
+                    });
+                }
+            }
+            return logs;
+        }
+
+        /// <summary>Dump a VFXErrorReporter's m_Errors dictionary as JSON entries tagged with `origin`.</summary>
+        private static JArray ReporterErrorsJson(object reporter, string origin)
+        {
+            var arr = new JArray();
+            if (reporter == null) return arr;
+            var errorsField = reporter.GetType().GetField("m_Errors", AllInstance);
+            var dict = errorsField?.GetValue(reporter) as IDictionary;
+            if (dict == null) return arr;
+            foreach (DictionaryEntry kv in dict)
+            {
+                var modelName = (kv.Key as UnityEngine.Object)?.name ?? kv.Key?.GetType().Name;
+                var modelType = kv.Key?.GetType().Name;
+                var list = kv.Value as IEnumerable;
+                if (list == null) continue;
+                foreach (var rep in list)
+                {
+                    arr.Add(new JObject
+                    {
+                        ["model"] = modelName,
+                        ["modelType"] = modelType,
+                        ["type"] = Prop(rep, "type")?.ToString(),
+                        ["error"] = Prop(rep, "error") as string,
+                        ["description"] = Prop(rep, "description") as string,
+                        ["origin"] = origin
+                    });
+                }
+            }
+            return arr;
+        }
+
+        /// <summary>The "Compilation"-origin errors the last compile registered on the graph's error manager.</summary>
+        private static JArray CompileReporterErrors(object graph)
+        {
+            try
+            {
+                var manager = Prop(graph, "errorManager");
+                var reporter = manager == null ? null : Prop(manager, "compileReporter");
+                return ReporterErrorsJson(reporter, "Compilation");
+            }
+            catch { return new JArray(); }
+        }
+
+        /// <summary>
+        /// Summarize the outcome of the import that Persist just ran: `success` is false when the compiler
+        /// threw (`exception` carries the reason), registered an Error-tier compile report, or any
+        /// Error/Exception was logged during the import (`logs`).
+        /// </summary>
+        private static JObject CompileSummary(object graph, string assetPath)
+        {
+            var logs = ImportLogsJson(out var exception);
+            var errors = CompileReporterErrors(graph);
+            bool hasErrorTier = errors.Any(e => string.Equals((string)e["type"], "Error", StringComparison.Ordinal));
+            return new JObject
+            {
+                ["success"] = exception == null && !hasErrorTier && logs.Count == 0,
+                ["exception"] = exception,
+                ["errors"] = errors,
+                ["logs"] = logs
+            };
+        }
+
+        /// <summary>The last compile summary recorded for an asset this editor session (null if none).</summary>
+        private static JObject LastCompileFor(string assetPath)
+        {
+            return !string.IsNullOrEmpty(assetPath) && s_LastCompileByAsset.TryGetValue(assetPath, out var s) ? s : null;
+        }
+
+        /// <summary>
+        /// Mark the graph dirty, write the asset, and reimport so it recompiles. Returns the compile
+        /// summary of that import (also remembered per asset for describe, and attached to the
+        /// vfx_apply response by <see cref="Apply"/>).
+        /// </summary>
+        private static JObject Persist(object graph, string assetPath)
         {
             Call(graph, GraphType, "SetExpressionGraphDirty", true);
             var resource = Prop(graph, "visualEffectResource");
             Call(null, ResourceExtType, "WriteAssetWithSubAssets", resource);
-            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            lock (s_ImportLogs) s_ImportLogs.Clear();
+            s_CapturingImportLogs = true;
+            try { AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); }
+            finally { s_CapturingImportLogs = false; }
             AssetDatabase.SaveAssets();
+            var summary = CompileSummary(graph, assetPath);
+            s_LastCompile = summary;
+            s_LastCompileByAsset[assetPath] = summary;
+            return summary;
+        }
+
+        /// <summary>
+        /// `compile` op: force a recompile of the graph (reimport) and report the outcome — the
+        /// explicit "is this graph compilable?" check. Also returns the Invalidate-tier validation
+        /// errors so one call answers both tiers.
+        /// </summary>
+        private static object CompileGraph(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var compile = Persist(graph, assetPath);
+            var validation = CollectErrors(graph);
+            return new JObject
+            {
+                ["op"] = "compile",
+                ["assetPath"] = assetPath,
+                ["compile"] = compile,
+                ["validationErrors"] = validation,
+                ["ok"] = (bool)compile["success"]
+                        && !validation.Any(e => string.Equals((string)e["type"], "Error", StringComparison.Ordinal))
+            };
         }
 
         private static object AddBlock(JObject parameters)
@@ -1102,32 +1377,27 @@ namespace UnityCliBridge.Handlers
             if (block == null)
                 throw new Exception($"CreateInstance returned null for block '{blockName}'");
 
-            // context.AddChild(block, index:-1, notify:true)
-            Call(targetContext, ContextType, "AddChild", block, -1, true);
+            // Optional `index` = insert position within the context (-1 / omitted = append).
+            int insertIndex = parameters?["index"]?.ToObject<int>() ?? -1;
+            Call(targetContext, ContextType, "AddChild", block, insertIndex, true);
 
-            // Optional settings.
-            var settings = parameters?["settings"] as JObject;
-            var applied = new JArray();
-            if (settings != null)
-            {
-                foreach (var kv in settings)
-                {
-                    object val = kv.Value.Type == JTokenType.Integer ? (object)kv.Value.ToObject<int>()
-                               : kv.Value.Type == JTokenType.Float ? (object)kv.Value.ToObject<float>()
-                               : kv.Value.Type == JTokenType.Boolean ? (object)kv.Value.ToObject<bool>()
-                               : kv.Value.ToString();
-                    try { Call(block, ModelType, "SetSettingValue", kv.Key, val); applied.Add(kv.Key); }
-                    catch (Exception e) { BridgeLogger.LogWarning("VfxGraphHandler", $"setting '{kv.Key}' failed: {e.Message}"); }
-                }
-            }
+            // Optional settings — same coercion + fail-loud contract as set_block_setting. A failed
+            // setting removes the block again so the in-memory graph is not left with a stray node.
+            JArray applied;
+            try { applied = ApplySettings(block, parameters?["settings"] as JObject); }
+            catch { Call(targetContext, ModelType, "RemoveChild", block, true); throw; }
 
             Persist(graph, assetPath);
 
+            int blockIndex = Children(targetContext).ToList().FindIndex(b => ReferenceEquals(b, block));
             return new JObject
             {
                 ["op"] = "add_block",
                 ["assetPath"] = assetPath,
                 ["contextType"] = wantContext,
+                ["contextIndex"] = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList()
+                    .FindIndex(c => ReferenceEquals(c, targetContext)),
+                ["blockIndex"] = blockIndex,
                 ["addedBlock"] = block.GetType().Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
                 ["settingsApplied"] = applied
@@ -1208,7 +1478,18 @@ namespace UnityCliBridge.Handlers
                     $"Setting '{settingName}' not found on operator '{op.GetType().Name}'. Use vfx_describe_graph to list settings.");
 
             object converted = CoerceSettingValue(field, valueToken, settingName);
+            object previous = field.GetValue(op);
             Call(op, ModelType, "SetSettingValue", settingName, converted);
+
+            // A Custom HLSL operator compiles to ONE VFXExpressionHLSL whose parents are its inputs, and
+            // a VFX expression takes at most 4 parents — the compiler throws on the 5th and the asset
+            // silently stops compiling. Refuse (and revert) here so the graph never enters that state.
+            var guard = CustomHlslOperatorInputGuard(op);
+            if (guard != null)
+            {
+                Call(op, ModelType, "SetSettingValue", settingName, previous);
+                return new { error = guard + " The setting was not applied." };
+            }
             Persist(graph, assetPath);
 
             return new JObject
@@ -1220,6 +1501,29 @@ namespace UnityCliBridge.Handlers
                 ["setting"] = settingName,
                 ["value"] = ToJToken(converted)
             };
+        }
+
+        /// <summary>The hard cap on a VFX expression's parent count (VFXExpression ctor throws above it).</summary>
+        private const int MaxExpressionParents = 4;
+
+        private static bool IsCustomHlslOperator(object op) =>
+            op != null && op.GetType().FullName == "UnityEditor.VFX.Operator.CustomHLSL";
+
+        /// <summary>
+        /// Null when `op` is not a Custom HLSL operator or its selected function exposes ≤ 4 inputs;
+        /// otherwise the error message explaining why the graph would not compile.
+        /// </summary>
+        private static string CustomHlslOperatorInputGuard(object op)
+        {
+            if (!IsCustomHlslOperator(op)) return null;
+            int inputs = 0;
+            try { inputs = (Prop(op, "inputSlots") as IEnumerable)?.Cast<object>().Count() ?? 0; }
+            catch { return null; }
+            if (inputs <= MaxExpressionParents) return null;
+            return $"Custom HLSL operator '{ModelName(op)}' exposes {inputs} inputs, but a VFX expression " +
+                   $"takes at most {MaxExpressionParents} parents — the graph would fail to compile " +
+                   "(\"An expression can only take up to 4 parent expressions\"). Pack inputs into " +
+                   "Vector2/Vector3/Vector4 parameters or split the function (a Custom HLSL BLOCK has no such limit).";
         }
 
         /// <summary>Resolve a graph operator by `operatorIndex` (order among graph operators).</summary>
@@ -1499,10 +1803,10 @@ namespace UnityCliBridge.Handlers
             var valueToken = parameters?["value"];
             if (valueToken == null || valueToken.Type == JTokenType.Null)
                 return new { error = "value is required" };
-            bool hasIndex = parameters?["index"] != null && parameters["index"].Type != JTokenType.Null;
+            bool hasIndex = ContextIndexToken(parameters) != null;
             var wantContext = parameters?["contextType"]?.ToString();
             if (!hasIndex && string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType (or index) is required" };
+                return new { error = "contextType (or index/contextIndex) is required" };
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
@@ -1602,10 +1906,10 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         private static object DeleteSystem(JObject parameters)
         {
-            bool hasIndex = parameters?["index"] != null && parameters["index"].Type != JTokenType.Null;
+            bool hasIndex = ContextIndexToken(parameters) != null;
             var wantContext = parameters?["contextType"]?.ToString();
             if (!hasIndex && string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType (or index) is required" };
+                return new { error = "contextType (or index/contextIndex) is required" };
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
@@ -1653,10 +1957,10 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         private static object SetSystemName(JObject parameters)
         {
-            bool hasIndex = parameters?["index"] != null && parameters["index"].Type != JTokenType.Null;
+            bool hasIndex = ContextIndexToken(parameters) != null;
             var wantContext = parameters?["contextType"]?.ToString();
             if (!hasIndex && string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType (or index) is required" };
+                return new { error = "contextType (or index/contextIndex) is required" };
             var name = parameters?["name"]?.ToString();
             if (name == null)
                 return new { error = "name is required" };
@@ -1900,8 +2204,11 @@ namespace UnityCliBridge.Handlers
                 matchedDescriptor = Prop(match, "name") as string;
             }
 
-            // Optional context settings (e.g. an Event context's eventName).
-            var appliedSettings = ApplySettings(context, parameters?["settings"] as JObject);
+            // Optional context settings (e.g. an Event context's eventName). A failed setting removes
+            // the context again so the in-memory graph is not left with a stray node.
+            JArray appliedSettings;
+            try { appliedSettings = ApplySettings(context, parameters?["settings"] as JObject); }
+            catch { Call(graph, ModelType, "RemoveChild", context, true); throw; }
 
             // Optional flow link: an existing context (by contextType) flows INTO the new one.
             JObject linked = null;
@@ -1925,6 +2232,7 @@ namespace UnityCliBridge.Handlers
             // Canvas position: explicit `position:[x,y]`, else auto-place so nodes never stack at
             // the origin (below the flow source, or a fresh column for an unlinked context).
             var pos = PositionParam(parameters) ?? AutoContextPosition(graph, fromContext, context);
+            pos = FindFreeSpot(graph, pos, EstimateSize(context), context, out bool posAdjusted, sameColumnOnly: true);
             SetProp(context, "position", pos);
 
             Persist(graph, assetPath);
@@ -1937,7 +2245,8 @@ namespace UnityCliBridge.Handlers
                 ["matchedDescriptor"] = matchedDescriptor,
                 ["settingsApplied"] = appliedSettings,
                 ["linked"] = linked,
-                ["position"] = PositionJson(pos)
+                ["position"] = PositionJson(pos),
+                ["positionAdjusted"] = posAdjusted
             };
         }
 
@@ -1966,9 +2275,27 @@ namespace UnityCliBridge.Handlers
 
             Call(graph, ModelType, "AddChild", op, -1, true);
 
+            // Optional settings (e.g. a Custom HLSL operator's m_HLSLCode) — same contract as
+            // set_operator_setting, including the Custom HLSL input-count guard.
+            JArray appliedSettings;
+            try { appliedSettings = ApplySettings(op, parameters?["settings"] as JObject); }
+            catch
+            {
+                Call(graph, ModelType, "RemoveChild", op, true);
+                throw;
+            }
+            var guard = CustomHlslOperatorInputGuard(op);
+            if (guard != null)
+            {
+                // Expected user-input validation → quiet error (no logged exception), node not left behind.
+                Call(graph, ModelType, "RemoveChild", op, true);
+                return new { error = guard + " The operator was not added." };
+            }
+
             // Canvas position: explicit `position:[x,y]`, else a staggered column left of the
             // contexts so operators stay readable instead of stacking at the origin.
             var pos = PositionParam(parameters) ?? AutoOperatorPosition(graph, op);
+            pos = FindFreeSpot(graph, pos, EstimateSize(op), op, out bool posAdjusted);
             SetProp(op, "position", pos);
 
             Persist(graph, assetPath);
@@ -1983,7 +2310,9 @@ namespace UnityCliBridge.Handlers
                 ["addedOperator"] = op.GetType().Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
                 ["operatorIndex"] = operatorIndex,
-                ["position"] = PositionJson(pos)
+                ["settingsApplied"] = appliedSettings,
+                ["position"] = PositionJson(pos),
+                ["positionAdjusted"] = posAdjusted
             };
         }
 
@@ -2262,6 +2591,25 @@ namespace UnityCliBridge.Handlers
                 throw new Exception(
                     "Link rejected: output slot type is incompatible with the input slot (or directions are wrong). " +
                     "'from' must reference an output slot, 'to' an input slot.");
+            if (ParameterType.IsInstanceOfType(fromNode) && !string.IsNullOrEmpty(assetPath))
+                NewParamLinksFor(assetPath).Add(((fromNode as UnityEngine.Object)?.GetInstanceID() ?? 0,
+                                                 (inSlot as UnityEngine.Object)?.GetInstanceID() ?? 0));
+
+            // A parameter linked for the first time has no canvas node yet; the editor creates one at
+            // the model position when the graph is opened. Seed that position in free space just left
+            // of the consumer instead of leaving it at the origin on top of whatever sits there.
+            if (ParameterType.IsInstanceOfType(fromNode))
+            {
+                int nodeCount = 0;
+                try { nodeCount = (Prop(fromNode, "nodes") as IEnumerable)?.Cast<object>().Count() ?? 0; } catch { }
+                if (nodeCount == 0)
+                {
+                    object consumer = BlockType.IsInstanceOfType(toNode) ? Call(toNode, ModelType, "GetParent") : toNode;
+                    var anchor = ModelPosition(consumer) - new Vector2(LayoutParameterWidth + LayoutOperatorColumnGapX, 0);
+                    if (BlockType.IsInstanceOfType(toNode)) anchor.y += BlockRowOffset(consumer, toNode);
+                    SetProp(fromNode, "position", FindFreeSpot(graph, anchor, EstimateSize(fromNode), fromNode, out _));
+                }
+            }
 
             Persist(graph, assetPath);
 
@@ -2378,6 +2726,10 @@ namespace UnityCliBridge.Handlers
             var node = ResolveNode(graph, target, "target");
             int slotIndex = target["slot"]?.ToObject<int>() ?? 0;
             var slot = GetSlot(node, true, slotIndex, "target");
+            // `target.subPath` descends into a compound slot's CHILD slot (link_slots' addressing); the
+            // top-level `subPath` below walks the VALUE struct instead. Both end at the same leaf.
+            var targetSub = (target["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
+            slot = DescendSlot(slot, targetSub, "target");
 
             var current = Prop(slot, "value");
             var subPath = (parameters?["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
@@ -2403,7 +2755,7 @@ namespace UnityCliBridge.Handlers
             SetProp(slot, "value", newValue);
             Persist(graph, assetPath);
 
-            return new JObject
+            var result = new JObject
             {
                 ["op"] = "set_slot_value",
                 ["assetPath"] = assetPath,
@@ -2416,6 +2768,10 @@ namespace UnityCliBridge.Handlers
                 ["subPath"] = subPath == null ? null : new JArray(subPath),
                 ["value"] = ToJToken(Prop(slot, "value"))
             };
+            // A linked input ignores its constant — say so instead of letting the write look effective.
+            if (LinkCount(slot) > 0)
+                result["warning"] = $"slot '{SlotName(slot)}' is linked; the link drives it and this constant is ignored until unlink_slots.";
+            return result;
         }
 
         /// <summary>
@@ -2554,6 +2910,15 @@ namespace UnityCliBridge.Handlers
             var serType = Activator.CreateInstance(SerializableTypeType, new object[] { paramType });
             Call(inline, ModelType, "SetSettingValue", "m_Type", serType);
             Call(graph, ModelType, "AddChild", inline, -1, true);
+            // Take the parameter's canvas spot (its first node, else its model position).
+            var paramPos = ModelPosition(node);
+            try
+            {
+                if (Prop(node, "nodes") is IEnumerable pnodes)
+                    foreach (var pn in pnodes) { paramPos = (Vector2)(FindField(pn.GetType(), "position")?.GetValue(pn) ?? paramPos); break; }
+            }
+            catch { }
+            SetProp(inline, "position", paramPos);
 
             // Carry the value over to the inline operator's input slot, then move the output links.
             try { SetProp(GetSlot(inline, true, 0, "inline"), "value", Prop(node, "value")); } catch { }
@@ -2879,6 +3244,22 @@ namespace UnityCliBridge.Handlers
             if (BlockType.IsInstanceOfType(node))
                 return new { error = "Blocks have no canvas position (they are ordered inside their context); use reorder_block or move_block." };
 
+            // A context that existed before this session keeps its x: systems and their contexts only
+            // move vertically (a person's horizontal lanes are theirs). Contexts created this session
+            // may be placed freely.
+            string note = null;
+            if (ContextType.IsInstanceOfType(node))
+            {
+                s_Created.TryGetValue(assetPath, out var createdSet);
+                bool created = createdSet != null && createdSet.Contains((node as UnityEngine.Object)?.GetInstanceID() ?? 0);
+                var current = ModelPosition(node);
+                if (!created && Math.Abs(current.x - pos.Value.x) > 0.5f)
+                {
+                    pos = new Vector2(current.x, pos.Value.y);
+                    note = "contexts of existing systems move vertically only; x was kept";
+                }
+            }
+
             int movedParameterNodes = 0;
             // Contexts/operators carry one VFXModel.position. A parameter's canvas presence is its
             // VFXParameter.Node list — move every node (staggered so they stay individually
@@ -2905,17 +3286,1784 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["node"] = node.GetType().Name,
                 ["position"] = PositionJson(pos.Value),
-                ["movedParameterNodes"] = ParameterType.IsInstanceOfType(node) ? (int?)movedParameterNodes : null
+                ["movedParameterNodes"] = ParameterType.IsInstanceOfType(node) ? (int?)movedParameterNodes : null,
+                ["note"] = note
+            };
+        }
+
+        /// <summary>
+        /// Edit an existing blackboard parameter in place (the post-creation twin of add_parameter):
+        /// `value` (coerced to the parameter's type — number/bool, [x,y,z] vector, [r,g,b,a] color, or an
+        /// asset path for Texture/Mesh), `min`/`max` (switch `valueFilter` to Range), `valueFilter`
+        /// (Default/Range/Enum), `tooltip`, `exposed` (bool), `category`, `exposedName` (unique).
+        /// </summary>
+        private static object SetParameter(JObject parameters)
+        {
+            int parameterIndex = parameters?["parameterIndex"]?.ToObject<int>() ?? 0;
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (param, all) = ResolveParameter(graph, parameterIndex);
+            var paramType = Prop(param, "type") as Type;
+            var changed = new JArray();
+
+            JToken Tok(string key)
+            {
+                var t = parameters?[key];
+                return t == null || t.Type == JTokenType.Null ? null : t;
+            }
+
+            var newName = Tok("exposedName")?.ToString();
+            if (!string.IsNullOrEmpty(newName))
+            {
+                if (all.Any(p => !ReferenceEquals(p, param) &&
+                                 string.Equals(Prop(p, "exposedName") as string, newName, StringComparison.Ordinal)))
+                    return new { error = $"another parameter is already named '{newName}' (exposed names must be unique)" };
+                Call(param, ModelType, "SetSettingValue", "m_ExposedName", newName);
+                changed.Add("exposedName");
+            }
+            if (Tok("exposed") != null)
+            {
+                Call(param, ModelType, "SetSettingValue", "m_Exposed", Tok("exposed").ToObject<bool>());
+                changed.Add("exposed");
+            }
+            if (Tok("value") != null)
+            {
+                SetProp(param, "value", ParamCoerce(Tok("value"), paramType, "value"));
+                changed.Add("value");
+            }
+            var filterProp = param.GetType().GetProperty("valueFilter", BindingFlags.Public | BindingFlags.Instance);
+            if (Tok("valueFilter") != null)
+            {
+                if (filterProp == null) return new { error = "this parameter type has no valueFilter" };
+                object f;
+                try { f = Enum.Parse(filterProp.PropertyType, Tok("valueFilter").ToString(), true); }
+                catch { return new { error = $"invalid valueFilter; valid: {string.Join(", ", Enum.GetNames(filterProp.PropertyType))}" }; }
+                SetProp(param, "valueFilter", f);
+                changed.Add("valueFilter");
+            }
+            if (Tok("min") != null || Tok("max") != null)
+            {
+                if (filterProp != null && Tok("valueFilter") == null)
+                    SetProp(param, "valueFilter", Enum.Parse(filterProp.PropertyType, "Range", true));
+                if (Tok("min") != null) { SetProp(param, "min", ParamCoerce(Tok("min"), paramType, "min")); changed.Add("min"); }
+                if (Tok("max") != null) { SetProp(param, "max", ParamCoerce(Tok("max"), paramType, "max")); changed.Add("max"); }
+            }
+            if (Tok("tooltip") != null) { SetProp(param, "tooltip", Tok("tooltip").ToString()); changed.Add("tooltip"); }
+            if (Tok("category") != null) { SetProp(param, "category", Tok("category").ToString()); changed.Add("category"); }
+
+            if (changed.Count == 0)
+                return new { error = "set_parameter requires at least one of: value, min, max, valueFilter, tooltip, exposed, category, exposedName" };
+
+            Persist(graph, assetPath);
+
+            JToken Safe(string prop) { try { return ToJToken(Prop(param, prop)); } catch { return null; } }
+            return new JObject
+            {
+                ["op"] = "set_parameter",
+                ["assetPath"] = assetPath,
+                ["parameterIndex"] = parameterIndex,
+                ["changed"] = changed,
+                ["exposedName"] = Prop(param, "exposedName") as string,
+                ["exposed"] = (bool)Prop(param, "exposed"),
+                ["value"] = Safe("value"),
+                ["valueFilter"] = Safe("valueFilter"),
+                ["min"] = Safe("min"),
+                ["max"] = Safe("max"),
+                ["tooltip"] = Safe("tooltip"),
+                ["category"] = Safe("category")
+            };
+        }
+
+        /// <summary>Remove a group box by `title` (or `index` into describe's `groups[]`); member nodes stay.</summary>
+        private static object RemoveGroup(JObject parameters)
+        {
+            var title = parameters?["title"]?.ToString();
+            var idxTok = parameters?["index"];
+            bool hasIndex = idxTok != null && idxTok.Type != JTokenType.Null;
+            if (string.IsNullOrEmpty(title) && !hasIndex)
+                return new { error = "title (or index) is required" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ui = Prop(graph, "UIInfos");
+            if (ui == null) throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
+            var groupsField = FindField(ui.GetType(), "groupInfos");
+            var groups = groupsField.GetValue(ui) as Array ?? Array.CreateInstance(GroupInfoType, 0);
+            var titleField = FindField(GroupInfoType, "title");
+
+            int gi = -1;
+            if (hasIndex) gi = idxTok.ToObject<int>();
+            else
+                for (int i = 0; i < groups.Length; i++)
+                    if (string.Equals(titleField.GetValue(groups.GetValue(i)) as string, title, StringComparison.Ordinal))
+                    { gi = i; break; }
+            if (gi < 0 || gi >= groups.Length)
+                return new { error = hasIndex
+                    ? $"index {gi} out of range; graph has {groups.Length} group(s)"
+                    : $"no group titled '{title}'; existing: [{string.Join(", ", groups.Cast<object>().Select(g => titleField.GetValue(g) as string))}]" };
+
+            var removedTitle = titleField.GetValue(groups.GetValue(gi)) as string;
+            var newGroups = Array.CreateInstance(GroupInfoType, groups.Length - 1);
+            int w = 0;
+            for (int r = 0; r < groups.Length; r++)
+                if (r != gi) newGroups.SetValue(groups.GetValue(r), w++);
+            groupsField.SetValue(ui, newGroups);
+
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "remove_group",
+                ["assetPath"] = assetPath,
+                ["removedTitle"] = removedTitle,
+                ["remainingGroups"] = newGroups.Length
+            };
+        }
+
+        // ---- Layout estimation + auto layout ------------------------------------
+        //
+        // The editor measures nodes with UI Toolkit, which a headless bridge cannot run, so the layout
+        // code estimates node bounds from what the model knows (slot and block counts). The estimates
+        // are generous on purpose: an overlap the estimator reports is a real overlap or a near-miss,
+        // and auto_layout spaces nodes by the same estimates so the result stays readable in the editor.
+
+        /// <summary>Reference-identity comparer for model-keyed dictionaries (VFXModel overrides Equals via UnityEngine.Object).</summary>
+        private sealed class RefEq : IEqualityComparer<object>
+        {
+            public static readonly RefEq Instance = new RefEq();
+            public new bool Equals(object a, object b) => ReferenceEquals(a, b);
+            public int GetHashCode(object o) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(o);
+        }
+
+        // Spacing calibrated against a hand-laid-out production graph (feeders ~220-280 px from what
+        // they feed, ~30 px between stacked nodes).
+        private const float LayoutContextWidth = 440f;
+        private const float LayoutOperatorWidth = 220f;
+        private const float LayoutParameterWidth = 200f;
+        private const float LayoutContextHeaderHeight = 90f;
+        private const float LayoutBlockHeaderHeight = 44f;
+        private const float LayoutSlotRowHeight = 24f;
+        private const float LayoutContextGapX = 120f;
+        private const float LayoutContextGapY = 110f;
+        private const float LayoutSystemGapX = 260f;
+        private const float LayoutOperatorColumnGapX = 60f;
+        private const float LayoutOperatorGapY = 30f;
+        private const float LayoutParamSplitDistance = 600f; // consumers further apart than this get their own parameter node
+        private const float LayoutGroupPadding = 32f;
+        private const float LayoutGroupHeaderHeight = 48f;
+
+        private static int TopLevelSlotCount(object model, string collection)
+        {
+            try { return (Prop(model, collection) as IEnumerable)?.Cast<object>().Count() ?? 0; }
+            catch { return 0; }
+        }
+
+        /// <summary>Estimated on-canvas height of one block row inside a context.</summary>
+        private static float EstimateBlockHeight(object block) =>
+            LayoutBlockHeaderHeight + LayoutSlotRowHeight * TopLevelSlotCount(block, "inputSlots");
+
+        private const float LayoutSuperCollapsedWidth = 150f;
+        private const float LayoutSuperCollapsedHeight = 40f;
+
+        private static bool ModelFlag(object model, string prop)
+        {
+            try { return Prop(model, prop) is bool b && b; } catch { return false; }
+        }
+
+        /// <summary>Top-level slots of a collection that carry a link somewhere in their subtree (what a collapsed node still shows).</summary>
+        private static int LinkedTopLevelSlotCount(object model, string collection)
+        {
+            int n = 0;
+            try
+            {
+                foreach (var slot in (Prop(model, collection) as IEnumerable)?.Cast<object>() ?? Enumerable.Empty<object>())
+                    if (Call(slot, SlotType, "HasLink", true) is bool b && b) n++;
+            }
+            catch { }
+            return n;
+        }
+
+        /// <summary>
+        /// Estimated on-canvas size of a context, operator, or parameter node. Honors the node's UI
+        /// state: a super-collapsed operator is a small pill, a collapsed one shows only its linked slots.
+        /// </summary>
+        private static Vector2 EstimateSize(object model)
+        {
+            if (ContextType.IsInstanceOfType(model))
+            {
+                float h = LayoutContextHeaderHeight + LayoutSlotRowHeight * TopLevelSlotCount(model, "inputSlots");
+                foreach (var b in Children(model)) h += EstimateBlockHeight(b);
+                return new Vector2(LayoutContextWidth, h + 24f);
+            }
+            if (ParameterType.IsInstanceOfType(model))
+                return new Vector2(LayoutParameterWidth, LayoutBlockHeaderHeight + LayoutSlotRowHeight);
+            if (ModelFlag(model, "superCollapsed"))
+                return new Vector2(LayoutSuperCollapsedWidth, LayoutSuperCollapsedHeight);
+            int rows = ModelFlag(model, "collapsed")
+                ? Math.Max(LinkedTopLevelSlotCount(model, "inputSlots"), LinkedTopLevelSlotCount(model, "outputSlots"))
+                : Math.Max(TopLevelSlotCount(model, "inputSlots"), TopLevelSlotCount(model, "outputSlots"));
+            return new Vector2(LayoutOperatorWidth, LayoutBlockHeaderHeight + LayoutSlotRowHeight * Math.Max(rows, 1));
+        }
+
+        /// <summary>The vertical offset of a block's row inside its context (for aligning feeders to it).</summary>
+        private static float BlockRowOffset(object ctx, object block)
+        {
+            float y = LayoutContextHeaderHeight + LayoutSlotRowHeight * TopLevelSlotCount(ctx, "inputSlots");
+            foreach (var b in Children(ctx))
+            {
+                if (ReferenceEquals(b, block)) return y + EstimateBlockHeight(b) * 0.5f;
+                y += EstimateBlockHeight(b);
+            }
+            return y;
+        }
+
+        /// <summary>
+        /// A new node must never land on an existing one. From `desired`, pick the nearest spot
+        /// (vertical distance first, neighbouring columns second, above the row last) where the node's
+        /// estimated rect fits without overlapping any canvas node or sticky note. `ignore` is the node
+        /// being placed itself (a model, or a set of models). Contexts only move vertically, so they
+        /// search their own column only (`sameColumnOnly`).
+        /// </summary>
+        private static Vector2 FindFreeSpot(object graph, Vector2 desired, Vector2 size, object ignore, out bool adjusted, bool sameColumnOnly = false)
+        {
+            adjusted = false;
+            var ignoreSet = ignore as HashSet<object>;
+            var occupied = new List<Rect>();
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            foreach (var (address, rect) in CanvasNodes(graph))
+            {
+                string kind = (string)address["kind"]; int idx = (int)address["index"];
+                object model = kind == "context" ? ctxs[idx] : kind == "operator" ? ops[idx] : ps[idx];
+                if (ignoreSet != null ? ignoreSet.Contains(model) : ReferenceEquals(model, ignore)) continue;
+                occupied.Add(rect);
+            }
+            foreach (var note in StickyNotesJson(graph))
+                if (note["position"] is JObject np)
+                    occupied.Add(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]));
+            bool Free(Vector2 p)
+            {
+                var r = new Rect(p.x + 2, p.y + 2, size.x - 4, size.y - 4);
+                return !occupied.Any(o => o.Overlaps(r));
+            }
+            if (Free(desired)) return desired;
+            adjusted = true;
+            const float step = 40f;
+            float colStep = size.x + LayoutOperatorColumnGapX;
+            int maxCol = sameColumnOnly ? 0 : 3;
+            Vector2 best = desired; float bestCost = float.MaxValue;
+            for (int col = -maxCol; col <= maxCol; col++)
+                for (int i = -8; i < 400; i++)
+                {
+                    float dx = col * colStep, dy = i * step;
+                    // Down the same column is cheapest; a neighbouring column costs about one node
+                    // width; going up costs double so a node prefers to sit below its row, not above.
+                    float cost = (dy < 0 ? -dy * 2f : dy) + Math.Abs(dx) * 1.2f;
+                    if (cost >= bestCost) continue;
+                    var p = new Vector2(desired.x + dx, desired.y + dy);
+                    if (Free(p)) { best = p; bestCost = cost; }
+                }
+            if (bestCost < float.MaxValue) return best;
+            // Pathological canvas: put it below everything.
+            float bottom = occupied.Count > 0 ? occupied.Max(o => o.yMax) : desired.y;
+            return new Vector2(desired.x, bottom + LayoutOperatorGapY);
+        }
+
+        /// <summary>
+        /// FindFreeSpot for something that will be boxed: the spot must also leave room for the group
+        /// frame (padding on every side, header on top) so the box drawn around it later covers no
+        /// stranger. Returns the node/stack position (frame excluded).
+        /// </summary>
+        private static Vector2 FindFreeSpotFramed(object graph, Vector2 desired, Vector2 size, object ignore, out bool adjusted)
+        {
+            var frameOffset = new Vector2(LayoutGroupPadding, LayoutGroupPadding + LayoutGroupHeaderHeight);
+            var framed = new Vector2(size.x + 2 * LayoutGroupPadding, size.y + 2 * LayoutGroupPadding + LayoutGroupHeaderHeight);
+            return FindFreeSpot(graph, desired - frameOffset, framed, ignore, out adjusted) + frameOffset;
+        }
+
+        /// <summary>Every canvas node (contexts, operators, one entry per parameter canvas node) with its estimated rect.</summary>
+        private static List<(JObject address, Rect rect)> CanvasNodes(object graph)
+        {
+            var items = new List<(JObject, Rect)>();
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            for (int i = 0; i < ctxs.Count; i++)
+            {
+                var size = EstimateSize(ctxs[i]);
+                var pos = ModelPosition(ctxs[i]);
+                items.Add((new JObject { ["kind"] = "context", ["index"] = i, ["name"] = ModelName(ctxs[i]) },
+                           new Rect(pos.x, pos.y, size.x, size.y)));
+            }
+            for (int i = 0; i < ops.Count; i++)
+            {
+                var size = EstimateSize(ops[i]);
+                var pos = ModelPosition(ops[i]);
+                items.Add((new JObject { ["kind"] = "operator", ["index"] = i, ["name"] = ModelName(ops[i]) },
+                           new Rect(pos.x, pos.y, size.x, size.y)));
+            }
+            for (int i = 0; i < ps.Count; i++)
+            {
+                var size = EstimateSize(ps[i]);
+                var pname = (Prop(ps[i], "exposedName") as string) ?? ModelName(ps[i]);
+                IEnumerable nodes = null;
+                try { nodes = Prop(ps[i], "nodes") as IEnumerable; } catch { }
+                int nodeCount = 0;
+                if (nodes != null)
+                    foreach (var n in nodes)
+                    {
+                        nodeCount++;
+                        var pos = (Vector2)(FindField(n.GetType(), "position")?.GetValue(n) ?? Vector2.zero);
+                        items.Add((new JObject
+                        {
+                            ["kind"] = "parameter", ["index"] = i, ["name"] = pname,
+                            ["nodeId"] = Convert.ToInt32(Prop(n, "id"))
+                        }, new Rect(pos.x, pos.y, size.x, size.y)));
+                    }
+                // A linked parameter authored headlessly has no canvas node yet; the editor creates one at
+                // the model position on open, so that spot counts for layout too. Unused parameters live
+                // only on the blackboard and take no canvas space.
+                if (nodeCount == 0 && Consumers(ps[i]).Count > 0)
+                {
+                    var pos = ModelPosition(ps[i]);
+                    items.Add((new JObject { ["kind"] = "parameter", ["index"] = i, ["name"] = pname, ["nodeId"] = null },
+                               new Rect(pos.x, pos.y, size.x, size.y)));
+                }
+            }
+            return items;
+        }
+
+        /// <summary>
+        /// Layout diagnostics for describe: `overlapCount` + the overlapping node pairs (estimated
+        /// bounds; capped at 50 pairs) and the canvas `bounds`. An agent finishing a graph should
+        /// see `overlapCount: 0` here — run `auto_layout` (or `move_node`) until it does.
+        /// </summary>
+        private static JObject LayoutJson(object graph)
+        {
+            try
+            {
+                var items = CanvasNodes(graph);
+                var overlaps = new JArray();
+                int count = 0;
+                for (int i = 0; i < items.Count; i++)
+                    for (int j = i + 1; j < items.Count; j++)
+                    {
+                        // Shrink slightly so nodes that merely touch are not reported.
+                        var a = items[i].rect; var b = items[j].rect;
+                        a.xMin += 4; a.yMin += 4; a.xMax -= 4; a.yMax -= 4;
+                        if (!a.Overlaps(b)) continue;
+                        count++;
+                        if (overlaps.Count < 50)
+                            overlaps.Add(new JObject { ["a"] = items[i].address, ["b"] = items[j].address });
+                    }
+                JObject bounds = null;
+                if (items.Count > 0)
+                {
+                    float xMin = items.Min(it => it.rect.xMin), yMin = items.Min(it => it.rect.yMin);
+                    float xMax = items.Max(it => it.rect.xMax), yMax = items.Max(it => it.rect.yMax);
+                    bounds = new JObject { ["x"] = xMin, ["y"] = yMin, ["width"] = xMax - xMin, ["height"] = yMax - yMin };
+                }
+                return new JObject { ["nodeCount"] = items.Count, ["overlapCount"] = count, ["overlaps"] = overlaps, ["bounds"] = bounds };
+            }
+            catch (Exception ex)
+            {
+                return new JObject { ["error"] = $"layout-estimator failed: {ex.Message}" };
+            }
+        }
+
+        /// <summary>The models that consume `node`'s outputs (blocks are reported as their owning context).</summary>
+        private static List<object> Consumers(object node)
+        {
+            var result = new List<object>();
+            IEnumerable outs = null;
+            try { outs = Prop(node, "outputSlots") as IEnumerable; } catch { }
+            if (outs == null) return result;
+
+            void Visit(object slot)
+            {
+                IEnumerable linked = null;
+                try { linked = Prop(slot, "LinkedSlots") as IEnumerable; } catch { }
+                if (linked != null)
+                    foreach (var other in linked)
+                    {
+                        object owner = null;
+                        try { owner = Prop(other, "owner"); } catch { }
+                        if (owner == null) continue;
+                        if (BlockType.IsInstanceOfType(owner))
+                        {
+                            try { owner = Call(owner, ModelType, "GetParent"); } catch { }
+                        }
+                        if (owner != null && !result.Any(r => ReferenceEquals(r, owner))) result.Add(owner);
+                    }
+                IEnumerable children = null;
+                try { children = Prop(slot, "children") as IEnumerable; } catch { }
+                if (children != null) foreach (var c in children) Visit(c);
+            }
+            foreach (var s in outs) Visit(s);
+            return result;
+        }
+
+        /// <summary>Same as <see cref="Consumers"/> but keeps blocks as blocks (for row alignment).</summary>
+        private static List<(object owner, object block)> ConsumerSlotsOwners(object node)
+        {
+            var result = new List<(object, object)>();
+            IEnumerable outs = null;
+            try { outs = Prop(node, "outputSlots") as IEnumerable; } catch { }
+            if (outs == null) return result;
+            void Visit(object slot)
+            {
+                IEnumerable linked = null;
+                try { linked = Prop(slot, "LinkedSlots") as IEnumerable; } catch { }
+                if (linked != null)
+                    foreach (var other in linked)
+                    {
+                        object owner = null;
+                        try { owner = Prop(other, "owner"); } catch { }
+                        if (owner == null) continue;
+                        object block = null;
+                        if (BlockType.IsInstanceOfType(owner))
+                        {
+                            block = owner;
+                            try { owner = Call(owner, ModelType, "GetParent"); } catch { owner = null; }
+                        }
+                        if (owner != null) result.Add((owner, block));
+                    }
+                IEnumerable children = null;
+                try { children = Prop(slot, "children") as IEnumerable; } catch { }
+                if (children != null) foreach (var c in children) Visit(c);
+            }
+            foreach (var s in outs) Visit(s);
+            return result;
+        }
+
+        /// <summary>One placeable feeder for auto_layout: an operator, a parameter canvas node, or a node-less parameter.</summary>
+        private sealed class LayoutItem
+        {
+            public object model;                              // VFXOperator or VFXParameter
+            public object node;                               // VFXParameter.Node (null for operators / node-less params)
+            public List<(object owner, object block)> consumers;
+            public Vector2 size;
+            public int rank;
+            public int component;
+            public float target;
+            public Rect rect;
+            public float CurrentY()
+            {
+                try
+                {
+                    if (node != null) return ((Vector2)FindField(node.GetType(), "position").GetValue(node)).y;
+                    return ModelPosition(model).y;
+                }
+                catch { return 0f; }
+            }
+        }
+
+        /// <summary>model → index of the first group box listing it (operators and contexts; parameters by any node).</summary>
+        private static Dictionary<object, int> GroupOfModels(object graph)
+        {
+            var map = new Dictionary<object, int>(RefEq.Instance);
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                if (!(FindField(ui?.GetType(), "groupInfos")?.GetValue(ui) is Array groups)) return map;
+                for (int g = 0; g < groups.Length; g++)
+                {
+                    if (!(FindField(GroupInfoType, "contents")?.GetValue(groups.GetValue(g)) is Array contents)) continue;
+                    foreach (var nid in contents)
+                    {
+                        if ((bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false)) continue;
+                        var model = FindField(NodeIDType, "model")?.GetValue(nid);
+                        if (model != null && !map.ContainsKey(model)) map[model] = g;
+                    }
+                }
+            }
+            catch { }
+            return map;
+        }
+
+        /// <summary>Indices of the group boxes whose contents list the parameter canvas node (model, id).</summary>
+        private static List<int> GroupsOfParameterNode(object graph, object param, int nodeId)
+        {
+            var result = new List<int>();
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                if (!(FindField(ui?.GetType(), "groupInfos")?.GetValue(ui) is Array groups)) return result;
+                for (int g = 0; g < groups.Length; g++)
+                {
+                    if (!(FindField(GroupInfoType, "contents")?.GetValue(groups.GetValue(g)) is Array contents)) continue;
+                    foreach (var nid in contents)
+                    {
+                        if ((bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false)) continue;
+                        if (ReferenceEquals(FindField(NodeIDType, "model")?.GetValue(nid), param)
+                            && Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? -1) == nodeId)
+                        { result.Add(g); break; }
+                    }
+                }
+            }
+            catch { }
+            return result;
+        }
+
+        /// <summary>Append a parameter canvas node (model, id) to a group box's contents.</summary>
+        private static void AddParameterNodeToGroup(object graph, int groupIndex, object param, int nodeId)
+        {
+            var ui = Prop(graph, "UIInfos");
+            var groupsField = FindField(ui.GetType(), "groupInfos");
+            var groups = groupsField.GetValue(ui) as Array;
+            var group = groups.GetValue(groupIndex);
+            var contentsField = FindField(GroupInfoType, "contents");
+            var contents = contentsField.GetValue(group) as Array ?? Array.CreateInstance(NodeIDType, 0);
+            var merged = Array.CreateInstance(NodeIDType, contents.Length + 1);
+            Array.Copy(contents, merged, contents.Length);
+            merged.SetValue(Activator.CreateInstance(NodeIDType, param, nodeId), contents.Length);
+            contentsField.SetValue(group, merged);
+            groups.SetValue(group, groupIndex);
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+        }
+
+        /// <summary>Drop group-content entries that point at parameter canvas nodes that no longer exist.</summary>
+        private static int PruneStaleParameterNodeIds(object graph)
+        {
+            int removed = 0;
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                if (!(FindField(ui?.GetType(), "groupInfos")?.GetValue(ui) is Array groups)) return 0;
+                var contentsField = FindField(GroupInfoType, "contents");
+                for (int g = 0; g < groups.Length; g++)
+                {
+                    var group = groups.GetValue(g);
+                    if (!(contentsField?.GetValue(group) is Array contents)) continue;
+                    var keep = new List<object>();
+                    foreach (var nid in contents)
+                    {
+                        bool sticky = (bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false);
+                        var model = FindField(NodeIDType, "model")?.GetValue(nid);
+                        if (!sticky && ParameterType.IsInstanceOfType(model))
+                        {
+                            int id = Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? -1);
+                            bool exists = false;
+                            try { exists = Call(model, ParameterType, "GetNode", id) != null; } catch { }
+                            if (!exists) { removed++; continue; }
+                        }
+                        keep.Add(nid);
+                    }
+                    if (keep.Count == contents.Length) continue;
+                    var arr = Array.CreateInstance(NodeIDType, keep.Count);
+                    for (int i = 0; i < keep.Count; i++) arr.SetValue(keep[i], i);
+                    contentsField.SetValue(group, arr);
+                    groups.SetValue(group, g);
+                }
+                if (removed > 0) EditorUtility.SetDirty(ui as UnityEngine.Object);
+            }
+            catch { }
+            return removed;
+        }
+
+        /// <summary>The consumers wired to ONE parameter canvas node (VFXParameter.Node.linkedSlots).</summary>
+        private static List<(object owner, object block)> ParameterNodeConsumers(object node)
+        {
+            var result = new List<(object, object)>();
+            IEnumerable linked = null;
+            try { linked = FindField(node.GetType(), "linkedSlots")?.GetValue(node) as IEnumerable; } catch { }
+            if (linked == null) return result;
+            foreach (var ls in linked)
+            {
+                object inSlot = null;
+                try { inSlot = FindField(ls.GetType(), "inputSlot")?.GetValue(ls); } catch { }
+                if (inSlot == null) continue;
+                object owner = null;
+                try { owner = Prop(inSlot, "owner"); } catch { }
+                if (owner == null) continue;
+                object block = null;
+                if (BlockType.IsInstanceOfType(owner))
+                {
+                    block = owner;
+                    try { owner = Call(owner, ModelType, "GetParent"); } catch { owner = null; }
+                }
+                if (owner != null) result.Add((owner, block));
+            }
+            return result;
+        }
+
+        private static Type NodeLinkedSlotType => T("UnityEditor.VFX.VFXParameter+NodeLinkedSlot");
+
+        /// <summary>Every slot in a slot subtree with its child-index path from the top-level slot.</summary>
+        private static IEnumerable<(object slot, List<int> path)> SlotTree(object top)
+        {
+            var stack = new Stack<(object, List<int>)>();
+            stack.Push((top, new List<int>()));
+            while (stack.Count > 0)
+            {
+                var (slot, path) = stack.Pop();
+                yield return (slot, path);
+                IEnumerable children = null;
+                try { children = Prop(slot, "children") as IEnumerable; } catch { }
+                if (children == null) continue;
+                int i = 0;
+                foreach (var c in children) { var p = new List<int>(path) { i++ }; stack.Push((c, p)); }
+            }
+        }
+
+        private static object ResolveSlotPath(object top, List<int> path)
+        {
+            var slot = top;
+            foreach (var i in path)
+            {
+                var children = (Prop(slot, "children") as IEnumerable)?.Cast<object>().ToList();
+                if (children == null || i >= children.Count) return null;
+                slot = children[i];
+            }
+            return slot;
+        }
+
+        /// <summary>(consumer model, block) for one input slot: a block's owner is reported as its context.</summary>
+        private static (object owner, object block) ConsumerOf(object inputSlot)
+        {
+            object owner = null;
+            try { owner = Prop(inputSlot, "owner"); } catch { }
+            if (owner == null) return (null, null);
+            object block = null;
+            if (BlockType.IsInstanceOfType(owner))
+            {
+                block = owner;
+                try { owner = Call(owner, ModelType, "GetParent"); } catch { owner = null; }
+            }
+            return (owner, block);
+        }
+
+        /// <summary>Every (outputSlot, inputSlot) edge leaving a model's output slot trees.</summary>
+        private static List<(object outSlot, object inSlot)> OutgoingLinks(object model)
+        {
+            var result = new List<(object, object)>();
+            IEnumerable outs = null;
+            try { outs = Prop(model, "outputSlots") as IEnumerable; } catch { }
+            if (outs == null) return result;
+            foreach (var top in outs)
+                foreach (var (slot, _) in SlotTree(top))
+                {
+                    IEnumerable linked = null;
+                    try { linked = Prop(slot, "LinkedSlots") as IEnumerable; } catch { }
+                    if (linked == null) continue;
+                    foreach (var other in linked.Cast<object>().ToList()) result.Add((slot, other));
+                }
+            return result;
+        }
+
+        // ---- Node-level layout (auto_layout scope "nodes", the default) ---------------------------
+        //
+        // A person's canvas is theirs. This pass moves NOTHING that existed before the session: it
+        // places only the nodes an agent created — operators, and a parameter canvas node for every
+        // link made from a parameter this session — each in free space just left of what it feeds,
+        // aligned with the consuming block's row (the same convention a person follows by hand).
+        // Existing nodes and sticky notes are obstacles. A system whose contexts were ALL created this
+        // session is handed to the system-level pass afterwards (fresh column, tidy feeders).
+
+        /// <summary>Canvas y of the row a consumer presents to its feeders: the block's row inside a context, else the node's centre.</summary>
+        private static float ConsumerRowY(object owner, object block)
+        {
+            var pos = ModelPosition(owner);
+            if (block != null && ContextType.IsInstanceOfType(owner)) return pos.y + BlockRowOffset(owner, block);
+            return pos.y + EstimateSize(owner).y * 0.5f;
+        }
+
+        /// <summary>Resize one group box to bound its current members (nodes + member sticky notes).</summary>
+        private static bool RefitGroup(object graph, int groupIndex)
+        {
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                if (!(FindField(ui?.GetType(), "groupInfos")?.GetValue(ui) is Array groupArr) || groupIndex < 0 || groupIndex >= groupArr.Length) return false;
+                var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+                var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+                var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+                var current = CanvasNodes(graph);
+                var (_, _, noteArr) = GetStickyNotes(graph);
+                var contentsField = FindField(GroupInfoType, "contents");
+                var posField = FindField(GroupInfoType, "position");
+                var group = groupArr.GetValue(groupIndex);
+                var rects = new List<Rect>();
+                if (!(contentsField?.GetValue(group) is Array contents)) return false;
+                foreach (var nid in contents)
+                {
+                    bool sticky = (bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false);
+                    int id = Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? -1);
+                    if (sticky)
+                    {
+                        if (noteArr != null && id >= 0 && id < noteArr.Length)
+                            rects.Add((Rect)FindField(StickyNoteInfoType, "position").GetValue(noteArr.GetValue(id)));
+                        continue;
+                    }
+                    var model = FindField(NodeIDType, "model")?.GetValue(nid);
+                    if (model == null) continue;
+                    int ci = ctxs.FindIndex(x => ReferenceEquals(x, model)), oi = ops.FindIndex(x => ReferenceEquals(x, model)), pi = ps.FindIndex(x => ReferenceEquals(x, model));
+                    foreach (var (address, rect) in current)
+                    {
+                        string kind = (string)address["kind"]; int idx = (int)address["index"];
+                        if ((kind == "context" && idx == ci) || (kind == "operator" && idx == oi)) rects.Add(rect);
+                        else if (kind == "parameter" && idx == pi && address["nodeId"]?.Type == JTokenType.Integer && (int)address["nodeId"] == id) rects.Add(rect);
+                    }
+                }
+                if (rects.Count == 0) return false;
+                float xMin = rects.Min(rc => rc.xMin) - LayoutGroupPadding;
+                float yMin = rects.Min(rc => rc.yMin) - LayoutGroupPadding - LayoutGroupHeaderHeight;
+                float xMax = rects.Max(rc => rc.xMax) + LayoutGroupPadding;
+                float yMax = rects.Max(rc => rc.yMax) + LayoutGroupPadding;
+                posField?.SetValue(group, new Rect(xMin, yMin, xMax - xMin, yMax - yMin));
+                groupArr.SetValue(group, groupIndex);
+                EditorUtility.SetDirty(ui as UnityEngine.Object);
+                return true;
+            }
+            catch { return false; }
+        }
+
+        private static object PlaceNewNodes(string assetPath)
+        {
+            var graph = LoadGraph(assetPath);
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            int IdOf(object m) => (m as UnityEngine.Object)?.GetInstanceID() ?? 0;
+            s_Created.TryGetValue(assetPath, out var created);
+            created = created ?? new HashSet<int>();
+            var newLinks = NewParamLinksFor(assetPath);
+
+            var createdOps = ops.Where(o => created.Contains(IdOf(o))).ToList();
+            var createdParams = ps.Where(p => created.Contains(IdOf(p))).ToList();
+            var createdCtxs = ctxs.Where(c => created.Contains(IdOf(c))).ToList();
+            if (createdOps.Count == 0 && createdParams.Count == 0 && createdCtxs.Count == 0 && newLinks.Count == 0)
+                return new
+                {
+                    error = "Nothing was created in this asset this editor session (a domain reload forgets the marks), so " +
+                            "there is nothing to place. Pass scope:\"touched\" to re-lay out the systems edited this session, " +
+                            "scope:\"all\" for the whole graph, or contexts:[<describe index>, …] for specific systems."
+                };
+
+            // ---- New systems: every context created this session → the system-level pass handles them last.
+            List<object> FlowNeighbors(object ctx, string prop)
+            {
+                try { return (Prop(ctx, prop) as IEnumerable)?.Cast<object>().ToList() ?? new List<object>(); }
+                catch { return new List<object>(); }
+            }
+            var component = new Dictionary<object, int>(RefEq.Instance);
+            int componentCount = 0;
+            foreach (var c in ctxs)
+            {
+                if (component.ContainsKey(c)) continue;
+                var stack = new Stack<object>(); stack.Push(c); component[c] = componentCount;
+                while (stack.Count > 0)
+                {
+                    var cur = stack.Pop();
+                    foreach (var n in FlowNeighbors(cur, "inputContexts").Concat(FlowNeighbors(cur, "outputContexts")))
+                        if (ctxs.Any(x => ReferenceEquals(x, n)) && !component.ContainsKey(n)) { component[n] = componentCount; stack.Push(n); }
+                }
+                componentCount++;
+            }
+            var newSystems = new HashSet<int>(Enumerable.Range(0, componentCount)
+                .Where(k => ctxs.Where(c => component[c] == k).All(c => created.Contains(IdOf(c)))));
+            bool InNewSystem(object owner)
+            {
+                if (owner == null) return false;
+                if (ContextType.IsInstanceOfType(owner)) return component.TryGetValue(owner, out var k) && newSystems.Contains(k);
+                if (OperatorType.IsInstanceOfType(owner))
+                {
+                    var cs = ConsumerSlotsOwners(owner);
+                    return cs.Count > 0 && cs.All(t => InNewSystem(t.owner));
+                }
+                return false;
+            }
+
+            // ---- Rank created operators (1 = feeds a context/block directly) so chains stack leftwards.
+            var rankOf = new Dictionary<object, int>(RefEq.Instance);
+            var visiting = new HashSet<object>(RefEq.Instance);
+            int Rank(object model)
+            {
+                if (ContextType.IsInstanceOfType(model)) return 0;
+                if (rankOf.TryGetValue(model, out var r)) return r;
+                if (!visiting.Add(model)) return 1;
+                int best = 0;
+                foreach (var consumer in Consumers(model)) best = Math.Max(best, Rank(consumer));
+                visiting.Remove(model);
+                return rankOf[model] = best + 1;
+            }
+
+            var placedOperators = new JArray();
+            var placedRects = new List<Rect>();
+            int operatorsLeftAlone = 0, operatorsInNewSystems = 0;
+            var opStackBottom = new Dictionary<object, float>(RefEq.Instance);
+            foreach (var op in createdOps.OrderBy(Rank).ThenBy(o => ModelPosition(o).y).ToList())
+            {
+                var consumers = ConsumerSlotsOwners(op);
+                if (consumers.Count == 0) { operatorsLeftAlone++; continue; }             // unlinked: add_operator already found it free space
+                if (consumers.All(t => InNewSystem(t.owner))) { operatorsInNewSystems++; continue; } // the system pass will place it
+                var size = EstimateSize(op);
+                float minX = consumers.Min(t => ModelPosition(t.owner).x);
+                float rowY = consumers.Average(t => ConsumerRowY(t.owner, t.block));
+                var desired = new Vector2(minX - (size.x + LayoutOperatorColumnGapX), rowY - size.y * 0.5f);
+                var stackOwner = consumers[0].owner;
+                if (opStackBottom.TryGetValue(stackOwner, out var opBottom)) desired.y = Math.Max(desired.y, opBottom + LayoutOperatorGapY);
+                var pos = FindFreeSpotFramed(graph, desired, size, op, out bool adjusted);
+                SetProp(op, "position", pos);
+                opStackBottom[stackOwner] = pos.y + size.y;
+                placedRects.Add(new Rect(pos.x, pos.y, size.x, size.y));
+                placedOperators.Add(new JObject
+                {
+                    ["operatorIndex"] = ops.FindIndex(o => ReferenceEquals(o, op)), ["name"] = ModelName(op),
+                    ["position"] = PositionJson(pos), ["positionAdjusted"] = adjusted
+                });
+            }
+
+            // ---- Parameters: every link made from a parameter this session gets a canvas node within reach.
+            var toHome = new List<(object param, object outSlot, object inSlot)>();
+            foreach (var p in createdParams)
+                foreach (var (outSlot, inSlot) in OutgoingLinks(p)) toHome.Add((p, outSlot, inSlot));
+            foreach (var (paramId, inSlotId) in newLinks)
+            {
+                var p = ps.FirstOrDefault(x => IdOf(x) == paramId);
+                if (p == null) continue;
+                var edge = OutgoingLinks(p).FirstOrDefault(e => IdOf(e.inSlot) == inSlotId);
+                if (edge.inSlot == null) continue; // unlinked again since
+                if (!toHome.Any(t => ReferenceEquals(t.param, p) && ReferenceEquals(t.inSlot, edge.inSlot))) toHome.Add((p, edge.outSlot, edge.inSlot));
+            }
+            var nlsListType = typeof(List<>).MakeGenericType(NodeLinkedSlotType);
+            var slotListType = typeof(List<>).MakeGenericType(SlotType);
+            var groupOfModels = GroupOfModels(graph);
+            var groupsToRefit = new HashSet<int>();
+            var placedParameterNodes = new JArray();
+            int parameterNodesCreated = 0, parameterLinksReusedNode = 0;
+            var createdSet = new HashSet<object>(createdParams, RefEq.Instance);
+            void Rehome(object p, object node, List<(object param, object outSlot, object inSlot)> edges)
+            {
+                // These edges belong to `node` now: drop them from every other node of the parameter
+                // (an editor validation may have hung them on the first node) and list them on `node`.
+                foreach (var n in (Prop(p, "nodes") as IEnumerable)?.Cast<object>() ?? Enumerable.Empty<object>())
+                {
+                    if (ReferenceEquals(n, node)) continue;
+                    if (!(FindField(n.GetType(), "linkedSlots")?.GetValue(n) is System.Collections.IList ls)) continue;
+                    var keep = (System.Collections.IList)Activator.CreateInstance(nlsListType);
+                    foreach (var entry in ls)
+                    {
+                        var es = FindField(NodeLinkedSlotType, "inputSlot").GetValue(entry);
+                        if (!edges.Any(e => ReferenceEquals(e.inSlot, es))) keep.Add(entry);
+                    }
+                    FindField(n.GetType(), "linkedSlots").SetValue(n, keep);
+                }
+                var links = FindField(node.GetType(), "linkedSlots").GetValue(node) as System.Collections.IList;
+                if (links == null) { links = (System.Collections.IList)Activator.CreateInstance(nlsListType); FindField(node.GetType(), "linkedSlots").SetValue(node, links); }
+                var present = new HashSet<object>(RefEq.Instance);
+                foreach (var entry in links) present.Add(FindField(NodeLinkedSlotType, "inputSlot").GetValue(entry));
+                foreach (var (_, outSlot, inSlot) in edges)
+                {
+                    if (present.Contains(inSlot)) continue;
+                    var entry = Activator.CreateInstance(NodeLinkedSlotType);
+                    FindField(NodeLinkedSlotType, "outputSlot").SetValue(entry, outSlot);
+                    FindField(NodeLinkedSlotType, "inputSlot").SetValue(entry, inSlot);
+                    links.Add(entry);
+                }
+            }
+            foreach (var byOwner in toHome.GroupBy(t => ConsumerOf(t.inSlot).owner, RefEq.Instance))
+            {
+                var owner = byOwner.Key;
+                if (owner == null || InNewSystem(owner)) continue;
+                // One stack per consumer: [param nodes that need placing], contiguous, left of the
+                // consumer and aligned with the row of the first block they feed.
+                var stack = new List<(object p, object node, List<(object param, object outSlot, object inSlot)> edges)>();
+                float rowY = float.MaxValue;
+                foreach (var byParam in byOwner.GroupBy(t => t.param, RefEq.Instance))
+                {
+                    var p = byParam.Key;
+                    var edges = byParam.ToList();
+                    var size = EstimateSize(p);
+                    var first = ConsumerOf(edges[0].inSlot);
+                    rowY = Math.Min(rowY, ConsumerRowY(owner, first.block) - size.y * 0.5f);
+                    var anchor = new Vector2(ModelPosition(owner).x - (LayoutParameterWidth + LayoutOperatorColumnGapX), ConsumerRowY(owner, first.block) - size.y * 0.5f);
+                    var nodes = (Prop(p, "nodes") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                    bool paramIsNew = createdSet.Contains(p);
+                    object reuse = null; float reuseDist = float.MaxValue;
+                    if (!paramIsNew)
+                        foreach (var n in nodes)
+                        {
+                            var npos = (Vector2)FindField(n.GetType(), "position").GetValue(n);
+                            float dist = Vector2.Distance(npos, anchor);
+                            if (dist <= LayoutParamSplitDistance && dist < reuseDist) { reuse = n; reuseDist = dist; }
+                        }
+                    if (reuse != null)
+                    {
+                        // An existing parameter already has a node beside this consumer: hang the edge there.
+                        Rehome(p, reuse, edges);
+                        parameterLinksReusedNode += edges.Count;
+                        placedParameterNodes.Add(new JObject
+                        {
+                            ["parameterIndex"] = ps.FindIndex(x => ReferenceEquals(x, p)), ["name"] = (Prop(p, "exposedName") as string) ?? ModelName(p),
+                            ["nodeId"] = Convert.ToInt32(Prop(reuse, "id")), ["position"] = PositionJson((Vector2)FindField(reuse.GetType(), "position").GetValue(reuse)),
+                            ["reusedExistingNode"] = true, ["movedOwnNode"] = false, ["links"] = edges.Count
+                        });
+                        continue;
+                    }
+                    // A parameter created this session owns no hand-placed nodes: the editor auto-created
+                    // one at the model position on reimport — move it into the stack rather than leaving
+                    // it wherever it landed. Anything else gets a fresh node.
+                    stack.Add((p, paramIsNew && nodes.Count > 0 ? nodes[0] : null, edges));
+                }
+                if (stack.Count == 0) continue;
+                float totalH = stack.Sum(t => EstimateSize(t.p).y) + LayoutOperatorGapY * (stack.Count - 1);
+                var stackAnchor = new Vector2(ModelPosition(owner).x - (LayoutParameterWidth + LayoutOperatorColumnGapX), rowY);
+                var ignore = new HashSet<object>(stack.Where(t => t.node != null).Select(t => t.p), RefEq.Instance);
+                var stackPos = FindFreeSpotFramed(graph, stackAnchor, new Vector2(LayoutParameterWidth, totalH), ignore, out _);
+                float cursor = stackPos.y;
+                foreach (var (p, own, edges) in stack)
+                {
+                    var size = EstimateSize(p);
+                    var pos = new Vector2(stackPos.x, cursor);
+                    object node = own; int id; bool movedOwn = own != null;
+                    if (own != null)
+                    {
+                        FindField(own.GetType(), "position").SetValue(own, pos);
+                        SetProp(p, "position", pos);
+                        id = Convert.ToInt32(Prop(own, "id"));
+                    }
+                    else
+                    {
+                        id = (int)Call(p, ParameterType, "AddNode", pos);
+                        node = Call(p, ParameterType, "GetNode", id);
+                        FindField(node.GetType(), "linkedSlots").SetValue(node, Activator.CreateInstance(nlsListType));
+                        FindField(node.GetType(), "expandedSlots").SetValue(node, Activator.CreateInstance(slotListType));
+                        if (((Prop(p, "nodes") as IEnumerable)?.Cast<object>().Count() ?? 0) == 1) SetProp(p, "position", pos);
+                        parameterNodesCreated++;
+                        if (OperatorType.IsInstanceOfType(owner) && groupOfModels.TryGetValue(owner, out var gi))
+                        { AddParameterNodeToGroup(graph, gi, p, id); groupsToRefit.Add(gi); }
+                    }
+                    Rehome(p, node, edges);
+                    placedRects.Add(new Rect(pos.x, pos.y, size.x, size.y));
+                    placedParameterNodes.Add(new JObject
+                    {
+                        ["parameterIndex"] = ps.FindIndex(x => ReferenceEquals(x, p)), ["name"] = (Prop(p, "exposedName") as string) ?? ModelName(p),
+                        ["nodeId"] = id, ["position"] = PositionJson(pos), ["reusedExistingNode"] = false, ["movedOwnNode"] = movedOwn, ["links"] = edges.Count
+                    });
+                    cursor += size.y + LayoutOperatorGapY;
+                }
+            }
+
+            // ---- Growth: a context that gained blocks this session may now cover the next context of
+            // its own system. A person selects everything from that context down and drags it down;
+            // do the same — vertically only — for the system's contexts and the feeders that drive
+            // them, plus the sticky notes sitting in that band. Nothing moves sideways.
+            var shiftedDown = new JArray();
+            int shiftedNodes = 0;
+            s_Touched.TryGetValue(assetPath, out var touchedSet);
+            var feedsComponent = new Dictionary<object, int>(RefEq.Instance);
+            var feedVisiting = new HashSet<object>(RefEq.Instance);
+            int FeedsComponent(object model)
+            {
+                if (ContextType.IsInstanceOfType(model)) return component.TryGetValue(model, out var k) ? k : -1;
+                if (feedsComponent.TryGetValue(model, out var known)) return known;
+                if (!feedVisiting.Add(model)) return -1;
+                int best = -1;
+                foreach (var consumer in Consumers(model)) { int k = FeedsComponent(consumer); if (k >= 0) { best = k; break; } }
+                feedVisiting.Remove(model);
+                return feedsComponent[model] = best;
+            }
+            int ParamNodeComponent(object node)
+            {
+                foreach (var (owner, _) in ParameterNodeConsumers(node)) { int k = FeedsComponent(owner); if (k >= 0) return k; }
+                return -1;
+            }
+            if (touchedSet != null)
+            {
+                var grown = ctxs.Where(c => touchedSet.Contains(IdOf(c)) && !created.Contains(IdOf(c)) && !newSystems.Contains(component[c]))
+                                .OrderBy(c => ModelPosition(c).y).ToList();
+                var movedModels = new HashSet<object>(RefEq.Instance);
+                foreach (var c in grown)
+                {
+                    int k = component[c];
+                    var cr = new Rect(ModelPosition(c), EstimateSize(c));
+                    var covered = ctxs.Where(o => !ReferenceEquals(o, c) && component[o] == k && ModelPosition(o).y > cr.y
+                                                  && cr.Overlaps(new Rect(ModelPosition(o), EstimateSize(o)))).ToList();
+                    if (covered.Count == 0) continue;
+                    float top = covered.Min(o => ModelPosition(o).y);
+                    float delta = cr.yMax + LayoutContextGapY - top;
+                    if (delta <= 0) continue;
+                    var band = new List<float>();
+                    foreach (var o in ctxs.Where(o => component[o] == k)) { band.Add(ModelPosition(o).x); band.Add(ModelPosition(o).x + LayoutContextWidth); }
+                    foreach (var o in ops.Where(o => FeedsComponent(o) == k)) { band.Add(ModelPosition(o).x); band.Add(ModelPosition(o).x + EstimateSize(o).x); }
+                    float bandMin = band.Min(), bandMax = band.Max();
+                    int moved = 0;
+                    foreach (var o in ctxs.Where(o => component[o] == k && ModelPosition(o).y >= top - 1f))
+                    { SetProp(o, "position", ModelPosition(o) + new Vector2(0, delta)); movedModels.Add(o); moved++; }
+                    foreach (var o in ops.Where(o => FeedsComponent(o) == k && ModelPosition(o).y >= top - 1f))
+                    { SetProp(o, "position", ModelPosition(o) + new Vector2(0, delta)); movedModels.Add(o); moved++; }
+                    foreach (var p in ps)
+                    {
+                        var pnodes = (Prop(p, "nodes") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                        foreach (var n in pnodes)
+                        {
+                            var posField = FindField(n.GetType(), "position");
+                            var np = (Vector2)posField.GetValue(n);
+                            if (np.y < top - 1f || ParamNodeComponent(n) != k) continue;
+                            posField.SetValue(n, np + new Vector2(0, delta)); movedModels.Add(p); moved++;
+                        }
+                    }
+                    var (noteUi, noteField, noteArr) = GetStickyNotes(graph);
+                    if (noteArr != null)
+                    {
+                        var notePos = FindField(StickyNoteInfoType, "position");
+                        for (int i = 0; i < noteArr.Length; i++)
+                        {
+                            var note = noteArr.GetValue(i);
+                            var nr = (Rect)notePos.GetValue(note);
+                            if (nr.y < top - 1f || nr.xMax < bandMin || nr.x > bandMax) continue;
+                            nr.y += delta; notePos.SetValue(note, nr); noteArr.SetValue(note, i); moved++;
+                        }
+                        if (noteUi != null) EditorUtility.SetDirty(noteUi as UnityEngine.Object);
+                    }
+                    shiftedNodes += moved;
+                    shiftedDown.Add(new JObject
+                    {
+                        ["grownContext"] = ctxs.FindIndex(x => ReferenceEquals(x, c)), ["name"] = ModelName(c),
+                        ["fromContext"] = ctxs.FindIndex(x => ReferenceEquals(x, covered.OrderBy(o => ModelPosition(o).y).First())),
+                        ["deltaY"] = delta, ["nodesMoved"] = moved
+                    });
+                }
+                foreach (var kv in GroupOfModels(graph))
+                    if (movedModels.Contains(kv.Key)) groupsToRefit.Add(kv.Value);
+            }
+
+            int staleGroupEntries = PruneStaleParameterNodeIds(graph);
+            int groupsRefit = 0;
+            foreach (var gi in groupsToRefit) if (RefitGroup(graph, gi)) groupsRefit++;
+            Persist(graph, assetPath);
+            newLinks.Clear(); // homed; a second pass must not re-home them
+
+            // ---- New systems get the full system-level pass, each in a fresh column right of the canvas.
+            JObject systemPass = null;
+            if (newSystems.Count > 0)
+            {
+                var indices = new JArray(ctxs.Select((c, i) => (c, i)).Where(t => newSystems.Contains(component[t.c])).Select(t => (JToken)t.i));
+                systemPass = AutoLayout(new JObject { ["assetPath"] = assetPath, ["scope"] = "touched", ["contexts"] = indices }) as JObject;
+                if (systemPass?["error"] != null) return systemPass;
+                graph = LoadGraph(assetPath);
+            }
+
+            var layout = LayoutJson(graph);
+            int stickyNotesOverNodes = 0;
+            foreach (var note in StickyNotesJson(graph))
+                if (note["position"] is JObject np && placedRects.Any(o => o.Overlaps(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]))))
+                    stickyNotesOverNodes++;
+            return new JObject
+            {
+                ["op"] = "auto_layout",
+                ["assetPath"] = assetPath,
+                ["scope"] = "nodes",
+                ["existingNodesMoved"] = shiftedNodes,
+                ["shiftedDown"] = shiftedDown,
+                ["placedOperators"] = placedOperators,
+                ["operatorsLeftAlone"] = operatorsLeftAlone,
+                ["placedParameterNodes"] = placedParameterNodes,
+                ["parameterNodesCreated"] = parameterNodesCreated,
+                ["parameterLinksReusedNode"] = parameterLinksReusedNode,
+                ["groupsRefit"] = groupsRefit,
+                ["staleGroupEntriesPruned"] = staleGroupEntries,
+                ["stickyNotesOverNodes"] = stickyNotesOverNodes,
+                ["newSystemsPlaced"] = newSystems.Count,
+                ["newSystemsOperatorsPlaced"] = operatorsInNewSystems,
+                ["newSystemsPass"] = systemPass == null ? null : new JObject
+                {
+                    ["laidOutContexts"] = systemPass["laidOutContexts"], ["duplicatedOperators"] = systemPass["duplicatedOperators"],
+                    ["parameterNodesCreated"] = systemPass["parameterNodesCreated"]
+                },
+                ["layout"] = systemPass?["layout"] ?? layout
+            };
+        }
+
+        /// <summary>
+        /// `auto_layout` op: reposition every context, operator, and parameter node into a readable
+        /// layered layout, then refit group boxes around their members. Sticky notes are left alone.
+        ///
+        /// Systems: contexts are grouped by flow connectivity; each connected group is one column laid
+        /// out top-to-bottom by flow depth (Spawn → Init → Update → Output), with parallel branches side
+        /// by side. Each system's feeders (the operators and parameter nodes that drive it) sit in
+        /// columns immediately to its LEFT, so the canvas reads feeders→system, feeders→system, … and
+        /// no edge crosses another system's chain.
+        ///
+        /// Shared nodes: an operator that feeds more than one system is DUPLICATED per system
+        /// (`duplicateShared`, default true — same settings, same input links, its output edges to that
+        /// system moved to the clone); a parameter gets one canvas node per consuming context
+        /// (`splitParameters`, default true). Both are what a person does by hand to avoid long edges;
+        /// duplicating an operator is functionally equivalent (same expression, evaluated per copy).
+        ///
+        /// Feeders are ranked by distance from the contexts they feed (rank 1 feeds a context/block
+        /// directly, rank 2 feeds a rank-1 operator, …) — one column per rank, each node vertically
+        /// aligned with what it feeds (a block-feeder aligns with that block's row) and pushed apart so
+        /// nothing overlaps. Describe's `layout.overlapCount` is the oracle; the response reports it.
+        /// </summary>
+        private static object AutoLayout(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            bool duplicateShared = parameters?["duplicateShared"]?.ToObject<bool>() ?? true;
+            bool splitParameters = parameters?["splitParameters"]?.ToObject<bool>() ?? true;
+            var explicitContexts = (parameters?["contexts"] as JArray)?.Select(t => t.ToObject<int>()).ToList();
+            var scope = parameters?["scope"]?.ToString()?.ToLowerInvariant() ?? (explicitContexts != null ? "touched" : "nodes");
+            if (scope == "nodes")
+            {
+                if (explicitContexts != null)
+                    return new { error = "scope \"nodes\" places only the nodes created this session and takes no contexts[]; pass scope:\"touched\" with contexts[] to lay out whole systems." };
+                return PlaceNewNodes(assetPath);
+            }
+            if (scope != "touched" && scope != "all")
+                return new { error = $"Unknown scope '{scope}'. Use \"nodes\" (default: place only the nodes created this session, nothing else moves), \"touched\" (re-lay out every system edited this session), \"all\", or pass contexts:[…]." };
+
+            var graph = LoadGraph(assetPath);
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            int IdOf(object m) => (m as UnityEngine.Object)?.GetInstanceID() ?? 0;
+            // Where every node was before this pass, by model (first rect per model): group boxes that
+            // contain sticky notes move their notes by the same displacement as their other members.
+            var beforeRectOfModel = new Dictionary<object, Rect>(RefEq.Instance);
+            foreach (var (address, rect) in CanvasNodes(graph))
+            {
+                string kind = (string)address["kind"]; int idx = (int)address["index"];
+                object model = kind == "context" ? ctxs[idx] : kind == "operator" ? ops[idx] : ps[idx];
+                if (!beforeRectOfModel.ContainsKey(model)) beforeRectOfModel[model] = rect;
+            }
+
+            // ---- 1. Systems: flow components + depth ------------------------------------------
+            List<object> FlowNeighbors(object ctx, string prop)
+            {
+                try { return (Prop(ctx, prop) as IEnumerable)?.Cast<object>().ToList() ?? new List<object>(); }
+                catch { return new List<object>(); }
+            }
+            var component = new Dictionary<object, int>(RefEq.Instance);
+            int componentCount = 0;
+            foreach (var c in ctxs)
+            {
+                if (component.ContainsKey(c)) continue;
+                var stack = new Stack<object>(); stack.Push(c); component[c] = componentCount;
+                while (stack.Count > 0)
+                {
+                    var cur = stack.Pop();
+                    foreach (var n in FlowNeighbors(cur, "inputContexts").Concat(FlowNeighbors(cur, "outputContexts")))
+                        if (ctxs.Any(x => ReferenceEquals(x, n)) && !component.ContainsKey(n)) { component[n] = componentCount; stack.Push(n); }
+                }
+                componentCount++;
+            }
+            var depth = new Dictionary<object, int>(RefEq.Instance);
+            foreach (var c in ctxs) depth[c] = 0;
+            for (int iter = 0; iter < ctxs.Count + 1; iter++)
+            {
+                bool changed = false;
+                foreach (var c in ctxs)
+                {
+                    int d = 0;
+                    foreach (var i in FlowNeighbors(c, "inputContexts"))
+                        if (depth.TryGetValue(i, out var di)) d = Math.Max(d, di + 1);
+                    if (d != depth[c]) { depth[c] = d; changed = true; }
+                }
+                if (!changed) break;
+            }
+            var componentOrder = Enumerable.Range(0, componentCount)
+                .OrderBy(k => ctxs.Where(c => component[c] == k).Min(c => ModelPosition(c).x)).ToList();
+            int firstComponent = componentOrder.Count > 0 ? componentOrder[0] : 0;
+
+            // ---- 2. Operators: rank + the system each one feeds ---------------------------------
+            var rankOf = new Dictionary<object, int>(RefEq.Instance);
+            var visiting = new HashSet<object>(RefEq.Instance);
+            int RankModel(object model)
+            {
+                if (ContextType.IsInstanceOfType(model)) return 0;
+                if (rankOf.TryGetValue(model, out var r)) return r;
+                if (!visiting.Add(model)) return 1;
+                int best = 0;
+                foreach (var consumer in Consumers(model)) best = Math.Max(best, RankModel(consumer));
+                visiting.Remove(model);
+                return rankOf[model] = best + 1;
+            }
+            foreach (var op in ops) RankModel(op);
+            var opComponent = new Dictionary<object, int>(RefEq.Instance);
+            int ComponentOfConsumer(object owner)
+            {
+                if (owner == null) return -1;
+                if (ContextType.IsInstanceOfType(owner) && component.TryGetValue(owner, out var k)) return k;
+                if (OperatorType.IsInstanceOfType(owner) && opComponent.TryGetValue(owner, out var ok)) return ok;
+                return -1;
+            }
+            List<IGrouping<int, (object outSlot, object inSlot)>> ConsumerGroups(object op) => OutgoingLinks(op)
+                .GroupBy(e => ComponentOfConsumer(ConsumerOf(e.inSlot).owner))
+                .Where(g => g.Key >= 0).OrderByDescending(g => g.Count()).ToList();
+            int maxOpRank = ops.Count > 0 ? ops.Max(o => rankOf[o]) : 0;
+            for (int r = 1; r <= maxOpRank; r++)
+                foreach (var op in ops.Where(o => rankOf[o] == r))
+                {
+                    var groups = ConsumerGroups(op);
+                    opComponent[op] = groups.Count == 0 ? -1 : groups[0].Key;
+                }
+
+            // ---- 3. Scope: which systems get laid out ------------------------------------------
+            var selected = new HashSet<int>();
+            if (scope == "all") foreach (var k in componentOrder) selected.Add(k);
+            if (explicitContexts != null)
+                foreach (var ci in explicitContexts)
+                {
+                    if (ci < 0 || ci >= ctxs.Count) return new { error = $"contexts[] index {ci} out of range; graph has {ctxs.Count} context(s)" };
+                    selected.Add(component[ctxs[ci]]);
+                }
+            if (scope == "touched" && explicitContexts == null)
+            {
+                s_Touched.TryGetValue(assetPath, out var touched);
+                if (touched == null || touched.Count == 0)
+                    return new
+                    {
+                        error = "No nodes are recorded as touched for this asset in this editor session, so there is " +
+                                "nothing to lay out by default. Pass scope:\"all\" to lay out the whole graph, or " +
+                                "contexts:[<describe index>, …] to lay out specific systems."
+                    };
+                foreach (var c in ctxs) if (touched.Contains(IdOf(c))) selected.Add(component[c]);
+                foreach (var op in ops) if (touched.Contains(IdOf(op)) && opComponent.TryGetValue(op, out var k) && k >= 0) selected.Add(k);
+                foreach (var p in ps)
+                    if (touched.Contains(IdOf(p)))
+                        foreach (var (owner, _) in ConsumerSlotsOwners(p)) { int k = ComponentOfConsumer(owner); if (k >= 0) selected.Add(k); }
+                if (selected.Count == 0)
+                    selected.Add(firstComponent); // touched nodes feed nothing yet — tidy the first system's feeders
+            }
+
+            // ---- 4. Duplicate operators shared across systems (clones only for SELECTED systems) --
+            int duplicatedOperators = 0;
+            if (duplicateShared)
+                for (int r = 1; r <= maxOpRank; r++)
+                    foreach (var op in ops.Where(o => rankOf[o] == r).ToList())
+                    {
+                        var groups = ConsumerGroups(op);
+                        if (groups.Count <= 1) continue;
+                        var outTops = (Prop(op, "outputSlots") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                        foreach (var group in groups.Skip(1))
+                        {
+                            if (!selected.Contains(group.Key)) continue; // leave untouched systems as they are
+                            var clone = DuplicateModelViaSerializer(op, OperatorType);
+                            Call(graph, ModelType, "AddChild", clone, -1, true);
+                            var opIns = (Prop(op, "inputSlots") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                            var cloneIns = (Prop(clone, "inputSlots") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                            for (int i = 0; i < Math.Min(opIns.Count, cloneIns.Count); i++)
+                                Call(null, SlotType, "CopyLinks", cloneIns[i], opIns[i], true);
+                            var cloneOuts = (Prop(clone, "outputSlots") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                            foreach (var (outSlot, inSlot) in group)
+                            {
+                                int topIndex = -1; List<int> path = null;
+                                for (int t = 0; t < outTops.Count && topIndex < 0; t++)
+                                    foreach (var (slot, p) in SlotTree(outTops[t]))
+                                        if (ReferenceEquals(slot, outSlot)) { topIndex = t; path = p; break; }
+                                if (topIndex < 0 || topIndex >= cloneOuts.Count) continue;
+                                var cloneOut = ResolveSlotPath(cloneOuts[topIndex], path);
+                                if (cloneOut == null) continue;
+                                Call(outSlot, SlotType, "Unlink", inSlot, true);
+                                Call(cloneOut, SlotType, "Link", inSlot, true);
+                            }
+                            rankOf[clone] = r;
+                            opComponent[clone] = group.Key;
+                            ops.Add(clone);
+                            duplicatedOperators++;
+                        }
+                    }
+
+            // ---- 5a. Preliminary context rows per selected system (local y, contexts stacked by depth) --
+            // Only used to decide how far apart a parameter's consumers are; the placement pass below
+            // recomputes the same stacking.
+            var rowOfContext = new Dictionary<object, float>(RefEq.Instance); // context → local top y
+            foreach (var k in componentOrder)
+            {
+                if (!selected.Contains(k)) continue;
+                var members = ctxs.Where(c => component[c] == k).ToList();
+                int maxDepth = members.Max(c => depth[c]);
+                float y = 0f;
+                for (int d = 0; d <= maxDepth; d++)
+                {
+                    var layer = members.Where(c => depth[c] == d).ToList();
+                    float layerHeight = 0f;
+                    foreach (var c in layer) { rowOfContext[c] = y; layerHeight = Math.Max(layerHeight, EstimateSize(c).y); }
+                    y += layerHeight + LayoutContextGapY;
+                }
+            }
+            float RowOf(object owner, object block)
+            {
+                if (owner != null && rowOfContext.TryGetValue(owner, out var top))
+                    return block != null ? top + BlockRowOffset(owner, block) : top + EstimateSize(owner).y * 0.5f;
+                return float.NaN;
+            }
+            // Row an operator ultimately feeds: follow its first consumer down to a context.
+            float DownstreamRow(object model)
+            {
+                var cur = model;
+                for (int guard = 0; guard < 64 && cur != null; guard++)
+                {
+                    var cs = ConsumerSlotsOwners(cur);
+                    if (cs.Count == 0) return float.NaN;
+                    var (owner, block) = cs[0];
+                    if (ContextType.IsInstanceOfType(owner)) return RowOf(owner, block);
+                    cur = owner;
+                }
+                return float.NaN;
+            }
+
+            var groupOfModels = GroupOfModels(graph);
+
+            // ---- 5. Parameters: one node per system, per consumer group, plus one per band of far-apart consumers --
+            int parameterNodesCreated = 0;
+            var paramItems = new List<LayoutItem>();
+            var nlsListType = typeof(List<>).MakeGenericType(NodeLinkedSlotType);
+            var slotListType = typeof(List<>).MakeGenericType(SlotType);
+            foreach (var p in ps)
+            {
+                bool isOutput = false;
+                try { isOutput = (bool)Prop(p, "isOutput"); } catch { }
+                List<(object outSlot, object inSlot)> edges = isOutput ? new List<(object outSlot, object inSlot)>() : OutgoingLinks(p);
+                var existing = (Prop(p, "nodes") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                int EdgeComponent((object outSlot, object inSlot) e) => ComponentOfConsumer(ConsumerOf(e.inSlot).owner);
+                bool Selected((object outSlot, object inSlot) e) => selected.Contains(EdgeComponent(e));
+
+                if (edges.Count == 0 || !splitParameters)
+                {
+                    // Positions only: every existing node in a selected system is re-placed; others stay.
+                    foreach (var n in existing)
+                    {
+                        var consumers = ParameterNodeConsumers(n);
+                        int comp = consumers.Select(c => ComponentOfConsumer(c.owner)).Where(k => k >= 0).DefaultIfEmpty(-1).First();
+                        if (comp < 0 && edges.Count == 0) comp = firstComponent;
+                        if (!selected.Contains(comp)) continue;
+                        paramItems.Add(new LayoutItem { model = p, node = n, consumers = consumers, size = EstimateSize(p), component = comp });
+                    }
+                    if (existing.Count == 0 && edges.Count > 0)
+                    {
+                        int comp = edges.Select(EdgeComponent).Where(k => k >= 0).DefaultIfEmpty(-1).First();
+                        if (selected.Contains(comp))
+                            paramItems.Add(new LayoutItem { model = p, consumers = ConsumerSlotsOwners(p), size = EstimateSize(p), component = comp });
+                    }
+                    continue;
+                }
+
+                // Split: links into selected systems leave their current node(s) and get one node per
+                // consuming context; nodes that only serve untouched systems keep their links + position.
+                var nodesField = FindField(p.GetType(), "m_Nodes");
+                var nodeList = (System.Collections.IList)nodesField.GetValue(p) ?? (System.Collections.IList)Activator.CreateInstance(nodesField.FieldType);
+                nodesField.SetValue(p, nodeList);
+                // Which existing node each edge lived on, and that node's group boxes — a new node
+                // inherits the membership of the node its links came from, so group boxes keep
+                // following their parameters after the split.
+                var oldNodeOfInSlot = new Dictionary<object, int>(RefEq.Instance);
+                var groupsOfOldNode = new Dictionary<int, List<int>>();
+                foreach (var n in existing)
+                {
+                    int oldId = Convert.ToInt32(Prop(n, "id"));
+                    groupsOfOldNode[oldId] = GroupsOfParameterNode(graph, p, oldId);
+                    if (FindField(n.GetType(), "linkedSlots")?.GetValue(n) is System.Collections.IList ls)
+                        foreach (var entry in ls)
+                        {
+                            var inSlot = FindField(NodeLinkedSlotType, "inputSlot").GetValue(entry);
+                            if (inSlot != null) oldNodeOfInSlot[inSlot] = oldId;
+                        }
+                }
+                foreach (var n in existing)
+                {
+                    var links = FindField(n.GetType(), "linkedSlots")?.GetValue(n) as System.Collections.IList;
+                    if (links == null) continue;
+                    var keep = (System.Collections.IList)Activator.CreateInstance(nlsListType);
+                    foreach (var entry in links)
+                    {
+                        var inSlot = FindField(NodeLinkedSlotType, "inputSlot").GetValue(entry);
+                        var outSlot = FindField(NodeLinkedSlotType, "outputSlot").GetValue(entry);
+                        if (!Selected((outSlot, inSlot))) keep.Add(entry);
+                    }
+                    FindField(n.GetType(), "linkedSlots").SetValue(n, keep);
+                    if (keep.Count == 0) nodeList.Remove(n); // fully re-homed below
+                }
+                // One node per system; a further node whenever consumers sit more than
+                // LayoutParamSplitDistance apart vertically. A hand-made graph keeps most parameters
+                // single and only duplicates the ones that fan out across the canvas.
+                // Split key: the system, then the GROUP BOX the consumer sits in (a parameter node is
+                // never shared between groups — it belongs to the group of what it feeds), then row bands.
+                var bands = new List<(int component, int group, List<(object outSlot, object inSlot)> edges)>();
+                int ConsumerGroup((object outSlot, object inSlot) e)
+                {
+                    var (owner, block) = ConsumerOf(e.inSlot);
+                    // Only an OPERATOR consumer's group counts: a group box around a system's contexts is
+                    // a system label, not a home for the parameters feeding its blocks.
+                    return OperatorType.IsInstanceOfType(owner) && groupOfModels.TryGetValue(owner, out var gi) ? gi : -1;
+                }
+                foreach (var bySystem in edges.Where(Selected).GroupBy(EdgeComponent))
+                foreach (var byGroup in bySystem.GroupBy(ConsumerGroup))
+                {
+                    var rows = byGroup.Select(e =>
+                    {
+                        var (owner, block) = ConsumerOf(e.inSlot);
+                        float row = ContextType.IsInstanceOfType(owner) ? RowOf(owner, block) : DownstreamRow(owner);
+                        return (e, row: float.IsNaN(row) ? float.MaxValue : row);
+                    }).OrderBy(t => t.row).ToList();
+                    float bandStart = float.NaN;
+                    List<(object outSlot, object inSlot)> band = null;
+                    foreach (var (e, row) in rows)
+                    {
+                        if (band == null || (row != float.MaxValue && row - bandStart > LayoutParamSplitDistance))
+                        { band = new List<(object outSlot, object inSlot)>(); bands.Add((bySystem.Key, byGroup.Key, band)); bandStart = row; }
+                        band.Add(e);
+                    }
+                }
+                foreach (var (bandComponent, bandGroup, g) in bands)
+                {
+                    int id = (int)Call(p, ParameterType, "AddNode", ModelPosition(p));
+                    var node = Call(p, ParameterType, "GetNode", id);
+                    var links = (System.Collections.IList)Activator.CreateInstance(nlsListType);
+                    var consumers = new List<(object owner, object block)>();
+                    foreach (var (outSlot, inSlot) in g)
+                    {
+                        var entry = Activator.CreateInstance(NodeLinkedSlotType);
+                        FindField(NodeLinkedSlotType, "outputSlot").SetValue(entry, outSlot);
+                        FindField(NodeLinkedSlotType, "inputSlot").SetValue(entry, inSlot);
+                        links.Add(entry);
+                        consumers.Add(ConsumerOf(inSlot));
+                    }
+                    FindField(node.GetType(), "linkedSlots").SetValue(node, links);
+                    FindField(node.GetType(), "expandedSlots").SetValue(node, Activator.CreateInstance(slotListType));
+                    parameterNodesCreated++;
+                    // Inherit group membership from the old node most of these links came from.
+                    var origins = g.Select(e => oldNodeOfInSlot.TryGetValue(e.inSlot, out var oid) ? oid : int.MinValue)
+                        .Where(o => o != int.MinValue).GroupBy(o => o).OrderByDescending(gr => gr.Count()).Select(gr => gr.Key).ToList();
+                    // A freshly loaded asset may not have per-node link records yet (the editor fills
+                    // them on validation) — then every existing node's groups are inherited.
+                    List<int> inherited = null;
+                    if (bandGroup >= 0)
+                        inherited = new List<int> { bandGroup }; // the group of what it feeds
+                    else if (origins.Count > 0 && groupsOfOldNode.TryGetValue(origins[0], out var fromOrigin) && fromOrigin.Count > 0)
+                        inherited = fromOrigin;
+                    else if (origins.Count == 0 || groupsOfOldNode.Count == 1)
+                        inherited = groupsOfOldNode.Values.SelectMany(x => x).Distinct().ToList();
+                    if (inherited != null)
+                        foreach (var gi in inherited) AddParameterNodeToGroup(graph, gi, p, id);
+                    paramItems.Add(new LayoutItem
+                    {
+                        model = p, node = node, consumers = consumers, size = EstimateSize(p),
+                        component = bandComponent,
+                        rank = 1 + consumers.Select(c => OperatorType.IsInstanceOfType(c.owner) && rankOf.TryGetValue(c.owner, out var cr) ? cr : 0).DefaultIfEmpty(0).Max()
+                    });
+                }
+            }
+
+            // ---- 6. Items to place (feeders of selected systems only) ---------------------------
+            var items = new List<LayoutItem>();
+            foreach (var op in ops)
+            {
+                int comp = opComponent.TryGetValue(op, out var oc) ? oc : -1;
+                if (comp < 0) comp = firstComponent;
+                if (!selected.Contains(comp)) continue;
+                items.Add(new LayoutItem { model = op, consumers = ConsumerSlotsOwners(op), size = EstimateSize(op), rank = rankOf[op], component = comp });
+            }
+            foreach (var it in paramItems)
+            {
+                if (it.component < 0) it.component = firstComponent;
+                if (!selected.Contains(it.component)) continue;
+                if (it.rank == 0) it.rank = 1 + it.consumers.Select(c => OperatorType.IsInstanceOfType(c.owner) && rankOf.TryGetValue(c.owner, out var cr) ? cr : 0).DefaultIfEmpty(0).Max();
+                items.Add(it);
+            }
+
+            // Everything that is NOT re-placed keeps its position and must not be overlapped.
+            var laidOutModels = new HashSet<object>(RefEq.Instance);
+            foreach (var c in ctxs) if (selected.Contains(component[c])) laidOutModels.Add(c);
+            foreach (var it in items) laidOutModels.Add(it.model);
+            var occupied = new List<Rect>();
+            foreach (var (address, rect) in CanvasNodes(graph))
+            {
+                // CanvasNodes addresses by kind+index; resolve to the model to test membership.
+                string kind = (string)address["kind"]; int idx = (int)address["index"];
+                bool moving;
+                if (kind == "parameter")
+                {
+                    int? nodeId = address["nodeId"]?.Type == JTokenType.Integer ? (int?)address["nodeId"] : null;
+                    moving = items.Any(it => ReferenceEquals(it.model, ps[idx]) &&
+                                             (it.node == null ? nodeId == null : nodeId != null && Convert.ToInt32(Prop(it.node, "id")) == nodeId));
+                }
+                else moving = laidOutModels.Contains(kind == "context" ? ctxs[idx] : ops[idx]);
+                if (!moving) occupied.Add(rect);
+            }
+            // Sticky notes are annotations, not obstacles: a note must never push a whole system away.
+            // They stay where they are; any note left over a node is reported (`stickyNotesOverNodes`).
+            var noteRects = new List<Rect>();
+            foreach (var note in StickyNotesJson(graph))
+                if (note["position"] is JObject np)
+                    noteRects.Add(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]));
+
+            // ---- 7. Place each selected system: [feeders][contexts], anchored where it is now -------
+            var placed = new Dictionary<object, Rect>(RefEq.Instance);
+            int systemsLaidOut = 0, shiftedDown = 0, newSystems = 0;
+            foreach (var k in componentOrder)
+            {
+                if (!selected.Contains(k)) continue;
+                var members = ctxs.Where(c => component[c] == k).ToList();
+                var feeders = items.Where(it => it.component == k).ToList();
+                int maxRank = feeders.Count > 0 ? feeders.Max(it => it.rank) : 0;
+                float feederWidth = maxRank * (LayoutOperatorWidth + LayoutOperatorColumnGapX);
+
+                // Local layout: contexts start at x = feederWidth, y = 0.
+                var local = new Dictionary<object, Rect>(RefEq.Instance);
+                // A system whose contexts were ALL created this session is new and gets its own column;
+                // any other system keeps every context's x (a person's lanes) and only moves vertically.
+                s_Created.TryGetValue(assetPath, out var createdSet);
+                bool isNew = createdSet != null && members.All(c => createdSet.Contains(IdOf(c)));
+                float minCtxX = members.Min(c => ModelPosition(c).x);
+                var localItems = new List<(LayoutItem it, Rect rect)>();
+                int maxDepth = members.Max(c => depth[c]);
+                var slotOf = new Dictionary<object, int>(RefEq.Instance);
+                float y = 0f, width = 0f;
+                for (int d = 0; d <= maxDepth; d++)
+                {
+                    var layer = members.Where(c => depth[c] == d).OrderBy(c =>
+                    {
+                        var ins = FlowNeighbors(c, "inputContexts").Where(slotOf.ContainsKey).Select(i => slotOf[i]).ToList();
+                        return ins.Count == 0 ? float.MaxValue : (float)ins.Average();
+                    }).ThenBy(c => ModelPosition(c).x).ToList();
+                    float layerHeight = 0f;
+                    for (int sIdx = 0; sIdx < layer.Count; sIdx++)
+                    {
+                        slotOf[layer[sIdx]] = sIdx;
+                        var size = EstimateSize(layer[sIdx]);
+                        float lx = isNew ? sIdx * (LayoutContextWidth + LayoutContextGapX) : ModelPosition(layer[sIdx]).x - minCtxX;
+                        local[layer[sIdx]] = new Rect(feederWidth + lx, y, size.x, size.y);
+                        width = Math.Max(width, lx + size.x);
+                        layerHeight = Math.Max(layerHeight, size.y);
+                    }
+                    y += layerHeight + LayoutContextGapY;
+                }
+                var localFeeder = new Dictionary<object, Rect>(RefEq.Instance);
+                for (int r = 1; r <= maxRank; r++)
+                {
+                    float x = feederWidth - r * (LayoutOperatorWidth + LayoutOperatorColumnGapX);
+                    var column = feeders.Where(it => it.rank == r).Select(it =>
+                    {
+                        var targets = new List<float>();
+                        foreach (var (owner, block) in it.consumers)
+                        {
+                            Rect rect;
+                            if (owner == null || !(local.TryGetValue(owner, out rect) || localFeeder.TryGetValue(owner, out rect))) continue;
+                            targets.Add(block != null && ContextType.IsInstanceOfType(owner) ? rect.y + BlockRowOffset(owner, block) : rect.center.y);
+                        }
+                        it.target = targets.Count == 0 ? float.MaxValue : (float)targets.Average();
+                        return it;
+                    }).OrderBy(it => it.target).ThenBy(it => it.CurrentY()).ToList();
+                    float bottom = float.NegativeInfinity;
+                    foreach (var it in column)
+                    {
+                        float yy = it.target == float.MaxValue ? (float.IsInfinity(bottom) ? 0f : bottom + LayoutOperatorGapY) : it.target - it.size.y * 0.5f;
+                        if (!float.IsInfinity(bottom)) yy = Math.Max(yy, bottom + LayoutOperatorGapY);
+                        var rect = new Rect(x, yy, it.size.x, it.size.y);
+                        localItems.Add((it, rect));
+                        bottom = yy + it.size.y;
+                        if (!localFeeder.ContainsKey(it.model)) localFeeder[it.model] = rect;
+                    }
+                }
+
+                // Anchor. A NEW system goes into a fresh column right of everything on the canvas
+                // (feeders included). An EXISTING system keeps its contexts' x exactly — feeders grow to
+                // its left — and the whole block only drops below anything it would cover (vertical
+                // motion only; horizontal collisions are resolved by moving down, never sideways).
+                float minLocalX = Math.Min(0f, localItems.Count > 0 ? localItems.Min(t => t.rect.xMin) : 0f);
+                float blockWidth = (feederWidth + width) - minLocalX;
+                float offX, offY;
+                if (isNew)
+                {
+                    float rightEdge = occupied.Count > 0 ? occupied.Max(o => o.xMax) : 0f;
+                    offX = (occupied.Count > 0 ? rightEdge + LayoutSystemGapX : 0f) - minLocalX;
+                    offY = occupied.Count > 0 ? occupied.Min(o => o.yMin) : 0f;
+                    newSystems++;
+                }
+                else
+                {
+                    offX = minCtxX - feederWidth;
+                    offY = members.Min(c => ModelPosition(c).y);
+                    float blockHeight = Math.Max(y, localItems.Count > 0 ? localItems.Max(t => t.rect.yMax) : 0f) - Math.Min(0f, localItems.Count > 0 ? localItems.Min(t => t.rect.yMin) : 0f);
+                    float blockTop = Math.Min(0f, localItems.Count > 0 ? localItems.Min(t => t.rect.yMin) : 0f);
+                    for (int guard = 0; guard < 20; guard++)
+                    {
+                        var block = new Rect(offX + minLocalX, offY + blockTop, blockWidth, blockHeight);
+                        var hits = occupied.Where(o => o.Overlaps(block)).ToList();
+                        if (hits.Count == 0) break;
+                        offY = hits.Max(h => h.yMax) + LayoutContextGapY - blockTop;
+                        shiftedDown++;
+                    }
+                }
+                foreach (var kv in local) { var rr = kv.Value; rr.x += offX; rr.y += offY; placed[kv.Key] = rr; occupied.Add(rr); }
+                foreach (var (it, rect) in localItems)
+                {
+                    var rr = rect; rr.x += offX; rr.y += offY; it.rect = rr; occupied.Add(rr);
+                    if (!placed.ContainsKey(it.model)) placed[it.model] = rr;
+                }
+                systemsLaidOut++;
+            }
+
+            foreach (var c in ctxs) if (placed.TryGetValue(c, out var cr)) SetProp(c, "position", new Vector2(cr.x, cr.y));
+            int parameterNodes = 0;
+            foreach (var it in items)
+            {
+                var pos = new Vector2(it.rect.x, it.rect.y);
+                if (it.node != null)
+                {
+                    FindField(it.node.GetType(), "position")?.SetValue(it.node, pos);
+                    parameterNodes++;
+                }
+                if (placed.TryGetValue(it.model, out var first) && (it.node == null || first == it.rect))
+                    SetProp(it.model, "position", pos);
+            }
+
+            int staleGroupEntries = PruneStaleParameterNodeIds(graph);
+
+            // ---- 8. Refit group boxes that contain a re-placed member ------------------------------
+            int groupsRefit = 0, stickyNotesMoved = 0;
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                var groupsField = ui == null ? null : FindField(ui.GetType(), "groupInfos");
+                if (groupsField?.GetValue(ui) is Array groupArr)
+                {
+                    var contentsField = FindField(GroupInfoType, "contents");
+                    var posField = FindField(GroupInfoType, "position");
+                    var current = CanvasNodes(graph).ToList();
+                    var (noteUi, noteField, noteArr) = GetStickyNotes(graph);
+                    var notePosField = noteArr != null && noteArr.Length > 0 ? FindField(StickyNoteInfoType, "position") : null;
+                    for (int g = 0; g < groupArr.Length; g++)
+                    {
+                        var group = groupArr.GetValue(g);
+                        var rects = new List<Rect>();
+                        var oldRects = new List<Rect>();
+                        var memberNoteIds = new List<int>();
+                        bool touchesLaidOut = false;
+                        if (contentsField?.GetValue(group) is Array contents)
+                            foreach (var nid in contents)
+                            {
+                                bool sticky = (bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false);
+                                if (sticky)
+                                {
+                                    int id = Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? -1);
+                                    if (id >= 0 && noteArr != null && id < noteArr.Length) memberNoteIds.Add(id);
+                                    continue;
+                                }
+                                var model = FindField(NodeIDType, "model")?.GetValue(nid);
+                                if (model == null) continue;
+                                if (laidOutModels.Contains(model)) touchesLaidOut = true;
+                                if (beforeRectOfModel.TryGetValue(model, out var before)) oldRects.Add(before);
+                                int ci = ctxs.FindIndex(x => ReferenceEquals(x, model)), oi = ops.FindIndex(x => ReferenceEquals(x, model)), pi = ps.FindIndex(x => ReferenceEquals(x, model));
+                                foreach (var (address, rect) in current)
+                                {
+                                    string kind = (string)address["kind"]; int idx = (int)address["index"];
+                                    if ((kind == "context" && idx == ci) || (kind == "operator" && idx == oi) || (kind == "parameter" && idx == pi)) rects.Add(rect);
+                                }
+                            }
+                        if (rects.Count == 0 || !touchesLaidOut) continue;
+                        // Member sticky notes travel with the group: same displacement as its nodes' top-left.
+                        if (memberNoteIds.Count > 0 && oldRects.Count > 0 && notePosField != null)
+                        {
+                            var delta = new Vector2(rects.Min(rc => rc.xMin) - oldRects.Min(rc => rc.xMin),
+                                                    rects.Min(rc => rc.yMin) - oldRects.Min(rc => rc.yMin));
+                            foreach (var id in memberNoteIds)
+                            {
+                                var note = noteArr.GetValue(id);
+                                var nr = (Rect)notePosField.GetValue(note);
+                                nr.x += delta.x; nr.y += delta.y;
+                                notePosField.SetValue(note, nr);
+                                noteArr.SetValue(note, id);
+                                rects.Add(nr);
+                                stickyNotesMoved++;
+                            }
+                        }
+                        float xMin = rects.Min(rc => rc.xMin) - LayoutGroupPadding;
+                        float yMin = rects.Min(rc => rc.yMin) - LayoutGroupPadding - LayoutGroupHeaderHeight;
+                        float xMax = rects.Max(rc => rc.xMax) + LayoutGroupPadding;
+                        float yMax = rects.Max(rc => rc.yMax) + LayoutGroupPadding;
+                        posField?.SetValue(group, new Rect(xMin, yMin, xMax - xMin, yMax - yMin));
+                        groupArr.SetValue(group, g);
+                        groupsRefit++;
+                    }
+                    EditorUtility.SetDirty(ui as UnityEngine.Object);
+                }
+            }
+            catch { /* graphs without a UI sidecar */ }
+
+            Persist(graph, assetPath);
+            // The laid-out systems are tidy now; forget their touched marks so the next pass is scoped again.
+            if (s_Touched.TryGetValue(assetPath, out var touchedSet))
+                foreach (var m in laidOutModels) touchedSet.Remove(IdOf(m));
+
+            var layout = LayoutJson(graph);
+            int stickyNotesOverNodes = 0;
+            foreach (var note in StickyNotesJson(graph))
+                if (note["position"] is JObject np && occupied.Any(o => o.Overlaps(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]))))
+                    stickyNotesOverNodes++;
+            return new JObject
+            {
+                ["op"] = "auto_layout",
+                ["assetPath"] = assetPath,
+                ["scope"] = explicitContexts != null ? "contexts" : scope,
+                ["systems"] = componentCount,
+                ["systemsLaidOut"] = systemsLaidOut,
+                ["systemsLeftAlone"] = componentCount - systemsLaidOut,
+                ["laidOutContexts"] = new JArray(ctxs.Select((c, i) => (c, i)).Where(t => placed.ContainsKey(t.c)).Select(t => (JToken)t.i)),
+                ["shiftedDown"] = shiftedDown,
+                ["stickyNotesOverNodes"] = stickyNotesOverNodes,
+                ["stickyNotesMovedWithGroups"] = stickyNotesMoved,
+                ["staleGroupEntriesPruned"] = staleGroupEntries,
+                ["newSystemsPlaced"] = newSystems,
+                ["contexts"] = ctxs.Count,
+                ["operators"] = ops.Count,
+                ["duplicatedOperators"] = duplicatedOperators,
+                ["parameters"] = ps.Count,
+                ["parameterNodes"] = parameterNodes,
+                ["parameterNodesCreated"] = parameterNodesCreated,
+                ["groupsRefit"] = groupsRefit,
+                ["layout"] = layout
             };
         }
 
         /// <summary>
         /// Add nodes to a named group box (VFXUI.groupInfos), creating the group when no group with
         /// that title exists. `nodes` = array of node addresses ({node: context|operator|parameter,
-        /// …index}); optional `position` = [x, y, w, h] applies only when creating. A parameter entry
-        /// uses its first canvas node's id (0 when the parameter has no canvas node yet — the id the
-        /// editor assigns when it auto-creates one).
+        /// …index}, plus {node: "stickyNote", index} for a note — a person routinely keeps the note
+        /// explaining a feature inside that feature's group). A parameter entry names one canvas node
+        /// with `nodeId` (default: the node nearest the other members, else its first node; 0 when the
+        /// parameter has no canvas node yet — the id the editor assigns when it auto-creates one).
+        /// The box is refit around its members afterwards unless an explicit `position` = [x, y, w, h]
+        /// is given (which only applies when creating).
         /// </summary>
+        /// <summary>Canvas nodes whose estimated rect lies inside `box` without being listed in `contents` (group members).</summary>
+        private static JArray NonMembersInside(object graph, Rect box, Array contents)
+        {
+            var result = new JArray();
+            var memberModels = new HashSet<object>(RefEq.Instance);
+            var memberParamNodes = new HashSet<(object, int)>();
+            foreach (var nid in contents)
+            {
+                if ((bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false)) continue;
+                var m = FindField(NodeIDType, "model")?.GetValue(nid);
+                if (m == null) continue;
+                if (ParameterType.IsInstanceOfType(m)) memberParamNodes.Add((m, Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? 0)));
+                else memberModels.Add(m);
+            }
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            var inner = new Rect(box.x + 4, box.y + 4, box.width - 8, box.height - 8);
+            foreach (var (address, rect) in CanvasNodes(graph))
+            {
+                if (!inner.Overlaps(rect)) continue;
+                string kind = (string)address["kind"]; int idx = (int)address["index"];
+                bool member;
+                if (kind == "parameter")
+                {
+                    int nodeId = address["nodeId"]?.Type == JTokenType.Integer ? (int)address["nodeId"] : -1;
+                    member = memberParamNodes.Contains((ps[idx], nodeId));
+                }
+                else member = memberModels.Contains(kind == "context" ? ctxs[idx] : ops[idx]);
+                if (!member) result.Add(address);
+            }
+            return result;
+        }
+
         private static object GroupNodes(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -2933,14 +5081,54 @@ namespace UnityCliBridge.Handlers
             var groups = groupsField.GetValue(ui) as Array ?? Array.CreateInstance(GroupInfoType, 0);
 
             var ids = new List<object>();
+            var memberCentres = new List<Vector2>();
+            var pendingParams = new List<(object node, JObject tok)>();
+            var (_, _, noteArr) = GetStickyNotes(graph);
             foreach (var tok in nodesTok)
             {
-                var node = ResolveNode(graph, tok as JObject, "nodes[]");
+                var jt = tok as JObject;
+                if (string.Equals(jt?["node"]?.ToString(), "stickyNote", StringComparison.OrdinalIgnoreCase))
+                {
+                    int ni = jt["index"]?.ToObject<int>() ?? -1;
+                    if (noteArr == null || ni < 0 || ni >= noteArr.Length)
+                        return new { error = $"stickyNote index {ni} out of range; graph has {noteArr?.Length ?? 0} sticky note(s)" };
+                    var nid = Activator.CreateInstance(NodeIDType);
+                    FindField(NodeIDType, "isStickyNote").SetValue(nid, true);
+                    FindField(NodeIDType, "id").SetValue(nid, ni);
+                    ids.Add(nid);
+                    var nr = (Rect)FindField(StickyNoteInfoType, "position").GetValue(noteArr.GetValue(ni));
+                    memberCentres.Add(nr.center);
+                    continue;
+                }
+                var node = ResolveNode(graph, jt, "nodes[]");
                 if (BlockType.IsInstanceOfType(node))
                     return new { error = "Blocks cannot be grouped (they live inside their context); group the context instead." };
+                if (ParameterType.IsInstanceOfType(node)) { pendingParams.Add((node, jt)); continue; }
+                ids.Add(Activator.CreateInstance(NodeIDType, node, 0));
+                memberCentres.Add(ModelPosition(node) + EstimateSize(node) * 0.5f);
+            }
+            // Parameters last: with no explicit nodeId, pick the canvas node nearest the other members.
+            foreach (var (node, jt) in pendingParams)
+            {
                 int id = 0;
-                if (ParameterType.IsInstanceOfType(node) && Prop(node, "nodes") is IEnumerable pn)
-                    foreach (var n in pn) { id = Convert.ToInt32(Prop(n, "id")); break; }
+                var pnodes = (Prop(node, "nodes") as IEnumerable)?.Cast<object>().ToList() ?? new List<object>();
+                if (jt?["nodeId"] != null && jt["nodeId"].Type == JTokenType.Integer)
+                {
+                    id = (int)jt["nodeId"];
+                    if (!pnodes.Any(n => Convert.ToInt32(Prop(n, "id")) == id))
+                        return new { error = $"parameter has no canvas node with id {id}; ids: [{string.Join(", ", pnodes.Select(n => Prop(n, "id")))}]" };
+                }
+                else if (pnodes.Count > 0)
+                {
+                    object best = pnodes[0]; float bestD = float.MaxValue;
+                    foreach (var n in pnodes)
+                    {
+                        var np = (Vector2)FindField(n.GetType(), "position").GetValue(n);
+                        float d = memberCentres.Count == 0 ? 0f : memberCentres.Min(c => Vector2.Distance(c, np));
+                        if (d < bestD) { bestD = d; best = n; }
+                    }
+                    id = Convert.ToInt32(Prop(best, "id"));
+                }
                 ids.Add(Activator.CreateInstance(NodeIDType, node, id));
             }
 
@@ -2980,13 +5168,82 @@ namespace UnityCliBridge.Handlers
             for (int i = 0; i < ids.Count; i++)
                 merged.SetValue(ids[i], contents.Length + i);
             contentsField.SetValue(group, merged);
+            var allGroups = groupsField.GetValue(ui) as Array;
+            allGroups.SetValue(group, gi);
 
             EditorUtility.SetDirty(ui as UnityEngine.Object);
+            bool refit = false;
+            if (!(created && parameters?["position"] is JArray)) refit = RefitGroup(graph, gi);
+
+            // `note` = {title, contents, colorTheme?, textSize?, width?, height?}: the note that explains
+            // this group, created in free space just left of the members and made a member itself —
+            // what a person does by hand for every feature they box.
+            int? noteIndex = null; JArray notePos = null;
+            if (parameters?["note"] is JObject noteTok)
+            {
+                float nw = noteTok["width"]?.ToObject<float>() ?? 260f, nh = noteTok["height"]?.ToObject<float>() ?? 180f;
+                var gr = (Rect)FindField(GroupInfoType, "position").GetValue((groupsField.GetValue(ui) as Array).GetValue(gi));
+                // The members' own bounds (the refit box minus padding/header).
+                var mb = new Rect(gr.x + LayoutGroupPadding, gr.y + LayoutGroupPadding + LayoutGroupHeaderHeight,
+                                  gr.width - 2 * LayoutGroupPadding, gr.height - 2 * LayoutGroupPadding - LayoutGroupHeaderHeight);
+                var candidates = new[]
+                {
+                    new Vector2(mb.xMin - nw - LayoutOperatorColumnGapX, mb.yMin),   // left, top-aligned
+                    new Vector2(mb.xMin, mb.yMax + LayoutOperatorGapY),              // below
+                    new Vector2(mb.xMin, mb.yMin - nh - LayoutOperatorGapY),         // above
+                    new Vector2(mb.xMax + LayoutOperatorColumnGapX, mb.yMin),        // right
+                };
+                Vector2 np = candidates[0]; int bestStrangers = int.MaxValue;
+                foreach (var c in candidates)
+                {
+                    var p = FindFreeSpotFramed(graph, c, new Vector2(nw, nh), null, out _);
+                    var union = Rect.MinMaxRect(Math.Min(mb.xMin, p.x), Math.Min(mb.yMin, p.y), Math.Max(mb.xMax, p.x + nw), Math.Max(mb.yMax, p.y + nh));
+                    var framedUnion = new Rect(union.x - LayoutGroupPadding, union.y - LayoutGroupPadding - LayoutGroupHeaderHeight,
+                                               union.width + 2 * LayoutGroupPadding, union.height + 2 * LayoutGroupPadding + LayoutGroupHeaderHeight);
+                    int strangers = NonMembersInside(graph, framedUnion, merged).Count;
+                    if (strangers < bestStrangers) { bestStrangers = strangers; np = p; }
+                    if (strangers == 0) break;
+                }
+                int ni = CreateStickyNote(graph, noteTok["title"]?.ToString() ?? title, noteTok["contents"]?.ToString() ?? string.Empty,
+                                          new Rect(np.x, np.y, nw, nh), noteTok["colorTheme"]?.ToObject<int>() ?? 1, noteTok["textSize"]?.ToString());
+                var nid = Activator.CreateInstance(NodeIDType);
+                FindField(NodeIDType, "isStickyNote").SetValue(nid, true);
+                FindField(NodeIDType, "id").SetValue(nid, ni);
+                var cur = contentsField.GetValue(group) as Array;
+                var withNote = Array.CreateInstance(NodeIDType, cur.Length + 1);
+                Array.Copy(cur, withNote, cur.Length);
+                withNote.SetValue(nid, cur.Length);
+                contentsField.SetValue(group, withNote);
+                (groupsField.GetValue(ui) as Array).SetValue(group, gi);
+                merged = withNote;
+                refit = RefitGroup(graph, gi) || refit;
+                noteIndex = ni; notePos = new JArray { np.x, np.y, nw, nh };
+            }
             Persist(graph, assetPath);
+
+            JArray groupRect = null;
+            var nonMembers = new JArray();
+            try
+            {
+                var r = (Rect)FindField(GroupInfoType, "position").GetValue((groupsField.GetValue(ui) as Array).GetValue(gi));
+                groupRect = new JArray { r.x, r.y, r.width, r.height };
+                // A box that visually swallows nodes it does not own misleads the reader (they look
+                // grouped but do not travel with the group). Report them so the caller can add them
+                // or move the group's members.
+                nonMembers = NonMembersInside(graph, r, merged);
+            }
+            catch { }
 
             return new JObject
             {
                 ["op"] = "group_nodes",
+                ["refit"] = refit,
+                ["position"] = groupRect,
+                ["noteIndex"] = noteIndex,
+                ["notePosition"] = notePos,
+                ["nonMembersInside"] = nonMembers,
+                ["note"] = nonMembers.Count == 0 ? null
+                    : $"{nonMembers.Count} node(s) sit inside the box without belonging to the group; add them (group_nodes again) or move the members closer together (move_node) so the box reads honestly.",
                 ["assetPath"] = assetPath,
                 ["title"] = title,
                 ["groupIndex"] = gi,
@@ -3064,6 +5321,10 @@ namespace UnityCliBridge.Handlers
 
             var clone = DuplicateModelViaSerializer(op, OperatorType);
             Call(graph, ModelType, "AddChild", clone, -1, true);
+            // The serializer copies the source position; find open space just below it instead.
+            var srcSize = EstimateSize(op);
+            var clonePos = FindFreeSpot(graph, ModelPosition(op) + new Vector2(0, srcSize.y + LayoutOperatorGapY), EstimateSize(clone), clone, out _);
+            SetProp(clone, "position", clonePos);
             Persist(graph, assetPath);
 
             return new JObject
@@ -3072,6 +5333,7 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["sourceOperatorIndex"] = operatorIndex,
                 ["duplicatedOperator"] = clone.GetType().Name,
+                ["position"] = PositionJson(clonePos),
                 ["operatorCount"] = Children(graph).Count(c => OperatorType.IsInstanceOfType(c))
             };
         }
@@ -3379,30 +5641,15 @@ namespace UnityCliBridge.Handlers
 
         private static object RemoveContext(JObject parameters)
         {
-            var idxTok = parameters?["index"];
-            bool hasIndex = idxTok != null && idxTok.Type != JTokenType.Null;
+            bool hasIndex = ContextIndexToken(parameters) != null;
             var wantContext = parameters?["contextType"]?.ToString();
             if (!hasIndex && string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType (or index) is required" };
+                return new { error = "contextType (or index/contextIndex) is required" };
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
             var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
-
-            object ctx;
-            if (hasIndex)
-            {
-                int idx = idxTok.ToObject<int>();
-                if (idx < 0 || idx >= ctxList.Count)
-                    throw new Exception($"index {idx} out of range; graph has {ctxList.Count} context(s)");
-                ctx = ctxList[idx];
-            }
-            else
-            {
-                ctx = FindContext(graph, wantContext);
-                if (ctx == null)
-                    throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
-            }
+            var ctx = ResolveContextRef(graph, parameters, ctxList, "context");
             var removedType = ctx.GetType().Name;
             var removedContextType = Prop(ctx, "contextType")?.ToString();
 
@@ -3423,12 +5670,20 @@ namespace UnityCliBridge.Handlers
             };
         }
 
-        /// <summary>Resolve a flow endpoint ({index} into the context list, or {contextType}) to a context.</summary>
+        /// <summary>`index` or its alias `contextIndex` — the absolute position in the graph's context list.</summary>
+        private static JToken ContextIndexToken(JObject o)
+        {
+            var t = o?["index"];
+            if (t == null || t.Type == JTokenType.Null) t = o?["contextIndex"];
+            return t == null || t.Type == JTokenType.Null ? null : t;
+        }
+
+        /// <summary>Resolve a context endpoint ({index}/{contextIndex} into the context list, or {contextType}).</summary>
         private static object ResolveContextRef(object graph, JObject endpoint, List<object> ctxList, string label)
         {
             if (endpoint == null)
-                throw new Exception($"{label} is required (an object with 'index' or 'contextType')");
-            var idxTok = endpoint["index"];
+                throw new Exception($"{label} is required (an object with 'index'/'contextIndex' or 'contextType')");
+            var idxTok = ContextIndexToken(endpoint);
             if (idxTok != null && idxTok.Type != JTokenType.Null)
             {
                 int idx = idxTok.ToObject<int>();
@@ -3437,9 +5692,11 @@ namespace UnityCliBridge.Handlers
                 return ctxList[idx];
             }
             var ct = endpoint["contextType"]?.ToString();
+            if (string.IsNullOrEmpty(ct))
+                throw new Exception($"{label} needs 'contextType' or 'index'/'contextIndex'");
             var ctx = FindContext(graph, ct);
             if (ctx == null)
-                throw new Exception($"{label} context of type '{ct}' not found (or use 'index')");
+                throw new Exception($"{label} context of type '{ct}' not found (or use 'index'/'contextIndex')");
             return ctx;
         }
 
@@ -3558,9 +5815,19 @@ namespace UnityCliBridge.Handlers
                 return new { error = "set_bounds requires at least one of: mode, center, size, padding" };
 
             var graph = LoadGraph(assetPath);
-            var ctx = FindContext(graph, wantContext);
-            if (ctx == null)
-                throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+            object ctx;
+            if (ContextIndexToken(parameters) != null)
+            {
+                var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+                ctx = ResolveContextRef(graph, parameters, ctxList, "context");
+                wantContext = Prop(ctx, "contextType")?.ToString();
+            }
+            else
+            {
+                ctx = FindContext(graph, wantContext);
+                if (ctx == null)
+                    throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+            }
 
             var data = Call(ctx, ContextType, "GetData");
             if (data == null)
@@ -3810,14 +6077,43 @@ namespace UnityCliBridge.Handlers
             }
             var duplicated = (Array)Call(null, MemorySerializerType, "DuplicateObjects", (object)deps.ToArray());
 
+            // Where the existing canvas ends (before the clones are added).
+            var existingRects = CanvasNodes(graph).Select(t => t.rect).ToList();
+            float rightEdge = existingRects.Count > 0 ? existingRects.Max(r => r.xMax) : 0f;
+            float topEdge = existingRects.Count > 0 ? existingRects.Min(r => r.yMin) : 0f;
+
             int added = 0;
             var addedTypes = new JArray();
+            var addedNodes = new List<object>();
             foreach (var clone in duplicated.Cast<object>())
             {
                 if (!IsNode(clone)) continue;
                 Call(graph, ModelType, "AddChild", clone, -1, true);
                 added++;
                 addedTypes.Add(clone.GetType().Name);
+                addedNodes.Add(clone);
+            }
+            // Shift the whole inserted block into a fresh column right of the existing canvas, keeping
+            // the template's internal arrangement.
+            if (addedNodes.Count > 0 && existingRects.Count > 0)
+            {
+                float minX = addedNodes.Min(n => ModelPosition(n).x), minY = addedNodes.Min(n => ModelPosition(n).y);
+                var shift = new Vector2(rightEdge + LayoutSystemGapX - minX, topEdge - minY);
+                foreach (var n in addedNodes)
+                {
+                    SetProp(n, "position", ModelPosition(n) + shift);
+                    if (!ParameterType.IsInstanceOfType(n)) continue;
+                    try
+                    {
+                        if (Prop(n, "nodes") is IEnumerable pnodes)
+                            foreach (var pn in pnodes)
+                            {
+                                var f = FindField(pn.GetType(), "position");
+                                if (f != null) f.SetValue(pn, (Vector2)f.GetValue(pn) + shift);
+                            }
+                    }
+                    catch { }
+                }
             }
             Persist(graph, assetPath);
 
@@ -4078,6 +6374,28 @@ namespace UnityCliBridge.Handlers
         }
 
         /// <summary>Append a sticky note to VFXGraph.UIInfos.stickyNoteInfos.</summary>
+        /// <summary>Append a sticky note to the graph's VFXUI sidecar; returns its index. Does not persist.</summary>
+        private static int CreateStickyNote(object graph, string title, string contents, Rect rect, int colorTheme, string textSize)
+        {
+            var (ui, notesField, _) = GetStickyNotes(graph);
+            var noteType = StickyNoteInfoType;
+            var newNote = Activator.CreateInstance(noteType);
+            FindField(noteType, "title").SetValue(newNote, title);
+            FindField(noteType, "contents").SetValue(newNote, contents);
+            FindField(noteType, "position").SetValue(newNote, rect);
+            FindField(noteType, "colorTheme").SetValue(newNote, colorTheme);
+            if (!string.IsNullOrEmpty(textSize))
+                FindField(noteType, "textSize").SetValue(newNote, textSize);
+            var oldArr = notesField.GetValue(ui) as Array;
+            int oldLen = oldArr?.Length ?? 0;
+            var newArr = Array.CreateInstance(noteType, oldLen + 1);
+            if (oldArr != null) Array.Copy(oldArr, newArr, oldLen);
+            newArr.SetValue(newNote, oldLen);
+            notesField.SetValue(ui, newArr);
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            return oldLen;
+        }
+
         private static object AddStickyNote(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -4085,8 +6403,11 @@ namespace UnityCliBridge.Handlers
             var contents = parameters?["contents"]?.ToString() ?? string.Empty;
             int colorTheme = parameters?["colorTheme"]?.ToObject<int>() ?? 1;
             var textSize = parameters?["textSize"]?.ToString();
+            bool avoidNodes = parameters?["avoidNodes"]?.ToObject<bool>() ?? true;
 
-            // Position: optional [x, y, width, height] (defaults to a 200x100 box at origin).
+            // Position: optional [x, y, width, height] (defaults to a 200x100 box at origin). Like a
+            // node, a note never lands on top of a node: it is nudged to the nearest free spot
+            // (`positionAdjusted`) unless avoidNodes:false.
             float x = 0, y = 0, w = 200, h = 100;
             var posTok = parameters?["position"] as JArray;
             if (posTok != null && posTok.Count >= 4)
@@ -4098,37 +6419,26 @@ namespace UnityCliBridge.Handlers
             }
 
             var graph = LoadGraph(assetPath);
-            var (ui, notesField, _) = GetStickyNotes(graph);
-
-            var noteType = StickyNoteInfoType;
-            var newNote = Activator.CreateInstance(noteType);
-            FindField(noteType, "title").SetValue(newNote, title);
-            FindField(noteType, "contents").SetValue(newNote, contents);
-            FindField(noteType, "position").SetValue(newNote, new Rect(x, y, w, h));
-            FindField(noteType, "colorTheme").SetValue(newNote, colorTheme);
-            if (!string.IsNullOrEmpty(textSize))
-                FindField(noteType, "textSize").SetValue(newNote, textSize);
-
-            var oldArr = notesField.GetValue(ui) as Array;
-            int oldLen = oldArr?.Length ?? 0;
-            var newArr = Array.CreateInstance(noteType, oldLen + 1);
-            if (oldArr != null) Array.Copy(oldArr, newArr, oldLen);
-            newArr.SetValue(newNote, oldLen);
-            notesField.SetValue(ui, newArr);
-
-            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            bool adjusted = false;
+            if (avoidNodes)
+            {
+                var p = FindFreeSpot(graph, new Vector2(x, y), new Vector2(w, h), null, out adjusted);
+                x = p.x; y = p.y;
+            }
+            int index = CreateStickyNote(graph, title, contents, new Rect(x, y, w, h), colorTheme, textSize);
             Persist(graph, assetPath);
 
             return new JObject
             {
                 ["op"] = "add_sticky_note",
                 ["assetPath"] = assetPath,
-                ["stickyNoteIndex"] = oldLen,
+                ["stickyNoteIndex"] = index,
                 ["title"] = title,
                 ["contents"] = contents,
                 ["colorTheme"] = colorTheme,
                 ["textSize"] = textSize,
-                ["position"] = new JArray { x, y, w, h }
+                ["position"] = new JArray { x, y, w, h },
+                ["positionAdjusted"] = adjusted
             };
         }
 

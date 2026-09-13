@@ -151,9 +151,6 @@ MonoBehaviour:
     - model: {fileID: 8926484042661614596}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 8926484042661614723}
-      id: 0
-      isStickyNote: 0
     - model: {fileID: 8926484042661614701}
       id: 0
       isStickyNote: 0
@@ -311,6 +308,9 @@ MonoBehaviour:
     - model: {fileID: 8926484042661617545}
       id: 0
       isStickyNote: 0
+    - model: {fileID: 0}
+      id: 2
+      isStickyNote: 1
   - title: Main Attractor (Metaballs Mesh)
     position:
       serializedVersion: 2
@@ -482,9 +482,9 @@ MonoBehaviour:
     position:
       serializedVersion: 2
       x: 1193
-      y: 691
-      width: 1536
-      height: 341
+      y: 688
+      width: 1817
+      height: 354
     contents:
     - model: {fileID: 8926484042661614555}
       id: 6
@@ -528,6 +528,9 @@ MonoBehaviour:
     - model: {fileID: 8926484042661617088}
       id: 0
       isStickyNote: 0
+    - model: {fileID: 0}
+      id: 3
+      isStickyNote: 1
   - title: Tangential Damping (Reduce particle swirl)
     position:
       serializedVersion: 2
@@ -630,8 +633,8 @@ MonoBehaviour:
   - title: For now
     position:
       serializedVersion: 2
-      x: 2442
-      y: 1505
+      x: 2242
+      y: 1514
       width: 178
       height: 100
     contents: this should prevent the particles from having nowhere to go when the
@@ -642,9 +645,9 @@ MonoBehaviour:
   - title: 'Heat-seeking steering: how d works'
     position:
       serializedVersion: 2
-      x: 2774
-      y: 740
-      width: 251
+      x: 2734
+      y: 748
+      width: 250
       height: 267
     contents: "Two additive steering systems, both writing via ADD-composition velocity
       blocks (never Set - other forces must not be cancelled). Shared front end:\n\nd
@@ -682,7 +685,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: -5348
     y: -493
-    width: 8373
+    width: 8358
     height: 4766
 --- !u!114 &114350483966674976
 MonoBehaviour:
@@ -732,7 +735,6 @@ MonoBehaviour:
   - {fileID: 8926484042661614704}
   - {fileID: 8926484042661614709}
   - {fileID: 8926484042661614718}
-  - {fileID: 8926484042661614723}
   - {fileID: 8926484042661614745}
   - {fileID: 8926484042661614815}
   - {fileID: 8926484042661614817}
@@ -7739,64 +7741,6 @@ MonoBehaviour:
   m_Direction: 1
   m_LinkedSlots:
   - {fileID: 8926484042661614712}
---- !u!114 &8926484042661614723
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 486e063e1ed58c843942ea4122829ab1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.VisualEffectGraph.Editor::UnityEditor.VFX.VFXAttributeParameter
-  m_UIIgnoredErrors: []
-  m_Parent: {fileID: 114350483966674976}
-  m_Children: []
-  m_UIPosition: {x: -782, y: 443}
-  m_UICollapsed: 0
-  m_UISuperCollapsed: 1
-  m_InputSlots: []
-  m_OutputSlots:
-  - {fileID: 8926484042661614724}
-  attribute: particleId
-  location: 0
-  mask: xyz
---- !u!114 &8926484042661614724
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c52d920e7fff73b498050a6b3c4404ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.VisualEffectGraph.Editor::UnityEditor.VFX.VFXSlotUint
-  m_UIIgnoredErrors: []
-  m_Parent: {fileID: 0}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661614724}
-  m_MasterData:
-    m_Owner: {fileID: 8926484042661614723}
-    m_Value:
-      m_Type:
-        m_SerializableType: System.UInt32, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0
-    m_Space: -1
-  m_Property:
-    name: Particle Id
-    m_serializedType:
-      m_SerializableType: System.UInt32, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-  m_Direction: 1
-  m_LinkedSlots: []
 --- !u!114 &8926484042661614745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45825,7 +45769,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661617546}
       inputSlot: {fileID: 8926484042661614841}
-    position: {x: 1310.588, y: 1688.6699}
+    position: {x: 1310.4, y: 1688.8}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
