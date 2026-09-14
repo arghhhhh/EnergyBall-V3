@@ -80,13 +80,26 @@ following the existing pattern:
 - `PlayerScaler.cs` — grows/shrinks the ball based on hand-vs-body distances.
 - `BoundaryForce.cs` / `BoundaryGizmos.cs` — keeps balls inside the play volume.
 
-### Metaballs → SDF → mesh pipeline
+### Metaballs → SDF pipeline
 - `Metaballs/MetaballsToSDF.cs` (`[RequireComponent]` MeshFilter+MeshRenderer):
-  owns the `List<Metaball>` (position + radius), a volume `ComputeShader`
-  (default grid `64x32x64`, `gridScale`, `targetValue 0.26`, `triangleBudget`
-  65536). Runs `Metaballs/MetaballsGenerator.compute` to build a scalar field.
+  owns the `List<Metaball>` (position + radius) and the volume `ComputeShader`
+  `Metaballs/MetaballsGenerator.compute` (default grid `64x32x64`, `gridScale`,
+  `targetValue 0.26`, `triangleBudget` 65536).
+- **SDF source** (`_sdfSource`, default `Analytic`): one dispatch of the
+  `MetaballSdfGenerator` kernel writes the signed distance to the isosurface
+  straight into a 3D RenderTexture (Newton step on the field, normalised like
+  `MeshToSDFBaker`: distance ÷ largest box extent, negative inside). This is what
+  the hand VFX graphs' ConformToSDF consumes. `MeshBake` is the legacy path
+  (marching cubes → mesh → VFX `MeshToSDFBaker`), kept only for A/B comparison and
+  far more expensive.
 - `MarchingCubes/MeshBuilder.cs` + `MarchingCubes/MarchingCubes.compute` +
-  `TriangleTable.cs`: triangulate the isosurface into a `Mesh` each frame.
+  `TriangleTable.cs`: triangulate the isosurface into a `Mesh`. Built lazily and
+  only when consumed: the `showMetaballMesh` debug setting or `MeshBake` mode.
+- GPU work is dirty-flagged: it only re-runs when a metaball moved/resized, a
+  player joined/left, `gridScale` changed, or the debug mesh was toggled on.
+  Metaball data is written from `FixedUpdate`, so extra rendered frames and idle
+  time with no players cost nothing here. Hand graphs are bound to the SDF texture
+  once per player (re-bound only if the texture, box size or `baseZDepth` change).
 - Each player owns one metaball index; hands/body movement move the metaballs.
 
 ### VFX & post-processing
