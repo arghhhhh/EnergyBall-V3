@@ -95,6 +95,10 @@ following the existing pattern:
 - `MarchingCubes/MeshBuilder.cs` + `MarchingCubes/MarchingCubes.compute` +
   `TriangleTable.cs`: triangulate the isosurface into a `Mesh`. Built lazily and
   only when consumed: the `showMetaballMesh` debug setting or `MeshBake` mode.
+  The GPU triangle counter is read back asynchronously (callback form, lands
+  ~2 frames later) and the submesh is trimmed to that count plus a margin, so
+  the renderer and the baker only touch real triangles instead of the full
+  `triangleBudget`; the clear kernel zeroes just the slack inside that range.
 - GPU work is dirty-flagged: it only re-runs when a metaball moved/resized, a
   player joined/left, `gridScale` changed, or the debug mesh was toggled on.
   Metaball data is written from `FixedUpdate`, so extra rendered frames and idle
