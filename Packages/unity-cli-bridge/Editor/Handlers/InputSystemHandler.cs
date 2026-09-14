@@ -81,6 +81,8 @@ namespace UnityCliBridge.Handlers
         static InputSystemHandler()
         {
             InputSystem.onDeviceChange += OnDeviceChange;
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EditorApplication.update -= ProcessScheduledReleases;
             EditorApplication.update += ProcessScheduledReleases;
         }
@@ -394,7 +396,13 @@ namespace UnityCliBridge.Handlers
                     keyboard = GetKeyboardState(),
                     mouse = GetMouseState(),
                     gamepad = GetGamepadState(),
-                    touchscreen = GetTouchscreenState()
+                    touchscreen = GetTouchscreenState(),
+                    playModeInputRouting = new
+                    {
+                        queuedEvents = ShouldQueueEvents(),
+                        backgroundBehavior = InputSystem.settings != null ? InputSystem.settings.backgroundBehavior.ToString() : null,
+                        overriddenFrom = overriddenBackgroundBehavior?.ToString()
+                    }
                 };
 
                 return state;
@@ -463,15 +471,127 @@ namespace UnityCliBridge.Handlers
             return new KeyboardState(keysArray);
         }
 
-        private static void ApplyStateChange<TState>(InputControl control, TState state)
-            where TState : struct
+        // Last state queued per device while events are pending. Queued events are
+        // not visible through CopyState until the next Input System update, so
+        // multi-step sequences (click = press + release, drag, rapid commands) build
+        // on this instead of re-reading the device.
+        private static readonly Dictionary<InputDevice, object> pendingStates = new Dictionary<InputDevice, object>();
+
+        /// <summary>
+        /// In Play Mode, simulated input is delivered as queued state events so the
+        /// player loop's own Input System update processes them exactly like events
+        /// from real hardware. That is what makes wasPressedThisFrame /
+        /// wasReleasedThisFrame fire for game code: writing device state directly
+        /// (InputState.Change) from the bridge happens outside an update, so the
+        /// change is stamped with the previous update and the press edge is never
+        /// observed. Edit Mode has no player loop, so state is written directly and
+        /// callers flush with InputSystem.Update() as before.
+        /// </summary>
+        private static bool ShouldQueueEvents()
         {
-            InputState.Change(control, state, GetSimulationUpdateType());
+            return Application.isPlaying
+                && InputSystem.settings != null
+                && InputSystem.settings.updateMode != InputSettings.UpdateMode.ProcessEventsManually;
+        }
+
+        // Original InputSettings.backgroundBehavior, restored when play mode ends.
+        // Null while nothing has been overridden.
+        private static InputSettings.BackgroundBehavior? overriddenBackgroundBehavior;
+
+        /// <summary>
+        /// Simulated events must reach the game even when the editor is not the
+        /// foreground OS window, which is the normal situation for automation.
+        /// Out of focus, the Input System either holds keyboard/pointer events back
+        /// for editor updates (default "Pointers And Keyboards Respect Game View
+        /// Focus") or, with "All Device Input Always Goes To Game View" and Run In
+        /// Background off, discards the whole event buffer. BackgroundBehavior
+        /// .IgnoreFocus makes the game count as focused in all of that logic (no
+        /// diversion, no discard, no device disabling on focus loss), so it is
+        /// applied for the duration of play mode while input is being simulated and
+        /// restored on exit. The editorInputBehaviorInPlayMode setting is left alone.
+        /// </summary>
+        private static void EnsurePlayModeInputRouting()
+        {
+            var settings = InputSystem.settings;
+            if (settings == null || overriddenBackgroundBehavior.HasValue)
+            {
+                return;
+            }
+
+            var current = settings.backgroundBehavior;
+            if (current == InputSettings.BackgroundBehavior.IgnoreFocus)
+            {
+                return;
+            }
+
+            overriddenBackgroundBehavior = current;
+            settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            BridgeLogger.Log("InputSystemHandler",
+                $"Play mode: backgroundBehavior {current} -> IgnoreFocus so simulated input reaches the game without OS focus (restored on exit)");
+        }
+
+        private static void RestorePlayModeInputRouting()
+        {
+            if (!overriddenBackgroundBehavior.HasValue)
+            {
+                return;
+            }
+
+            var settings = InputSystem.settings;
+            if (settings != null)
+            {
+                settings.backgroundBehavior = overriddenBackgroundBehavior.Value;
+            }
+
+            overriddenBackgroundBehavior = null;
+        }
+
+        private static void ApplyStateChange<TState>(InputDevice device, TState state)
+            where TState : struct, IInputStateTypeInfo
+        {
+            if (ShouldQueueEvents())
+            {
+                EnsurePlayModeInputRouting();
+                InputSystem.QueueStateEvent(device, state);
+                pendingStates[device] = state;
+                return;
+            }
+
+            InputState.Change(device, state, GetSimulationUpdateType());
         }
 
         private static void ApplyStateEvent(InputDevice device, InputEventPtr eventPtr)
         {
+            if (ShouldQueueEvents())
+            {
+                EnsurePlayModeInputRouting();
+                // QueueEvent copies the event, so callers may dispose their buffer afterwards.
+                InputSystem.QueueEvent(eventPtr);
+                return;
+            }
+
             InputState.Change(device, eventPtr, GetSimulationUpdateType());
+        }
+
+        /// <summary>
+        /// Current device state to build the next change on: the last queued (still
+        /// pending) state if there is one, otherwise the device's committed state.
+        /// </summary>
+        private static TState GetBaseState<TState>(InputDevice device)
+            where TState : struct, IInputStateTypeInfo
+        {
+            if (pendingStates.TryGetValue(device, out var pending) && pending is TState pendingState)
+            {
+                return pendingState;
+            }
+
+            device.CopyState<TState>(out var state);
+            return state;
+        }
+
+        private static void ClearPendingStates()
+        {
+            pendingStates.Clear();
         }
 
         private static InputUpdateType GetSimulationUpdateType()
@@ -551,8 +671,21 @@ namespace UnityCliBridge.Handlers
             return string.IsNullOrWhiteSpace(deviceName) ? typeof(T).Name : deviceName;
         }
 
+        private static void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            ClearPendingStates();
+            if (change == PlayModeStateChange.ExitingPlayMode || change == PlayModeStateChange.EnteredEditMode)
+            {
+                RestorePlayModeInputRouting();
+            }
+        }
+
         private static void OnDeviceChange(InputDevice device, InputDeviceChange change)
         {
+            if (change == InputDeviceChange.Removed || change == InputDeviceChange.Disconnected)
+            {
+                pendingStates.Remove(device);
+            }
             if (change == InputDeviceChange.Removed || change == InputDeviceChange.Disconnected)
             {
                 foreach (var key in activeDevices.Where(kvp => kvp.Value == device).Select(kvp => kvp.Key).ToList())
@@ -678,8 +811,16 @@ namespace UnityCliBridge.Handlers
             {
                 InputSystem.QueueTextEvent(keyboard, c);
             }
-            
-            FlushQueuedEvents();
+
+            if (ShouldQueueEvents())
+            {
+                // Let the player loop's own update deliver the text events.
+                EnsurePlayModeInputRouting();
+            }
+            else
+            {
+                FlushQueuedEvents();
+            }
             
             return new
             {
@@ -761,7 +902,7 @@ namespace UnityCliBridge.Handlers
             
             Vector2 position = new Vector2(x, y);
 
-            mouse.CopyState<MouseState>(out var mouseState);
+            var mouseState = GetBaseState<MouseState>(mouse);
             if (absolute)
             {
                 mouseState.position = position;
@@ -798,12 +939,12 @@ namespace UnityCliBridge.Handlers
 
             for (int i = 0; i < clickCount; i++)
             {
-                mouse.CopyState<MouseState>(out var pressState);
+                var pressState = GetBaseState<MouseState>(mouse);
                 pressState = pressState.WithButton(mouseButton, true);
                 ApplyMouseButtonSnapshot(mouseButton, true);
                 ApplyStateChange(mouse, pressState);
 
-                mouse.CopyState<MouseState>(out var releaseState);
+                var releaseState = GetBaseState<MouseState>(mouse);
                 releaseState = releaseState.WithButton(mouseButton, false);
                 ApplyMouseButtonSnapshot(mouseButton, false);
                 ApplyStateChange(mouse, releaseState);
@@ -830,7 +971,7 @@ namespace UnityCliBridge.Handlers
             }
 
             float value = string.Equals(action, "release", StringComparison.OrdinalIgnoreCase) ? 0.0f : 1.0f;
-            mouse.CopyState<MouseState>(out var mouseState);
+            var mouseState = GetBaseState<MouseState>(mouse);
             mouseState = mouseState.WithButton(mouseButton, value > 0f);
             ApplyMouseButtonSnapshot(mouseButton, value > 0f);
             ApplyStateChange(mouse, mouseState);
@@ -871,24 +1012,24 @@ namespace UnityCliBridge.Handlers
                 return new { error = $"Invalid mouse button: {button}" };
             }
 
-            mouse.CopyState<MouseState>(out var startState);
+            var startState = GetBaseState<MouseState>(mouse);
             startState.position = new Vector2(startX, startY);
             startState.delta = Vector2.zero;
             simulatedMousePosition = startState.position;
             ApplyStateChange(mouse, startState);
 
-            mouse.CopyState<MouseState>(out var pressState);
+            var pressState = GetBaseState<MouseState>(mouse);
             pressState = pressState.WithButton(mouseButton, true);
             ApplyMouseButtonSnapshot(mouseButton, true);
             ApplyStateChange(mouse, pressState);
 
-            mouse.CopyState<MouseState>(out var dragState);
+            var dragState = GetBaseState<MouseState>(mouse);
             dragState.delta = new Vector2(endX - startX, endY - startY);
             dragState.position = new Vector2(endX, endY);
             simulatedMousePosition = dragState.position;
             ApplyStateChange(mouse, dragState);
 
-            mouse.CopyState<MouseState>(out var releaseState);
+            var releaseState = GetBaseState<MouseState>(mouse);
             releaseState = releaseState.WithButton(mouseButton, false);
             ApplyMouseButtonSnapshot(mouseButton, false);
             ApplyStateChange(mouse, releaseState);
@@ -909,7 +1050,7 @@ namespace UnityCliBridge.Handlers
             float deltaX = parameters["deltaX"]?.ToObject<float>() ?? 0;
             float deltaY = parameters["deltaY"]?.ToObject<float>() ?? 0;
 
-            mouse.CopyState<MouseState>(out var mouseState);
+            var mouseState = GetBaseState<MouseState>(mouse);
             mouseState.scroll = new Vector2(deltaX, deltaY);
             simulatedMouseScroll = mouseState.scroll;
             ApplyStateChange(mouse, mouseState);
@@ -980,7 +1121,7 @@ namespace UnityCliBridge.Handlers
             }
             
             bool pressed = !string.Equals(action, "release", StringComparison.OrdinalIgnoreCase);
-            gamepad.CopyState<GamepadState>(out var gamepadState);
+            var gamepadState = GetBaseState<GamepadState>(gamepad);
             if (TryParseGamepadButton(buttonName, out var gamepadButton))
             {
                 gamepadState = gamepadState.WithButton(gamepadButton, pressed);
@@ -1025,7 +1166,7 @@ namespace UnityCliBridge.Handlers
             Vector2 afterStick = ApplyAxisDeadzoneInverse(desired);
             Vector2 raw = ApplyStickDeadzoneInverse(afterStick);
 
-            gamepad.CopyState<GamepadState>(out var state);
+            var state = GetBaseState<GamepadState>(gamepad);
             if (stick == "left")
             {
                 state.leftStick = raw;
@@ -1110,7 +1251,7 @@ namespace UnityCliBridge.Handlers
             
             value = Mathf.Clamp01(value);
 
-            gamepad.CopyState<GamepadState>(out var gamepadState);
+            var gamepadState = GetBaseState<GamepadState>(gamepad);
             if (trigger == "left")
             {
                 gamepadState.leftTrigger = value;
@@ -1178,7 +1319,7 @@ namespace UnityCliBridge.Handlers
                     return new { error = $"Invalid direction: {direction}" };
             }
             
-            gamepad.CopyState<GamepadState>(out var gamepadState);
+            var gamepadState = GetBaseState<GamepadState>(gamepad);
             gamepadState = gamepadState
                 .WithButton(GamepadButton.DpadUp, false)
                 .WithButton(GamepadButton.DpadDown, false)

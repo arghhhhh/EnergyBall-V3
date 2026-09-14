@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.VFX;
 
 public class DummySceneControl : MonoBehaviour
@@ -13,10 +14,16 @@ public class DummySceneControl : MonoBehaviour
     public SpriteRenderer leftHandSprite;
     public SpriteRenderer rightHandSprite;
 
-    KeyCode bothOpen;
-    KeyCode bothClosed;
-    KeyCode leftOpen;
-    KeyCode rightOpen;
+    // Input System keys (names parse from the string fields, e.g. "U").
+    Key bothOpen;
+    Key bothClosed;
+    Key leftOpen;
+    Key rightOpen;
+
+    readonly ButtonEdge bothOpenEdge = new();
+    readonly ButtonEdge bothClosedEdge = new();
+    readonly ButtonEdge leftOpenEdge = new();
+    readonly ButtonEdge rightOpenEdge = new();
 
     private float closedOpacity = 0.35f;
 
@@ -39,7 +46,7 @@ public class DummySceneControl : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(bothOpen))
+        if (bothOpenEdge.Update(IsPressed(bothOpen)))
         {
             player.leftHandState = Windows.Kinect.HandState.Open;
             player.rightHandState = Windows.Kinect.HandState.Open;
@@ -50,7 +57,7 @@ public class DummySceneControl : MonoBehaviour
             }
             Debug.Log("Both open");
         }
-        if (Input.GetKeyDown(bothClosed))
+        if (bothClosedEdge.Update(IsPressed(bothClosed)))
         {
             player.leftHandState = Windows.Kinect.HandState.Closed;
             player.rightHandState = Windows.Kinect.HandState.Closed;
@@ -61,7 +68,7 @@ public class DummySceneControl : MonoBehaviour
             }
             Debug.Log("Both closed");
         }
-        if (Input.GetKeyDown(leftOpen))
+        if (leftOpenEdge.Update(IsPressed(leftOpen)))
         {
             player.leftHandState = Windows.Kinect.HandState.Open;
             player.rightHandState = Windows.Kinect.HandState.Closed;
@@ -71,7 +78,7 @@ public class DummySceneControl : MonoBehaviour
                 SetSpriteAlpha(rightHandSprite, closedOpacity);
             }
         }
-        if (Input.GetKeyDown(rightOpen))
+        if (rightOpenEdge.Update(IsPressed(rightOpen)))
         {
             player.leftHandState = Windows.Kinect.HandState.Closed;
             player.rightHandState = Windows.Kinect.HandState.Open;
@@ -85,10 +92,16 @@ public class DummySceneControl : MonoBehaviour
 
     void SetKeys()
     {
-        bothOpen = (KeyCode)Enum.Parse(typeof(KeyCode), bothOpenKey);
-        bothClosed = (KeyCode)Enum.Parse(typeof(KeyCode), bothClosedKey);
-        leftOpen = (KeyCode)Enum.Parse(typeof(KeyCode), leftOpenKey);
-        rightOpen = (KeyCode)Enum.Parse(typeof(KeyCode), rightOpenKey);
+        bothOpen = KeyName.Parse(bothOpenKey);
+        bothClosed = KeyName.Parse(bothClosedKey);
+        leftOpen = KeyName.Parse(leftOpenKey);
+        rightOpen = KeyName.Parse(rightOpenKey);
+    }
+
+    static bool IsPressed(Key key)
+    {
+        var keyboard = Keyboard.current;
+        return key != Key.None && keyboard != null && keyboard[key].isPressed;
     }
 
     void SetSpriteAlpha(SpriteRenderer sprite, float alpha)

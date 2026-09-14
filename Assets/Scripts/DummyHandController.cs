@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class DummyHandController : MonoBehaviour
 {
@@ -15,10 +16,11 @@ public class DummyHandController : MonoBehaviour
     public string leftKey = "LeftArrow";
     public string rightKey = "RightArrow";
 
-    KeyCode up;
-    KeyCode down;
-    KeyCode left;
-    KeyCode right;
+    // Input System keys (names parse from the string fields, e.g. "UpArrow").
+    Key up;
+    Key down;
+    Key left;
+    Key right;
 
     void Start()
     {
@@ -39,19 +41,19 @@ public class DummyHandController : MonoBehaviour
         }
         float step = speedDamper * bodyScale;
 
-        if (Input.GetKey(up))
+        if (IsPressed(up))
         {
             hand.transform.position += step * transform.up;
         }
-        if (Input.GetKey(down))
+        if (IsPressed(down))
         {
             hand.transform.position += -1f * step * transform.up;
         }
-        if (Input.GetKey(left))
+        if (IsPressed(left))
         {
             hand.transform.position += -1f * step * transform.right;
         }
-        if (Input.GetKey(right))
+        if (IsPressed(right))
         {
             hand.transform.position += step * transform.right;
         }
@@ -59,10 +61,16 @@ public class DummyHandController : MonoBehaviour
 
     void SetKeys()
     {
-        up = (KeyCode)Enum.Parse(typeof(KeyCode), upKey);
-        down = (KeyCode)Enum.Parse(typeof(KeyCode), downKey);
-        left = (KeyCode)Enum.Parse(typeof(KeyCode), leftKey);
-        right = (KeyCode)Enum.Parse(typeof(KeyCode), rightKey);
+        up = KeyName.Parse(upKey);
+        down = KeyName.Parse(downKey);
+        left = KeyName.Parse(leftKey);
+        right = KeyName.Parse(rightKey);
+    }
+
+    static bool IsPressed(Key key)
+    {
+        var keyboard = Keyboard.current;
+        return key != Key.None && keyboard != null && keyboard[key].isPressed;
     }
 
     void OnValidate()

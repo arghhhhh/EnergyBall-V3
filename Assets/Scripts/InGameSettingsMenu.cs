@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using RuntimeCurveEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 [DefaultExecutionOrder(-100)]
@@ -165,9 +166,14 @@ public class InGameSettingsMenu : MonoBehaviour
         }
     }
 
+    readonly ButtonEdge menuKeyEdge = new();
+
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.M) && !isModalOpen && !RuntimeCurveEditorWindow.IsVisible)
+        bool menuKeyPressed = menuKeyEdge.Update(
+            Keyboard.current != null && Keyboard.current.mKey.isPressed
+        );
+        if (menuKeyPressed && !isModalOpen && !RuntimeCurveEditorWindow.IsVisible)
         {
             ToggleMenu();
         }

@@ -3,6 +3,7 @@ using MarchingCubes;
 using NaughtyAttributes;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using Windows.Kinect;
 using Joint = Windows.Kinect.Joint;
@@ -901,6 +902,24 @@ public class SceneController : MonoBehaviour
         }
     }
 
+    // Mouse input (Input System). Left-click deletes all bodies, right-click
+    // reloads the scene; both are consumed by the next FixedUpdate.
+    bool leftClickQueued;
+    bool rightClickQueued;
+    readonly ButtonEdge leftClickEdge = new();
+    readonly ButtonEdge rightClickEdge = new();
+
+    void Update()
+    {
+        var mouse = Mouse.current;
+        bool left = mouse != null && mouse.leftButton.isPressed;
+        bool right = mouse != null && mouse.rightButton.isPressed;
+        if (leftClickEdge.Update(left))
+            leftClickQueued = true;
+        if (rightClickEdge.Update(right))
+            rightClickQueued = true;
+    }
+
     void FixedUpdate()
     {
         if (!CurrentSettings.dummyOnlyMode)
@@ -930,14 +949,18 @@ public class SceneController : MonoBehaviour
                 }
             }
 
-            if (Input.GetMouseButtonDown(0) && (settingsMenu == null || !settingsMenu.IsMenuOpen))
+            // Clicks are latched in Update (see PollMouse) so a click is handled
+            // exactly once regardless of how many physics steps a frame runs.
+            if (leftClickQueued && (settingsMenu == null || !settingsMenu.IsMenuOpen))
             {
                 DeleteAllBodies(knownIds);
             }
-            else if (Input.GetMouseButtonDown(1))
+            else if (rightClickQueued)
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             }
+            leftClickQueued = false;
+            rightClickQueued = false;
 
             foreach (var body in bodyData)
             {

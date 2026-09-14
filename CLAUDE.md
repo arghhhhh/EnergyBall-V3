@@ -155,6 +155,20 @@ following the existing pattern:
 `dummyOnlyMode` let you spawn and puppet players without a sensor. Use these to test
 metaballs, gravity, scaling, and VFX from the editor. Test scenes live in
 `Assets/Testing/` (e.g. `Dummy Scene.unity`, VFX experiments, Kinect webcam output).
+`Dummy Scene.unity` already contains two dummy prefab instances; hands open on **U**
+(both), close on **I**, single-hand **O**/**P**; arrow/WASD-style keys move hands.
+
+### Input (Input System package, no legacy `UnityEngine.Input`)
+All key/mouse reads go through `UnityEngine.InputSystem` (`Keyboard.current`,
+`Mouse.current`). Press edges are detected with `ButtonEdge.cs` (rising edge over
+`isPressed` sampled once per frame) rather than `wasPressedThisFrame`: the unity-cli
+bridge injects input by writing device state and running its own Input System update,
+which consumes the `wasPressedThisFrame` edge before `MonoBehaviour.Update` runs.
+`SceneController` latches mouse clicks in `Update` and consumes them in `FixedUpdate`.
+Key names in the dummy scripts' string fields are parsed by `KeyName.cs`, which also
+accepts legacy KeyCode spellings (`Keypad1` → `Numpad1`, `Alpha1` → `Digit1`, ...).
+Bridge testing: `input_keyboard` with `{"action":"press","key":"u","holdSeconds":0.3}`
+opens both dummies' hands; `read_console` with `filterText` "Both open" confirms it.
 
 ## Working in this repo
 
