@@ -298,6 +298,9 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             if (string.IsNullOrEmpty(assetPath))
                 return new { error = "assetPath is required" };
+            bool includeSlots = parameters?["includeSlots"] == null
+                || parameters["includeSlots"].Type == JTokenType.Null
+                || parameters["includeSlots"].ToObject<bool>();
             var graph = LoadGraph(assetPath);
 
             // Collect contexts and operators first so links can be resolved to stable indices.
@@ -457,6 +460,10 @@ namespace UnityCliBridge.Handlers
             JArray SlotsJson(object container, bool isInput)
             {
                 var arr = new JArray();
+                // includeSlots:false -- slot trees dominate the payload (a large graph describes
+                // at ~450 KB, most of it slots). `slotsOmitted` on the response says the empty
+                // arrays mean "not reported", not "none".
+                if (!includeSlots) return arr;
                 IEnumerable coll;
                 try { coll = Prop(container, isInput ? "inputSlots" : "outputSlots") as IEnumerable; }
                 catch { return arr; }
@@ -689,7 +696,7 @@ namespace UnityCliBridge.Handlers
             var includeErrors = parameters?["includeErrors"]?.ToObject<bool>() ?? true;
             JArray errors = includeErrors ? AllErrors(graph, assetPath) : null;
 
-            return new JObject
+            var described = new JObject
             {
                 ["assetPath"] = assetPath,
                 ["contextCount"] = contexts.Count,
@@ -713,6 +720,35 @@ namespace UnityCliBridge.Handlers
                 ["layout"] = LayoutJson(graph),
                 ["touched"] = TouchedJson(assetPath, ctxList, opList, paramList)
             };
+            if (!includeSlots) described["slotsOmitted"] = true;
+            return FilterDescribeSections(described, parameters?["include"] as JArray);
+        }
+
+        /// <summary>
+        /// `include` filter: keep only the named top-level sections. Identity keys (assetPath,
+        /// slotsOmitted) and every *Count field are always kept, so a filtered describe still
+        /// reports the true size of what it left out. Unknown names are reported rather than
+        /// silently ignored, so a typo does not look like an empty graph.
+        /// </summary>
+        private static object FilterDescribeSections(JObject described, JArray include)
+        {
+            if (include == null || include.Count == 0) return described;
+            var wanted = new HashSet<string>(include.Select(t => t.ToString()),
+                StringComparer.OrdinalIgnoreCase);
+            var unknown = wanted.Where(w => described[w] == null).OrderBy(w => w).ToList();
+            if (unknown.Count > 0)
+                return new { error = $"Unknown include section(s): {string.Join(", ", unknown)}. "
+                    + $"Available: {string.Join(", ", described.Properties().Select(p => p.Name).OrderBy(n => n))}." };
+            var filtered = new JObject();
+            foreach (var prop in described.Properties())
+            {
+                bool keep = wanted.Contains(prop.Name)
+                    || prop.Name == "assetPath"
+                    || prop.Name == "slotsOmitted"
+                    || prop.Name.EndsWith("Count", StringComparison.Ordinal);
+                if (keep) filtered[prop.Name] = prop.Value;
+            }
+            return filtered;
         }
 
         /// <summary>The nodes recorded as touched this session, resolved to describe indices.</summary>
@@ -1007,6 +1043,72 @@ namespace UnityCliBridge.Handlers
             return set;
         }
 
+        // Required arguments per `vfx_apply` op, checked before the graph is touched.
+        // Deliberately weaker than each handler's own guard: this only trips when a
+        // parameter is ABSENT, never when it is present-but-empty, so it can never reject
+        // a call the handler would have accepted. The handler guards remain authoritative.
+        // Runtime ops that dereference `value`; guarded so a missing value returns an
+        // error instead of a NullReferenceException surfacing as a bridge fault.
+        private static readonly HashSet<string> s_RuntimeValueOps = new HashSet<string>
+        {
+            "set_float", "set_int", "set_bool", "set_vector2", "set_vector3", "set_vector4",
+        };
+
+        private static readonly Dictionary<string, string[]> s_RequiredApplyArgs =
+            new Dictionary<string, string[]>
+            {
+            ["add_block"] = new[] { "blockName" },
+            ["add_context"] = new[] { "contextName" },
+            ["add_custom_attribute"] = new[] { "attributeName", "attributeType" },
+            ["add_operator"] = new[] { "operatorName" },
+            ["add_parameter"] = new[] { "parameterName", "type" },
+            ["convert_to_inline"] = new[] { "target" },
+            ["convert_to_property"] = new[] { "target" },
+            ["create_from_template"] = new[] { "targetPath", "template" },
+            ["create_subgraph_asset"] = new[] { "kind", "subgraphPath" },
+            ["designate_template"] = new[] { "name" },
+            ["group_nodes"] = new[] { "nodes", "title" },
+            ["insert_template"] = new[] { "template" },
+            ["link_flow"] = new[] { "from", "to" },
+            ["link_slots"] = new[] { "from", "to" },
+            ["move_node"] = new[] { "position", "target" },
+            ["remove_sticky_note"] = new[] { "index" },
+            ["rename_category"] = new[] { "newCategory" },
+            ["rename_operator_input"] = new[] { "index", "name" },
+            ["reorder_block"] = new[] { "toIndex" },
+            ["reorder_category"] = new[] { "toIndex" },
+            ["reorder_operator_input"] = new[] { "index", "toIndex" },
+            ["reorder_sticky_note"] = new[] { "index", "toIndex" },
+            ["set_block_enabled"] = new[] { "enabled" },
+            ["set_block_setting"] = new[] { "setting", "value" },
+            ["set_context_setting"] = new[] { "setting", "value" },
+            ["set_initial_event_name"] = new[] { "eventName" },
+            ["set_operator_operand_type"] = new[] { "operandType" },
+            ["set_operator_setting"] = new[] { "setting", "value" },
+            ["set_parameter_category"] = new[] { "category" },
+            ["set_slot_space"] = new[] { "space", "target" },
+            ["set_slot_value"] = new[] { "target", "value" },
+            ["set_system_name"] = new[] { "name" },
+            ["unlink_flow"] = new[] { "from", "to" },
+            ["unlink_slots"] = new[] { "target" },
+            ["update_sticky_note"] = new[] { "index" },
+            };
+
+        /// <summary>
+        /// Validates that required arguments are present without loading the graph.
+        /// Returns an error object when one is missing, otherwise null.
+        /// </summary>
+        private static object ValidateApplyArgs(string op, JObject parameters)
+        {
+            if (string.IsNullOrEmpty(op)) return null;
+            if (!s_RequiredApplyArgs.TryGetValue(op, out var required)) return null;
+            foreach (var name in required)
+            {
+                if (parameters?[name] == null || parameters[name].Type == JTokenType.Null)
+                    return new { error = $"{name} is required" };
+            }
+            return null;
+        }
         public static object Apply(JObject parameters)
         {
             s_LastCompile = null;
@@ -1014,6 +1116,16 @@ namespace UnityCliBridge.Handlers
             {
                 var op = parameters?["op"]?.ToString();
                 var assetPath = parameters?["assetPath"]?.ToString();
+                // Validate before Fingerprint: Fingerprint -> DescribeGraphCore -> LoadGraph,
+                // so a missing argument would otherwise load the graph before being rejected.
+                var argError = ValidateApplyArgs(op, parameters);
+                if (argError != null) return argError;
+                // autoCompile:false defers the recompile so a batch of ops pays for one compile
+                // instead of N. The explicit `compile` op always compiles.
+                s_DeferCompile = op != "compile"
+                    && parameters?["autoCompile"] != null
+                    && parameters["autoCompile"].Type != JTokenType.Null
+                    && !parameters["autoCompile"].ToObject<bool>();
                 bool track = !string.IsNullOrEmpty(op) && !s_NonTrackedOps.Contains(op) && !string.IsNullOrEmpty(assetPath);
                 Dictionary<int, string> before = track ? Fingerprint(assetPath) : null;
                 var result = ApplyCore(parameters);
@@ -1035,6 +1147,7 @@ namespace UnityCliBridge.Handlers
                 return result;
             }
             catch (Exception ex) { return Fail("vfx_apply", ex); }
+            finally { s_DeferCompile = false; }
         }
 
         private static object ApplyCore(JObject parameters)
@@ -1200,6 +1313,11 @@ namespace UnityCliBridge.Handlers
         private static readonly List<(LogType type, string message)> s_ImportLogs =
             new List<(LogType, string)>();
         private static bool s_CapturingImportLogs;
+        // When set, `Persist` writes the asset but skips the reimport/recompile. Every vfx_apply
+        // op otherwise triggers its own recompile, so batching N edits costs N recompiles.
+        private static bool s_DeferCompile;
+        private static readonly HashSet<string> s_PendingCompile = new HashSet<string>();
+
         private static JObject s_LastCompile;
         private static readonly Dictionary<string, JObject> s_LastCompileByAsset =
             new Dictionary<string, JObject>(StringComparer.OrdinalIgnoreCase);
@@ -1317,6 +1435,17 @@ namespace UnityCliBridge.Handlers
         private static JObject Persist(object graph, string assetPath)
         {
             Call(graph, GraphType, "SetExpressionGraphDirty", true);
+            if (s_DeferCompile)
+            {
+                // Skip both the asset write and the reimport. The graph stays live in memory
+                // (GetOrCreateGraph caches it per resource), so later ops build on it and one
+                // `compile` op writes and compiles the whole batch once. Edits are in-memory
+                // until then: a domain reload before `compile` discards them.
+                s_PendingCompile.Add(assetPath);
+                var deferred = new JObject { ["deferred"] = true, ["assetPath"] = assetPath };
+                s_LastCompile = deferred;
+                return deferred;
+            }
             var resource = Prop(graph, "visualEffectResource");
             Call(null, ResourceExtType, "WriteAssetWithSubAssets", resource);
             lock (s_ImportLogs) s_ImportLogs.Clear();
@@ -1339,12 +1468,14 @@ namespace UnityCliBridge.Handlers
         {
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
+            bool hadPending = s_PendingCompile.Remove(assetPath);
             var compile = Persist(graph, assetPath);
             var validation = CollectErrors(graph);
             return new JObject
             {
                 ["op"] = "compile",
                 ["assetPath"] = assetPath,
+                ["flushedDeferred"] = hadPending,
                 ["compile"] = compile,
                 ["validationErrors"] = validation,
                 ["ok"] = (bool)compile["success"]
@@ -6279,10 +6410,12 @@ namespace UnityCliBridge.Handlers
                     throw new Exception("instancingMode property not found on VisualEffectResource (VFX package too old?).");
                 object modeValue;
                 try { modeValue = Enum.Parse(modeProp.PropertyType, modeStr, true); }
-                catch (Exception e)
+                catch (Exception)
                 {
+                    // Caller error, not a bridge fault: return it quietly rather than
+                    // throwing into Fail() -> BridgeLogger.LogError -> Debug.LogError.
                     var names = string.Join(", ", Enum.GetNames(modeProp.PropertyType));
-                    throw new Exception($"Invalid mode '{modeStr}': {e.Message}. Supported: {names}.");
+                    return new { error = $"Invalid mode '{modeStr}'. Supported: {names}." };
                 }
                 modeProp.SetValue(resource, modeValue);
                 appliedMode = new JValue(modeValue.ToString());
@@ -6638,6 +6771,11 @@ namespace UnityCliBridge.Handlers
             var gameObject = parameters?["gameObject"]?.ToString();
             if (string.IsNullOrEmpty(gameObject))
                 return new { error = "gameObject is required (name of a scene object with a VisualEffect)" };
+
+            // Validate before touching the scene: FindVisualEffect throws when the object
+            // is absent, which would surface a caller error as a bridge fault.
+            if (s_RuntimeValueOps.Contains(op) && parameters?["value"] == null)
+                return new { error = "value is required" };
 
             if (op == "set_asset")
             {
