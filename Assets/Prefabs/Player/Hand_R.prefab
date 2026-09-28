@@ -58,6 +58,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2234651539841191416, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: seed
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 2333748608341226706, guid: f497d5d0d40136d46b5b968a0cd1cb19,
         type: 3}
       propertyPath: m_PropertySheet.m_Bool.m_Array.Array.size
@@ -82,6 +87,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Hand_R
+      objectReference: {fileID: 0}
+    - target: {fileID: 5093652640199930057, guid: f497d5d0d40136d46b5b968a0cd1cb19,
+        type: 3}
+      propertyPath: seed
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8833295124590701895, guid: f497d5d0d40136d46b5b968a0cd1cb19,
         type: 3}
