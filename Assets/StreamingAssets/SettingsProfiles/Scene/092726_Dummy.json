@@ -164,15 +164,78 @@
             "x": 0.00800000037997961,
             "y": 0.014000000432133675
         },
-        "lifetimeRemapMaxDist": 0.6000000238418579,
-        "lifeRange": {
-            "x": 1.0,
-            "y": 3.0
+        "maxLifetime": 4.0,
+        "maxLifetimeClosed": 1.0,
+        "fadeInTime": 0.30000001192092898,
+        "fadeInCurve": {
+            "serializedVersion": "2",
+            "m_Curve": [
+                {
+                    "serializedVersion": "3",
+                    "time": 0.0,
+                    "value": 0.0,
+                    "inSlope": 0.0,
+                    "outSlope": 2.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                },
+                {
+                    "serializedVersion": "3",
+                    "time": 1.0,
+                    "value": 1.0,
+                    "inSlope": 0.0,
+                    "outSlope": 0.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                }
+            ],
+            "m_PreInfinity": 2,
+            "m_PostInfinity": 2,
+            "m_RotationOrder": 4
         },
+        "fadeOutTime": 3.0,
         "lengthScaler": 1.25,
         "minStretchLength": 0.009999999776482582,
         "vfxSphereCollisionScaleMult": 0.9300000071525574,
         "collisionDetectionScaleMult": 1.25,
+        "colorCycleTime": 0.30000001192092898,
+        "glowFullRadius": 0.8999999761581421,
+        "glowRange": 0.41999998688697817,
+        "glowCurve": {
+            "serializedVersion": "2",
+            "m_Curve": [
+                {
+                    "serializedVersion": "3",
+                    "time": 0.0,
+                    "value": 0.0,
+                    "inSlope": 0.0,
+                    "outSlope": 0.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                },
+                {
+                    "serializedVersion": "3",
+                    "time": 1.0,
+                    "value": 1.0,
+                    "inSlope": 2.0,
+                    "outSlope": 2.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                }
+            ],
+            "m_PreInfinity": 2,
+            "m_PostInfinity": 2,
+            "m_RotationOrder": 4
+        },
+        "surfaceBrightness": 10.0,
         "mainAttractionSpeed": 0.949999988079071,
         "mainAttractionForce": 43.0,
         "mainStickDistance": 0.019999999552965165,

@@ -93,6 +93,42 @@ public class HandVfxSettings
     )]
     public float collisionDetectionScaleMult = 1.25f;
 
+    [Header("Colour & Glow")]
+    [VfxProperty("colorCycleTime")]
+    [Tooltip(
+        "Seconds for a particle to travel through the player's aura gradient (sampled by age, "
+            + "then held on the last colour). Time - never scaled."
+    )]
+    public float colorCycleTime = 4f;
+
+    [VfxProperty("glowFullRadius")]
+    [Tooltip(
+        "Distance from the vfxSphere centre, in vfxSphere radii, at which the surface glow is "
+            + "full (1 = surface). Slightly above 1 keeps particles resting on the ball in the "
+            + "clamped full-glow zone. Ratio - never scaled."
+    )]
+    public float glowFullRadius = 1.1f;
+
+    [VfxProperty("glowRange")]
+    [Tooltip(
+        "How far outside glowFullRadius the surface glow starts ramping in, in vfxSphere radii. "
+            + "Glow follows the particle's current distance (no collision lock). Ratio - never scaled."
+    )]
+    public float glowRange = 3f;
+
+    [VfxProperty("glowCurve")]
+    [Tooltip(
+        "Glow amount across the ramp. X 0 = glowRange out, X 1 = glowFullRadius. Y = glow (0-1)."
+    )]
+    public AnimationCurve glowCurve = AnimationCurve.Linear(0, 0, 1, 1);
+
+    [VfxProperty("surfaceBrightness")]
+    [Tooltip(
+        "Colour multiplier at full glow, for the Multiply Color glow block (disabled by default; "
+            + "the Blend Color block is the other option). Ratio - never scaled."
+    )]
+    public float surfaceBrightness = 3f;
+
     [Header("Main Attractor")]
     [BodyScaled(1), VfxProperty("mainAttractionSpeed")]
     [Tooltip("ConformToSDF attraction speed toward the ball surface (m/s at 1x).")]
@@ -265,6 +301,7 @@ public class HandVfxSettings
         var copy = (HandVfxSettings)MemberwiseClone();
         copy.tangentialDampingFadeCurve = new AnimationCurve(tangentialDampingFadeCurve.keys);
         copy.fadeInCurve = new AnimationCurve(fadeInCurve.keys);
+        copy.glowCurve = new AnimationCurve(glowCurve.keys);
         return copy;
     }
 }

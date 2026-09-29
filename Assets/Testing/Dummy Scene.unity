@@ -898,12 +898,66 @@ MonoBehaviour:
     spawnSphereRadius: 0.012
     spawnVeloSpread: 0.8
     sizeRange: {x: 0.008, y: 0.014}
-    lifetimeRemapMaxDist: 0.6
-    lifeRange: {x: 1, y: 3}
+    maxLifetime: 4
+    maxLifetimeClosed: 1
+    fadeInTime: 0.3
+    fadeInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    fadeOutTime: 3
     lengthScaler: 1.25
     minStretchLength: 0.01
     vfxSphereCollisionScaleMult: 0.93
     collisionDetectionScaleMult: 1.25
+    colorCycleTime: 0.3
+    glowFullRadius: 0.9
+    glowRange: 0.42
+    glowCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    surfaceBrightness: 10
     mainAttractionSpeed: 0.95
     mainAttractionForce: 43
     mainStickDistance: 0.02
@@ -1352,7 +1406,7 @@ MonoBehaviour:
   showPointCloud: 0
   showMetaballBounds: 0
   showAttractionRadius: 0
-  showHandTrailDistorters: 1
+  showHandTrailDistorters: 0
   showSecondaryAttractor: 0
   settingsMenu: {fileID: 1605418794}
   volumeController: {fileID: 1361264294}

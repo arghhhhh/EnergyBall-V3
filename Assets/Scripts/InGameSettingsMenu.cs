@@ -358,6 +358,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateAnimationGroup(sceneSettingsPanel);
         CreateHandVfxSpawnGroup(sceneSettingsPanel);
         CreateHandVfxCollisionGroup(sceneSettingsPanel);
+        CreateHandVfxColorGroup(sceneSettingsPanel);
         CreateHandVfxMainAttractorGroup(sceneSettingsPanel);
         CreateHandVfxTrailDistortersGroup(sceneSettingsPanel);
         CreateHandVfxSecondaryAttractorGroup(sceneSettingsPanel);
@@ -887,6 +888,43 @@ public class InGameSettingsMenu : MonoBehaviour
             "Collision Detection Scale Mult",
             () => runtimeSettings.handVfx.collisionDetectionScaleMult,
             v => runtimeSettings.handVfx.collisionDetectionScaleMult = v
+        );
+    }
+
+    private void CreateHandVfxColorGroup(ScrollView parentContainer)
+    {
+        var group = CreateGroup("Hand VFX - Colour & Glow", parentContainer);
+
+        CreateFloatField(
+            group,
+            "Color Cycle Time (s)",
+            () => runtimeSettings.handVfx.colorCycleTime,
+            v => runtimeSettings.handVfx.colorCycleTime = v
+        );
+        CreateFloatField(
+            group,
+            "Glow Full Radius (radii)",
+            () => runtimeSettings.handVfx.glowFullRadius,
+            v => runtimeSettings.handVfx.glowFullRadius = v
+        );
+        CreateFloatField(
+            group,
+            "Glow Range (radii)",
+            () => runtimeSettings.handVfx.glowRange,
+            v => runtimeSettings.handVfx.glowRange = v
+        );
+        CreateCurveField(
+            group,
+            "Glow Curve",
+            () => runtimeSettings.handVfx.glowCurve,
+            v => runtimeSettings.handVfx.glowCurve = v,
+            tooltip: "Glow amount across the ramp. X 0 = glowRange out, X 1 = glowFullRadius. Y = glow (0-1)."
+        );
+        CreateFloatField(
+            group,
+            "Surface Brightness",
+            () => runtimeSettings.handVfx.surfaceBrightness,
+            v => runtimeSettings.handVfx.surfaceBrightness = v
         );
     }
 
