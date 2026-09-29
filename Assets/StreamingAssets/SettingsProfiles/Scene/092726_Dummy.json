@@ -331,6 +331,6 @@
     "_showPointCloud": false,
     "_showMetaballBounds": false,
     "_showAttractionRadius": false,
-    "_showHandTrailDistorters": true,
+    "_showHandTrailDistorters": false,
     "_showSecondaryAttractor": false
 }

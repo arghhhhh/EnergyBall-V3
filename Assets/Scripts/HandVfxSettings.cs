@@ -30,16 +30,44 @@ public class HandVfxSettings
     [Tooltip("Random per-particle size range (m at 1x).")]
     public Vector2 sizeRange = new(0.008f, 0.014f);
 
-    [BodyScaled(1), VfxProperty("lifetimeRemapMaxDist")]
-    [Tooltip("Hand-to-ball distance at which particle lifetime hits its max (m at 1x).")]
-    public float lifetimeRemapMaxDist = 0.6f;
-
-    [VfxProperty("lifeRange")]
+    [VfxProperty("maxLifetime")]
     [Tooltip(
-        "Particle lifetime range (s) at hand-to-ball distance 0 -> lifetimeRemapMaxDist. "
-            + "Blended toward (0.25, 1) as closeProgress rises. Time - never scaled."
+        "Fallback lifetime (s) for particles that never reach the ball, at closeProgress 0. "
+            + "Arriving particles die fadeOutTime after contact instead. Time - never scaled."
     )]
-    public Vector2 lifeRange = new(1f, 2f);
+    public float maxLifetime = 4f;
+
+    [VfxProperty("maxLifetimeClosed")]
+    [Tooltip(
+        "Fallback lifetime (s) at closeProgress 1; blended linearly from maxLifetime. Sampled at "
+            + "spawn. Time - never scaled."
+    )]
+    public float maxLifetimeClosed = 1f;
+
+    [VfxProperty("fadeInTime")]
+    [Tooltip(
+        "Seconds after spawn for a particle to grow from size 0 to full size. Time - never scaled."
+    )]
+    public float fadeInTime = 0.1f;
+
+    [VfxProperty("fadeInCurve")]
+    [Tooltip(
+        "Size multiplier over the fade-in. X 0 = spawn, X 1 = fadeInTime (remapped, so the shape "
+            + "is independent of the duration). Y = fraction of full size."
+    )]
+    public AnimationCurve fadeInCurve = new(
+        new Keyframe(0f, 0f, 0f, 2f),
+        new Keyframe(1f, 1f, 0f, 0f)
+    );
+
+    [VfxProperty("fadeOutTime")]
+    [Tooltip(
+        "Seconds a particle takes to shrink and fade to 0 before death. On first contact with "
+            + "the ball its lifetime is cut to age + fadeOutTime, so the fade starts there; "
+            + "particles that never reach it fade over the last fadeOutTime of their lifetime. "
+            + "Time - never scaled."
+    )]
+    public float fadeOutTime = 2f;
 
     [BodyScaled(-1), VfxProperty("lengthScaler")]
     [Tooltip(
@@ -236,6 +264,7 @@ public class HandVfxSettings
         // Every field is a value type except the curves, which must be copied by keys.
         var copy = (HandVfxSettings)MemberwiseClone();
         copy.tangentialDampingFadeCurve = new AnimationCurve(tangentialDampingFadeCurve.keys);
+        copy.fadeInCurve = new AnimationCurve(fadeInCurve.keys);
         return copy;
     }
 }

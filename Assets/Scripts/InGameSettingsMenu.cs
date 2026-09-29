@@ -829,15 +829,34 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Lifetime Remap Max Dist (×s)",
-            () => runtimeSettings.handVfx.lifetimeRemapMaxDist,
-            v => runtimeSettings.handVfx.lifetimeRemapMaxDist = v
+            "Max Lifetime (s)",
+            () => runtimeSettings.handVfx.maxLifetime,
+            v => runtimeSettings.handVfx.maxLifetime = v
         );
-        CreateVector2Field(
+        CreateFloatField(
             group,
-            "Life Range (s)",
-            () => runtimeSettings.handVfx.lifeRange,
-            v => runtimeSettings.handVfx.lifeRange = v
+            "Max Lifetime Closed (s)",
+            () => runtimeSettings.handVfx.maxLifetimeClosed,
+            v => runtimeSettings.handVfx.maxLifetimeClosed = v
+        );
+        CreateFloatField(
+            group,
+            "Fade In Time (s)",
+            () => runtimeSettings.handVfx.fadeInTime,
+            v => runtimeSettings.handVfx.fadeInTime = v
+        );
+        CreateCurveField(
+            group,
+            "Fade In Curve",
+            () => runtimeSettings.handVfx.fadeInCurve,
+            v => runtimeSettings.handVfx.fadeInCurve = v,
+            tooltip: "Size multiplier over the fade-in. X 0 = spawn, X 1 = fadeInTime. Y = fraction of full size."
+        );
+        CreateFloatField(
+            group,
+            "Fade Out Time (s)",
+            () => runtimeSettings.handVfx.fadeOutTime,
+            v => runtimeSettings.handVfx.fadeOutTime = v
         );
         CreateFloatField(
             group,
