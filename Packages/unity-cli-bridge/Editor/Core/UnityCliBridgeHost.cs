@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
@@ -32,6 +33,7 @@ namespace UnityCliBridge.Core
         private static CancellationTokenSource cancellationTokenSource;
         private static Task listenerTask;
         private static bool isProcessingCommand;
+        private static Task pendingCommand;
         private static int activeClientCount;
         
         
@@ -60,6 +62,7 @@ namespace UnityCliBridge.Core
         /// </summary>
         static UnityCliBridge()
         {
+            global::UnityCliBridge.Handlers.PlayerBuildHandler.Initialize();
             BridgeLogger.Log("Initializing...");
             EditorApplication.update += ProcessCommandQueue;
             EditorApplication.quitting += Shutdown;
@@ -214,6 +217,29 @@ namespace UnityCliBridge.Core
                 return;
             }
 
+            StartTcpListenerOnCurrentEndpoint();
+        }
+
+        /// <summary>
+        /// Starts a listener on an ephemeral loopback port even in a test-runner process, so
+        /// integration tests exercise the real transport. Returns the bound port. Call
+        /// <see cref="Restart"/> afterwards to return to the configured endpoint.
+        /// </summary>
+        internal static int StartOnEphemeralLoopbackPortForTesting()
+        {
+            currentHost = "127.0.0.1";
+            bindAddress = IPAddress.Loopback;
+            currentPort = 0;
+            StartTcpListenerOnCurrentEndpoint();
+            if (tcpListener == null)
+            {
+                throw new InvalidOperationException("TCP listener failed to start; see the Unity CLI Bridge log.");
+            }
+            return ((IPEndPoint)tcpListener.LocalEndpoint).Port;
+        }
+
+        private static void StartTcpListenerOnCurrentEndpoint()
+        {
             try
             {
                 if (tcpListener != null)
@@ -400,6 +426,11 @@ namespace UnityCliBridge.Core
                                 var command = JsonConvert.DeserializeObject<Command>(json);
                                 if (command != null)
                                 {
+                                    if (global::UnityCliBridge.Handlers.PlayerBuildHandler.TryHandleBackground(command, out var buildResponse))
+                                    {
+                                        if (!await TrySendFramedMessage(stream, buildResponse, cancellationToken)) break;
+                                        continue;
+                                    }
                                     // Queue command for processing on main thread
                                     lock (queueLock)
                                     {
@@ -408,7 +439,7 @@ namespace UnityCliBridge.Core
                                 }
                                 else
                                 {
-                                    var errorResponse = Response.ErrorResult("Invalid command format", "PARSE_ERROR", null);
+                                    var errorResponse = Response.ErrorResult("Invalid command format", "PARSE_ERROR", (object)null);
                                     if (!await TrySendFramedMessage(stream, errorResponse, cancellationToken))
                                     {
                                         break;
@@ -417,7 +448,7 @@ namespace UnityCliBridge.Core
                             }
                             catch (JsonException ex)
                             {
-                                var errorResponse = Response.ErrorResult($"JSON parsing error: {ex.Message}", "JSON_ERROR", null);
+                                var errorResponse = Response.ErrorResult($"JSON parsing error: {ex.Message}", "JSON_ERROR", (object)null);
                                 if (!await TrySendFramedMessage(stream, errorResponse, cancellationToken))
                                 {
                                     break;
@@ -472,14 +503,18 @@ namespace UnityCliBridge.Core
                 return false;
             }
 
+            var sendGate = SendGates.GetValue(stream, _ => new SemaphoreSlim(1, 1));
+            var entered = false;
             try
             {
+                await sendGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+                entered = true;
                 var messageBytes = Encoding.UTF8.GetBytes(message);
                 var lengthBytes = BitConverter.GetBytes(messageBytes.Length);
                 if (BitConverter.IsLittleEndian) Array.Reverse(lengthBytes);
-                await stream.WriteAsync(lengthBytes, 0, 4, cancellationToken);
-                await stream.WriteAsync(messageBytes, 0, messageBytes.Length, cancellationToken);
-                await stream.FlushAsync(cancellationToken);
+                await stream.WriteAsync(lengthBytes, 0, 4, cancellationToken).ConfigureAwait(false);
+                await stream.WriteAsync(messageBytes, 0, messageBytes.Length, cancellationToken).ConfigureAwait(false);
+                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
                 return true;
             }
             catch (Exception ex) when (cancellationToken.IsCancellationRequested || IsExpectedDisconnect(ex))
@@ -491,15 +526,32 @@ namespace UnityCliBridge.Core
                 try { BridgeLogger.LogError($"Send error: {ex}"); } catch { }
                 return false;
             }
+            finally
+            {
+                if (entered) sendGate.Release();
+            }
         }
+
+        private static readonly ConditionalWeakTable<NetworkStream, SemaphoreSlim> SendGates =
+            new ConditionalWeakTable<NetworkStream, SemaphoreSlim>();
         
         /// <summary>
         /// Processes queued commands on the Unity main thread.
         /// Drains all queued commands within a single frame for lower latency.
         /// </summary>
-        private static async void ProcessCommandQueue()
+        private static void ProcessCommandQueue()
         {
             if (isProcessingCommand) return;
+            // Unity 2022 does not pump UnitySynchronizationContext while paused.
+            // Poll completion from Editor.update so the next handler still starts
+            // on the main thread without depending on that context resuming.
+            if (pendingCommand != null)
+            {
+                if (!pendingCommand.IsCompleted) return;
+                if (pendingCommand.IsFaulted)
+                    BridgeLogger.LogError($"Command failed: {pendingCommand.Exception}");
+                pendingCommand = null;
+            }
             isProcessingCommand = true;
             try
             {
@@ -511,7 +563,11 @@ namespace UnityCliBridge.Core
                         if (commandQueue.Count == 0) break;
                         item = commandQueue.Dequeue();
                     }
-                    await ProcessCommandInternal(item.command, item.client, item.enqueuedAtUtc);
+                    pendingCommand = ProcessCommandInternal(item.command, item.client, item.enqueuedAtUtc);
+                    if (!pendingCommand.IsCompleted) break;
+                    if (pendingCommand.IsFaulted)
+                        BridgeLogger.LogError($"Command failed: {pendingCommand.Exception}");
+                    pendingCommand = null;
                 }
             }
             finally
@@ -550,7 +606,7 @@ namespace UnityCliBridge.Core
                     response = Response.ErrorResult(command.Id, $"Command '{command.Type}' is blocked during Play Mode", "PLAY_MODE_BLOCKED", state);
                     response = PrepareCommandResponseForStats(response, out _);
                     var sendStopwatch = Stopwatch.StartNew();
-                    await TrySendFramedMessage(responseStream, response, CancellationToken.None);
+                    await TrySendFramedMessage(responseStream, response, CancellationToken.None).ConfigureAwait(false);
                     sendStopwatch.Stop();
                     BridgeCommandStats.RecordStageDuration("response_send_ms", sendStopwatch.Elapsed.TotalMilliseconds);
                     statsScope.Complete(false, Encoding.UTF8.GetByteCount(response));
@@ -572,10 +628,17 @@ namespace UnityCliBridge.Core
 
                 // Send response
                 var responseWriteStopwatch = Stopwatch.StartNew();
-                await TrySendFramedMessage(responseStream, response, CancellationToken.None);
+                var responseSent = await TrySendFramedMessage(responseStream, response, CancellationToken.None).ConfigureAwait(false);
                 responseWriteStopwatch.Stop();
                 BridgeCommandStats.RecordStageDuration("response_send_ms", responseWriteStopwatch.Elapsed.TotalMilliseconds);
                 statsScope.Complete(!responseIsError, Encoding.UTF8.GetByteCount(response));
+                if (responseSent && !responseIsError &&
+                    string.Equals(command.Type, "quit_editor", StringComparison.OrdinalIgnoreCase))
+                {
+                    // delayCall can run while an asynchronous write is suspended.
+                    // Register only after the complete success frame has been flushed.
+                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                }
             }
             catch (Exception ex)
             {
@@ -596,7 +659,7 @@ namespace UnityCliBridge.Core
                         );
                         errorResponse = PrepareCommandResponseForStats(errorResponse, out _);
                         var responseWriteStopwatch = Stopwatch.StartNew();
-                        await TrySendFramedMessage(responseStream, errorResponse, CancellationToken.None);
+                        await TrySendFramedMessage(responseStream, errorResponse, CancellationToken.None).ConfigureAwait(false);
                         responseWriteStopwatch.Stop();
                         BridgeCommandStats.RecordStageDuration("response_send_ms", responseWriteStopwatch.Elapsed.TotalMilliseconds);
                         statsScope.Complete(false, Encoding.UTF8.GetByteCount(errorResponse));

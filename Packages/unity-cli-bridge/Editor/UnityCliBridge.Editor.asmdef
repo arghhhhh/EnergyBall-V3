@@ -26,11 +26,6 @@
             "name": "com.unity.addressables",
             "expression": "",
             "define": "UNITY_ADDRESSABLES"
-        },
-        {
-            "name": "com.unity.recorder",
-            "expression": "",
-            "define": "UNITY_RECORDER"
         }
     ],
     "noEngineReferences": false

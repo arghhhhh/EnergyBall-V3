@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityCliBridge.Logging;
+using UnityCliBridge.Helpers;
 
 namespace UnityCliBridge.Handlers
 {
@@ -19,18 +20,42 @@ namespace UnityCliBridge.Handlers
     /// </summary>
     public static class VfxGraphHandler
     {
+        private static int? InstanceId(object value) => value is UnityEngine.Object obj
+            ? ObjectIdentity.GetInstanceId(obj) : (int?)null;
+
         // ---- Reflection type resolution -------------------------------------
 
         private const string EditorAsmHint = "Unity.VisualEffectGraph.Editor";
 
-        private static Type T(string fullName)
+        private sealed class VfxInputException : Exception
+        {
+            public string Code { get; }
+            public VfxInputException(string message, string code = "INVALID_ARGUMENT") : base(message)
+            {
+                Code = code;
+            }
+        }
+
+        private static Type FindType(string fullName)
         {
             foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
                 var t = asm.GetType(fullName, false);
                 if (t != null) return t;
             }
-            throw new Exception($"VFX type not found: {fullName}. Is com.unity.visualeffectgraph installed?");
+            return null;
+        }
+
+        private static void EnsurePackageAvailable()
+        {
+            if (FindType("UnityEditor.VFX.VFXGraph") == null)
+                throw new VfxInputException("The com.unity.visualeffectgraph package is not installed.", "VFX_PACKAGE_MISSING");
+        }
+
+        private static Type T(string fullName)
+        {
+            EnsurePackageAvailable();
+            return FindType(fullName) ?? throw new VfxInputException($"VFX type not found: {fullName}", "VFX_API_UNSUPPORTED");
         }
 
         private static Type ResourceType => T("UnityEditor.VFX.VisualEffectResource");
@@ -74,7 +99,7 @@ namespace UnityCliBridge.Handlers
             var m = type.GetMethod(method, flags, null,
                 args.Select(a => a?.GetType() ?? typeof(object)).ToArray(), null)
                 ?? type.GetMethods(flags).FirstOrDefault(x => x.Name == method && x.GetParameters().Length == args.Length);
-            if (m == null) throw new Exception($"Method not found: {type.Name}.{method}({args.Length} args)");
+            if (m == null) throw new VfxInputException($"Method not found: {type.Name}.{method}({args.Length} args)", "VFX_API_UNSUPPORTED");
             return m.Invoke(target, args);
         }
 
@@ -85,7 +110,7 @@ namespace UnityCliBridge.Handlers
                 var p = t.GetProperty(name, AllInstance | BindingFlags.DeclaredOnly);
                 if (p != null) return p.GetValue(target);
             }
-            throw new Exception($"Property not found: {target.GetType().Name}.{name}");
+            throw new VfxInputException($"Property not found: {target.GetType().Name}.{name}", "VFX_API_UNSUPPORTED");
         }
 
         private static void SetProp(object target, string name, object value)
@@ -95,7 +120,7 @@ namespace UnityCliBridge.Handlers
                 var p = t.GetProperty(name, AllInstance | BindingFlags.DeclaredOnly);
                 if (p != null && p.CanWrite) { p.SetValue(target, value); return; }
             }
-            throw new Exception($"Writable property not found: {target.GetType().Name}.{name}");
+            throw new VfxInputException($"Writable property not found: {target.GetType().Name}.{name}", "VFX_API_UNSUPPORTED");
         }
 
         private static IEnumerable<object> Children(object model)
@@ -107,13 +132,26 @@ namespace UnityCliBridge.Handlers
 
         private static object LoadGraph(string assetPath)
         {
-            if (string.IsNullOrEmpty(assetPath))
-                throw new Exception("assetPath is required");
+            if (string.IsNullOrWhiteSpace(assetPath))
+                throw new VfxInputException("assetPath is required");
+            EnsurePackageAvailable();
+            // GetResourceAtPath may emit an Editor error for a missing/non-VFX asset.
+            if (AssetDatabase.LoadAssetAtPath(assetPath, VisualEffectAssetType) == null
+                && !assetPath.EndsWith(".vfxblock", StringComparison.OrdinalIgnoreCase)
+                && !assetPath.EndsWith(".vfxoperator", StringComparison.OrdinalIgnoreCase))
+                throw new VfxInputException($"No VisualEffectResource at path: {assetPath}", "ASSET_NOT_FOUND");
+            if (string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(assetPath)))
+                throw new VfxInputException($"No VisualEffectResource at path: {assetPath}", "ASSET_NOT_FOUND");
             var resource = Call(null, ResourceType, "GetResourceAtPath", assetPath);
             if (resource == null)
-                throw new Exception($"No VisualEffectResource at path: {assetPath}");
-            var graph = Call(null, ResourceExtType, "GetOrCreateGraph", resource);
-            return graph;
+                throw new VfxInputException($"No VisualEffectResource at path: {assetPath}", "ASSET_NOT_FOUND");
+            // VFX 17.7 split GetOrCreateGraph into separate read/create operations.
+            var legacy = ResourceExtType.GetMethods(AllStatic)
+                .FirstOrDefault(m => m.Name == "GetOrCreateGraph" && m.GetParameters().Length == 1);
+            if (legacy != null)
+                return legacy.Invoke(null, new[] { resource });
+            return Call(null, ResourceExtType, "GetGraph", resource)
+                ?? Call(null, ResourceExtType, "CreateGraph", resource);
         }
 
         private static string ModelName(object model)
@@ -279,17 +317,30 @@ namespace UnityCliBridge.Handlers
         /// changes on dynamic operators.</summary>
         private static string SlotValueTypeName(object slot) => SlotClrType(slot)?.Name;
 
-        /// <summary>Log an error and return it as a { error } result.</summary>
+        private static object InputError(string message, string code = "INVALID_ARGUMENT") =>
+            new { error = message, code };
+
+        private static object WithErrorCode(object result)
+        {
+            var obj = result as JObject ?? JObject.FromObject(result);
+            if (obj["error"] == null) return result;
+            if (obj["code"] == null) obj["code"] = "INVALID_ARGUMENT";
+            return obj;
+        }
+
+        /// <summary>Caller errors are quiet; unexpected bridge faults remain Error logs.</summary>
         private static object Fail(string command, Exception ex)
         {
+            if (ex is VfxInputException input)
+                return InputError(input.Message, input.Code);
             BridgeLogger.LogError("VfxGraphHandler", $"Error in {command}: {ex.Message}");
-            return new { error = ex.Message };
+            return new { error = ex.Message, code = "INTERNAL_ERROR" };
         }
 
         /// <summary>Tier-1 read-back: contexts (flow links + blocks + slots) and operators with slot links.</summary>
         public static object DescribeGraph(JObject parameters)
         {
-            try { return DescribeGraphCore(parameters); }
+            try { return WithErrorCode(DescribeGraphCore(parameters)); }
             catch (Exception ex) { return Fail("vfx_describe_graph", ex); }
         }
 
@@ -534,7 +585,7 @@ namespace UnityCliBridge.Handlers
                 try
                 {
                     var data = Call(ctx, ContextType, "GetData");
-                    if (data is UnityEngine.Object uo) dataId = uo.GetInstanceID();
+                    if (data is UnityEngine.Object uo) dataId = ObjectIdentity.GetInstanceId(uo);
                     if (data != null)
                     {
                         try { simSpace = Prop(data, "space")?.ToString(); }
@@ -557,7 +608,7 @@ namespace UnityCliBridge.Handlers
                 contexts.Add(new JObject
                 {
                     ["index"] = i,
-                    ["instanceId"] = (ctx as UnityEngine.Object)?.GetInstanceID(),
+                    ["instanceId"] = InstanceId(ctx),
                     ["contextType"] = ctxType,
                     ["type"] = ctx.GetType().Name,
                     ["name"] = ModelName(ctx),
@@ -581,7 +632,7 @@ namespace UnityCliBridge.Handlers
                 operators.Add(new JObject
                 {
                     ["index"] = i,
-                    ["instanceId"] = (op as UnityEngine.Object)?.GetInstanceID(),
+                    ["instanceId"] = InstanceId(op),
                     ["type"] = op.GetType().Name,
                     ["name"] = ModelName(op),
                     ["position"] = PositionJson(ModelPosition(op)),
@@ -625,7 +676,7 @@ namespace UnityCliBridge.Handlers
                 paramsJson.Add(new JObject
                 {
                     ["index"] = i,
-                    ["instanceId"] = (p as UnityEngine.Object)?.GetInstanceID(),
+                    ["instanceId"] = InstanceId(p),
                     ["type"] = p.GetType().Name,
                     ["parameterType"] = (Prop(p, "type") as Type)?.Name,
                     ["exposedName"] = exposedName,
@@ -756,7 +807,7 @@ namespace UnityCliBridge.Handlers
         {
             s_Touched.TryGetValue(assetPath, out var set);
             JArray Idx(List<object> list) => new JArray(list.Select((m, i) => (m, i))
-                .Where(t => set != null && set.Contains((t.m as UnityEngine.Object)?.GetInstanceID() ?? 0))
+                .Where(t => set != null && set.Contains(InstanceId(t.m) ?? 0))
                 .Select(t => (JToken)t.i));
             return new JObject { ["contexts"] = Idx(ctxList), ["operators"] = Idx(opList), ["parameters"] = Idx(paramList) };
         }
@@ -817,7 +868,10 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                arr.Add(new JObject { ["error"] = $"error-collector failed: {ex.Message}" });
+                var failure = new JObject { ["error"] = $"error-collector failed: {ex.Message}" };
+                // VFX 14 has no VFXErrorReporter: report the stable unsupported code with the entry.
+                if (ex is VfxInputException input) failure["code"] = input.Code;
+                arr.Add(failure);
             }
             return arr;
         }
@@ -909,7 +963,7 @@ namespace UnityCliBridge.Handlers
         /// <summary>Discovery oracle: list available descriptors. kind = block (default)|operator|context|parameter.</summary>
         public static object ListLibrary(JObject parameters)
         {
-            try { return ListLibraryCore(parameters); }
+            try { return WithErrorCode(ListLibraryCore(parameters)); }
             catch (Exception ex) { return Fail("vfx_list_library", ex); }
         }
 
@@ -1044,9 +1098,8 @@ namespace UnityCliBridge.Handlers
         }
 
         // Required arguments per `vfx_apply` op, checked before the graph is touched.
-        // Deliberately weaker than each handler's own guard: this only trips when a
-        // parameter is ABSENT, never when it is present-but-empty, so it can never reject
-        // a call the handler would have accepted. The handler guards remain authoritative.
+        // Keep graph-independent requirements here so Fingerprint cannot precede validation.
+        // Empty strings remain valid for values and fields that explicitly support clearing.
         // Runtime ops that dereference `value`; guarded so a missing value returns an
         // error instead of a NullReferenceException surfacing as a bridge fault.
         private static readonly HashSet<string> s_RuntimeValueOps = new HashSet<string>
@@ -1094,20 +1147,146 @@ namespace UnityCliBridge.Handlers
             ["update_sticky_note"] = new[] { "index" },
             };
 
-        /// <summary>
-        /// Validates that required arguments are present without loading the graph.
-        /// Returns an error object when one is missing, otherwise null.
-        /// </summary>
+        private static readonly HashSet<string> s_ApplyOpsWithoutRequiredArgs = new HashSet<string>
+        {
+            "add_operator_input", "add_sticky_note", "auto_layout", "compile", "delete_system",
+            "duplicate_block", "duplicate_operator", "duplicate_parameter", "move_block", "remove_block",
+            "remove_context", "remove_group", "remove_operator", "remove_operator_input", "remove_parameter",
+            "rename_parameter", "reorder_parameter", "set_bounds", "set_instancing", "set_parameter"
+        };
+
+        /// <summary>Validate graph-independent arguments before LoadGraph or Fingerprint.</summary>
         private static object ValidateApplyArgs(string op, JObject parameters)
         {
-            if (string.IsNullOrEmpty(op)) return null;
-            if (!s_RequiredApplyArgs.TryGetValue(op, out var required)) return null;
+            if (string.IsNullOrWhiteSpace(op)) return InputError("op is required");
+            if (!s_RequiredApplyArgs.ContainsKey(op) && !s_ApplyOpsWithoutRequiredArgs.Contains(op))
+                return InputError($"Unsupported op: '{op}'.");
+            if (s_RequiredApplyArgs.TryGetValue(op, out var required))
             foreach (var name in required)
             {
-                if (parameters?[name] == null || parameters[name].Type == JTokenType.Null)
-                    return new { error = $"{name} is required" };
+                var value = parameters?[name];
+                // Preserve the aliases supported by the individual operations.
+                if (op == "add_custom_attribute" && name == "attributeName") value = value ?? parameters?["name"];
+                if (op == "add_custom_attribute" && name == "attributeType") value = value ?? parameters?["type"];
+                if (op == "set_operator_operand_type" && name == "operandType") value = value ?? parameters?["type"];
+                if (op == "unlink_slots" && name == "target") value = value ?? parameters?["to"];
+                bool allowsEmpty = name == "value" || name == "category" || name == "newCategory"
+                    || name == "eventName" || (op == "set_system_name" && name == "name");
+                if (value == null || value.Type == JTokenType.Null
+                    || (!allowsEmpty && value.Type == JTokenType.String && string.IsNullOrWhiteSpace(value.ToString())))
+                    return InputError($"{name} is required");
+                if ((name == "target" || name == "from" || name == "to") && !(value is JObject))
+                    return InputError($"{name} is required (an object)");
+            }
+
+            if (op != "create_subgraph_asset" && op != "create_from_template"
+                && string.IsNullOrWhiteSpace(parameters?["assetPath"]?.ToString()))
+                return InputError("assetPath is required");
+
+            if (required != null)
+            foreach (var name in required.Where(k => k == "target" || k == "from" || k == "to"))
+            {
+                var address = parameters?[name] as JObject;
+                if (op == "unlink_slots" && name == "target") address = address ?? parameters?["to"] as JObject;
+                var addressError = ValidateNodeAddress(address, name, op == "link_flow" || op == "unlink_flow");
+                if (addressError != null) return addressError;
+            }
+
+            switch (op)
+            {
+                case "set_context_setting": case "remove_context": case "delete_system": case "set_system_name":
+                    if (ContextIndexToken(parameters) == null && string.IsNullOrWhiteSpace(parameters?["contextType"]?.ToString()))
+                        return InputError("contextType (or index/contextIndex) is required");
+                    break;
+                case "remove_block": case "set_block_enabled": case "reorder_block": case "move_block": case "duplicate_block":
+                    if (!HasContextRef(parameters)) return InputError("contextType or contextIndex is required");
+                    if (op == "move_block" && !HasContextRef(parameters, "toContextIndex", "toContextType"))
+                        return InputError("toContextType or toContextIndex is required (the destination context)");
+                    break;
+                case "rename_parameter":
+                    if (string.IsNullOrWhiteSpace(parameters?["exposedName"]?.ToString() ?? parameters?["name"]?.ToString()))
+                        return InputError("exposedName (the new name) is required");
+                    break;
+                case "rename_category": case "reorder_category":
+                    if (string.IsNullOrWhiteSpace(parameters?["category"]?.ToString()))
+                        return InputError("category (the existing category name) is required");
+                    break;
+                case "reorder_parameter":
+                    if (parameters?["order"] == null || parameters["order"].Type == JTokenType.Null)
+                        return InputError("order (the new integer position) is required");
+                    break;
+                case "remove_group":
+                    if (string.IsNullOrWhiteSpace(parameters?["title"]?.ToString())
+                        && (parameters?["index"] == null || parameters["index"].Type == JTokenType.Null))
+                        return InputError("title (or index) is required");
+                    break;
+                case "group_nodes":
+                    if (!(parameters?["nodes"] is JArray nodes) || nodes.Count == 0)
+                        return InputError("nodes is required (array of node addresses)");
+                    foreach (var node in nodes)
+                    {
+                        // Sticky notes are valid group members, but cannot be slot endpoints.
+                        if (node is JObject note && string.Equals(note["node"]?.ToString(), "stickyNote", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (note["index"] == null || note["index"].Type == JTokenType.Null)
+                                return InputError("nodes[].index is required for a stickyNote");
+                            continue;
+                        }
+                        var addressError = ValidateNodeAddress(node as JObject, "nodes[]", false);
+                        if (addressError != null) return addressError;
+                    }
+                    break;
+                case "move_node":
+                    if (PositionParam(parameters) == null) return InputError("position is required ([x, y])");
+                    break;
+                case "set_bounds":
+                    if (!new[] { "mode", "center", "size", "padding" }.Any(k => parameters?[k] != null && parameters[k].Type != JTokenType.Null))
+                        return InputError("set_bounds requires at least one of: mode, center, size, padding");
+                    return ValidateEnumArgument(parameters, "mode", "UnityEditor.VFX.BoundsSettingMode", new[] { "Manual", "Recorded", "Automatic" });
+                case "set_instancing":
+                    if (!new[] { "mode", "capacity" }.Any(k => parameters?[k] != null && parameters[k].Type != JTokenType.Null))
+                        return InputError("set_instancing requires at least one of: mode, capacity");
+                    return ValidateEnumArgument(parameters, "mode", "UnityEngine.VFX.VFXInstancingMode", new[] { "Disabled", "Auto", "Custom" });
+                case "set_slot_space":
+                    return ValidateEnumArgument(parameters, "space", "UnityEditor.VFX.VFXSpace", new[] { "None", "Local", "World" });
+                case "add_custom_attribute":
+                    var attributeType = parameters?["attributeType"] ?? parameters?["type"];
+                    var signatureType = FindType("UnityEditor.VFX.Block.CustomAttributeUtility+Signature");
+                    var signatures = signatureType == null ? new[] { "Float", "Vector2", "Vector3", "Vector4", "Bool", "Uint", "Int" } : Enum.GetNames(signatureType);
+                    if (!signatures.Any(name => string.Equals(name, attributeType?.ToString(), StringComparison.OrdinalIgnoreCase)))
+                        return InputError($"Unknown attribute type '{attributeType}'. Valid: {string.Join(", ", signatures)}");
+                    break;
+                case "set_parameter":
+                    if (!new[] { "value", "min", "max", "valueFilter", "tooltip", "exposed", "category" }
+                        .Any(k => parameters?[k] != null && parameters[k].Type != JTokenType.Null)
+                        && string.IsNullOrEmpty(parameters?["exposedName"]?.ToString()))
+                        return InputError("set_parameter requires at least one of: value, min, max, valueFilter, tooltip, exposed, category, exposedName");
+                    return ValidateEnumArgument(parameters, "valueFilter", "UnityEditor.VFX.VFXValueFilter", new[] { "Default", "Range", "Enum" });
             }
             return null;
+        }
+
+        private static object ValidateNodeAddress(JObject address, string label, bool flow)
+        {
+            if (address == null) return InputError($"{label} is required (an object)");
+            var kind = address["node"]?.ToString();
+            if (!flow && kind != "operator" && kind != "parameter" && kind != "context" && kind != "block")
+                return InputError($"{label}.node is required (operator, parameter, context, or block)");
+            if (flow && ContextIndexToken(address) == null && string.IsNullOrWhiteSpace(address["contextType"]?.ToString()))
+                return InputError($"{label} needs 'contextType' or 'index'/'contextIndex'");
+            if (!flow && (kind == "context" || kind == "block") && !HasContextRef(address))
+                return InputError($"{label} needs 'contextType' or 'contextIndex'");
+            return null;
+        }
+
+        private static object ValidateEnumArgument(JObject parameters, string key, string typeName, string[] fallbackNames)
+        {
+            var token = parameters?[key];
+            if (token == null || token.Type == JTokenType.Null) return null;
+            var type = FindType(typeName);
+            var names = type == null ? fallbackNames : Enum.GetNames(type);
+            if (names.Any(name => string.Equals(name, token.ToString(), StringComparison.OrdinalIgnoreCase))) return null;
+            return InputError($"Invalid {key} '{token}'. Supported: {string.Join(", ", names)}.");
         }
         public static object Apply(JObject parameters)
         {
@@ -1119,7 +1298,7 @@ namespace UnityCliBridge.Handlers
                 // Validate before Fingerprint: Fingerprint -> DescribeGraphCore -> LoadGraph,
                 // so a missing argument would otherwise load the graph before being rejected.
                 var argError = ValidateApplyArgs(op, parameters);
-                if (argError != null) return argError;
+                if (argError != null) return WithErrorCode(argError);
                 // autoCompile:false defers the recompile so a batch of ops pays for one compile
                 // instead of N. The explicit `compile` op always compiles.
                 s_DeferCompile = op != "compile"
@@ -1144,7 +1323,7 @@ namespace UnityCliBridge.Handlers
                 // that leaves the graph uncompilable is visible in the op's own response.
                 if (result is JObject jo && s_LastCompile != null && jo["compile"] == null)
                     jo["compile"] = s_LastCompile;
-                return result;
+                return WithErrorCode(result);
             }
             catch (Exception ex) { return Fail("vfx_apply", ex); }
             finally { s_DeferCompile = false; }
@@ -1251,16 +1430,16 @@ namespace UnityCliBridge.Handlers
                 var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
                 int ci = ciTok.ToObject<int>();
                 if (ci < 0 || ci >= ctxList.Count)
-                    throw new Exception($"{idxKey} {ci} out of range; graph has {ctxList.Count} context(s)");
+                    throw new VfxInputException($"{idxKey} {ci} out of range; graph has {ctxList.Count} context(s)");
                 return ctxList[ci];
             }
             var ct = node?[typeKey]?.ToString();
             if (string.IsNullOrEmpty(ct)) ct = defaultType;
             if (string.IsNullOrEmpty(ct))
-                throw new Exception($"{typeKey} or {idxKey} is required");
+                throw new VfxInputException($"{typeKey} or {idxKey} is required");
             var ctx = FindContext(graph, ct);
             if (ctx == null)
-                throw new Exception($"No context of type '{ct}' found (or use {idxKey} to address it by position)");
+                throw new VfxInputException($"No context of type '{ct}' found (or use {idxKey} to address it by position)");
             return ctx;
         }
 
@@ -1447,7 +1626,13 @@ namespace UnityCliBridge.Handlers
                 return deferred;
             }
             var resource = Prop(graph, "visualEffectResource");
-            Call(null, ResourceExtType, "WriteAssetWithSubAssets", resource);
+            var writeWithSubAssets = ResourceExtType.GetMethods(AllStatic).FirstOrDefault(m =>
+                m.Name == "WriteAssetWithSubAssets" && m.GetParameters().Length == 1);
+            if (writeWithSubAssets != null)
+                writeWithSubAssets.Invoke(null, new[] { resource });
+            else
+                // VFX 14 persists the graph through the resource's instance API.
+                Call(resource, ResourceType, "WriteAsset");
             lock (s_ImportLogs) s_ImportLogs.Clear();
             s_CapturingImportLogs = true;
             try { AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); }
@@ -1483,6 +1668,13 @@ namespace UnityCliBridge.Handlers
             };
         }
 
+        // Custom HLSL blocks and operators were introduced in VFX Graph 17.0; the descriptor is absent before.
+        private static void ThrowIfCustomHlslUnavailable(string requestedName)
+        {
+            if (requestedName.IndexOf("Custom HLSL", StringComparison.OrdinalIgnoreCase) >= 0)
+                throw new VfxInputException("Custom HLSL requires VFX Graph 17.0 or newer.", "VFX_API_UNSUPPORTED");
+        }
+
         private static object AddBlock(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -1502,7 +1694,10 @@ namespace UnityCliBridge.Handlers
                         ?? descriptors.FirstOrDefault(d =>
                             ((Prop(d, "name") as string)?.IndexOf(blockName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
             if (match == null)
-                throw new Exception($"No block descriptor matching '{blockName}'. Try vfx_list_library to discover names.");
+            {
+                ThrowIfCustomHlslUnavailable(blockName);
+                throw new VfxInputException($"No block descriptor matching '{blockName}'. Try vfx_list_library to discover names.");
+            }
 
             var block = Call(match, match.GetType(), "CreateInstance");
             if (block == null)
@@ -1599,7 +1794,7 @@ namespace UnityCliBridge.Handlers
 
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             if (operatorIndex < 0 || operatorIndex >= ops.Count)
-                throw new Exception(
+                throw new VfxInputException(
                     $"operatorIndex {operatorIndex} out of range; graph has {ops.Count} operator(s)");
             var op = ops[operatorIndex];
 
@@ -1662,7 +1857,7 @@ namespace UnityCliBridge.Handlers
         {
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             if (operatorIndex < 0 || operatorIndex >= ops.Count)
-                throw new Exception($"operatorIndex {operatorIndex} out of range; graph has {ops.Count} operator(s)");
+                throw new VfxInputException($"operatorIndex {operatorIndex} out of range; graph has {ops.Count} operator(s)");
             return ops[operatorIndex];
         }
 
@@ -1969,6 +2164,16 @@ namespace UnityCliBridge.Handlers
             // GetSetting resolves composed/nested settings (returns the FieldInfo + its owning instance);
             // use that field for coercion and the model's SetSettingValue, which writes the nested
             // instance and runs the proper invalidation.
+            // VFX 17.6+ reimports re-create the [SerializeReference] shading in place while the
+            // non-serialized trait-description cache still points at the old instance, so the
+            // first write after a Persist would land on an orphan. Rebuild the cache first.
+            for (var t = ctx.GetType(); t != null; t = t.BaseType)
+            {
+                var markDirty = t.GetMethod("MarkCacheAsDirty", AllInstance | BindingFlags.DeclaredOnly);
+                if (markDirty == null) continue;
+                markDirty.Invoke(ctx, null);
+                break;
+            }
             var composedSetting = Call(ctx, ModelType, "GetSetting", settingName);
             var composedField = composedSetting?.GetType()
                 .GetField("field", BindingFlags.Public | BindingFlags.Instance)
@@ -1977,6 +2182,10 @@ namespace UnityCliBridge.Handlers
             {
                 object convertedComposed = CoerceSettingValue(composedField, valueToken, settingName);
                 Call(ctx, ModelType, "SetSettingValue", settingName, convertedComposed);
+                var applied = Call(ctx, ModelType, "GetSetting", settingName);
+                var appliedValue = applied?.GetType().GetProperty("value", BindingFlags.Public | BindingFlags.Instance)?.GetValue(applied);
+                if (!Equals(appliedValue, convertedComposed))
+                    throw new VfxInputException($"Setting '{settingName}' did not apply to {ctx.GetType().Name}.", "VFX_API_UNSUPPORTED");
                 Persist(graph, assetPath);
                 return SetContextSettingResult(assetPath, ctx, settingName, "context-composed", ToJToken(convertedComposed));
             }
@@ -2052,12 +2261,12 @@ namespace UnityCliBridge.Handlers
                 throw new Exception(
                     $"Context '{target.GetType().Name}' has no VFXData — it isn't part of a particle system " +
                     "(Spawn/Event contexts can't address a system). Address an Init/Update/Output context.");
-            int systemId = targetData.GetInstanceID();
+            int systemId = ObjectIdentity.GetInstanceId(targetData);
 
             var members = ctxList.Where(c =>
             {
                 var d = Call(c, ContextType, "GetData") as UnityEngine.Object;
-                return d != null && d.GetInstanceID() == systemId;
+                return d != null && ObjectIdentity.GetInstanceId(d) == systemId;
             }).ToList();
 
             foreach (var ctx in members)
@@ -2157,7 +2366,7 @@ namespace UnityCliBridge.Handlers
             // needs a manual Invoke (the Call helper can't surface a by-ref result).
             var method = GraphType.GetMethod("TryAddCustomAttribute", AllInstance);
             if (method == null)
-                throw new Exception("VFXGraph.TryAddCustomAttribute not found (package version mismatch).");
+                throw new VfxInputException("VFXGraph.TryAddCustomAttribute not found (package version mismatch).", "VFX_API_UNSUPPORTED");
             var args = new object[] { name, valueType, description, isReadOnly, null };
             bool ok = (bool)method.Invoke(graph, args);
             if (!ok)
@@ -2202,7 +2411,7 @@ namespace UnityCliBridge.Handlers
 
             var blocks = Children(targetContext).ToList();
             if (blockIndex < 0 || blockIndex >= blocks.Count)
-                throw new Exception(
+                throw new VfxInputException(
                     $"blockIndex {blockIndex} out of range; context '{wantContext}' has {blocks.Count} block(s)");
             var block = blocks[blockIndex];
 
@@ -2324,7 +2533,7 @@ namespace UnityCliBridge.Handlers
                     var available = string.Join(", ", descriptors
                         .Select(d => Prop(d, "name") as string)
                         .Where(n => !string.IsNullOrEmpty(n)).Distinct());
-                    throw new Exception($"No context descriptor matching '{contextName}'. Available: {available}");
+                    throw new VfxInputException($"No context descriptor matching '{contextName}'. Available: {available}");
                 }
 
                 context = Call(match, match.GetType(), "CreateInstance");
@@ -2348,7 +2557,7 @@ namespace UnityCliBridge.Handlers
             {
                 fromContext = FindContext(graph, linkFrom);
                 if (fromContext == null)
-                    throw new Exception($"linkFrom context '{linkFrom}' not found in {assetPath}");
+                    throw new VfxInputException($"linkFrom context '{linkFrom}' not found in {assetPath}");
                 int fromIndex = parameters?["fromIndex"]?.ToObject<int>() ?? 0;
                 int toIndex = parameters?["toIndex"]?.ToObject<int>() ?? 0;
                 Call(fromContext, ContextType, "LinkTo", context, fromIndex, toIndex);
@@ -2397,8 +2606,11 @@ namespace UnityCliBridge.Handlers
                         ?? descriptors.FirstOrDefault(d =>
                             ((Prop(d, "name") as string)?.IndexOf(operatorName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
             if (match == null)
-                throw new Exception(
+            {
+                ThrowIfCustomHlslUnavailable(operatorName);
+                throw new VfxInputException(
                     $"No operator descriptor matching '{operatorName}'. Use vfx_list_library with kind 'operator' to discover names.");
+            }
 
             var op = Call(match, match.GetType(), "CreateInstance");
             if (op == null)
@@ -2477,7 +2689,7 @@ namespace UnityCliBridge.Handlers
                 var available = string.Join(", ", descriptors
                     .Select(d => Prop(d, "name") as string)
                     .Where(n => !string.IsNullOrEmpty(n)).Distinct());
-                throw new Exception($"No parameter type matching '{typeName}'. Available: {available}");
+                throw new VfxInputException($"No parameter type matching '{typeName}'. Available: {available}");
             }
 
             var parameter = Call(match, match.GetType(), "CreateInstance");
@@ -2586,7 +2798,7 @@ namespace UnityCliBridge.Handlers
         private static object ResolveNode(object graph, JObject node, string label)
         {
             if (node == null)
-                throw new Exception($"{label} is required (an object with 'node' = operator|context|block)");
+                throw new VfxInputException($"{label} is required (an object with 'node' = operator|context|block)");
             var kind = node["node"]?.ToString();
             switch (kind)
             {
@@ -2595,7 +2807,7 @@ namespace UnityCliBridge.Handlers
                         int idx = node["operatorIndex"]?.ToObject<int>() ?? 0;
                         var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
                         if (idx < 0 || idx >= ops.Count)
-                            throw new Exception($"{label} operatorIndex {idx} out of range; graph has {ops.Count} operator(s)");
+                            throw new VfxInputException($"{label} operatorIndex {idx} out of range; graph has {ops.Count} operator(s)");
                         return ops[idx];
                     }
                 case "parameter":
@@ -2603,7 +2815,7 @@ namespace UnityCliBridge.Handlers
                         int idx = node["parameterIndex"]?.ToObject<int>() ?? 0;
                         var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
                         if (idx < 0 || idx >= ps.Count)
-                            throw new Exception($"{label} parameterIndex {idx} out of range; graph has {ps.Count} parameter(s)");
+                            throw new VfxInputException($"{label} parameterIndex {idx} out of range; graph has {ps.Count} parameter(s)");
                         return ps[idx];
                     }
                 case "context":
@@ -2616,11 +2828,11 @@ namespace UnityCliBridge.Handlers
                         int bi = node["blockIndex"]?.ToObject<int>() ?? 0;
                         var blocks = Children(ctx).ToList();
                         if (bi < 0 || bi >= blocks.Count)
-                            throw new Exception($"{label} blockIndex {bi} out of range; context has {blocks.Count} block(s)");
+                            throw new VfxInputException($"{label} blockIndex {bi} out of range; context has {blocks.Count} block(s)");
                         return blocks[bi];
                     }
                 default:
-                    throw new Exception($"{label} has unknown node kind '{kind}'. Supported: operator, parameter, context, block");
+                    throw new VfxInputException($"{label} has unknown node kind '{kind}'. Supported: operator, parameter, context, block");
             }
         }
 
@@ -2653,7 +2865,7 @@ namespace UnityCliBridge.Handlers
             var coll = (Prop(container, isInput ? "inputSlots" : "outputSlots") as IEnumerable)?.Cast<object>().ToList()
                        ?? new List<object>();
             if (index < 0 || index >= coll.Count)
-                throw new Exception(
+                throw new VfxInputException(
                     $"{label} {(isInput ? "input" : "output")} slot index {index} out of range; {container.GetType().Name} has {coll.Count}");
             return coll[index];
         }
@@ -2683,7 +2895,7 @@ namespace UnityCliBridge.Handlers
                         string.Equals(SlotName(c), key, StringComparison.OrdinalIgnoreCase));
                 }
                 if (next == null)
-                    throw new Exception(
+                    throw new VfxInputException(
                         $"{label} sub-slot '{key}' not found; available children: " +
                         $"[{string.Join(", ", children.Select(SlotName))}]");
                 slot = next;
@@ -2723,8 +2935,8 @@ namespace UnityCliBridge.Handlers
                     "Link rejected: output slot type is incompatible with the input slot (or directions are wrong). " +
                     "'from' must reference an output slot, 'to' an input slot.");
             if (ParameterType.IsInstanceOfType(fromNode) && !string.IsNullOrEmpty(assetPath))
-                NewParamLinksFor(assetPath).Add(((fromNode as UnityEngine.Object)?.GetInstanceID() ?? 0,
-                                                 (inSlot as UnityEngine.Object)?.GetInstanceID() ?? 0));
+                NewParamLinksFor(assetPath).Add((InstanceId(fromNode) ?? 0,
+                                                 InstanceId(inSlot) ?? 0));
 
             // A parameter linked for the first time has no canvas node yet; the editor creates one at
             // the model position when the graph is opened. Seed that position in free space just left
@@ -2780,7 +2992,7 @@ namespace UnityCliBridge.Handlers
             {
                 var arr = value as JArray;
                 if (arr == null || arr.Count < 3)
-                    throw new Exception("Color value must be an array [r,g,b] or [r,g,b,a]");
+                    throw new VfxInputException("Color value must be an array [r,g,b] or [r,g,b,a]");
                 float a = arr.Count >= 4 ? arr[3].ToObject<float>() : 1f;
                 return new Color(arr[0].ToObject<float>(), arr[1].ToObject<float>(), arr[2].ToObject<float>(), a);
             }
@@ -2982,7 +3194,9 @@ namespace UnityCliBridge.Handlers
             if (inlineType == null) return new { error = "could not read the inline operator's value type" };
 
             var descriptors = (Call(null, LibraryType, "GetParameters") as IEnumerable).Cast<object>().ToList();
-            var desc = descriptors.FirstOrDefault(d => (Prop(d, "modelType") as Type) == inlineType);
+            // VFX 14 descriptors report modelType = VFXParameter; the value type is on model.type.
+            var desc = descriptors.FirstOrDefault(d => (Prop(d, "modelType") as Type) == inlineType)
+                ?? descriptors.FirstOrDefault(d => Prop(Prop(d, "model"), "type") as Type == inlineType);
             if (desc == null)
                 return new { error = $"no blackboard parameter type matches the inline operator's type '{inlineType.Name}'" };
 
@@ -3192,7 +3406,7 @@ namespace UnityCliBridge.Handlers
 
             var blocks = Children(ctx).ToList();
             if (blockIndex < 0 || blockIndex >= blocks.Count)
-                throw new Exception(
+                throw new VfxInputException(
                     $"blockIndex {blockIndex} out of range; context '{wantContext}' has {blocks.Count} block(s)");
             var block = blocks[blockIndex];
             var removedType = block.GetType().Name;
@@ -3231,7 +3445,7 @@ namespace UnityCliBridge.Handlers
             if (blockIndex < 0 || blockIndex >= blocks.Count)
             {
                 var ctName = Prop(ctx, "contextType")?.ToString();
-                throw new Exception(
+                throw new VfxInputException(
                     $"blockIndex {blockIndex} out of range; context '{ctName}' has {blocks.Count} block(s)");
             }
             return (ctx, blocks[blockIndex]);
@@ -3292,7 +3506,7 @@ namespace UnityCliBridge.Handlers
 
             int count = Children(ctx).Count();
             if (toIndex < 0 || toIndex >= count)
-                throw new Exception($"toIndex {toIndex} out of range; context '{wantContext}' has {count} block(s)");
+                throw new VfxInputException($"toIndex {toIndex} out of range; context '{wantContext}' has {count} block(s)");
 
             Call(ctx, ModelType, "RemoveChild", block, false); // notify:false — re-add immediately
             Call(ctx, ModelType, "AddChild", block, toIndex, true);
@@ -3382,7 +3596,7 @@ namespace UnityCliBridge.Handlers
             if (ContextType.IsInstanceOfType(node))
             {
                 s_Created.TryGetValue(assetPath, out var createdSet);
-                bool created = createdSet != null && createdSet.Contains((node as UnityEngine.Object)?.GetInstanceID() ?? 0);
+                bool created = createdSet != null && createdSet.Contains(InstanceId(node) ?? 0);
                 var current = ModelPosition(node);
                 if (!created && Math.Abs(current.x - pos.Value.x) > 0.5f)
                 {
@@ -4157,7 +4371,7 @@ namespace UnityCliBridge.Handlers
             var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
-            int IdOf(object m) => (m as UnityEngine.Object)?.GetInstanceID() ?? 0;
+            int IdOf(object m) => InstanceId(m) ?? 0;
             s_Created.TryGetValue(assetPath, out var created);
             created = created ?? new HashSet<int>();
             var newLinks = NewParamLinksFor(assetPath);
@@ -4550,7 +4764,7 @@ namespace UnityCliBridge.Handlers
             var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
-            int IdOf(object m) => (m as UnityEngine.Object)?.GetInstanceID() ?? 0;
+            int IdOf(object m) => InstanceId(m) ?? 0;
             // Where every node was before this pass, by model (first rect per model): group boxes that
             // contain sticky notes move their notes by the same displacement as their other members.
             var beforeRectOfModel = new Dictionary<object, Rect>(RefEq.Instance);
@@ -5203,6 +5417,10 @@ namespace UnityCliBridge.Handlers
                 return new { error = "title is required" };
             if (!(parameters?["nodes"] is JArray nodesTok) || nodesTok.Count == 0)
                 return new { error = "nodes is required (array of node addresses: {node: context|operator|parameter, …index})" };
+            // Reject an unsupported note colorTheme before the group is created, not after.
+            if (parameters?["note"]?["colorTheme"] is JToken theme && theme.Type != JTokenType.Null
+                && FindField(StickyNoteInfoType, "colorTheme") == null)
+                throw new VfxInputException("colorTheme requires VFX Graph 17.4 or newer.", "VFX_API_UNSUPPORTED");
 
             var graph = LoadGraph(assetPath);
             var ui = Prop(graph, "UIInfos");
@@ -5336,7 +5554,7 @@ namespace UnityCliBridge.Handlers
                     if (strangers == 0) break;
                 }
                 int ni = CreateStickyNote(graph, noteTok["title"]?.ToString() ?? title, noteTok["contents"]?.ToString() ?? string.Empty,
-                                          new Rect(np.x, np.y, nw, nh), noteTok["colorTheme"]?.ToObject<int>() ?? 1, noteTok["textSize"]?.ToString());
+                                          new Rect(np.x, np.y, nw, nh), noteTok["colorTheme"]?.ToObject<int>(), noteTok["textSize"]?.ToString());
                 var nid = Activator.CreateInstance(NodeIDType);
                 FindField(NodeIDType, "isStickyNote").SetValue(nid, true);
                 FindField(NodeIDType, "id").SetValue(nid, ni);
@@ -5446,7 +5664,7 @@ namespace UnityCliBridge.Handlers
 
             var srcOps = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             if (operatorIndex < 0 || operatorIndex >= srcOps.Count)
-                throw new Exception(
+                throw new VfxInputException(
                     $"operatorIndex {operatorIndex} out of range; graph has {srcOps.Count} operator(s)");
             var op = srcOps[operatorIndex];
 
@@ -5477,7 +5695,7 @@ namespace UnityCliBridge.Handlers
 
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             if (operatorIndex < 0 || operatorIndex >= ops.Count)
-                throw new Exception(
+                throw new VfxInputException(
                     $"operatorIndex {operatorIndex} out of range; graph has {ops.Count} operator(s)");
             var op = ops[operatorIndex];
             var removedType = op.GetType().Name;
@@ -5504,7 +5722,7 @@ namespace UnityCliBridge.Handlers
 
             var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
             if (parameterIndex < 0 || parameterIndex >= ps.Count)
-                throw new Exception(
+                throw new VfxInputException(
                     $"parameterIndex {parameterIndex} out of range; graph has {ps.Count} parameter(s)");
             var param = ps[parameterIndex];
             var removedName = ModelName(param);
@@ -5528,7 +5746,7 @@ namespace UnityCliBridge.Handlers
         {
             var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
             if (parameterIndex < 0 || parameterIndex >= ps.Count)
-                throw new Exception($"parameterIndex {parameterIndex} out of range; graph has {ps.Count} parameter(s)");
+                throw new VfxInputException($"parameterIndex {parameterIndex} out of range; graph has {ps.Count} parameter(s)");
             return (ps[parameterIndex], ps);
         }
 
@@ -5684,7 +5902,7 @@ namespace UnityCliBridge.Handlers
                 throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
             var field = FindField(ui.GetType(), "categories");
             if (field == null)
-                throw new Exception("categories field not found on VFXUI.");
+                throw new VfxInputException("categories field not found on VFXUI.", "VFX_API_UNSUPPORTED");
             var list = field.GetValue(ui) as System.Collections.IList;
             if (list == null)
             {
@@ -5813,21 +6031,21 @@ namespace UnityCliBridge.Handlers
         private static object ResolveContextRef(object graph, JObject endpoint, List<object> ctxList, string label)
         {
             if (endpoint == null)
-                throw new Exception($"{label} is required (an object with 'index'/'contextIndex' or 'contextType')");
+                throw new VfxInputException($"{label} is required (an object with 'index'/'contextIndex' or 'contextType')");
             var idxTok = ContextIndexToken(endpoint);
             if (idxTok != null && idxTok.Type != JTokenType.Null)
             {
                 int idx = idxTok.ToObject<int>();
                 if (idx < 0 || idx >= ctxList.Count)
-                    throw new Exception($"{label} index {idx} out of range; graph has {ctxList.Count} context(s)");
+                    throw new VfxInputException($"{label} index {idx} out of range; graph has {ctxList.Count} context(s)");
                 return ctxList[idx];
             }
             var ct = endpoint["contextType"]?.ToString();
             if (string.IsNullOrEmpty(ct))
-                throw new Exception($"{label} needs 'contextType' or 'index'/'contextIndex'");
+                throw new VfxInputException($"{label} needs 'contextType' or 'index'/'contextIndex'");
             var ctx = FindContext(graph, ct);
             if (ctx == null)
-                throw new Exception($"{label} context of type '{ct}' not found (or use 'index'/'contextIndex')");
+                throw new VfxInputException($"{label} context of type '{ct}' not found (or use 'index'/'contextIndex')");
             return ctx;
         }
 
@@ -5957,7 +6175,7 @@ namespace UnityCliBridge.Handlers
             {
                 ctx = FindContext(graph, wantContext);
                 if (ctx == null)
-                    throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+                    throw new VfxInputException($"No context of type '{wantContext}' found in {assetPath}");
             }
 
             var data = Call(ctx, ContextType, "GetData");
@@ -6057,7 +6275,7 @@ namespace UnityCliBridge.Handlers
                     return new { error = "subgraphPath must end with '.vfx' for kind 'system'." };
                 var parentDirSys = System.IO.Path.GetDirectoryName(subgraphPath)?.Replace('\\', '/');
                 if (!string.IsNullOrEmpty(parentDirSys) && !AssetDatabase.IsValidFolder(parentDirSys))
-                    throw new Exception($"Parent folder does not exist: {parentDirSys}");
+                    throw new VfxInputException($"Parent folder does not exist: {parentDirSys}");
                 var createdSys = Call(null, AssetEditorUtilityType, "CreateNewAsset", subgraphPath);
                 if (createdSys == null)
                     throw new Exception($"CreateNewAsset returned null for '{subgraphPath}'.");
@@ -6096,7 +6314,7 @@ namespace UnityCliBridge.Handlers
             // Make sure the parent folder exists. AssetDatabase.CopyAsset won't create folders.
             var parentDir = System.IO.Path.GetDirectoryName(subgraphPath)?.Replace('\\', '/');
             if (!string.IsNullOrEmpty(parentDir) && !AssetDatabase.IsValidFolder(parentDir))
-                throw new Exception($"Parent folder does not exist: {parentDir}");
+                throw new VfxInputException($"Parent folder does not exist: {parentDir}");
 
             if (!AssetDatabase.CopyAsset(templatePath, subgraphPath))
                 throw new Exception($"Failed to copy template '{templatePath}' to '{subgraphPath}'.");
@@ -6133,10 +6351,13 @@ namespace UnityCliBridge.Handlers
 
             var parentDir = System.IO.Path.GetDirectoryName(targetPath)?.Replace('\\', '/');
             if (!string.IsNullOrEmpty(parentDir) && !AssetDatabase.IsValidFolder(parentDir))
-                throw new Exception($"Parent folder does not exist: {parentDir}");
+                throw new VfxInputException($"Parent folder does not exist: {parentDir}");
 
-            // CreateTemplateAsset(pathName, templateFilePath) copies + imports.
-            Call(null, AssetEditorUtilityType, "CreateTemplateAsset", targetPath, templateFile);
+            // VFX 14 only has CreateTemplateAsset(pathName), which always chooses
+            // its default template. Copy the selected asset through the public API
+            // so the same operation works across VFX package versions.
+            if (!AssetDatabase.CopyAsset(templateFile, targetPath))
+                throw new VfxInputException($"Could not copy VFX template '{templateFile}' to '{targetPath}'.", "VFX_TEMPLATE_COPY_FAILED");
             AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
 
             var created = AssetDatabase.LoadMainAssetAtPath(targetPath);
@@ -6164,10 +6385,10 @@ namespace UnityCliBridge.Handlers
             var templateDir = AssetEditorUtilityType
                 .GetProperty("templatePath", AllStatic)?.GetValue(null) as string;
             if (string.IsNullOrEmpty(templateDir))
-                throw new Exception("Could not resolve the VFX package template directory.");
+                throw new VfxInputException("Could not resolve the VFX package template directory.", "VFX_API_UNSUPPORTED");
             var templateFile = (templateDir.TrimEnd('/', '\\') + "/" + template + ".vfx");
             if (!System.IO.File.Exists(templateFile) && AssetDatabase.LoadMainAssetAtPath(templateFile) == null)
-                throw new Exception(
+                throw new VfxInputException(
                     $"No template '{template}' in {templateDir}. Use vfx_list_library kind 'template' to discover names.");
             return templateFile;
         }
@@ -6279,9 +6500,9 @@ namespace UnityCliBridge.Handlers
                 return new { error = $"No .vfx asset at path: {assetPath}" };
 
             var descType = TemplateDescriptorType
-                ?? throw new Exception("GraphViewTemplateDescriptor type not found (UnityEditor.Experimental.GraphView).");
+                ?? throw new VfxInputException("GraphViewTemplateDescriptor type not found (UnityEditor.Experimental.GraphView).", "VFX_API_UNSUPPORTED");
             var helperType = TemplateHelperType
-                ?? throw new Exception("VFXTemplateHelperInternal type not found.");
+                ?? throw new VfxInputException("VFXTemplateHelperInternal type not found.", "VFX_API_UNSUPPORTED");
 
             object desc = Activator.CreateInstance(descType);
             FindField(descType, "name")?.SetValue(desc, name);
@@ -6305,7 +6526,7 @@ namespace UnityCliBridge.Handlers
             var setMethod = helperType.GetMethod("TrySetTemplateStatic",
                 BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             if (setMethod == null)
-                throw new Exception("VFXTemplateHelperInternal.TrySetTemplateStatic not found.");
+                throw new VfxInputException("VFXTemplateHelperInternal.TrySetTemplateStatic not found.", "VFX_API_UNSUPPORTED");
             bool ok = (bool)setMethod.Invoke(null, new[] { assetPath, desc });
             if (!ok)
                 return new { error = $"Failed to set template metadata on {assetPath}." };
@@ -6407,7 +6628,7 @@ namespace UnityCliBridge.Handlers
             {
                 var modeProp = resource.GetType().GetProperty("instancingMode", AllInstance);
                 if (modeProp == null)
-                    throw new Exception("instancingMode property not found on VisualEffectResource (VFX package too old?).");
+                    throw new VfxInputException("instancingMode property not found on VisualEffectResource (VFX package too old?).", "VFX_API_UNSUPPORTED");
                 object modeValue;
                 try { modeValue = Enum.Parse(modeProp.PropertyType, modeStr, true); }
                 catch (Exception)
@@ -6440,7 +6661,7 @@ namespace UnityCliBridge.Handlers
                     var so = new SerializedObject(resource as UnityEngine.Object);
                     var prop = so.FindProperty("m_Infos.m_InstancingCapacity");
                     if (prop == null)
-                        throw new Exception("instancingCapacity is not exposed on VisualEffectResource and the serialized fallback (m_Infos.m_InstancingCapacity) was not found.");
+                        throw new VfxInputException("instancingCapacity is not exposed on VisualEffectResource and the serialized fallback (m_Infos.m_InstancingCapacity) was not found.", "VFX_API_UNSUPPORTED");
                     prop.intValue = cap;
                     so.ApplyModifiedPropertiesWithoutUndo();
                     appliedCapacity = new JValue(cap);
@@ -6492,7 +6713,7 @@ namespace UnityCliBridge.Handlers
             var so = new SerializedObject(resource as UnityEngine.Object);
             var prop = so.FindProperty("m_Infos.m_InitialEventName");
             if (prop == null)
-                throw new Exception("m_Infos.m_InitialEventName not found on VisualEffectResource (VFX package too old?).");
+                throw new VfxInputException("m_Infos.m_InitialEventName not found on VisualEffectResource (VFX package too old?).", "VFX_API_UNSUPPORTED");
             prop.stringValue = eventName;
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -6508,15 +6729,15 @@ namespace UnityCliBridge.Handlers
 
         /// <summary>Append a sticky note to VFXGraph.UIInfos.stickyNoteInfos.</summary>
         /// <summary>Append a sticky note to the graph's VFXUI sidecar; returns its index. Does not persist.</summary>
-        private static int CreateStickyNote(object graph, string title, string contents, Rect rect, int colorTheme, string textSize)
+        private static int CreateStickyNote(object graph, string title, string contents, Rect rect, int? colorTheme, string textSize)
         {
             var (ui, notesField, _) = GetStickyNotes(graph);
             var noteType = StickyNoteInfoType;
             var newNote = Activator.CreateInstance(noteType);
+            SetColorTheme(newNote, colorTheme);
             FindField(noteType, "title").SetValue(newNote, title);
             FindField(noteType, "contents").SetValue(newNote, contents);
             FindField(noteType, "position").SetValue(newNote, rect);
-            FindField(noteType, "colorTheme").SetValue(newNote, colorTheme);
             if (!string.IsNullOrEmpty(textSize))
                 FindField(noteType, "textSize").SetValue(newNote, textSize);
             var oldArr = notesField.GetValue(ui) as Array;
@@ -6534,7 +6755,7 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var title = parameters?["title"]?.ToString() ?? "Note";
             var contents = parameters?["contents"]?.ToString() ?? string.Empty;
-            int colorTheme = parameters?["colorTheme"]?.ToObject<int>() ?? 1;
+            int? colorTheme = parameters?["colorTheme"]?.ToObject<int>();
             var textSize = parameters?["textSize"]?.ToString();
             bool avoidNodes = parameters?["avoidNodes"]?.ToObject<bool>() ?? true;
 
@@ -6568,7 +6789,7 @@ namespace UnityCliBridge.Handlers
                 ["stickyNoteIndex"] = index,
                 ["title"] = title,
                 ["contents"] = contents,
-                ["colorTheme"] = colorTheme,
+                ["colorTheme"] = FindField(StickyNoteInfoType, "colorTheme") != null ? new JValue(colorTheme ?? 1) : JValue.CreateNull(),
                 ["textSize"] = textSize,
                 ["position"] = new JArray { x, y, w, h },
                 ["positionAdjusted"] = adjusted
@@ -6583,8 +6804,22 @@ namespace UnityCliBridge.Handlers
                 throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
             var notesField = FindField(ui.GetType(), "stickyNoteInfos");
             if (notesField == null)
-                throw new Exception("stickyNoteInfos field not found on VFXUI.");
+                throw new VfxInputException("stickyNoteInfos field not found on VFXUI.", "VFX_API_UNSUPPORTED");
             return (ui, notesField, notesField.GetValue(ui) as Array);
+        }
+
+        /// <summary>
+        /// Apply an indexed color theme. VFX Graph before 17.4 has only the string `theme`, so an
+        /// explicit colorTheme there is unsupported; an omitted one keeps the package default.
+        /// Call before mutating the note so a rejected request leaves the graph unchanged.
+        /// </summary>
+        private static void SetColorTheme(object note, int? colorTheme)
+        {
+            var field = FindField(StickyNoteInfoType, "colorTheme");
+            if (field != null)
+                field.SetValue(note, colorTheme ?? 1);
+            else if (colorTheme.HasValue)
+                throw new VfxInputException("colorTheme requires VFX Graph 17.4 or newer.", "VFX_API_UNSUPPORTED");
         }
 
         /// <summary>Edit an existing sticky note by index — only the supplied fields are changed.</summary>
@@ -6600,17 +6835,17 @@ namespace UnityCliBridge.Handlers
             var (ui, _, arr) = GetStickyNotes(graph);
             int len = arr?.Length ?? 0;
             if (index < 0 || index >= len)
-                throw new Exception($"index {index} out of range; graph has {len} sticky note(s)");
+                throw new VfxInputException($"index {index} out of range; graph has {len} sticky note(s)");
 
             var noteType = StickyNoteInfoType;
             var note = arr.GetValue(index);
             var changed = new JArray();
+            if (parameters["colorTheme"] != null)
+            { SetColorTheme(note, parameters["colorTheme"].ToObject<int>()); changed.Add("colorTheme"); }
             if (parameters["title"] != null)
             { FindField(noteType, "title").SetValue(note, parameters["title"].ToString()); changed.Add("title"); }
             if (parameters["contents"] != null)
             { FindField(noteType, "contents").SetValue(note, parameters["contents"].ToString()); changed.Add("contents"); }
-            if (parameters["colorTheme"] != null)
-            { FindField(noteType, "colorTheme").SetValue(note, parameters["colorTheme"].ToObject<int>()); changed.Add("colorTheme"); }
             if (parameters["textSize"] != null)
             { FindField(noteType, "textSize").SetValue(note, parameters["textSize"].ToString()); changed.Add("textSize"); }
             var posTok = parameters["position"] as JArray;
@@ -6650,7 +6885,7 @@ namespace UnityCliBridge.Handlers
             var (ui, notesField, arr) = GetStickyNotes(graph);
             int len = arr?.Length ?? 0;
             if (index < 0 || index >= len)
-                throw new Exception($"index {index} out of range; graph has {len} sticky note(s)");
+                throw new VfxInputException($"index {index} out of range; graph has {len} sticky note(s)");
 
             var noteType = StickyNoteInfoType;
             var newArr = Array.CreateInstance(noteType, len - 1);
@@ -6692,9 +6927,9 @@ namespace UnityCliBridge.Handlers
             var (ui, notesField, arr) = GetStickyNotes(graph);
             int len = arr?.Length ?? 0;
             if (index < 0 || index >= len)
-                throw new Exception($"index {index} out of range; graph has {len} sticky note(s)");
+                throw new VfxInputException($"index {index} out of range; graph has {len} sticky note(s)");
             if (toIndex < 0 || toIndex >= len)
-                throw new Exception($"toIndex {toIndex} out of range; graph has {len} sticky note(s)");
+                throw new VfxInputException($"toIndex {toIndex} out of range; graph has {len} sticky note(s)");
 
             var noteType = StickyNoteInfoType;
             var moved = arr.GetValue(index);
@@ -6728,14 +6963,15 @@ namespace UnityCliBridge.Handlers
         /// <summary>Find an active VisualEffect component on a named GameObject.</summary>
         private static object FindVisualEffect(string gameObject)
         {
+            EnsurePackageAvailable();
             if (string.IsNullOrEmpty(gameObject))
-                throw new Exception("gameObject is required (name of a scene object with a VisualEffect)");
+                throw new VfxInputException("gameObject is required (name of a scene object with a VisualEffect)");
             var go = GameObject.Find(gameObject);
             if (go == null)
-                throw new Exception($"GameObject '{gameObject}' not found in the active scene");
+                throw new VfxInputException($"GameObject '{gameObject}' not found in the active scene");
             var comp = go.GetComponent(VisualEffectType);
             if (comp == null)
-                throw new Exception($"GameObject '{gameObject}' has no VisualEffect component");
+                throw new VfxInputException($"GameObject '{gameObject}' has no VisualEffect component");
             return comp;
         }
 
@@ -6743,7 +6979,7 @@ namespace UnityCliBridge.Handlers
         {
             var arr = token as JArray;
             if (arr == null || arr.Count < n)
-                throw new Exception($"value must be an array of {n} numbers");
+                throw new VfxInputException($"value must be an array of {n} numbers");
             switch (n)
             {
                 case 2: return new Vector2(arr[0].ToObject<float>(), arr[1].ToObject<float>());
@@ -6761,7 +6997,7 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         public static object Runtime(JObject parameters)
         {
-            try { return RuntimeCore(parameters); }
+            try { return WithErrorCode(RuntimeCore(parameters)); }
             catch (Exception ex) { return Fail("vfx_runtime", ex); }
         }
 
@@ -6774,7 +7010,8 @@ namespace UnityCliBridge.Handlers
 
             // Validate before touching the scene: FindVisualEffect throws when the object
             // is absent, which would surface a caller error as a bridge fault.
-            if (s_RuntimeValueOps.Contains(op) && parameters?["value"] == null)
+            if (op != null && s_RuntimeValueOps.Contains(op)
+                && (parameters?["value"] == null || parameters["value"].Type == JTokenType.Null))
                 return new { error = "value is required" };
 
             if (op == "set_asset")
@@ -7018,7 +7255,7 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         public static object BakeSdf(JObject parameters)
         {
-            try { return BakeSdfCore(parameters); }
+            try { return WithErrorCode(BakeSdfCore(parameters)); }
             catch (Exception ex) { return Fail("vfx_bake_sdf", ex); }
         }
 
@@ -7033,6 +7270,7 @@ namespace UnityCliBridge.Handlers
             if (!outputPath.StartsWith("Assets/") || !outputPath.EndsWith(".asset"))
                 return new { error = "outputPath must start with 'Assets/' and end with '.asset'" };
 
+            EnsurePackageAvailable();
             // Arg/asset validation first (so a bad mesh/path reports clearly regardless of GPU capability).
             var mesh = AssetDatabase.LoadAssetAtPath(meshPath, typeof(Mesh)) as Mesh;
             if (mesh == null)
@@ -7046,6 +7284,9 @@ namespace UnityCliBridge.Handlers
             var bakerType = MeshToSdfBakerType;
             if (bakerType == null)
                 return new { error = "MeshToSDFBaker not found (the VFX Graph package's SDF Bake Tool is unavailable)." };
+            var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(bakerType.Assembly);
+            if (!Application.isPlaying && package != null && package.version.StartsWith("14.", StringComparison.Ordinal))
+                return InputError("VFX Graph 14 SDF cleanup uses deferred Destroy and requires Play Mode. Enter Play Mode before baking.", "VFX_SDF_EDIT_MODE_UNSUPPORTED");
             if (!SystemInfo.supportsComputeShaders)
                 return new { error = "SDF baking requires compute shader support, which this device/editor lacks." };
 
@@ -7144,7 +7385,7 @@ namespace UnityCliBridge.Handlers
 
         public static object Settings(JObject parameters)
         {
-            try { return SettingsCore(parameters); }
+            try { return WithErrorCode(SettingsCore(parameters)); }
             catch (Exception ex) { return Fail("vfx_settings", ex); }
         }
 
@@ -7308,7 +7549,7 @@ namespace UnityCliBridge.Handlers
         private static string PrefKey(string keyConstName)
         {
             var f = VFXViewPreferenceType.GetField(keyConstName, BindingFlags.Public | BindingFlags.Static);
-            if (f == null) throw new Exception($"VFXViewPreference key constant not found: {keyConstName}");
+            if (f == null) throw new VfxInputException($"VFXViewPreference key constant not found: {keyConstName}", "VFX_API_UNSUPPORTED");
             return (string)f.GetValue(null);
         }
 
@@ -7363,6 +7604,10 @@ namespace UnityCliBridge.Handlers
                 };
 
             string key = PrefKey(entry.KeyConst);
+            var setDirty = VFXViewPreferenceType.GetMethod("SetDirty", AllStatic);
+            var loaded = VFXViewPreferenceType.GetField("m_Loaded", AllStatic);
+            if (setDirty == null && loaded == null)
+                throw new VfxInputException("Cannot invalidate this VFX package's preference cache.", "VFX_API_UNSUPPORTED");
             switch (entry.Type)
             {
                 case "bool":  EditorPrefs.SetBool(key, valueToken.ToObject<bool>()); break;
@@ -7387,7 +7632,8 @@ namespace UnityCliBridge.Handlers
 
             // VFXViewPreference caches values via its private LoadIfNeeded — invalidate so the next
             // property read returns the new value (the canonical round-trip surface).
-            try { Call(null, VFXViewPreferenceType, "SetDirty"); } catch { }
+            if (setDirty != null) setDirty.Invoke(null, null);
+            else loaded.SetValue(null, false); // VFX 14 predates SetDirty.
 
             return new JObject
             {
