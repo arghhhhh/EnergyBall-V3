@@ -1,21 +1,10 @@
 {
   "dependencies": {
+    "com.akiojin.unity-cli-bridge": "https://github.com/arghhhhh/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge#d53ea1dbcbfaff82e45dbb5090acbe4fa287832c",
     "com.maligan.unity-zed": "https://github.com/maligan/unity-zed.git",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.collections": "2.6.8",
     "com.unity.inputsystem": "1.20.0",
-    "com.unity.nuget.newtonsoft-json": "3.2.2",
-    "com.unity.render-pipelines.universal": "17.3.0",
-    "com.unity.timeline": "1.8.13",
-    "com.unity.ugui": "2.0.0",
-    "com.unity.visualeffectgraph": "17.3.0",
-    "jp.keijiro.klak.motion": "1.1.1",
-    "jp.keijiro.klutter-tools": "2.6.0",
-    "jp.keijiro.metamesh": "1.2.2",
-    "jp.keijiro.metawire": "2.1.3",
-    "jp.keijiro.noiseshader": "3.0.1",
-    "jp.keijiro.shadergraphassets": "2.5.3",
-    "jp.keijiro.vfxgraphassets": "3.10.1",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
@@ -49,7 +38,19 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.render-pipelines.universal": "17.3.0",
+    "com.unity.timeline": "1.8.13",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.visualeffectgraph": "17.3.0",
+    "jp.keijiro.klak.motion": "1.1.1",
+    "jp.keijiro.klutter-tools": "2.6.0",
+    "jp.keijiro.metamesh": "1.2.2",
+    "jp.keijiro.metawire": "2.1.3",
+    "jp.keijiro.noiseshader": "3.0.1",
+    "jp.keijiro.shadergraphassets": "2.5.3",
+    "jp.keijiro.vfxgraphassets": "3.10.1"
   },
   "scopedRegistries": [
     {

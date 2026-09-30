@@ -1,13 +1,16 @@
 {
   "dependencies": {
     "com.akiojin.unity-cli-bridge": {
-      "version": "file:unity-cli-bridge",
+      "version": "https://github.com/arghhhhh/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge#d53ea1dbcbfaff82e45dbb5090acbe4fa287832c",
       "depth": 0,
-      "source": "embedded",
+      "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1",
-        "com.unity.inputsystem": "1.14.2"
-      }
+        "com.unity.test-framework": "1.1.33",
+        "com.unity.inputsystem": "1.14.2",
+        "com.unity.ugui": "1.0.0"
+      },
+      "hash": "d53ea1dbcbfaff82e45dbb5090acbe4fa287832c"
     },
     "com.maligan.unity-zed": {
       "version": "https://github.com/maligan/unity-zed.git",
