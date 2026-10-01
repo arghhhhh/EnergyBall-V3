@@ -171,7 +171,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -828,6 +828,7 @@ MonoBehaviour:
   _gridScale: 0.3
   _triangleBudget: 32768
   _targetValue: 0.254
+  _sdfSource: 0
   metaballs:
   - Position: {x: 0, y: 0, z: 0}
     Radius: 0
@@ -1229,12 +1230,66 @@ MonoBehaviour:
     spawnSphereRadius: 0.012
     spawnVeloSpread: 0.5
     sizeRange: {x: 0.008, y: 0.014}
-    lifetimeRemapMaxDist: 0.6
-    lifeRange: {x: 1, y: 2}
+    maxLifetime: 4
+    maxLifetimeClosed: 1
+    fadeInTime: 0.1
+    fadeInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    fadeOutTime: 2
     lengthScaler: 1.25
     minStretchLength: 0.01
     vfxSphereCollisionScaleMult: 0.93
     collisionDetectionScaleMult: 1.25
+    colorCycleTime: 4
+    glowFullRadius: 1.1
+    glowRange: 3
+    glowCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    surfaceBrightness: 3
     mainAttractionSpeed: 0.95
     mainAttractionForce: 43
     mainStickDistance: 0.02
