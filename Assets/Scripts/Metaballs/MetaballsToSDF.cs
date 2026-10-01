@@ -125,6 +125,13 @@ namespace MarchingCubes
         bool _fieldDirty = true;
         bool _meshWasShown = false;
 
+        // Submesh size the last build cleared up to. The builder grows the
+        // submesh asynchronously (on readback, after the build), exposing a
+        // range no build at that size has cleared - it can still hold
+        // triangles from an older, larger surface. Growth past this forces
+        // one rebuild so the clear kernel covers the new range.
+        int _builtSubmeshTriangles;
+
         // Hand-VFX binding state: rebound only when one of these changes.
         bool _bindingsDirty = true;
         Texture _boundTexture;
@@ -224,10 +231,19 @@ namespace MarchingCubes
             }
             _meshWasShown = showMesh;
 
+            if (needMesh && _builder.SubmeshTriangleCount > _builtSubmeshTriangles)
+            {
+                _fieldDirty = true;
+            }
+
             if (_fieldDirty)
             {
                 Rebuild(gridScale, needMesh);
                 _fieldDirty = false;
+                if (needMesh)
+                {
+                    _builtSubmeshTriangles = _builder.SubmeshTriangleCount;
+                }
             }
 
             Texture currentSdf = CurrentSdfTexture;
