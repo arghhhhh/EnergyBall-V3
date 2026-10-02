@@ -1419,13 +1419,6 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateToggleField(
             group,
-            "Dummy Only Mode",
-            () => runtimeSettings.dummyOnlyMode,
-            v => runtimeSettings.dummyOnlyMode = v,
-            tooltip: "Skip the Kinect entirely and drive the scene with dummy players only. For development without a sensor."
-        );
-        CreateToggleField(
-            group,
             "Show Sphere Mesh On Hand Collision",
             () => runtimeSettings.showSphereMeshOnHandCollision,
             v => runtimeSettings.showSphereMeshOnHandCollision = v,
@@ -2408,7 +2401,6 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.useTrackingStateColors = loadedSettings.useTrackingStateColors;
 
         // Debug settings
-        runtimeSettings.dummyOnlyMode = loadedSettings.dummyOnlyMode;
         runtimeSettings.showSphereMeshOnHandCollision =
             loadedSettings.showSphereMeshOnHandCollision;
         runtimeSettings.alwaysShowSphereMesh = loadedSettings.alwaysShowSphereMesh;
@@ -2542,7 +2534,6 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.useTrackingStateColors = source.useTrackingStateColors;
 
         // Debug settings
-        destination.dummyOnlyMode = source.dummyOnlyMode;
         destination.showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         destination.alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         destination.showMetaballMesh = source.showMetaballMesh;
@@ -2675,7 +2666,6 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.metaballRadiusAnimationStartSize = 0.0f;
         destination.bodySpawnSize = 0.0f;
         destination.metaballRadiusAnimationCurve = new AnimationCurve();
-        destination.dummyOnlyMode = false;
         destination.drawSkeleton = false;
         destination.customColors = false;
         destination.showSphereMeshOnHandCollision = false;

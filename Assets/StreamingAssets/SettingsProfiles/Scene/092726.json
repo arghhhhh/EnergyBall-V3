@@ -159,27 +159,90 @@
     "handVfx": {
         "spawnRate": 1500,
         "spawnSphereRadius": 0.012000000104308129,
-        "spawnVeloSpread": 0.5,
+        "spawnVeloSpread": 0.800000011920929,
         "sizeRange": {
             "x": 0.00800000037997961,
             "y": 0.014000000432133675
         },
-        "lifetimeRemapMaxDist": 0.6000000238418579,
-        "lifeRange": {
-            "x": 1.0,
-            "y": 2.0
+        "maxLifetime": 4.0,
+        "maxLifetimeClosed": 1.0,
+        "fadeInTime": 0.30000001192092898,
+        "fadeInCurve": {
+            "serializedVersion": "2",
+            "m_Curve": [
+                {
+                    "serializedVersion": "3",
+                    "time": 0.0,
+                    "value": 0.0,
+                    "inSlope": 0.0,
+                    "outSlope": 2.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                },
+                {
+                    "serializedVersion": "3",
+                    "time": 1.0,
+                    "value": 1.0,
+                    "inSlope": 0.0,
+                    "outSlope": 0.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                }
+            ],
+            "m_PreInfinity": 2,
+            "m_PostInfinity": 2,
+            "m_RotationOrder": 4
         },
+        "fadeOutTime": 3.0,
         "lengthScaler": 1.25,
         "minStretchLength": 0.009999999776482582,
         "vfxSphereCollisionScaleMult": 0.9300000071525574,
         "collisionDetectionScaleMult": 1.25,
+        "colorCycleTime": 0.30000001192092898,
+        "glowFullRadius": 0.8999999761581421,
+        "glowRange": 0.41999998688697817,
+        "glowCurve": {
+            "serializedVersion": "2",
+            "m_Curve": [
+                {
+                    "serializedVersion": "3",
+                    "time": 0.0,
+                    "value": 0.0,
+                    "inSlope": 0.0,
+                    "outSlope": 0.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                },
+                {
+                    "serializedVersion": "3",
+                    "time": 1.0,
+                    "value": 1.0,
+                    "inSlope": 2.0,
+                    "outSlope": 2.0,
+                    "tangentMode": 0,
+                    "weightedMode": 0,
+                    "inWeight": 0.0,
+                    "outWeight": 0.0
+                }
+            ],
+            "m_PreInfinity": 2,
+            "m_PostInfinity": 2,
+            "m_RotationOrder": 4
+        },
+        "surfaceBrightness": 10.0,
         "mainAttractionSpeed": 0.949999988079071,
         "mainAttractionForce": 43.0,
         "mainStickDistance": 0.019999999552965165,
         "mainStickForce": 0.4000000059604645,
-        "tangentialDamping": 5.0,
+        "tangentialDamping": 10.0,
         "tangentialDampingFade": {
-            "x": 1.2999999523162842,
+            "x": 1.2000000476837159,
             "y": 1.600000023841858
         },
         "tangentialDampingFadeCurve": {
@@ -213,12 +276,12 @@
             "m_RotationOrder": 4
         },
         "seekStrength": 1.0,
-        "tdRadius": 0.10000000149011612,
+        "tdRadius": 0.05000000074505806,
         "tdStickDistance": 0.019999999552965165,
         "tdStickForce": 1.0,
-        "tdAttractionForce": 2.0,
-        "tdAttractionSpeed": 40.0,
-        "tdWanderAmount": 0.05999999865889549,
+        "tdAttractionForce": 8.0,
+        "tdAttractionSpeed": 80.0,
+        "tdWanderAmount": 0.15000000596046449,
         "saAttractionSpeed": 0.949999988079071,
         "saAttractionForce": 10.0,
         "saStickDistance": 0.019999999552965165,
@@ -300,7 +363,7 @@
     },
     "_customColors": true,
     "drawSkeleton": false,
-    "useTrackingStateColors": false,
+    "useTrackingStateColors": true,
     "bloomThreshold": 0.0,
     "bloomIntensity": 0.0,
     "bloomScatter": 0.0,
@@ -324,7 +387,6 @@
     "colorAdjustmentsSaturation": 0.0,
     "whiteBalanceTemperature": 0.0,
     "whiteBalanceTint": 0.0,
-    "dummyOnlyMode": false,
     "showSphereMeshOnHandCollision": false,
     "alwaysShowSphereMesh": false,
     "showMetaballMesh": false,

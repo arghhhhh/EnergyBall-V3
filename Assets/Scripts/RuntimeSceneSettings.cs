@@ -245,7 +245,6 @@ public class RuntimeSceneSettings
     public float whiteBalanceTint = 0.0f;
 
     [Header("Debugging")]
-    public bool dummyOnlyMode = false;
     public bool showSphereMeshOnHandCollision = false;
     public bool alwaysShowSphereMesh = false;
     public bool showMetaballMesh = false;
@@ -409,7 +408,6 @@ public class RuntimeSceneSettings
         copy.colorAdjustmentsSaturation = colorAdjustmentsSaturation;
         copy.whiteBalanceTemperature = whiteBalanceTemperature;
         copy.whiteBalanceTint = whiteBalanceTint;
-        copy.dummyOnlyMode = dummyOnlyMode;
         copy.drawSkeleton = drawSkeleton;
         copy._customColors = _customColors;
         copy.useTrackingStateColors = useTrackingStateColors;

@@ -1182,6 +1182,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64e0a8cbe467405488d02a1bef548523, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dummyOnlyMode: 0
+  settingsMenu: {fileID: 125572181}
+  volumeController: {fileID: 1361264294}
   g: 0.4
   maxTowardsForce: 0.39999998
   maxAwayFromForce: 1
@@ -1228,11 +1231,11 @@ MonoBehaviour:
   handVfx:
     spawnRate: 1500
     spawnSphereRadius: 0.012
-    spawnVeloSpread: 0.5
+    spawnVeloSpread: 0.8
     sizeRange: {x: 0.008, y: 0.014}
     maxLifetime: 4
     maxLifetimeClosed: 1
-    fadeInTime: 0.1
+    fadeInTime: 0.3
     fadeInCurve:
       serializedVersion: 2
       m_Curve:
@@ -1257,14 +1260,14 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    fadeOutTime: 2
+    fadeOutTime: 3
     lengthScaler: 1.25
     minStretchLength: 0.01
     vfxSphereCollisionScaleMult: 0.93
     collisionDetectionScaleMult: 1.25
-    colorCycleTime: 4
-    glowFullRadius: 1.1
-    glowRange: 3
+    colorCycleTime: 0.3
+    glowFullRadius: 0.9
+    glowRange: 0.42
     glowCurve:
       serializedVersion: 2
       m_Curve:
@@ -1272,7 +1275,7 @@ MonoBehaviour:
         time: 0
         value: 0
         inSlope: 0
-        outSlope: 1
+        outSlope: 0
         tangentMode: 0
         weightedMode: 0
         inWeight: 0
@@ -1280,8 +1283,8 @@ MonoBehaviour:
       - serializedVersion: 3
         time: 1
         value: 1
-        inSlope: 1
-        outSlope: 0
+        inSlope: 2
+        outSlope: 2
         tangentMode: 0
         weightedMode: 0
         inWeight: 0
@@ -1289,13 +1292,13 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    surfaceBrightness: 3
+    surfaceBrightness: 10
     mainAttractionSpeed: 0.95
     mainAttractionForce: 43
     mainStickDistance: 0.02
     mainStickForce: 0.4
-    tangentialDamping: 5
-    tangentialDampingFade: {x: 1.3, y: 1.6}
+    tangentialDamping: 10
+    tangentialDampingFade: {x: 1.2, y: 1.6}
     tangentialDampingFadeCurve:
       serializedVersion: 2
       m_Curve:
@@ -1321,12 +1324,12 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     seekStrength: 1
-    tdRadius: 0.1
+    tdRadius: 0.05
     tdStickDistance: 0.02
     tdStickForce: 1
-    tdAttractionForce: 2
-    tdAttractionSpeed: 40
-    tdWanderAmount: 0.06
+    tdAttractionForce: 8
+    tdAttractionSpeed: 80
+    tdWanderAmount: 0.15
     saAttractionSpeed: 0.95
     saAttractionForce: 10
     saStickDistance: 0.02
@@ -1731,7 +1734,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  dummyOnlyMode: 0
   drawSkeleton: 0
   showSphereMeshOnHandCollision: 0
   alwaysShowSphereMesh: 0
@@ -1741,8 +1743,6 @@ MonoBehaviour:
   showAttractionRadius: 0
   showHandTrailDistorters: 0
   showSecondaryAttractor: 0
-  settingsMenu: {fileID: 125572181}
-  volumeController: {fileID: 1361264294}
   metaballsToSDF: {fileID: 906608103}
   playerPrefab: {fileID: 673367081158314858, guid: 0fc75339efa2573449288aa1d5103dca,
     type: 3}

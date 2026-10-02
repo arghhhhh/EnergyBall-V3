@@ -60,8 +60,7 @@ public class BodySourceManager : MonoBehaviour
 
     void Start()
     {
-        var runtimeSettings = controller.GetRuntimeSettings();
-        if (runtimeSettings.dummyOnlyMode)
+        if (controller.dummyOnlyMode)
         {
             return;
         }
@@ -191,8 +190,7 @@ public class BodySourceManager : MonoBehaviour
 
     void Update()
     {
-        var runtimeSettings = controller.GetRuntimeSettings();
-        if (runtimeSettings.dummyOnlyMode)
+        if (controller.dummyOnlyMode)
         {
             return;
         }

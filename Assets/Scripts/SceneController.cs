@@ -11,6 +11,13 @@ using Joint = Windows.Kinect.Joint;
 public class SceneController : MonoBehaviour
 {
     public static SceneController Instance { get; private set; } // singleton pattern
+
+    [Header("Runtime Settings")]
+    [Tooltip("Skip the Kinect entirely and drive the scene with dummy players only. Per scene, not part of settings profiles.")]
+    public bool dummyOnlyMode = false;
+    public InGameSettingsMenu settingsMenu;
+    public VolumeController volumeController;
+
     #region Inspector Settings
     [BoxGroup("Gravity Attraction")]
     [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
@@ -318,9 +325,6 @@ public class SceneController : MonoBehaviour
     };
 
     [BoxGroup("Debugging")]
-    public bool dummyOnlyMode = false;
-
-    [BoxGroup("Debugging")]
     public bool drawSkeleton = false;
 
     [BoxGroup("Debugging")]
@@ -357,10 +361,6 @@ public class SceneController : MonoBehaviour
     [BoxGroup("Debugging")]
     public bool showSecondaryAttractor = false;
     #endregion
-
-    [Header("Runtime Settings")]
-    public InGameSettingsMenu settingsMenu;
-    public VolumeController volumeController;
 
     // BASE settings (what the menu / inspector / profiles hold, at bodyScale = 1).
     private RuntimeSceneSettings runtimeSettings;
@@ -903,7 +903,7 @@ public class SceneController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (!CurrentSettings.dummyOnlyMode)
+        if (!dummyOnlyMode)
         {
             bodyData = bodySourceManager.GetData();
             if (bodyData == null)
@@ -1102,7 +1102,6 @@ public class SceneController : MonoBehaviour
         target.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
 
         // Debugging
-        target.dummyOnlyMode = dummyOnlyMode;
         target.drawSkeleton = drawSkeleton;
         target.customColors = customColors;
         target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
@@ -1190,7 +1189,6 @@ public class SceneController : MonoBehaviour
         metaballRadiusAnimationCurve = new AnimationCurve(source.metaballRadiusAnimationCurve.keys);
 
         // Debugging
-        dummyOnlyMode = source.dummyOnlyMode;
         drawSkeleton = source.drawSkeleton;
         customColors = source.customColors;
         showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;

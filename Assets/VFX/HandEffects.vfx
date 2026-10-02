@@ -117,10 +117,10 @@ MonoBehaviour:
   - title: Path Distortion betw. Hand & Sphere (TDs)
     position:
       serializedVersion: 2
-      x: -551
-      y: 1170
-      width: 1222
-      height: 419
+      x: -545
+      y: 1171
+      width: 1217
+      height: 426
     contents:
     - model: {fileID: 8926484042661614815}
       id: 0
@@ -179,6 +179,9 @@ MonoBehaviour:
     - model: {fileID: 8926484042661617797}
       id: 0
       isStickyNote: 0
+    - model: {fileID: 0}
+      id: 8
+      isStickyNote: 1
   - title: Secondary Attractor
     position:
       serializedVersion: 2
@@ -730,10 +733,10 @@ MonoBehaviour:
   - title: Surface Glow + Colour Cycle
     position:
       serializedVersion: 2
-      x: -1812
-      y: 4781
+      x: -995
+      y: 3887
       width: 260
-      height: 180
+      height: 307
     contents: 'Gradient time = saturate(age / colorCycleTime) - age-based, so collision
       cutting lifetime no longer jumps the colour.
 
@@ -750,7 +753,19 @@ MonoBehaviour:
       Blend Color (toward bright grey, original look) or Multiply Color by Lerp(1,
       surfaceBrightness, glow) (keeps hue; disabled by default).'
     theme: 
-    textSize: 
+    textSize: Small
+    colorTheme: 1
+  - title: TODO
+    position:
+      serializedVersion: 2
+      x: -471
+      y: 1258
+      width: 115
+      height: 100
+    contents: Right compare val is arbitrary and I should probably come up with a
+      better system here
+    theme: Classic
+    textSize: Small
     colorTheme: 1
   categories:
   - name: SpawnFX
@@ -758,9 +773,9 @@ MonoBehaviour:
   uiBounds:
     serializedVersion: 2
     x: -5348
-    y: -447
-    width: 8358
-    height: 5408
+    y: -445
+    width: 8357
+    height: 5288
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -4092,7 +4107,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614603}
       inputSlot: {fileID: 8926484042661614879}
-    position: {x: 95.2, y: 1300.8}
+    position: {x: 95.333336, y: 1300.6666}
     expandedSlots: []
     expanded: 0
     supecollapsed: 1
@@ -4110,7 +4125,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614603}
       inputSlot: {fileID: 8926484042661615532}
-    position: {x: -525.6, y: 1324}
+    position: {x: -520, y: 1368.6666}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -4530,7 +4545,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614617}
       inputSlot: {fileID: 8926484042661614873}
-    position: {x: 95.2, y: 1372}
+    position: {x: 95.333336, y: 1372}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -4611,7 +4626,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614619}
       inputSlot: {fileID: 8926484042661614805}
-    position: {x: 526.4, y: 1230.4}
+    position: {x: 526.6667, y: 1230}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -4794,7 +4809,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614624}
       inputSlot: {fileID: 8926484042661614821}
-    position: {x: 524.8, y: 1406.4}
+    position: {x: 524.6667, y: 1406}
     expandedSlots:
     - {fileID: 8926484042661614624}
     expanded: 1
@@ -8011,7 +8026,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: False
+      m_SerializableObject: True
     m_Space: -1
   m_Property:
     name: _vfx_enabled
@@ -8065,7 +8080,7 @@ MonoBehaviour:
       inputSlot: {fileID: 8926484042661614825}
     - outputSlot: {fileID: 8926484042661614816}
       inputSlot: {fileID: 8926484042661614809}
-    position: {x: 513.6, y: 1274.4}
+    position: {x: 513.3333, y: 1274}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -8147,7 +8162,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661614818}
       inputSlot: {fileID: 8926484042661616301}
-    position: {x: 90.4, y: 1463.2001}
+    position: {x: 90.666664, y: 1462.6666}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -8584,7 +8599,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: False
+      m_SerializableObject: True
     m_Space: -1
   m_Property:
     name: _vfx_enabled
@@ -18015,7 +18030,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.01
+      m_SerializableObject: 0.8
     m_Space: -1
   m_Property:
     name: right
@@ -30970,7 +30985,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: False
+      m_SerializableObject: True
     m_Space: -1
   m_Property:
     name: a
@@ -31582,7 +31597,7 @@ MonoBehaviour:
     linkedSlots:
     - outputSlot: {fileID: 8926484042661616378}
       inputSlot: {fileID: 8926484042661617791}
-    position: {x: -452.8, y: 1429.6001}
+    position: {x: -452.66666, y: 1429.3333}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -43810,7 +43825,7 @@ MonoBehaviour:
       inputSlot: {fileID: 8926484042661614813}
     - outputSlot: {fileID: 8926484042661617538}
       inputSlot: {fileID: 8926484042661614829}
-    position: {x: 473.6, y: 1501.6001}
+    position: {x: 473.33334, y: 1501.3333}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
@@ -43894,7 +43909,7 @@ MonoBehaviour:
       inputSlot: {fileID: 8926484042661614828}
     - outputSlot: {fileID: 8926484042661617540}
       inputSlot: {fileID: 8926484042661614812}
-    position: {x: 474.4, y: 1453.6001}
+    position: {x: 474.66666, y: 1453.3333}
     expandedSlots: []
     expanded: 1
     supecollapsed: 1
