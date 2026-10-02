@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.akiojin.unity-cli-bridge": {
-      "version": "https://github.com/arghhhhh/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge#d53ea1dbcbfaff82e45dbb5090acbe4fa287832c",
+      "version": "https://github.com/arghhhhh/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge#7f45d7aec2a866abda88ba3768bf4057c5f23053",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -10,7 +10,7 @@
         "com.unity.inputsystem": "1.14.2",
         "com.unity.ugui": "1.0.0"
       },
-      "hash": "d53ea1dbcbfaff82e45dbb5090acbe4fa287832c"
+      "hash": "7f45d7aec2a866abda88ba3768bf4057c5f23053"
     },
     "com.maligan.unity-zed": {
       "version": "https://github.com/maligan/unity-zed.git",
