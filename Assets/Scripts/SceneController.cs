@@ -199,7 +199,7 @@ public class SceneController : MonoBehaviour
 
     [BoxGroup("Camera Feed Alignment")]
     [Tooltip(
-        "Transform of the camera the players are rendered through (Main Camera — the Overlay "
+        "Transform of the camera the players are rendered through (Main Camera — the Particles "
             + "Camera must share its position for alignment to hold)."
     )]
     public Transform renderCameraTransform;
@@ -283,7 +283,7 @@ public class SceneController : MonoBehaviour
     public bool customColors = false;
 
     [BoxGroup("Style Settings")]
-    [HideIf("customColors")]
+    [HideIf(EConditionOperator.Or, "customColors", "dummyOnlyMode")]
     [Tooltip("Use tracking state colors for the skeleton")]
     public bool useTrackingStateColors = true;
 
@@ -325,6 +325,7 @@ public class SceneController : MonoBehaviour
     };
 
     [BoxGroup("Debugging")]
+    [HideIf("dummyOnlyMode")]
     public bool drawSkeleton = false;
 
     [BoxGroup("Debugging")]
@@ -548,6 +549,15 @@ public class SceneController : MonoBehaviour
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         return $"LastUsedPostProcessingProfile_{sceneName}";
+    }
+
+    /// <summary>
+    /// Get the PlayerPrefs key for this scene's last used camera-feed post-processing profile
+    /// </summary>
+    public string GetSceneSpecificFeedPostProcessingProfileKey()
+    {
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        return $"LastUsedFeedPostProcessingProfile_{sceneName}";
     }
 
     void InitializeNewDummy(PlayerConstructor dummy)
@@ -1381,7 +1391,10 @@ public class SceneController : MonoBehaviour
         string ppProfile =
             file?.postProcessingProfileName
             ?? PlayerPrefs.GetString($"LastUsedPostProcessingProfile_{sceneName}", "");
-        SettingsWorkingSet.Save(sceneName, settings, sceneProfile, ppProfile);
+        string feedPpProfile =
+            file?.feedPostProcessingProfileName
+            ?? PlayerPrefs.GetString($"LastUsedFeedPostProcessingProfile_{sceneName}", "");
+        SettingsWorkingSet.Save(sceneName, settings, sceneProfile, ppProfile, feedPpProfile);
     }
 
     /// <summary>
@@ -1412,15 +1425,15 @@ public class SceneController : MonoBehaviour
 
         if (volumeController != null)
         {
-            if (
-                markSceneDirty
-                && volumeController.TryGetComponent(out UnityEngine.Rendering.Volume vol)
-                && vol.profile != null
-            )
-                UnityEditor.Undo.RecordObject(
-                    vol.profile,
-                    "Restore post-processing from working set"
-                );
+            if (markSceneDirty)
+            {
+                var profiles = volumeController.GetProfiles();
+                if (profiles.Length > 0)
+                    UnityEditor.Undo.RecordObjects(
+                        profiles,
+                        "Restore post-processing from working set"
+                    );
+            }
             volumeController.ApplyCurrentSettings(file.settings);
         }
 

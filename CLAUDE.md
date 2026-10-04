@@ -113,9 +113,33 @@ following the existing pattern:
   `handVfx`, one `[VfxProperty("graphName")]` field per exposed value) and is pushed
   to both hand graphs by `PlayerScaleApplier.cs` on spawn and on every settings
   change. `bodySpawnSize` (top-level setting) drives `BodyEffects.vfx` the same way.
-- `VolumeController.cs`: manages the URP post-processing `Volume` (Bloom, Vignette,
-  ChromaticAberration, LensDistortion, ColorAdjustments, WhiteBalance,
-  ScreenSpaceLensFlare) and persists edits via `SessionState`.
+- **Split post-processing (main scene).** The particle layer and the camera feed each
+  get their own look:
+  - `Main Camera` (base, layers 0–5) draws the Kinect feed quad with PP on and Volume
+    Mask `PP Feed` (layer 8) → `Feed Volume` (`VolumeProfile (Camera Feed).asset`).
+  - `Main Camera/Particles Camera` (base, depth −1, layer 6 `KinectOverlay` only, clear
+    transparent) has PP on with Volume Mask `PP Particles` (layer 7) → `Particles
+    Volume` (`VolumeProfile.asset`). `ParticleLayerCompositor.cs` renders it into a
+    screen-sized RenderTexture (with depth, for the body occluder) shown full screen
+    by the `Particle Layer Composite` canvas (Screen Space Overlay, sort −1, drawn after
+    the Main Camera's PP) using the premultiplied `EnergyBall/UIPremultipliedComposite`
+    shader.
+  - Not a camera stack on purpose: an overlay camera's PP runs on the whole stack
+    (feed included), so it can't separate the looks.
+  - Needs URP **Alpha Processing** (`m_AllowPostProcessAlphaOutput`). It's project
+    wide and masks PP by alpha on every camera, so any camera that outputs to the
+    screen must clear with alpha 1 (Main Camera, Dummy Scene camera). Under it, bloom
+    glow still spreads into alpha-0 areas, but color grading / vignette don't touch
+    those pixels.
+  - Anything that must depth-interact with the body occluder stays on layer 6.
+- `VolumeController.cs` (on `Particles Volume`): pushes
+  `RuntimeSceneSettings.particlePostProcessing` into `particleVolume` and
+  `feedPostProcessing` into `feedVolume` (Bloom, ChromaticAberration, LensDistortion,
+  ColorAdjustments, WhiteBalance, ScreenSpaceLensFlare). The Dummy Scene has no feed
+  pass: `feedVolume` is empty and only the particle look applies.
+- Instagram banner: `Banner Canvas` (Screen Space Overlay, Scale With Screen Size,
+  1920×1080 reference, match height), so it keeps the same share of the screen at any
+  output resolution.
 
 ### Settings system (base → effective)
 - `RuntimeSceneSettings.cs` — the `[Serializable]` settings class. Profiles, the
@@ -135,6 +159,14 @@ following the existing pattern:
   `EnergyBall/Migrate Scene Profiles To Base` (Editor menu) rewrites v0 files.
 - `InGameSettingsMenu.cs` / `SettingsMenuSetup.cs` — live in-game tuning UI (base
   values, labels carry `(×s)` / `(×s²)` / `(×1/s)` hints).
+- Post-processing values live in `PostProcessSettings.cs`, held twice on the settings
+  (`particlePostProcessing`, `feedPostProcessing`). PP profile files are serialized
+  straight from `PostProcessSettings`, and older files with flat keys load unchanged.
+  The menu's Post Processing tab has a **Particles / Camera Feed** target switch: each
+  target has its own profile, dirty flag and last-used key
+  (`LastUsedPostProcessingProfile_<scene>` / `LastUsedFeedPostProcessingProfile_<scene>`),
+  and any PP profile can be loaded into either. With no last-used feed profile, the feed
+  loads the same profile as the particles.
 - Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
   animation-curve presets in `Assets/StreamingAssets/CurvePresets/`, edited via the
   `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor.
@@ -143,8 +175,10 @@ following the existing pattern:
   Every change writes it (menu edits, profile loads, inspector edits in play AND edit
   mode), so the most recent change always wins: play start restores it instead of
   auto-loading the last-used profile, and on play exit `SceneController`'s editor hook
-  copies it back into the inspector twins (dirtying the scene) and the Volume Profile
-  asset. The menu shows "Unsaved changes" / `Scene *` when the working set differs
+  copies it back into the inspector twins (dirtying the scene) and both Volume Profiles.
+  It records `postProcessingProfileName` (particles) and
+  `feedPostProcessingProfileName`. A pre-split file (flat PP keys) loads its one look
+  into both targets. The menu shows "Unsaved changes" / `Scene *` when the working set differs
   from its profile and asks before a load discards it. No SessionState anywhere.
 - Why the exponents are what they are, the HandEffects.vfx scaling rules (Conform,
   noise, Turbulence, the intentional `÷ 5`) and the gotchas: `Docs/BodyScale.md`.

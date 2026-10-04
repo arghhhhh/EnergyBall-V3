@@ -6,13 +6,25 @@ This guide explains how to add new settings fields to an existing tab in the in-
 
 The settings menu system uses `RuntimeSceneSettings` as the central data class. Settings are organized into groups within tabs, and changes are persisted through JSON profile files.
 
-**Working set.** Independently of profiles, every change (menu, profile load, inspector in play or edit mode) is written to a per-scene working-set file (`SettingsWorkingSet.cs`, under `Application.persistentDataPath`). It is restored at play start and copied back into the inspector when play stops, so the latest change always sticks; the menu marks the tab dirty (`Scene *`, "Unsaved changes") until you Save. New fields need nothing extra for this - the whole `RuntimeSceneSettings` object is serialized - but **a field missing from `CopySceneSettings` / `CopyPostProcessingSettings` is invisible to dirty tracking and to profiles**, so steps 7-8 matter. Always go through `NotifySettingsChanged()` (never invoke `OnSettingsChanged` directly) so the working set and dirty state stay current.
+**Working set.** Independently of profiles, every change (menu, profile load, inspector in play or edit mode) is written to a per-scene working-set file (`SettingsWorkingSet.cs`, under `Application.persistentDataPath`). It is restored at play start and copied back into the inspector when play stops, so the latest change always sticks; the menu marks the tab dirty (`Scene *`, "Unsaved changes") until you Save. New fields need nothing extra for this - the whole `RuntimeSceneSettings` object is serialized - but **a field missing from `CopySceneSettings` is invisible to dirty tracking and to profiles**, so steps 7-8 matter. Always go through `NotifySettingsChanged()` (never invoke `OnSettingsChanged` directly) so the working set and dirty state stay current.
 
 **Base vs. effective values.** Everything the menu, the `SceneController` inspector and the JSON profiles hold is a _base_ value at `bodyScale = 1`. `SceneController.RebuildEffectiveSettings()` derives the object consumers read (`CurrentSettings` / `GetRuntimeSettings()`) as `base × bodyScale^exp` via `BodyScaling.CreateEffective`. So:
 
 - **If the new setting has a dimension** (a length, velocity, per-frame displacement, rigidbody force, spatial frequency), put `[BodyScaled(exp)]` on the `RuntimeSceneSettings` field and store the **1× value**. Exponents: lengths / velocities / per-frame displacements `1`; rigidbody forces (`AddForce`) `2` (mass ∝ s); spatial frequencies `-1`. Time, ratios, rates, curves, bools and counts get no attribute. See `Docs/BodyScale.md` for the derivation and the VFX-specific rules.
 - Append the unit hint to the menu label by hand: `"Push Force (×s²)"`, `"TD Radius (×s)"`, `"Noise Frequency (×1/s)"`.
 - Consumers never rescale anything themselves — they just read the effective object.
+
+**Post-processing settings are different.** The Post Processing tab edits one of two looks, `RuntimeSceneSettings.particlePostProcessing` or `feedPostProcessing` (both `PostProcessSettings`). The tab's **Particles / Camera Feed** switch picks which one. A PP profile file is just a serialized `PostProcessSettings`, so a new PP value needs only three things:
+
+1. A field on `PostProcessSettings.cs` with a C# default. `DeepCopy()`, profile load/save, dirty tracking and the working set all go through JSON, so there's nothing else to copy.
+2. A write in `VolumeController.VolumeTarget.Apply()`. If it's a new Volume override, also add a `TryGet` in `Resolve()` and add the override to both Volume Profile assets (`VolumeProfile.asset`, `VolumeProfile (Camera Feed).asset`).
+3. A row in `CreatePostProcessingGroup()` bound to `ActivePP`, never `runtimeSettings`:
+
+```csharp
+CreateSliderField(bloomGroup, "Bloom Intensity", () => ActivePP.bloomIntensity, v => ActivePP.bloomIntensity = v, 0f, 3f);
+```
+
+Steps 1–8 below are for **scene** settings.
 
 ## Quick Reference
 
@@ -24,8 +36,8 @@ The settings menu system uses `RuntimeSceneSettings` as the central data class. 
 | 4    | `SceneController.cs`      | Update `CopyInspectorToRuntime()` method                         |
 | 5    | `SceneController.cs`      | Update `CopyRuntimeToInspector()` method                         |
 | 6    | `InGameSettingsMenu.cs`   | Add UI field in appropriate group method                         |
-| 7    | `InGameSettingsMenu.cs`   | Update `MergeSceneSettings()` or `MergePostProcessingSettings()` |
-| 8    | `InGameSettingsMenu.cs`   | Update `CopySceneSettings()` or `CopyPostProcessingSettings()`   |
+| 7    | `InGameSettingsMenu.cs`   | Update `MergeSceneSettings()`                                    |
+| 8    | `InGameSettingsMenu.cs`   | Update `CopySceneSettings()`                                     |
 
 ## Step-by-Step Guide
 
@@ -52,7 +64,7 @@ public float boundaryOutwardDrag = 50f;
 
 `[BodyScaled]` supports `float`, `Vector2` and `Vector3` fields.
 
-**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`; the PP copy sets `destination.handVfx = new HandVfxSettings()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching `CreateHandVfx*Group` in the menu. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write (`float`, `int`, `Vector2`, `Vector3`, `AnimationCurve`). Curves in `HandVfxSettings` must be copied by keys in its `DeepCopy()`.
+**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching `CreateHandVfx*Group` in the menu. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write (`float`, `int`, `Vector2`, `Vector3`, `AnimationCurve`). Curves in `HandVfxSettings` must be copied by keys in its `DeepCopy()`.
 
 **For properties with change notifications:**
 
@@ -218,17 +230,6 @@ private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
 }
 ```
 
-**For Post-Processing settings** - Update `MergePostProcessingSettings()`:
-
-```csharp
-private void MergePostProcessingSettings(RuntimeSceneSettings loadedSettings)
-{
-    // ... existing properties ...
-
-    runtimeSettings.myNewPostProcessingSetting = loadedSettings.myNewPostProcessingSetting;
-}
-```
-
 ### 8. Update Copy Method for Saving
 
 **File:** `Assets/Scripts/InGameSettingsMenu.cs`
@@ -246,33 +247,11 @@ private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings
     destination.addedBoundaryDistance = source.addedBoundaryDistance;
     destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
 
-    // ... zeroing out post-processing values ...
 }
 ```
 
-**For Post-Processing settings** - Update `CopyPostProcessingSettings()`:
+Post-processing values never pass through here. They live in `PostProcessSettings` and are saved separately (see the Overview), so there's no cross-tab zeroing to do.
 
-```csharp
-private void CopyPostProcessingSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
-{
-    // ... existing properties ...
-
-    destination.myNewPostProcessingSetting = source.myNewPostProcessingSetting;
-
-    // ... zeroing out scene values ...
-}
-```
-
-**Important:** Also add the zero/default value for your property in the _opposite_ copy method to prevent cross-contamination:
-
-```csharp
-// In CopyPostProcessingSettings(), zero out scene settings:
-destination.addedBoundaryDistance = 0.0f;
-destination.boundaryOutwardDrag = 0.0f;
-
-// In CopySceneSettings(), zero out post-processing settings:
-destination.myNewPostProcessingSetting = 0.0f;
-```
 
 ## Available UI Field Types
 
@@ -332,7 +311,7 @@ copy.myCurve = new AnimationCurve(myCurve.keys);
 
 A plain `copy.myCurve = myCurve;` would share the same object — edits in the menu would mutate the backup.
 
-### MergeSceneSettings() / MergePostProcessingSettings()
+### MergeSceneSettings()
 
 Guard against null or empty curves from older profile JSON files that may not contain the field:
 
@@ -341,18 +320,12 @@ if (loadedSettings.myCurve != null && loadedSettings.myCurve.length > 0)
     runtimeSettings.myCurve = new AnimationCurve(loadedSettings.myCurve.keys);
 ```
 
-### CopySceneSettings() / CopyPostProcessingSettings()
+### CopySceneSettings()
 
 Copy the curve by keys, same as DeepCopy:
 
 ```csharp
 destination.myCurve = new AnimationCurve(source.myCurve.keys);
-```
-
-In the **opposite** copy method, zero it out with an empty curve (not `null`):
-
-```csharp
-destination.myCurve = new AnimationCurve();
 ```
 
 ### CopyInspectorToRuntime() / CopyRuntimeToInspector()
@@ -422,9 +395,9 @@ The settings menu follows this group structure to match the SceneController insp
 
 4. **Missing Copy method update**: Your setting won't save to profiles.
 
-5. **Cross-contamination**: Forgetting to zero out your setting in the opposite Copy method causes scene settings to appear in post-processing profiles and vice versa.
+5. **PP value on `RuntimeSceneSettings`**: post-processing values belong on `PostProcessSettings`, and the menu row must bind to `ActivePP`. Otherwise the Particles / Camera Feed switch, PP profiles and the Volumes never see the value.
 
-6. **Wrong tab**: Adding a scene setting to post-processing methods or vice versa.
+6. **Wrong tab**: Adding a scene setting to the Post Processing tab or vice versa.
 
 7. **Tooltip text drift**: if the field has a `[Tooltip]` on `RuntimeSceneSettings` / `SceneController`, keep the menu `tooltip:` in sync (or copy it verbatim) so the inspector and menu don't contradict each other.
 
@@ -536,12 +509,4 @@ runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 // Boundary Drag settings
 destination.addedBoundaryDistance = source.addedBoundaryDistance;
 destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
-```
-
-### InGameSettingsMenu.cs - CopyPostProcessingSettings()
-
-```csharp
-// Zero out boundary drag settings
-destination.addedBoundaryDistance = 0.0f;
-destination.boundaryOutwardDrag = 0.0f;
 ```

@@ -341,12 +341,9 @@ private void CopyYourNewTabSettings(RuntimeSceneSettings source, RuntimeSceneSet
     // Scene settings:
     destination.g = 0.0f;
     destination.maxTowardsForce = 0.0f;
-    // ... (copy all the scene setting defaults from CopyPostProcessingSettings)
-    
-    // Post-processing settings:
-    destination.bloomThreshold = 0.0f;
-    destination.bloomIntensity = 0.0f;
-    // ... (copy all the post-processing setting defaults from CopySceneSettings)
+    // ... (every other scene field)
+    // Post-processing needs no zeroing: it lives in the nested PostProcessSettings
+    // objects, which a fresh RuntimeSceneSettings leaves at their defaults.
 }
 
 private void MergeYourNewTabSettings(RuntimeSceneSettings loadedSettings)

@@ -41,14 +41,11 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private RuntimeSceneSettings runtimeSettings;
     private string currentSceneProfilePath = "";
-    private string currentPostProcessingProfilePath = "";
 
     // Dirty tracking: canonical JSON of the scene / PP slice as it was when the active profile
     // was last loaded or saved. Dirty = current canonical JSON differs from this.
     private string sceneBaselineJson = "";
-    private string postProcessingBaselineJson = "";
     private bool isSceneDirty;
-    private bool isPostProcessingDirty;
     private Label sceneDirtyLabel;
     private Label postProcessingDirtyLabel;
 
@@ -57,7 +54,59 @@ public class InGameSettingsMenu : MonoBehaviour
     private string sceneProfilesDirectory;
     private string postProcessingProfilesDirectory;
     private string lastUsedSceneProfileKey = "LastUsedSceneProfile";
-    private string lastUsedPostProcessingProfileKey = "LastUsedPostProcessingProfile";
+
+    /// <summary>
+    /// Post-processing has two targets - the particle layer and the camera feed - each with its
+    /// own look, active profile, dirty baseline and last-used key. Any PP profile file loads
+    /// into either one; the Post Processing tab edits whichever is selected.
+    /// </summary>
+    public enum PostProcessingTarget
+    {
+        Particles,
+        Feed,
+    }
+
+    private class PostProcessingTargetState
+    {
+        public string displayName;
+        public string profilePath = "";
+        public string baselineJson = "";
+        public bool isDirty;
+        public string lastUsedKey;
+        public Func<RuntimeSceneSettings, PostProcessSettings> get;
+        public Action<RuntimeSceneSettings, PostProcessSettings> set;
+
+        public string ProfileName =>
+            string.IsNullOrEmpty(profilePath) ? "" : Path.GetFileNameWithoutExtension(profilePath);
+    }
+
+    private readonly PostProcessingTargetState particlePP = new()
+    {
+        displayName = "Particles",
+        lastUsedKey = "LastUsedPostProcessingProfile",
+        get = s => s.particlePostProcessing ??= new PostProcessSettings(),
+        set = (s, v) => s.particlePostProcessing = v,
+    };
+
+    private readonly PostProcessingTargetState feedPP = new()
+    {
+        displayName = "Camera Feed",
+        lastUsedKey = "LastUsedFeedPostProcessingProfile",
+        get = s => s.feedPostProcessing ??= new PostProcessSettings(),
+        set = (s, v) => s.feedPostProcessing = v,
+    };
+
+    private PostProcessingTarget activePostProcessingTarget = PostProcessingTarget.Particles;
+    private Button postProcessingTargetParticlesButton,
+        postProcessingTargetFeedButton;
+
+    private PostProcessingTargetState GetPPState(PostProcessingTarget target) =>
+        target == PostProcessingTarget.Feed ? feedPP : particlePP;
+
+    private PostProcessingTargetState ActivePPState => GetPPState(activePostProcessingTarget);
+
+    /// <summary>The look the Post Processing tab's fields read and write.</summary>
+    private PostProcessSettings ActivePP => ActivePPState.get(runtimeSettings);
 
     private readonly List<VisualElement> settingGroups = new();
     private readonly Dictionary<string, VisualElement> settingElements = new();
@@ -141,8 +190,8 @@ public class InGameSettingsMenu : MonoBehaviour
         if (Controller != null)
         {
             lastUsedSceneProfileKey = Controller.GetSceneSpecificSceneProfileKey();
-            lastUsedPostProcessingProfileKey =
-                Controller.GetSceneSpecificPostProcessingProfileKey();
+            particlePP.lastUsedKey = Controller.GetSceneSpecificPostProcessingProfileKey();
+            feedPP.lastUsedKey = Controller.GetSceneSpecificFeedPostProcessingProfileKey();
         }
     }
 
@@ -155,13 +204,14 @@ public class InGameSettingsMenu : MonoBehaviour
             Controller != null
             && (
                 lastUsedSceneProfileKey == "LastUsedSceneProfile"
-                || lastUsedPostProcessingProfileKey == "LastUsedPostProcessingProfile"
+                || particlePP.lastUsedKey == "LastUsedPostProcessingProfile"
+                || feedPP.lastUsedKey == "LastUsedFeedPostProcessingProfile"
             )
         )
         {
             lastUsedSceneProfileKey = Controller.GetSceneSpecificSceneProfileKey();
-            lastUsedPostProcessingProfileKey =
-                Controller.GetSceneSpecificPostProcessingProfileKey();
+            particlePP.lastUsedKey = Controller.GetSceneSpecificPostProcessingProfileKey();
+            feedPP.lastUsedKey = Controller.GetSceneSpecificFeedPostProcessingProfileKey();
         }
     }
 
@@ -263,6 +313,12 @@ public class InGameSettingsMenu : MonoBehaviour
             postProcessingSaveAsButton = postProcessingTabContent.Q<Button>(
                 "PostProcessingSaveAsButton"
             );
+            postProcessingTargetParticlesButton = postProcessingTabContent.Q<Button>(
+                "PostProcessingTargetParticles"
+            );
+            postProcessingTargetFeedButton = postProcessingTabContent.Q<Button>(
+                "PostProcessingTargetFeed"
+            );
         }
 
         closeButton = root.Q<Button>("CloseButton");
@@ -291,6 +347,20 @@ public class InGameSettingsMenu : MonoBehaviour
 
         sceneTab.clicked += () => SwitchTab("scene");
         postProcessingTab.clicked += () => SwitchTab("postprocessing");
+
+        if (postProcessingTargetParticlesButton != null)
+            postProcessingTargetParticlesButton.clicked += () =>
+                SwitchPostProcessingTarget(PostProcessingTarget.Particles);
+        if (postProcessingTargetFeedButton != null)
+        {
+            postProcessingTargetFeedButton.clicked += () =>
+                SwitchPostProcessingTarget(PostProcessingTarget.Feed);
+            // Scenes without a separate feed pass have nothing for the feed look to drive.
+            bool hasFeedVolume = Controller?.volumeController?.feedVolume != null;
+            postProcessingTargetFeedButton.style.display = hasFeedVolume
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
 
         // Auto-load when dropdown selections change
         if (sceneProfileDropdown != null)
@@ -394,6 +464,27 @@ public class InGameSettingsMenu : MonoBehaviour
             sceneTabContent?.RemoveFromClassList("active");
             postProcessingTabContent?.AddToClassList("active");
         }
+    }
+
+    private void SwitchPostProcessingTarget(PostProcessingTarget target)
+    {
+        if (target == activePostProcessingTarget)
+            return;
+        activePostProcessingTarget = target;
+
+        postProcessingTargetParticlesButton?.EnableInClassList(
+            "active",
+            target == PostProcessingTarget.Particles
+        );
+        postProcessingTargetFeedButton?.EnableInClassList(
+            "active",
+            target == PostProcessingTarget.Feed
+        );
+
+        // Point the dropdown at this target's profile and rebind the fields to its look.
+        postProcessingProfileDropdown?.SetValueWithoutNotify(ActivePPState.ProfileName);
+        RefreshUI();
+        UpdateDirtyIndicators();
     }
 
     private void CreateGravityAttractionGroup(ScrollView parentContainer)
@@ -1195,22 +1286,22 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(
             bloomGroup,
             "Bloom Threshold",
-            () => runtimeSettings.bloomThreshold,
-            v => runtimeSettings.bloomThreshold = v
+            () => ActivePP.bloomThreshold,
+            v => ActivePP.bloomThreshold = v
         );
         CreateSliderField(
             bloomGroup,
             "Bloom Intensity",
-            () => runtimeSettings.bloomIntensity,
-            v => runtimeSettings.bloomIntensity = v,
+            () => ActivePP.bloomIntensity,
+            v => ActivePP.bloomIntensity = v,
             0f,
             3f
         );
         CreateSliderField(
             bloomGroup,
             "Bloom Scatter",
-            () => runtimeSettings.bloomScatter,
-            v => runtimeSettings.bloomScatter = v,
+            () => ActivePP.bloomScatter,
+            v => ActivePP.bloomScatter = v,
             0f,
             1f
         );
@@ -1220,64 +1311,64 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(
             lensFlareGroup,
             "Intensity",
-            () => runtimeSettings.lensFlareIntensity,
-            v => runtimeSettings.lensFlareIntensity = v,
+            () => ActivePP.lensFlareIntensity,
+            v => ActivePP.lensFlareIntensity = v,
             0f,
             3f
         );
         CreateSliderField(
             lensFlareGroup,
             "Regular Multiplier (Flares)",
-            () => runtimeSettings.lensFlareRegularMultiplier,
-            v => runtimeSettings.lensFlareRegularMultiplier = v,
+            () => ActivePP.lensFlareRegularMultiplier,
+            v => ActivePP.lensFlareRegularMultiplier = v,
             0f,
             3f
         );
         CreateSliderField(
             lensFlareGroup,
             "Reversed Multiplier (Flares)",
-            () => runtimeSettings.lensFlareReversedMultiplier,
-            v => runtimeSettings.lensFlareReversedMultiplier = v,
+            () => ActivePP.lensFlareReversedMultiplier,
+            v => ActivePP.lensFlareReversedMultiplier = v,
             0f,
             3f
         );
         CreateSliderField(
             lensFlareGroup,
             "Multiplier (Streaks)",
-            () => runtimeSettings.lensFlareStreaksMultiplier,
-            v => runtimeSettings.lensFlareStreaksMultiplier = v,
+            () => ActivePP.lensFlareStreaksMultiplier,
+            v => ActivePP.lensFlareStreaksMultiplier = v,
             0f,
             3f
         );
         CreateSliderField(
             lensFlareGroup,
             "Length (Streaks)",
-            () => runtimeSettings.lensFlareStreaksLength,
-            v => runtimeSettings.lensFlareStreaksLength = v,
+            () => ActivePP.lensFlareStreaksLength,
+            v => ActivePP.lensFlareStreaksLength = v,
             0f,
             1f
         );
         CreateSliderField(
             lensFlareGroup,
             "Orientation (Streaks)",
-            () => runtimeSettings.lensFlareStreaksOrientation,
-            v => runtimeSettings.lensFlareStreaksOrientation = v,
+            () => ActivePP.lensFlareStreaksOrientation,
+            v => ActivePP.lensFlareStreaksOrientation = v,
             -180f,
             180f
         );
         CreateSliderField(
             lensFlareGroup,
             "Threshold (Streaks)",
-            () => runtimeSettings.lensFlareStreaksThreshold,
-            v => runtimeSettings.lensFlareStreaksThreshold = v,
+            () => ActivePP.lensFlareStreaksThreshold,
+            v => ActivePP.lensFlareStreaksThreshold = v,
             0f,
             1f
         );
         CreateSliderField(
             lensFlareGroup,
             "Chromatic Aberration Intensity",
-            () => runtimeSettings.lensFlareChromaticIntensity,
-            v => runtimeSettings.lensFlareChromaticIntensity = v,
+            () => ActivePP.lensFlareChromaticIntensity,
+            v => ActivePP.lensFlareChromaticIntensity = v,
             0f,
             1f
         );
@@ -1287,48 +1378,48 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(
             lensDistortionGroup,
             "Intensity",
-            () => runtimeSettings.lensDistortionIntensity,
-            v => runtimeSettings.lensDistortionIntensity = v,
+            () => ActivePP.lensDistortionIntensity,
+            v => ActivePP.lensDistortionIntensity = v,
             -1f,
             1f
         );
         CreateSliderField(
             lensDistortionGroup,
             "X Multiplier",
-            () => runtimeSettings.lensDistortionXMultiplier,
-            v => runtimeSettings.lensDistortionXMultiplier = v,
+            () => ActivePP.lensDistortionXMultiplier,
+            v => ActivePP.lensDistortionXMultiplier = v,
             0f,
             2f
         );
         CreateSliderField(
             lensDistortionGroup,
             "Y Multiplier",
-            () => runtimeSettings.lensDistortionYMultiplier,
-            v => runtimeSettings.lensDistortionYMultiplier = v,
+            () => ActivePP.lensDistortionYMultiplier,
+            v => ActivePP.lensDistortionYMultiplier = v,
             0f,
             2f
         );
         CreateSliderField(
             lensDistortionGroup,
             "Scale",
-            () => runtimeSettings.lensDistortionScale,
-            v => runtimeSettings.lensDistortionScale = v,
+            () => ActivePP.lensDistortionScale,
+            v => ActivePP.lensDistortionScale = v,
             0.01f,
             3f
         );
         CreateSliderField(
             lensDistortionGroup,
             "Center X",
-            () => runtimeSettings.lensDistortionCenterX,
-            v => runtimeSettings.lensDistortionCenterX = v,
+            () => ActivePP.lensDistortionCenterX,
+            v => ActivePP.lensDistortionCenterX = v,
             0f,
             1f
         );
         CreateSliderField(
             lensDistortionGroup,
             "Center Y",
-            () => runtimeSettings.lensDistortionCenterY,
-            v => runtimeSettings.lensDistortionCenterY = v,
+            () => ActivePP.lensDistortionCenterY,
+            v => ActivePP.lensDistortionCenterY = v,
             0f,
             1f
         );
@@ -1338,30 +1429,30 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateFloatField(
             colorAdjustmentsGroup,
             "Post Exposure",
-            () => runtimeSettings.colorAdjustmentsPostExposure,
-            v => runtimeSettings.colorAdjustmentsPostExposure = v
+            () => ActivePP.colorAdjustmentsPostExposure,
+            v => ActivePP.colorAdjustmentsPostExposure = v
         );
         CreateSliderField(
             colorAdjustmentsGroup,
             "Contrast",
-            () => runtimeSettings.colorAdjustmentsContrast,
-            v => runtimeSettings.colorAdjustmentsContrast = v,
+            () => ActivePP.colorAdjustmentsContrast,
+            v => ActivePP.colorAdjustmentsContrast = v,
             -100f,
             100f
         );
         CreateSliderField(
             colorAdjustmentsGroup,
             "Hue Shift",
-            () => runtimeSettings.colorAdjustmentsHueShift,
-            v => runtimeSettings.colorAdjustmentsHueShift = v,
+            () => ActivePP.colorAdjustmentsHueShift,
+            v => ActivePP.colorAdjustmentsHueShift = v,
             -180f,
             180f
         );
         CreateSliderField(
             colorAdjustmentsGroup,
             "Saturation",
-            () => runtimeSettings.colorAdjustmentsSaturation,
-            v => runtimeSettings.colorAdjustmentsSaturation = v,
+            () => ActivePP.colorAdjustmentsSaturation,
+            v => ActivePP.colorAdjustmentsSaturation = v,
             -100f,
             100f
         );
@@ -1371,16 +1462,16 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateSliderField(
             whiteBalanceGroup,
             "Temperature",
-            () => runtimeSettings.whiteBalanceTemperature,
-            v => runtimeSettings.whiteBalanceTemperature = v,
+            () => ActivePP.whiteBalanceTemperature,
+            v => ActivePP.whiteBalanceTemperature = v,
             -100f,
             100f
         );
         CreateSliderField(
             whiteBalanceGroup,
             "Tint",
-            () => runtimeSettings.whiteBalanceTint,
-            v => runtimeSettings.whiteBalanceTint = v,
+            () => ActivePP.whiteBalanceTint,
+            v => ActivePP.whiteBalanceTint = v,
             -100f,
             100f
         );
@@ -1397,20 +1488,27 @@ public class InGameSettingsMenu : MonoBehaviour
             v => runtimeSettings.customColors = v,
             tooltip: "Assign each new player a color from the custom palette (set in the SceneController inspector) instead of the default gradient."
         );
-        CreateToggleField(
-            group,
-            "Draw Skeleton",
-            () => runtimeSettings.drawSkeleton,
-            v => runtimeSettings.drawSkeleton = v,
-            tooltip: "Draw line-renderer bones between tracked Kinect joints for each player."
-        );
-        CreateToggleField(
-            group,
-            "Use Tracking State Colors",
-            () => runtimeSettings.useTrackingStateColors,
-            v => runtimeSettings.useTrackingStateColors = v,
-            tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color. Only applies when Draw Skeleton is on."
-        );
+
+        // Kinect-only settings: dummies have no tracked skeleton, so hide them in dummy-only mode.
+        // Values still load and save with the profile, so shared profiles keep them.
+        bool kinectSettingsVisible = Controller == null || !Controller.dummyOnlyMode;
+        if (kinectSettingsVisible)
+        {
+            CreateToggleField(
+                group,
+                "Draw Skeleton",
+                () => runtimeSettings.drawSkeleton,
+                v => runtimeSettings.drawSkeleton = v,
+                tooltip: "Draw line-renderer bones between tracked Kinect joints for each player."
+            );
+            CreateToggleField(
+                group,
+                "Use Tracking State Colors",
+                () => runtimeSettings.useTrackingStateColors,
+                v => runtimeSettings.useTrackingStateColors = v,
+                tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color. Only applies when Draw Skeleton is on."
+            );
+        }
     }
 
     private void CreateDebuggingGroup(ScrollView parentContainer)
@@ -1734,6 +1832,7 @@ public class InGameSettingsMenu : MonoBehaviour
         AttachTooltip(labelElement, tooltip);
 
         var toggle = new Toggle();
+        toggle.name = label;
         toggle.AddToClassList("toggle");
         toggle.value = getter();
         toggle.RegisterValueChangedCallback(evt =>
@@ -2177,34 +2276,43 @@ public class InGameSettingsMenu : MonoBehaviour
         if (isRefreshingSuppressed)
             return;
 
-        // Working set restored: just point the dropdown at the profile it came from.
-        if (restoredFromWorkingSet)
+        // A restored working set already knows both targets' profiles - just show the active one.
+        if (!restoredFromWorkingSet)
         {
-            string name = Path.GetFileNameWithoutExtension(currentPostProcessingProfilePath ?? "");
-            if (!string.IsNullOrEmpty(name) && profileFiles.Contains(name))
-                postProcessingProfileDropdown.SetValueWithoutNotify(name);
-            return;
+            // Particles: last used for this scene, else the first profile. The feed: its own
+            // last used profile, else the same profile as the particles.
+            AutoLoadPostProcessingProfile(
+                PostProcessingTarget.Particles,
+                profileFiles,
+                profileFiles.FirstOrDefault()
+            );
+            AutoLoadPostProcessingProfile(
+                PostProcessingTarget.Feed,
+                profileFiles,
+                particlePP.ProfileName
+            );
         }
 
-        // Try to restore last used post-processing profile for this specific scene
-        string lastUsedProfile = PlayerPrefs.GetString(lastUsedPostProcessingProfileKey, "");
-        if (!string.IsNullOrEmpty(lastUsedProfile) && profileFiles.Contains(lastUsedProfile))
-        {
-            postProcessingProfileDropdown.SetValueWithoutNotify(lastUsedProfile);
-            LoadProfile(
-                Path.Combine(postProcessingProfilesDirectory, lastUsedProfile + ".json"),
-                ProfileType.PostProcessing
-            );
-        }
-        else if (profileFiles.Count > 0)
-        {
-            // If no scene-specific profile exists, use the first available but don't save it as preference yet
-            postProcessingProfileDropdown.SetValueWithoutNotify(profileFiles[0]);
-            LoadProfile(
-                Path.Combine(postProcessingProfilesDirectory, profileFiles[0] + ".json"),
-                ProfileType.PostProcessing
-            );
-        }
+        string name = ActivePPState.ProfileName;
+        if (!string.IsNullOrEmpty(name) && profileFiles.Contains(name))
+            postProcessingProfileDropdown.SetValueWithoutNotify(name);
+    }
+
+    private void AutoLoadPostProcessingProfile(
+        PostProcessingTarget target,
+        List<string> profileFiles,
+        string fallbackProfile
+    )
+    {
+        string lastUsedProfile = PlayerPrefs.GetString(GetPPState(target).lastUsedKey, "");
+        string profile = profileFiles.Contains(lastUsedProfile) ? lastUsedProfile : fallbackProfile;
+        if (string.IsNullOrEmpty(profile) || !profileFiles.Contains(profile))
+            return;
+        LoadProfile(
+            Path.Combine(postProcessingProfilesDirectory, profile + ".json"),
+            ProfileType.PostProcessing,
+            target
+        );
     }
 
     private void RefreshProfileDropdowns()
@@ -2236,11 +2344,15 @@ public class InGameSettingsMenu : MonoBehaviour
                 postProcessingProfilesDirectory,
                 postProcessingProfileDropdown.value + ".json"
             );
-            LoadProfile(profilePath, ProfileType.PostProcessing);
+            LoadProfile(profilePath, ProfileType.PostProcessing, activePostProcessingTarget);
         }
     }
 
-    private void LoadProfile(string path, ProfileType profileType)
+    private void LoadProfile(
+        string path,
+        ProfileType profileType,
+        PostProcessingTarget ppTarget = PostProcessingTarget.Particles
+    )
     {
         if (!File.Exists(path))
             return;
@@ -2248,11 +2360,12 @@ public class InGameSettingsMenu : MonoBehaviour
         try
         {
             var json = File.ReadAllText(path);
-            var loadedSettings = JsonUtility.FromJson<RuntimeSceneSettings>(json);
 
             // Merge loaded settings based on profile type
             if (profileType == ProfileType.Scene)
             {
+                var loadedSettings = JsonUtility.FromJson<RuntimeSceneSettings>(json);
+
                 // Legacy (version 0) scene files hold effective values tuned at their own
                 // bodyScale - convert to base-at-1x in memory (never written back here).
                 // PP profiles are version 0 too and must NOT be touched.
@@ -2277,14 +2390,18 @@ public class InGameSettingsMenu : MonoBehaviour
             }
             else if (profileType == ProfileType.PostProcessing)
             {
-                // Load only post-processing settings, keep current scene settings
-                MergePostProcessingSettings(loadedSettings);
-                currentPostProcessingProfilePath = path;
-                postProcessingBaselineJson = CanonicalPostProcessingJson(runtimeSettings);
+                // Load the look into one target only; scene settings and the other target stay.
+                // PP files are PostProcessSettings JSON (older ones are full settings dumps
+                // whose flat PP keys map onto the same field names).
+                var state = GetPPState(ppTarget);
+                var loaded = JsonUtility.FromJson<PostProcessSettings>(json);
+                state.set(runtimeSettings, loaded);
+                state.profilePath = path;
+                state.baselineJson = loaded.ToCanonicalJson();
 
-                // Save as last used post-processing profile
+                // Save as last used post-processing profile for this target
                 string profileName = Path.GetFileNameWithoutExtension(path);
-                PlayerPrefs.SetString(lastUsedPostProcessingProfileKey, profileName);
+                PlayerPrefs.SetString(state.lastUsedKey, profileName);
                 PlayerPrefs.Save();
 
                 // Update Volume Profile with post-processing settings (during play mode)
@@ -2412,45 +2529,6 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.showSecondaryAttractor = loadedSettings.showSecondaryAttractor;
     }
 
-    private void MergePostProcessingSettings(RuntimeSceneSettings loadedSettings)
-    {
-        // Copy only post-processing settings from loaded profile
-        // Keep the current scene settings intact
-
-        // Bloom settings
-        runtimeSettings.bloomThreshold = loadedSettings.bloomThreshold;
-        runtimeSettings.bloomIntensity = loadedSettings.bloomIntensity;
-        runtimeSettings.bloomScatter = loadedSettings.bloomScatter;
-
-        // Lens Flare settings
-        runtimeSettings.lensFlareIntensity = loadedSettings.lensFlareIntensity;
-        runtimeSettings.lensFlareRegularMultiplier = loadedSettings.lensFlareRegularMultiplier;
-        runtimeSettings.lensFlareReversedMultiplier = loadedSettings.lensFlareReversedMultiplier;
-        runtimeSettings.lensFlareStreaksMultiplier = loadedSettings.lensFlareStreaksMultiplier;
-        runtimeSettings.lensFlareStreaksLength = loadedSettings.lensFlareStreaksLength;
-        runtimeSettings.lensFlareStreaksOrientation = loadedSettings.lensFlareStreaksOrientation;
-        runtimeSettings.lensFlareStreaksThreshold = loadedSettings.lensFlareStreaksThreshold;
-        runtimeSettings.lensFlareChromaticIntensity = loadedSettings.lensFlareChromaticIntensity;
-
-        // Lens Distortion settings
-        runtimeSettings.lensDistortionIntensity = loadedSettings.lensDistortionIntensity;
-        runtimeSettings.lensDistortionXMultiplier = loadedSettings.lensDistortionXMultiplier;
-        runtimeSettings.lensDistortionYMultiplier = loadedSettings.lensDistortionYMultiplier;
-        runtimeSettings.lensDistortionScale = loadedSettings.lensDistortionScale;
-        runtimeSettings.lensDistortionCenterX = loadedSettings.lensDistortionCenterX;
-        runtimeSettings.lensDistortionCenterY = loadedSettings.lensDistortionCenterY;
-
-        // Color Adjustments settings
-        runtimeSettings.colorAdjustmentsPostExposure = loadedSettings.colorAdjustmentsPostExposure;
-        runtimeSettings.colorAdjustmentsContrast = loadedSettings.colorAdjustmentsContrast;
-        runtimeSettings.colorAdjustmentsHueShift = loadedSettings.colorAdjustmentsHueShift;
-        runtimeSettings.colorAdjustmentsSaturation = loadedSettings.colorAdjustmentsSaturation;
-
-        // White Balance settings
-        runtimeSettings.whiteBalanceTemperature = loadedSettings.whiteBalanceTemperature;
-        runtimeSettings.whiteBalanceTint = loadedSettings.whiteBalanceTint;
-    }
-
     private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings destination)
     {
         // Copy only non-post-processing settings to destination.
@@ -2542,140 +2620,6 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.showAttractionRadius = source.showAttractionRadius;
         destination.showHandTrailDistorters = source.showHandTrailDistorters;
         destination.showSecondaryAttractor = source.showSecondaryAttractor;
-
-        // Explicitly set all post-processing values to zero/defaults to prevent them from being saved in scene profiles
-        destination.bloomThreshold = 0.0f;
-        destination.bloomIntensity = 0.0f;
-        destination.bloomScatter = 0.0f;
-        destination.lensFlareIntensity = 0.0f;
-        destination.lensFlareRegularMultiplier = 0.0f;
-        destination.lensFlareReversedMultiplier = 0.0f;
-        destination.lensFlareStreaksMultiplier = 0.0f;
-        destination.lensFlareStreaksLength = 0.0f;
-        destination.lensFlareStreaksOrientation = 0.0f;
-        destination.lensFlareStreaksThreshold = 0.0f;
-        destination.lensFlareChromaticIntensity = 0.0f;
-        destination.lensDistortionIntensity = 0.0f;
-        destination.lensDistortionXMultiplier = 0.0f;
-        destination.lensDistortionYMultiplier = 0.0f;
-        destination.lensDistortionScale = 0.0f;
-        destination.lensDistortionCenterX = 0.0f;
-        destination.lensDistortionCenterY = 0.0f;
-        destination.colorAdjustmentsPostExposure = 0.0f;
-        destination.colorAdjustmentsContrast = 0.0f;
-        destination.colorAdjustmentsHueShift = 0.0f;
-        destination.colorAdjustmentsSaturation = 0.0f;
-        destination.whiteBalanceTemperature = 0.0f;
-        destination.whiteBalanceTint = 0.0f;
-    }
-
-    private void CopyPostProcessingSettings(
-        RuntimeSceneSettings source,
-        RuntimeSceneSettings destination
-    )
-    {
-        // Copy only post-processing settings to destination
-        destination.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
-
-        // Bloom settings
-        destination.bloomThreshold = source.bloomThreshold;
-        destination.bloomIntensity = source.bloomIntensity;
-        destination.bloomScatter = source.bloomScatter;
-
-        // Lens Flare settings
-        destination.lensFlareIntensity = source.lensFlareIntensity;
-        destination.lensFlareRegularMultiplier = source.lensFlareRegularMultiplier;
-        destination.lensFlareReversedMultiplier = source.lensFlareReversedMultiplier;
-        destination.lensFlareStreaksMultiplier = source.lensFlareStreaksMultiplier;
-        destination.lensFlareStreaksLength = source.lensFlareStreaksLength;
-        destination.lensFlareStreaksOrientation = source.lensFlareStreaksOrientation;
-        destination.lensFlareStreaksThreshold = source.lensFlareStreaksThreshold;
-        destination.lensFlareChromaticIntensity = source.lensFlareChromaticIntensity;
-
-        // Lens Distortion settings
-        destination.lensDistortionIntensity = source.lensDistortionIntensity;
-        destination.lensDistortionXMultiplier = source.lensDistortionXMultiplier;
-        destination.lensDistortionYMultiplier = source.lensDistortionYMultiplier;
-        destination.lensDistortionScale = source.lensDistortionScale;
-        destination.lensDistortionCenterX = source.lensDistortionCenterX;
-        destination.lensDistortionCenterY = source.lensDistortionCenterY;
-
-        // Color Adjustments settings
-        destination.colorAdjustmentsPostExposure = source.colorAdjustmentsPostExposure;
-        destination.colorAdjustmentsContrast = source.colorAdjustmentsContrast;
-        destination.colorAdjustmentsHueShift = source.colorAdjustmentsHueShift;
-        destination.colorAdjustmentsSaturation = source.colorAdjustmentsSaturation;
-
-        // White Balance settings
-        destination.whiteBalanceTemperature = source.whiteBalanceTemperature;
-        destination.whiteBalanceTint = source.whiteBalanceTint;
-
-        // Explicitly set all scene-specific values to defaults to prevent them from being saved in post-processing profiles
-        destination.g = 0.0f;
-        destination.maxTowardsForce = 0.0f;
-        destination.maxAwayFromForce = 0.0f;
-        destination.gravityForceDamper = 0.0f;
-        destination.stopGravityDistance = 0.0f;
-        destination.stopMovingDistance = 0.0f;
-        destination.stopVelocity = 0.0f;
-        destination.attractionRadiusMultiplier = 0.0f;
-        // Curves are scene settings, not post-processing
-        destination.forceToMiddle = new AnimationCurve();
-        destination.singleHandOpenForceDamper = 0.0f;
-        destination.pushForce = 0.0f;
-        destination.torsoMaxForwardOffset = 0.0f;
-        destination.torsoOffsetFalloffDistance = 0.0f;
-        destination.minDrag = 0.0f;
-        destination.maxDrag = 0.0f;
-        destination.addedBoundaryDistance = 0.0f;
-        destination.boundaryOutwardDrag = 0.0f;
-        destination.outOfBoundsResetDelay = 0.0f;
-        destination.alignmentVectorStrength = new AnimationCurve();
-        destination.alignmentVectorStrengthScaler = 0.0f;
-        destination.handPushScaler = 0.0f;
-        destination.prayToActivate = false;
-        destination.prayToActivateDistance = 0.0f;
-        destination.pulseAmount = 0.0f;
-        destination.pulseSpeed = 0.0f;
-        destination.graphLimit = 0.0f;
-        destination.pulseFreqs = new float[0];
-        destination.singleHandScaling = false;
-        destination.minimumUnscaledSize = 0.0f;
-        destination.maximumUnscaledSize = 0.0f;
-        destination.minHandDisplacementPerFrame = 0.0f;
-        destination.maxHandVelocity = 0.0f;
-        destination.distanceDamper = new AnimationCurve();
-        destination.pulseScaleDamper = 0.0f;
-        destination.mergeSizeScalerDamper = 0.0f;
-        destination.maxDistanceBetweenHands = 0.0f;
-        destination.baseZDepth = 0.0f;
-        destination.gridScale = 0.0f;
-        destination.defaultUnscaledSize = 0.0f;
-        destination.bodyScale = 0.0f;
-        destination.maxDistanceFromCamera = 0.0f;
-        destination.sphereResetJitter = 0.0f;
-        // JsonUtility can't write null for a class field - PP files carry a defaults block
-        // (MergePostProcessingSettings ignores it).
-        destination.handVfx = new HandVfxSettings();
-        destination.particleInitializationDelay = 0.0f;
-        destination.initializationResetDelay = 0.0f;
-        destination.singleHandOpenThreshold = 0.0f;
-        destination.singleHandForceLerpDuration = 0.0f;
-        destination.initializationSpeed = 0.0f;
-        destination.metaballRadiusAnimationDuration = 0.0f;
-        destination.metaballRadiusAnimationStartSize = 0.0f;
-        destination.bodySpawnSize = 0.0f;
-        destination.metaballRadiusAnimationCurve = new AnimationCurve();
-        destination.drawSkeleton = false;
-        destination.customColors = false;
-        destination.showSphereMeshOnHandCollision = false;
-        destination.alwaysShowSphereMesh = false;
-        destination.showMetaballMesh = false;
-        destination.showPointCloud = false;
-        destination.showMetaballBounds = false;
-        destination.showAttractionRadius = false;
-        destination.showHandTrailDistorters = false;
-        destination.showSecondaryAttractor = false;
     }
 
     private void SaveCurrentProfile(TabType tabType)
@@ -2691,12 +2635,12 @@ public class InGameSettingsMenu : MonoBehaviour
         }
         else if (tabType == TabType.PostProcessing)
         {
-            if (string.IsNullOrEmpty(currentPostProcessingProfilePath))
+            if (string.IsNullOrEmpty(ActivePPState.profilePath))
             {
                 ShowSaveAsDialog(tabType);
                 return;
             }
-            SaveProfile(currentPostProcessingProfilePath, tabType);
+            SaveProfile(ActivePPState.profilePath, tabType);
         }
     }
 
@@ -2828,7 +2772,7 @@ public class InGameSettingsMenu : MonoBehaviour
         else
         {
             profilePath = Path.Combine(postProcessingProfilesDirectory, profileName + ".json");
-            lastUsedKey = lastUsedPostProcessingProfileKey;
+            lastUsedKey = ActivePPState.lastUsedKey;
         }
 
         SaveProfile(profilePath, tabType);
@@ -2857,22 +2801,21 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         try
         {
-            RuntimeSceneSettings settingsToSave;
+            string json;
 
             if (tabType == TabType.Scene)
             {
                 // Create a clean settings object with only scene-related data
-                settingsToSave = new RuntimeSceneSettings();
-                // Important: Only copy scene settings, leave all post-processing settings at their default values
+                var settingsToSave = new RuntimeSceneSettings();
                 CopySceneSettings(runtimeSettings, settingsToSave);
                 currentSceneProfilePath = path;
+                json = JsonUtility.ToJson(settingsToSave, true);
             }
             else
             {
-                // Create a settings object with only post-processing data
-                settingsToSave = new RuntimeSceneSettings();
-                CopyPostProcessingSettings(runtimeSettings, settingsToSave);
-                currentPostProcessingProfilePath = path;
+                // A PP profile is just the active target's look.
+                json = JsonUtility.ToJson(ActivePP, true);
+                ActivePPState.profilePath = path;
 
                 // Update volume controller with post-processing settings
                 if (Controller?.volumeController != null)
@@ -2881,14 +2824,13 @@ public class InGameSettingsMenu : MonoBehaviour
                 }
             }
 
-            var json = JsonUtility.ToJson(settingsToSave, true);
             File.WriteAllText(path, json);
 
             // The saved profile is the new baseline for this tab.
             if (tabType == TabType.Scene)
                 sceneBaselineJson = CanonicalSceneJson(runtimeSettings);
             else
-                postProcessingBaselineJson = CanonicalPostProcessingJson(runtimeSettings);
+                ActivePPState.baselineJson = ActivePP.ToCanonicalJson();
             UpdateDirtyState();
             UpdateDirtyIndicators();
             SaveWorkingSet();
@@ -2935,10 +2877,6 @@ public class InGameSettingsMenu : MonoBehaviour
             ? ""
             : Path.GetFileNameWithoutExtension(currentSceneProfilePath);
 
-    private string CurrentPostProcessingProfileName =>
-        string.IsNullOrEmpty(currentPostProcessingProfilePath)
-            ? ""
-            : Path.GetFileNameWithoutExtension(currentPostProcessingProfilePath);
 
     /// <summary>
     /// Replaces the base settings object and keeps the debugging-change subscription attached
@@ -2975,7 +2913,8 @@ public class InGameSettingsMenu : MonoBehaviour
             ActiveSceneName,
             runtimeSettings,
             CurrentSceneProfileName,
-            CurrentPostProcessingProfileName
+            particlePP.ProfileName,
+            feedPP.ProfileName
         );
     }
 
@@ -2992,26 +2931,34 @@ public class InGameSettingsMenu : MonoBehaviour
         SetRuntimeSettings(file.settings.DeepCopy());
 
         currentSceneProfilePath = ResolveProfilePath(sceneProfilesDirectory, file.sceneProfileName);
-        currentPostProcessingProfilePath = ResolveProfilePath(
+        particlePP.profilePath = ResolveProfilePath(
             postProcessingProfilesDirectory,
             file.postProcessingProfileName
         );
+        feedPP.profilePath = ResolveProfilePath(
+            postProcessingProfilesDirectory,
+            file.feedPostProcessingProfileName
+        );
         sceneBaselineJson = ComputeProfileBaseline(currentSceneProfilePath, ProfileType.Scene);
-        postProcessingBaselineJson = ComputeProfileBaseline(
-            currentPostProcessingProfilePath,
+        particlePP.baselineJson = ComputeProfileBaseline(
+            particlePP.profilePath,
             ProfileType.PostProcessing
         );
+        feedPP.baselineJson = ComputeProfileBaseline(feedPP.profilePath, ProfileType.PostProcessing);
 
         // Keep the last-used keys in step so a missing working set still falls back sensibly.
         if (!string.IsNullOrEmpty(currentSceneProfilePath))
             PlayerPrefs.SetString(lastUsedSceneProfileKey, file.sceneProfileName);
-        if (!string.IsNullOrEmpty(currentPostProcessingProfilePath))
-            PlayerPrefs.SetString(lastUsedPostProcessingProfileKey, file.postProcessingProfileName);
+        if (!string.IsNullOrEmpty(particlePP.profilePath))
+            PlayerPrefs.SetString(particlePP.lastUsedKey, file.postProcessingProfileName);
+        if (!string.IsNullOrEmpty(feedPP.profilePath))
+            PlayerPrefs.SetString(feedPP.lastUsedKey, file.feedPostProcessingProfileName);
         PlayerPrefs.Save();
 
         Debug.Log(
             $"[InGameSettingsMenu] Restored working set for '{ActiveSceneName}' "
-                + $"(scene profile '{file.sceneProfileName}', PP profile '{file.postProcessingProfileName}', saved {file.savedAtUtc})."
+                + $"(scene profile '{file.sceneProfileName}', particle PP profile '{file.postProcessingProfileName}', "
+                + $"feed PP profile '{file.feedPostProcessingProfileName}', saved {file.savedAtUtc})."
         );
         return true;
     }
@@ -3035,11 +2982,11 @@ public class InGameSettingsMenu : MonoBehaviour
         try
         {
             string json = File.ReadAllText(path);
+            if (profileType == ProfileType.PostProcessing)
+                return JsonUtility.FromJson<PostProcessSettings>(json).ToCanonicalJson();
+
             var loaded = JsonUtility.FromJson<RuntimeSceneSettings>(json);
-            if (
-                profileType == ProfileType.Scene
-                && loaded.settingsVersion < RuntimeSceneSettings.CurrentSettingsVersion
-            )
+            if (loaded.settingsVersion < RuntimeSceneSettings.CurrentSettingsVersion)
             {
                 BodyScaling.ConvertLegacyProfileInPlace(loaded, json);
             }
@@ -3047,17 +2994,8 @@ public class InGameSettingsMenu : MonoBehaviour
             // Merge into a scratch copy so the merge code stays the single source of truth.
             var live = runtimeSettings;
             runtimeSettings = live.DeepCopy();
-            string baseline;
-            if (profileType == ProfileType.Scene)
-            {
-                MergeSceneSettings(loaded);
-                baseline = CanonicalSceneJson(runtimeSettings);
-            }
-            else
-            {
-                MergePostProcessingSettings(loaded);
-                baseline = CanonicalPostProcessingJson(runtimeSettings);
-            }
+            MergeSceneSettings(loaded);
+            string baseline = CanonicalSceneJson(runtimeSettings);
             runtimeSettings = live;
             return baseline;
         }
@@ -3075,13 +3013,6 @@ public class InGameSettingsMenu : MonoBehaviour
         return JsonUtility.ToJson(clean);
     }
 
-    private string CanonicalPostProcessingJson(RuntimeSceneSettings source)
-    {
-        var clean = new RuntimeSceneSettings();
-        CopyPostProcessingSettings(source, clean);
-        return JsonUtility.ToJson(clean);
-    }
-
     private void UpdateDirtyState()
     {
         if (runtimeSettings == null)
@@ -3089,25 +3020,32 @@ public class InGameSettingsMenu : MonoBehaviour
         isSceneDirty =
             string.IsNullOrEmpty(currentSceneProfilePath)
             || CanonicalSceneJson(runtimeSettings) != sceneBaselineJson;
-        isPostProcessingDirty =
-            string.IsNullOrEmpty(currentPostProcessingProfilePath)
-            || CanonicalPostProcessingJson(runtimeSettings) != postProcessingBaselineJson;
+        foreach (var state in new[] { particlePP, feedPP })
+        {
+            state.isDirty =
+                string.IsNullOrEmpty(state.profilePath)
+                || state.get(runtimeSettings).ToCanonicalJson() != state.baselineJson;
+        }
     }
 
     private void UpdateDirtyIndicators()
     {
         SetDirtyLabel(sceneDirtyLabel, isSceneDirty, currentSceneProfilePath);
-        SetDirtyLabel(
-            postProcessingDirtyLabel,
-            isPostProcessingDirty,
-            currentPostProcessingProfilePath
-        );
+        SetDirtyLabel(postProcessingDirtyLabel, ActivePPState.isDirty, ActivePPState.profilePath);
+        SetTargetButtonText(postProcessingTargetParticlesButton, particlePP);
+        SetTargetButtonText(postProcessingTargetFeedButton, feedPP);
         if (sceneTab != null)
             sceneTab.text = isSceneDirty ? "Scene *" : "Scene";
         if (postProcessingTab != null)
-            postProcessingTab.text = isPostProcessingDirty
+            postProcessingTab.text = IsPostProcessingDirty
                 ? "Post Processing *"
                 : "Post Processing";
+    }
+
+    private static void SetTargetButtonText(Button button, PostProcessingTargetState state)
+    {
+        if (button != null)
+            button.text = state.isDirty ? state.displayName + " *" : state.displayName;
     }
 
     private static void SetDirtyLabel(Label label, bool dirty, string profilePath)
@@ -3119,7 +3057,7 @@ public class InGameSettingsMenu : MonoBehaviour
     }
 
     public bool IsSceneDirty => isSceneDirty;
-    public bool IsPostProcessingDirty => isPostProcessingDirty;
+    public bool IsPostProcessingDirty => particlePP.isDirty || feedPP.isDirty;
 
     /// <summary>
     /// Load the dropdown's profile, asking first when the tab has unsaved changes.
@@ -3127,7 +3065,7 @@ public class InGameSettingsMenu : MonoBehaviour
     /// </summary>
     private void RequestLoadSelectedProfile(TabType tabType, string previousDropdownValue = null)
     {
-        bool dirty = tabType == TabType.Scene ? isSceneDirty : isPostProcessingDirty;
+        bool dirty = tabType == TabType.Scene ? isSceneDirty : ActivePPState.isDirty;
         string tabKey = tabType == TabType.Scene ? "scene" : "postprocessing";
         if (!dirty)
         {
@@ -3136,7 +3074,7 @@ public class InGameSettingsMenu : MonoBehaviour
         }
 
         string activeName =
-            tabType == TabType.Scene ? CurrentSceneProfileName : CurrentPostProcessingProfileName;
+            tabType == TabType.Scene ? CurrentSceneProfileName : ActivePPState.ProfileName;
         string message = string.IsNullOrEmpty(activeName)
             ? "The current settings have not been saved to a profile. Loading will discard them."
             : $"'{activeName}' has unsaved changes. Loading will discard them.";

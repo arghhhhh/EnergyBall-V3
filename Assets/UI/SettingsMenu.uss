@@ -288,3 +288,36 @@
     font-size: 12px;
     white-space: normal;
 }
+
+/* Post Processing tab: which look (particle layer / camera feed) the controls below edit. */
+.pp-target-controls {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.pp-target-label {
+    color: rgb(180, 180, 180);
+    margin-right: 8px;
+}
+
+.pp-target-button {
+    padding: 6px 14px;
+    background-color: rgb(40, 40, 40);
+    border-width: 1px;
+    border-color: rgb(80, 80, 80);
+    border-radius: 4px;
+    color: rgb(180, 180, 180);
+    margin-right: 5px;
+}
+
+.pp-target-button:hover {
+    background-color: rgb(60, 60, 60);
+    color: white;
+}
+
+.pp-target-button.active {
+    background-color: rgb(80, 80, 80);
+    border-color: rgb(140, 140, 140);
+    color: white;
+}

@@ -211,38 +211,10 @@ public class RuntimeSceneSettings
     public bool drawSkeleton = false;
     public bool useTrackingStateColors = true;
 
-    [Header("Bloom")]
-    public float bloomThreshold = 1.0f;
-    public float bloomIntensity = 0.5f;
-    public float bloomScatter = 0.7f;
-
-    [Header("Screen Space Lens Flare")]
-    public float lensFlareIntensity = 1.0f;
-    public float lensFlareRegularMultiplier = 1.0f;
-    public float lensFlareReversedMultiplier = 1.0f;
-    public float lensFlareStreaksMultiplier = 1.0f;
-    public float lensFlareStreaksLength = 0.04f;
-    public float lensFlareStreaksOrientation = 0.0f;
-    public float lensFlareStreaksThreshold = 0.05f;
-    public float lensFlareChromaticIntensity = 1.0f;
-
-    [Header("Lens Distortion")]
-    public float lensDistortionIntensity = 0.0f;
-    public float lensDistortionXMultiplier = 1.0f;
-    public float lensDistortionYMultiplier = 1.0f;
-    public float lensDistortionScale = 1.0f;
-    public float lensDistortionCenterX = 0.5f;
-    public float lensDistortionCenterY = 0.5f;
-
-    [Header("Color Adjustments")]
-    public float colorAdjustmentsPostExposure = 0.0f;
-    public float colorAdjustmentsContrast = 0.0f;
-    public float colorAdjustmentsHueShift = 0.0f;
-    public float colorAdjustmentsSaturation = 0.0f;
-
-    [Header("White Balance")]
-    public float whiteBalanceTemperature = 0.0f;
-    public float whiteBalanceTint = 0.0f;
+    // Post-processing: the particle layer (KinectOverlay, Particles Camera) and the camera feed
+    // (Main Camera) each get their own look. PP profiles load into either target.
+    public PostProcessSettings particlePostProcessing = new();
+    public PostProcessSettings feedPostProcessing = new();
 
     [Header("Debugging")]
     public bool showSphereMeshOnHandCollision = false;
@@ -385,29 +357,10 @@ public class RuntimeSceneSettings
         copy.metaballRadiusAnimationStartSize = metaballRadiusAnimationStartSize;
         copy.bodySpawnSize = bodySpawnSize;
         copy.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
-        copy.bloomThreshold = bloomThreshold;
-        copy.bloomIntensity = bloomIntensity;
-        copy.bloomScatter = bloomScatter;
-        copy.lensFlareIntensity = lensFlareIntensity;
-        copy.lensFlareRegularMultiplier = lensFlareRegularMultiplier;
-        copy.lensFlareReversedMultiplier = lensFlareReversedMultiplier;
-        copy.lensFlareStreaksMultiplier = lensFlareStreaksMultiplier;
-        copy.lensFlareStreaksLength = lensFlareStreaksLength;
-        copy.lensFlareStreaksOrientation = lensFlareStreaksOrientation;
-        copy.lensFlareStreaksThreshold = lensFlareStreaksThreshold;
-        copy.lensFlareChromaticIntensity = lensFlareChromaticIntensity;
-        copy.lensDistortionIntensity = lensDistortionIntensity;
-        copy.lensDistortionXMultiplier = lensDistortionXMultiplier;
-        copy.lensDistortionYMultiplier = lensDistortionYMultiplier;
-        copy.lensDistortionScale = lensDistortionScale;
-        copy.lensDistortionCenterX = lensDistortionCenterX;
-        copy.lensDistortionCenterY = lensDistortionCenterY;
-        copy.colorAdjustmentsPostExposure = colorAdjustmentsPostExposure;
-        copy.colorAdjustmentsContrast = colorAdjustmentsContrast;
-        copy.colorAdjustmentsHueShift = colorAdjustmentsHueShift;
-        copy.colorAdjustmentsSaturation = colorAdjustmentsSaturation;
-        copy.whiteBalanceTemperature = whiteBalanceTemperature;
-        copy.whiteBalanceTint = whiteBalanceTint;
+        copy.particlePostProcessing =
+            particlePostProcessing != null ? particlePostProcessing.DeepCopy() : new PostProcessSettings();
+        copy.feedPostProcessing =
+            feedPostProcessing != null ? feedPostProcessing.DeepCopy() : new PostProcessSettings();
         copy.drawSkeleton = drawSkeleton;
         copy._customColors = _customColors;
         copy.useTrackingStateColors = useTrackingStateColors;

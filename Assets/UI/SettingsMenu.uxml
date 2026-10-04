@@ -26,6 +26,11 @@
             </ui:VisualElement>
             
             <ui:VisualElement name="PostProcessingTabContent" class="tab-panel">
+                <ui:VisualElement name="PostProcessingTargetControls" class="pp-target-controls">
+                    <ui:Label text="Target" class="pp-target-label" />
+                    <ui:Button text="Particles" name="PostProcessingTargetParticles" class="pp-target-button active" />
+                    <ui:Button text="Camera Feed" name="PostProcessingTargetFeed" class="pp-target-button" />
+                </ui:VisualElement>
                 <ui:VisualElement name="PostProcessingProfileControls" class="profile-controls">
                     <ui:DropdownField name="PostProcessingProfileDropdown" style="flex-grow: 1;" />
                     <ui:Label name="PostProcessingDirtyLabel" text="Unsaved changes" class="profile-dirty-label" style="display: none;" />

@@ -128,8 +128,9 @@ calling a value "inline".
   `SyncInspectorToRuntime`.
 - JsonUtility: missing keys keep the C# defaults, which must therefore be base
   values. Nested `[Serializable]` classes and `Vector2/3` serialize fine. It cannot
-  write `null` for a class field, so post-processing profiles carry a default
-  `handVfx` block that `MergePostProcessingSettings` ignores.
+  write `null` for a class field, so scene profiles carry default
+  `particlePostProcessing` / `feedPostProcessing` blocks that `MergeSceneSettings`
+  ignores (PP lives in `PostProcessSettings` files of its own).
 - `VisualEffect.Set*` on a name the compiled graph lacks logs an error, so always
   `Has*`-guard (the applier does). After commit-jumping across `.vfx` / prefab
   changes: reimport the VFX assets, run `Edit/VFX/Rebuild And Save All VFX Graphs`,

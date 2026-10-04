@@ -10,7 +10,8 @@ using UnityEngine;
 /// file is always the newest state. On play start the menu restores from it (instead of
 /// auto-loading the last-used profile); on play exit the editor hook in SceneController copies
 /// it back into the inspector twins. "Dirty" means the working set differs from the profile it
-/// was derived from (<see cref="sceneProfileName"/> / <see cref="postProcessingProfileName"/>).
+/// was derived from (<see cref="File.sceneProfileName"/> / <see cref="File.postProcessingProfileName"/>
+/// for the particle PP target / <see cref="File.feedPostProcessingProfileName"/> for the feed).
 ///
 /// Stored under Application.persistentDataPath (StreamingAssets is read-only in builds), keyed
 /// by scene name like the last-used-profile PlayerPrefs keys.
@@ -24,8 +25,17 @@ public static class SettingsWorkingSet
         public string sceneName = "";
         public string sceneProfileName = "";
         public string postProcessingProfileName = "";
+        public string feedPostProcessingProfileName = "";
         public string savedAtUtc = "";
         public RuntimeSceneSettings settings;
+    }
+
+    // Pre-split working sets stored the PP values flat on the settings object. Reading the same
+    // text through this shape maps those flat keys onto a PostProcessSettings.
+    [Serializable]
+    private class LegacyPostProcessFile
+    {
+        public PostProcessSettings settings;
     }
 
     private const string DirectoryName = "SettingsWorkingSet";
@@ -48,7 +58,8 @@ public static class SettingsWorkingSet
             return null;
         try
         {
-            var file = JsonUtility.FromJson<File>(System.IO.File.ReadAllText(path));
+            string json = System.IO.File.ReadAllText(path);
+            var file = JsonUtility.FromJson<File>(json);
             if (file == null || file.settings == null)
                 return null;
             // The working set is always written as base-at-1x; a v0 payload can only come from
@@ -59,6 +70,15 @@ public static class SettingsWorkingSet
                     $"[SettingsWorkingSet] '{path}' holds a legacy settings payload - ignoring it."
                 );
                 return null;
+            }
+            if (!json.Contains("\"particlePostProcessing\""))
+            {
+                // Pre-split file: one look drove everything, so both targets start from it.
+                var legacy = JsonUtility.FromJson<LegacyPostProcessFile>(json);
+                var look = legacy?.settings ?? new PostProcessSettings();
+                file.settings.particlePostProcessing = look;
+                file.settings.feedPostProcessing = look.DeepCopy();
+                file.feedPostProcessingProfileName = file.postProcessingProfileName;
             }
             return file;
         }
@@ -73,7 +93,8 @@ public static class SettingsWorkingSet
         string sceneName,
         RuntimeSceneSettings settings,
         string sceneProfileName,
-        string postProcessingProfileName
+        string postProcessingProfileName,
+        string feedPostProcessingProfileName
     )
     {
         if (settings == null)
@@ -85,6 +106,7 @@ public static class SettingsWorkingSet
                 sceneName = sceneName,
                 sceneProfileName = sceneProfileName ?? "",
                 postProcessingProfileName = postProcessingProfileName ?? "",
+                feedPostProcessingProfileName = feedPostProcessingProfileName ?? "",
                 savedAtUtc = DateTime.UtcNow.ToString("o"),
                 settings = settings.DeepCopy(),
             };
