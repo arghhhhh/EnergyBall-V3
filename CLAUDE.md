@@ -159,6 +159,14 @@ following the existing pattern:
   `EnergyBall/Migrate Scene Profiles To Base` (Editor menu) rewrites v0 files.
 - `InGameSettingsMenu.cs` / `SettingsMenuSetup.cs` — live in-game tuning UI (base
   values, labels carry `(×s)` / `(×s²)` / `(×1/s)` hints).
+- **Feature-gated settings**: `SceneController.SceneFeature` (`Kinect` = not
+  `dummyOnlyMode`; `CameraFeed` = Kinect + `cameraFeedQuad` assigned). The menu builds
+  such rows only inside `if (SceneSupports(SceneFeature.X))`. Their SceneController twins
+  use NaughtyAttributes `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`, or a named
+  condition property when combined with another rule (NaughtyAttributes allows one
+  ShowIf/HideIf per field). Hidden settings still load and save with profiles. Kinect:
+  skeleton drawing/colors. CameraFeed: `showCameraFeed` (toggles the feed quad's
+  renderer in play mode).
 - Post-processing values live in `PostProcessSettings.cs`, held twice on the settings
   (`particlePostProcessing`, `feedPostProcessing`). PP profile files are serialized
   straight from `PostProcessSettings`, and older files with flat keys load unchanged.

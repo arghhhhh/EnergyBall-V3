@@ -24,6 +24,13 @@ public class InGameSettingsMenu : MonoBehaviour
     /// </summary>
     private SceneController Controller => SceneController.Instance;
 
+    /// <summary>
+    /// True when the scene has <paramref name="feature"/> (Kinect, camera feed). Settings that
+    /// depend on one are only built when it's present. Without a controller nothing is hidden.
+    /// </summary>
+    private bool SceneSupports(SceneController.SceneFeature feature) =>
+        Controller == null || Controller.HasFeature(feature);
+
     private VisualElement settingsPanel;
     private ScrollView sceneSettingsPanel;
     private ScrollView postProcessingPanel;
@@ -1489,10 +1496,19 @@ public class InGameSettingsMenu : MonoBehaviour
             tooltip: "Assign each new player a color from the custom palette (set in the SceneController inspector) instead of the default gradient."
         );
 
-        // Kinect-only settings: dummies have no tracked skeleton, so hide them in dummy-only mode.
-        // Values still load and save with the profile, so shared profiles keep them.
-        bool kinectSettingsVisible = Controller == null || !Controller.dummyOnlyMode;
-        if (kinectSettingsVisible)
+        // Feature-dependent settings are hidden (not dropped) where the scene lacks the feature:
+        // their values still load and save with the profile, so shared profiles keep them.
+        if (SceneSupports(SceneController.SceneFeature.CameraFeed))
+        {
+            CreateToggleField(
+                group,
+                "Show Camera Feed",
+                () => runtimeSettings.showCameraFeed,
+                v => runtimeSettings.showCameraFeed = v,
+                tooltip: "Show the Kinect color feed behind the players. Off leaves a black background."
+            );
+        }
+        if (SceneSupports(SceneController.SceneFeature.Kinect))
         {
             CreateToggleField(
                 group,
@@ -2514,6 +2530,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Style settings
         runtimeSettings.customColors = loadedSettings.customColors;
+        runtimeSettings.showCameraFeed = loadedSettings.showCameraFeed;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
         runtimeSettings.useTrackingStateColors = loadedSettings.useTrackingStateColors;
 
@@ -2608,6 +2625,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Style settings
         destination.customColors = source.customColors;
+        destination.showCameraFeed = source.showCameraFeed;
         destination.drawSkeleton = source.drawSkeleton;
         destination.useTrackingStateColors = source.useTrackingStateColors;
 

@@ -26,6 +26,13 @@ CreateSliderField(bloomGroup, "Bloom Intensity", () => ActivePP.bloomIntensity, 
 
 Steps 1–8 below are for **scene** settings.
 
+**Settings that need a feature.** If a setting only makes sense with a live Kinect, or with a camera feed in the scene, gate it on `SceneController.SceneFeature` rather than on a scene name:
+
+- Menu: build the row inside `if (SceneSupports(SceneController.SceneFeature.Kinect)) { ... }` (or `CameraFeed`).
+- Inspector: give the SceneController twin `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`. NaughtyAttributes allows one ShowIf/HideIf per field, so when the field already has a rule, combine them with `EConditionOperator.And`. If a rule needs negation, add a named condition property next to `ShowTrackingStateColorsField`.
+- Load, save and copy as usual. The value stays in profiles even where it's hidden, so profiles shared between scenes keep it.
+- A new kind of feature means a new `SceneFeature` flag, set in `SceneController.Features`.
+
 ## Quick Reference
 
 | Step | File                      | Action                                                           |

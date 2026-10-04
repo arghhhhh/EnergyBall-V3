@@ -208,6 +208,7 @@ public class RuntimeSceneSettings
             }
         }
     }
+    public bool showCameraFeed = true;
     public bool drawSkeleton = false;
     public bool useTrackingStateColors = true;
 
@@ -361,6 +362,7 @@ public class RuntimeSceneSettings
             particlePostProcessing != null ? particlePostProcessing.DeepCopy() : new PostProcessSettings();
         copy.feedPostProcessing =
             feedPostProcessing != null ? feedPostProcessing.DeepCopy() : new PostProcessSettings();
+        copy.showCameraFeed = showCameraFeed;
         copy.drawSkeleton = drawSkeleton;
         copy._customColors = _customColors;
         copy.useTrackingStateColors = useTrackingStateColors;

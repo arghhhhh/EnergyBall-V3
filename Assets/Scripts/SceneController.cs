@@ -18,6 +18,47 @@ public class SceneController : MonoBehaviour
     public InGameSettingsMenu settingsMenu;
     public VolumeController volumeController;
 
+    /// <summary>
+    /// Hardware / scene capabilities a setting can depend on. Settings that only make sense
+    /// with a live Kinect, or with a camera feed in the scene, are shown in the in-game menu and
+    /// the inspector only when the feature is present (see <see cref="HasFeature"/>).
+    /// </summary>
+    [System.Flags]
+    public enum SceneFeature
+    {
+        None = 0,
+
+        /// <summary>A Kinect drives the players (not dummy-only mode).</summary>
+        Kinect = 1 << 0,
+
+        /// <summary>The Kinect color feed is shown in this scene (a feed quad is assigned).</summary>
+        CameraFeed = 1 << 1,
+    }
+
+    public SceneFeature Features
+    {
+        get
+        {
+            var features = SceneFeature.None;
+            if (!dummyOnlyMode)
+            {
+                features |= SceneFeature.Kinect;
+                if (cameraFeedQuad != null)
+                    features |= SceneFeature.CameraFeed;
+            }
+            return features;
+        }
+    }
+
+    public bool HasFeature(SceneFeature feature) => (Features & feature) == feature;
+
+    // NaughtyAttributes visibility conditions (one ShowIf per field, so combined rules get a
+    // named property). They mirror what the in-game menu shows.
+    private bool HasKinect => HasFeature(SceneFeature.Kinect);
+    private bool HasCameraFeed => HasFeature(SceneFeature.CameraFeed);
+    private bool ShowTrackingStateColorsField => HasKinect && !customColors;
+    private bool ShowSkeletonColorField => ShowTrackingStateColorsField && !useTrackingStateColors;
+
     #region Inspector Settings
     [BoxGroup("Gravity Attraction")]
     [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
@@ -283,12 +324,12 @@ public class SceneController : MonoBehaviour
     public bool customColors = false;
 
     [BoxGroup("Style Settings")]
-    [HideIf(EConditionOperator.Or, "customColors", "dummyOnlyMode")]
+    [ShowIf("ShowTrackingStateColorsField")]
     [Tooltip("Use tracking state colors for the skeleton")]
     public bool useTrackingStateColors = true;
 
     [BoxGroup("Style Settings")]
-    [HideIf(EConditionOperator.Or, "customColors", "useTrackingStateColors")]
+    [ShowIf("ShowSkeletonColorField")]
     public Color skeletonColor = Color.magenta;
 
     [BoxGroup("Style Settings")]
@@ -297,7 +338,7 @@ public class SceneController : MonoBehaviour
     public Gradient particleColor = new();
     private int lastColorIndex;
 
-    [ShowIf("customColors")]
+    [ShowIf(EConditionOperator.And, "customColors", "HasKinect")]
     [BoxGroup("Style Settings")]
     public Color[] skeletonColors = new Color[]
     {
@@ -324,8 +365,13 @@ public class SceneController : MonoBehaviour
         new(),
     };
 
+    [BoxGroup("Style Settings")]
+    [ShowIf("HasCameraFeed")]
+    [Tooltip("Show the Kinect color feed behind the players. Off leaves a black background.")]
+    public bool showCameraFeed = true;
+
     [BoxGroup("Debugging")]
-    [HideIf("dummyOnlyMode")]
+    [ShowIf("HasKinect")]
     public bool drawSkeleton = false;
 
     [BoxGroup("Debugging")]
@@ -1006,6 +1052,7 @@ public class SceneController : MonoBehaviour
         float previousBodyScale =
             cachedCurrentSettings != null ? cachedCurrentSettings.bodyScale : 0f;
         cachedCurrentSettings = BodyScaling.CreateEffective(runtimeSettings);
+        ApplyCameraFeedVisibility();
 
         if (playerScaleApplier == null)
             return;
@@ -1025,6 +1072,18 @@ public class SceneController : MonoBehaviour
             );
         }
         playerScaleApplier.ApplyToAll(players.Values, cachedCurrentSettings);
+    }
+
+    /// <summary>
+    /// Shows or hides the camera feed quad. Play mode only: renderer.enabled is serialized, so
+    /// toggling it in edit mode would dirty the scene; play-mode changes revert on exit.
+    /// </summary>
+    private void ApplyCameraFeedVisibility()
+    {
+        if (!Application.isPlaying || cameraFeedQuad == null)
+            return;
+        if (cameraFeedQuad.TryGetComponent(out Renderer feedRenderer))
+            feedRenderer.enabled = cachedCurrentSettings.showCameraFeed;
     }
 
     private RuntimeSceneSettings CreateFallbackSettings()
@@ -1112,7 +1171,9 @@ public class SceneController : MonoBehaviour
         target.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
 
         // Debugging
+        target.showCameraFeed = showCameraFeed;
         target.drawSkeleton = drawSkeleton;
+        target.useTrackingStateColors = useTrackingStateColors;
         target.customColors = customColors;
         target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         target.alwaysShowSphereMesh = alwaysShowSphereMesh;
@@ -1199,7 +1260,9 @@ public class SceneController : MonoBehaviour
         metaballRadiusAnimationCurve = new AnimationCurve(source.metaballRadiusAnimationCurve.keys);
 
         // Debugging
+        showCameraFeed = source.showCameraFeed;
         drawSkeleton = source.drawSkeleton;
+        useTrackingStateColors = source.useTrackingStateColors;
         customColors = source.customColors;
         showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         alwaysShowSphereMesh = source.alwaysShowSphereMesh;
