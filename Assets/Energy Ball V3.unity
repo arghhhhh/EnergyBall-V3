@@ -1367,6 +1367,9 @@ MonoBehaviour:
   dummyOnlyMode: 0
   settingsMenu: {fileID: 125572181}
   volumeController: {fileID: 1361264294}
+  projectiveAlignment: 1
+  cameraFeedQuad: {fileID: 1766269651}
+  renderCameraTransform: {fileID: 118562682}
   g: 0.4
   maxTowardsForce: 0.39999998
   maxAwayFromForce: 1
@@ -1535,11 +1538,6 @@ MonoBehaviour:
     snareSizeRange: {x: 0.016, y: 0.02}
     snareRadiusRandRange: {x: -0.02, y: 0.04}
     snareSpawnVeloSphereRadius: 0.2
-  projectiveAlignment: 1
-  cameraFeedQuad: {fileID: 1766269651}
-  renderCameraTransform: {fileID: 118562682}
-  skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
-    type: 2}
   particleInitializationDelay: 1.75
   initializationResetDelay: 3
   singleHandOpenThreshold: 0.1
@@ -1671,9 +1669,21 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  customColors: 1
-  useTrackingStateColors: 1
+  showCameraFeed: 0
+  individualColors: 1
+  drawSkeleton: 1
+  skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
+    type: 2}
+  useTrackingStateColors: 0
   skeletonColor: {r: 1, g: 0, b: 1, a: 1}
+  skeletonColors:
+  - {r: 0, g: 0, b: 1, a: 1}
+  - {r: 0, g: 1, b: 1, a: 1}
+  - {r: 0, g: 1, b: 0, a: 1}
+  - {r: 1, g: 0, b: 1, a: 1}
+  - {r: 1, g: 0, b: 0, a: 1}
+  - {r: 1, g: 0.5, b: 0, a: 1}
+  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   particleColor:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}
@@ -1704,14 +1714,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
-  skeletonColors:
-  - {r: 0, g: 0, b: 1, a: 1}
-  - {r: 0, g: 1, b: 1, a: 1}
-  - {r: 0, g: 1, b: 0, a: 1}
-  - {r: 1, g: 0, b: 1, a: 1}
-  - {r: 1, g: 0, b: 0, a: 1}
-  - {r: 1, g: 0.5, b: 0, a: 1}
-  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   particleColors:
   - serializedVersion: 2
     key0: {r: 2.6539848, g: 0.09411748, b: 5.992157, a: 1}
@@ -1916,7 +1918,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  drawSkeleton: 0
   showSphereMeshOnHandCollision: 0
   alwaysShowSphereMesh: 0
   showMetaballMesh: 0

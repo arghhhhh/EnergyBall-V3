@@ -117,6 +117,10 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private readonly List<VisualElement> settingGroups = new();
     private readonly Dictionary<string, VisualElement> settingElements = new();
+
+    // Rows whose visibility depends on other settings (the menu's counterpart to the inspector's
+    // NaughtyAttributes ShowIf). Re-evaluated on every settings change; rebuilt with the UI.
+    private readonly List<(VisualElement row, Func<bool> isVisible)> conditionalRows = new();
     private readonly List<Texture2D> curveTextures = new();
     private bool isModalOpen = false;
     private VisualElement curveEditorBlocker;
@@ -416,6 +420,7 @@ public class InGameSettingsMenu : MonoBehaviour
         sceneSettingsPanel.Clear();
         postProcessingPanel.Clear();
         settingElements.Clear();
+        conditionalRows.Clear();
 
         // Scene Settings Tab
         CreateSceneSettingsContent();
@@ -1488,16 +1493,9 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = CreateGroup("Style", parentContainer);
 
-        CreateToggleField(
-            group,
-            "Custom Colors",
-            () => runtimeSettings.customColors,
-            v => runtimeSettings.customColors = v,
-            tooltip: "Assign each new player a color from the custom palette (set in the SceneController inspector) instead of the default gradient."
-        );
-
-        // Feature-dependent settings are hidden (not dropped) where the scene lacks the feature:
-        // their values still load and save with the profile, so shared profiles keep them.
+        // Same order and gating as the SceneController inspector's Style Settings. Feature-
+        // dependent settings are hidden (not dropped) where the scene lacks the feature: their
+        // values still load and save with the profile, so shared profiles keep them.
         if (SceneSupports(SceneController.SceneFeature.CameraFeed))
         {
             CreateToggleField(
@@ -1508,6 +1506,15 @@ public class InGameSettingsMenu : MonoBehaviour
                 tooltip: "Show the Kinect color feed behind the players. Off leaves a black background."
             );
         }
+
+        CreateToggleField(
+            group,
+            "Individual Colors",
+            () => runtimeSettings.individualColors,
+            v => runtimeSettings.individualColors = v,
+            tooltip: "Give each new player its own color from the palette (set in the SceneController inspector) instead of the shared default gradient."
+        );
+
         if (SceneSupports(SceneController.SceneFeature.Kinect))
         {
             CreateToggleField(
@@ -1522,9 +1529,28 @@ public class InGameSettingsMenu : MonoBehaviour
                 "Use Tracking State Colors",
                 () => runtimeSettings.useTrackingStateColors,
                 v => runtimeSettings.useTrackingStateColors = v,
-                tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color. Only applies when Draw Skeleton is on."
+                tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color."
             );
+            ShowRowIf("Use Tracking State Colors", () => runtimeSettings.drawSkeleton);
         }
+    }
+
+    /// <summary>
+    /// Shows the row of the field labelled <paramref name="label"/> only while
+    /// <paramref name="isVisible"/> holds. Call right after creating the field.
+    /// </summary>
+    private void ShowRowIf(string label, Func<bool> isVisible)
+    {
+        if (!settingElements.TryGetValue(label, out var field) || field.parent == null)
+            return;
+        conditionalRows.Add((field.parent, isVisible));
+        field.parent.style.display = isVisible() ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private void UpdateConditionalRows()
+    {
+        foreach (var (row, isVisible) in conditionalRows)
+            row.style.display = isVisible() ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private void CreateDebuggingGroup(ScrollView parentContainer)
@@ -2529,8 +2555,8 @@ public class InGameSettingsMenu : MonoBehaviour
             );
 
         // Style settings
-        runtimeSettings.customColors = loadedSettings.customColors;
         runtimeSettings.showCameraFeed = loadedSettings.showCameraFeed;
+        runtimeSettings.individualColors = loadedSettings.individualColors;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
         runtimeSettings.useTrackingStateColors = loadedSettings.useTrackingStateColors;
 
@@ -2624,8 +2650,8 @@ public class InGameSettingsMenu : MonoBehaviour
         );
 
         // Style settings
-        destination.customColors = source.customColors;
         destination.showCameraFeed = source.showCameraFeed;
+        destination.individualColors = source.individualColors;
         destination.drawSkeleton = source.drawSkeleton;
         destination.useTrackingStateColors = source.useTrackingStateColors;
 
@@ -2895,7 +2921,6 @@ public class InGameSettingsMenu : MonoBehaviour
             ? ""
             : Path.GetFileNameWithoutExtension(currentSceneProfilePath);
 
-
     /// <summary>
     /// Replaces the base settings object and keeps the debugging-change subscription attached
     /// (the old code lost it whenever the object was swapped).
@@ -2917,6 +2942,7 @@ public class InGameSettingsMenu : MonoBehaviour
     /// </summary>
     private void NotifySettingsChanged()
     {
+        UpdateConditionalRows();
         UpdateDirtyState();
         UpdateDirtyIndicators();
         SaveWorkingSet();
@@ -2962,7 +2988,10 @@ public class InGameSettingsMenu : MonoBehaviour
             particlePP.profilePath,
             ProfileType.PostProcessing
         );
-        feedPP.baselineJson = ComputeProfileBaseline(feedPP.profilePath, ProfileType.PostProcessing);
+        feedPP.baselineJson = ComputeProfileBaseline(
+            feedPP.profilePath,
+            ProfileType.PostProcessing
+        );
 
         // Keep the last-used keys in step so a missing working set still falls back sensibly.
         if (!string.IsNullOrEmpty(currentSceneProfilePath))

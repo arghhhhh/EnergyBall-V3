@@ -28,7 +28,7 @@
     "bodyScale": 0.0,
     "maxDistanceFromCamera": 0.0,
     "particleInitializationDelay": 0.0,
-    "_customColors": false,
+    "_individualColors": false,
     "drawSkeleton": false,
     "useTrackingStateColors": true,
     "bloomThreshold": 0.8799999952316284,

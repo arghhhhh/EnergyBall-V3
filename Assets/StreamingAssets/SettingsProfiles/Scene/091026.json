@@ -298,7 +298,7 @@
         "m_PostInfinity": 2,
         "m_RotationOrder": 4
     },
-    "_customColors": true,
+    "_individualColors": true,
     "drawSkeleton": false,
     "useTrackingStateColors": true,
     "bloomThreshold": 0.0,

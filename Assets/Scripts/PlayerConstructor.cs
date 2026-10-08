@@ -219,6 +219,10 @@ public class PlayerConstructor : MonoBehaviour
 
     [HideInInspector]
     public Color skeletonColor;
+
+    // Index into SceneController.particleColors when individual colors are on; -1 otherwise.
+    [System.NonSerialized]
+    public int paletteSlot = -1;
     public bool isDummy = false;
 
     [HideInInspector]

@@ -165,8 +165,18 @@ following the existing pattern:
   use NaughtyAttributes `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`, or a named
   condition property when combined with another rule (NaughtyAttributes allows one
   ShowIf/HideIf per field). Hidden settings still load and save with profiles. Kinect:
-  skeleton drawing/colors. CameraFeed: `showCameraFeed` (toggles the feed quad's
-  renderer in play mode).
+  `drawSkeleton` and the `cameraFeedQuad` slot. That slot is what enables CameraFeed, so
+  it can't be gated on it. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
+  material, tracking-state colors, the single skeleton color. CameraFeed:
+  `showCameraFeed` (toggles the feed quad's renderer in play mode),
+  `projectiveAlignment`, `renderCameraTransform`. Individual colors: `particleColors` is
+  the palette (its length is the slot count). Each player keeps its
+  `PlayerConstructor.paletteSlot`, and `skeletonColors[slot]` is optional (wraps,
+  falls back to `skeletonColor`), so it shows only when bones use it.
+- Menu rows that depend on another setting's value (not on a scene feature) use
+  `ShowRowIf(label, condition)` right after the field is created. It's re-evaluated on
+  every settings change, e.g. Use Tracking State Colors shows only while Draw Skeleton is
+  on.
 - Post-processing values live in `PostProcessSettings.cs`, held twice on the settings
   (`particlePostProcessing`, `feedPostProcessing`). PP profile files are serialized
   straight from `PostProcessSettings`, and older files with flat keys load unchanged.

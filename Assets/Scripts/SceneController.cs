@@ -58,10 +58,41 @@ public class SceneController : MonoBehaviour
     // named property). They mirror what the in-game menu shows.
     private bool HasKinect => HasFeature(SceneFeature.Kinect);
     private bool HasCameraFeed => HasFeature(SceneFeature.CameraFeed);
-    private bool ShowTrackingStateColorsField => HasKinect && !customColors;
-    private bool ShowSkeletonColorField => ShowTrackingStateColorsField && !useTrackingStateColors;
+    private bool ShowSkeletonSettings => HasKinect && drawSkeleton;
+
+    // The single skeleton color is only used when bones aren't tracking-state colored and players
+    // don't get individual palette colors.
+    private bool ShowSkeletonColorField =>
+        ShowSkeletonSettings && !useTrackingStateColors && !individualColors;
+
+    // Per-slot skeleton colors: only used for bones colored by the player's palette slot.
+    private bool ShowSkeletonPaletteField =>
+        ShowSkeletonSettings && !useTrackingStateColors && individualColors;
 
     #region Inspector Settings
+    [BoxGroup("Camera Feed Alignment")]
+    [ShowIf("HasCameraFeed")]
+    [Tooltip(
+        "Project joints through the Kinect color-camera intrinsics onto the camera feed quad "
+            + "so skeletons/hands align with the video at every depth. Falls back to the legacy "
+            + "linear mapping when off or when the mapper is unavailable."
+    )]
+    public bool projectiveAlignment = true;
+
+    // Gated on Kinect, not CameraFeed: assigning this is what turns the CameraFeed feature on.
+    [BoxGroup("Camera Feed Alignment")]
+    [ShowIf("HasKinect")]
+    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
+    public Transform cameraFeedQuad;
+
+    [BoxGroup("Camera Feed Alignment")]
+    [ShowIf("HasCameraFeed")]
+    [Tooltip(
+        "Transform of the camera the players are rendered through (Main Camera — the Particles "
+            + "Camera must share its position for alignment to hold)."
+    )]
+    public Transform renderCameraTransform;
+
     [BoxGroup("Gravity Attraction")]
     [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
     public float g = 0.48f;
@@ -228,32 +259,6 @@ public class SceneController : MonoBehaviour
     [Tooltip("Per-hand HandEffects.vfx values (base at 1x). See HandVfxSettings.")]
     public HandVfxSettings handVfx = new();
 
-    [BoxGroup("Camera Feed Alignment")]
-    [Tooltip(
-        "Project joints through the Kinect color-camera intrinsics onto the camera feed quad "
-            + "so skeletons/hands align with the video at every depth. Falls back to the legacy "
-            + "linear mapping when off or when the mapper is unavailable."
-    )]
-    public bool projectiveAlignment = true;
-
-    [BoxGroup("Camera Feed Alignment")]
-    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
-    public Transform cameraFeedQuad;
-
-    [BoxGroup("Camera Feed Alignment")]
-    [Tooltip(
-        "Transform of the camera the players are rendered through (Main Camera — the Particles "
-            + "Camera must share its position for alignment to hold)."
-    )]
-    public Transform renderCameraTransform;
-
-    [BoxGroup("Camera Feed Alignment")]
-    [Tooltip(
-        "Material applied to skeleton LineRenderers at player creation. Uses ZTest Always so "
-            + "the debug skeleton is never hidden by the body depth occluder."
-    )]
-    public Material skeletonLineMaterial;
-
     [BoxGroup("Animation")]
     [Tooltip(
         "The amount of time it takes for the particle initialization animation to play once a new player is added to the scene."
@@ -323,10 +328,28 @@ public class SceneController : MonoBehaviour
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
 
     [BoxGroup("Style Settings")]
-    public bool customColors = false;
+    [ShowIf("HasCameraFeed")]
+    [Tooltip("Show the Kinect color feed behind the players. Off leaves a black background.")]
+    public bool showCameraFeed = true;
 
     [BoxGroup("Style Settings")]
-    [ShowIf("ShowTrackingStateColorsField")]
+    public bool individualColors = false;
+
+    [BoxGroup("Style Settings")]
+    [ShowIf("HasKinect")]
+    public bool drawSkeleton = false;
+
+    [BoxGroup("Style Settings")]
+    [ShowIf("ShowSkeletonSettings")]
+    [Tooltip(
+        "Material applied to skeleton LineRenderers at player creation. Uses ZTest Always so "
+            + "the debug skeleton is never hidden by the body depth occluder."
+    )]
+    public Material skeletonLineMaterial;
+
+    // Applies with individual colors too: tracking-state colors override the player's color.
+    [BoxGroup("Style Settings")]
+    [ShowIf("ShowSkeletonSettings")]
     [Tooltip("Use tracking state colors for the skeleton")]
     public bool useTrackingStateColors = true;
 
@@ -334,14 +357,12 @@ public class SceneController : MonoBehaviour
     [ShowIf("ShowSkeletonColorField")]
     public Color skeletonColor = Color.magenta;
 
+    [ShowIf("ShowSkeletonPaletteField")]
     [BoxGroup("Style Settings")]
-    [HideIf("customColors")]
-    [GradientUsage(true)]
-    public Gradient particleColor = new();
-    private int lastColorIndex;
-
-    [ShowIf(EConditionOperator.And, "customColors", "HasKinect")]
-    [BoxGroup("Style Settings")]
+    [Tooltip(
+        "Skeleton color for each palette slot (same index as particleColors). Wraps around when "
+            + "shorter than particleColors; empty falls back to the single skeleton color."
+    )]
     public Color[] skeletonColors = new Color[]
     {
         Color.blue,
@@ -353,9 +374,20 @@ public class SceneController : MonoBehaviour
         Color.yellow,
     };
 
-    [ShowIf("customColors")]
+    [BoxGroup("Style Settings")]
+    [HideIf("individualColors")]
+    [GradientUsage(true)]
+    public Gradient particleColor = new();
+    private int lastColorIndex;
+
+    // The palette: its length is the number of slots, and each player keeps its slot index.
+    [ShowIf("individualColors")]
     [BoxGroup("Style Settings")]
     [GradientUsage(true)]
+    [Tooltip(
+        "The individual-colors palette: one particle gradient per slot. Its length is the number "
+            + "of slots; each new player takes a free slot (random among them)."
+    )]
     public Gradient[] particleColors = new Gradient[]
     {
         new(),
@@ -366,15 +398,6 @@ public class SceneController : MonoBehaviour
         new(),
         new(),
     };
-
-    [BoxGroup("Style Settings")]
-    [ShowIf("HasCameraFeed")]
-    [Tooltip("Show the Kinect color feed behind the players. Off leaves a black background.")]
-    public bool showCameraFeed = true;
-
-    [BoxGroup("Debugging")]
-    [ShowIf("HasKinect")]
-    public bool drawSkeleton = false;
 
     [BoxGroup("Debugging")]
     public bool showSphereMeshOnHandCollision = false;
@@ -623,7 +646,7 @@ public class SceneController : MonoBehaviour
                 CurrentSettings.defaultUnscaledSize,
                 CurrentSettings.defaultUnscaledSize
             );
-            if (CurrentSettings.customColors)
+            if (CurrentSettings.individualColors)
             {
                 ChoosePlayerColor(dummy);
             }
@@ -647,7 +670,7 @@ public class SceneController : MonoBehaviour
             newPlayer.name = $"Player {userId}";
             playerConstructor.userId = userId;
             metaballsToSDF.AssignMetaballIndex(playerConstructor);
-            if (CurrentSettings.customColors)
+            if (CurrentSettings.individualColors)
             {
                 ChoosePlayerColor(playerConstructor);
             }
@@ -676,56 +699,56 @@ public class SceneController : MonoBehaviour
 
     void ChoosePlayerColor(PlayerConstructor player)
     {
-        if (CurrentSettings.customColors)
+        int slotCount = particleColors != null ? particleColors.Length : 0;
+        if (!CurrentSettings.individualColors || slotCount == 0)
         {
-            // Collect all currently used color indices
-            HashSet<int> usedIndices = new();
-            foreach (var existingPlayer in players.Values)
-            {
-                if (existingPlayer != null && existingPlayer != player.gameObject)
-                {
-                    var pc = existingPlayer.GetComponent<PlayerConstructor>();
-                    for (int i = 0; i < skeletonColors.Length; i++)
-                    {
-                        if (pc.skeletonColor == skeletonColors[i])
-                        {
-                            usedIndices.Add(i);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            int colorIndex;
-            // If there are unused colors, pick from those
-            if (usedIndices.Count < skeletonColors.Length)
-            {
-                do
-                {
-                    colorIndex = Random.Range(0, skeletonColors.Length);
-                } while (usedIndices.Contains(colorIndex));
-            }
-            else
-            {
-                // All colors in use, pick randomly (avoid last used for variety)
-                colorIndex = Random.Range(0, skeletonColors.Length);
-                while (colorIndex == lastColorIndex && skeletonColors.Length > 1)
-                {
-                    colorIndex = Random.Range(0, skeletonColors.Length);
-                }
-            }
-
-            lastColorIndex = colorIndex;
-            player.skeletonColor = skeletonColors[colorIndex];
-            player.leftHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
-            player.rightHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
-        }
-        else
-        {
+            player.paletteSlot = -1;
             player.skeletonColor = skeletonColor;
             player.leftHandVfx.SetGradient("playerAuraBase", particleColor);
             player.rightHandVfx.SetGradient("playerAuraBase", particleColor);
+            return;
         }
+
+        // Slots held by the other players
+        HashSet<int> usedSlots = new();
+        foreach (var existingPlayer in players.Values)
+        {
+            if (existingPlayer != null && existingPlayer != player.gameObject)
+            {
+                int slot = existingPlayer.GetComponent<PlayerConstructor>().paletteSlot;
+                if (slot >= 0)
+                    usedSlots.Add(slot);
+            }
+        }
+
+        int colorIndex;
+        // If there are free slots, pick from those
+        if (usedSlots.Count < slotCount)
+        {
+            do
+            {
+                colorIndex = Random.Range(0, slotCount);
+            } while (usedSlots.Contains(colorIndex));
+        }
+        else
+        {
+            // All slots in use, pick randomly (avoid last used for variety)
+            colorIndex = Random.Range(0, slotCount);
+            while (colorIndex == lastColorIndex && slotCount > 1)
+            {
+                colorIndex = Random.Range(0, slotCount);
+            }
+        }
+
+        lastColorIndex = colorIndex;
+        player.paletteSlot = colorIndex;
+        // Skeleton colors are optional per slot: wrap a shorter array, fall back when empty.
+        player.skeletonColor =
+            skeletonColors != null && skeletonColors.Length > 0
+                ? skeletonColors[colorIndex % skeletonColors.Length]
+                : skeletonColor;
+        player.leftHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
+        player.rightHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
     }
 
     void SetPlayerHandStates(Body body, PlayerConstructor player)
@@ -1051,14 +1074,14 @@ public class SceneController : MonoBehaviour
         runtimeSettings ??= CreateFallbackSettings();
         float previousBodyScale =
             cachedCurrentSettings != null ? cachedCurrentSettings.bodyScale : 0f;
-        bool? previousCustomColors = cachedCurrentSettings?.customColors;
+        bool? previousIndividualColors = cachedCurrentSettings?.individualColors;
         cachedCurrentSettings = BodyScaling.CreateEffective(runtimeSettings);
         ApplyCameraFeedVisibility();
 
         // Only a real change of the live setting re-picks player colors (palette vs default).
         if (
-            previousCustomColors.HasValue
-            && previousCustomColors.Value != cachedCurrentSettings.customColors
+            previousIndividualColors.HasValue
+            && previousIndividualColors.Value != cachedCurrentSettings.individualColors
         )
             RecolorAllPlayers();
 
@@ -1182,7 +1205,7 @@ public class SceneController : MonoBehaviour
         target.showCameraFeed = showCameraFeed;
         target.drawSkeleton = drawSkeleton;
         target.useTrackingStateColors = useTrackingStateColors;
-        target.customColors = customColors;
+        target.individualColors = individualColors;
         target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         target.alwaysShowSphereMesh = alwaysShowSphereMesh;
         target.showMetaballMesh = showMetaballMesh;
@@ -1271,7 +1294,7 @@ public class SceneController : MonoBehaviour
         showCameraFeed = source.showCameraFeed;
         drawSkeleton = source.drawSkeleton;
         useTrackingStateColors = source.useTrackingStateColors;
-        customColors = source.customColors;
+        individualColors = source.individualColors;
         showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         showMetaballMesh = source.showMetaballMesh;

@@ -166,8 +166,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
@@ -176,7 +176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text:
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -366,8 +366,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
@@ -410,7 +410,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b5f9cd5c38aa8f849be02add9df48e68, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DummyCameraScaler
   orthographicSize: 0.95
 --- !u!1 &326409335
@@ -442,8 +442,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 5
@@ -472,7 +472,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f36a4462949f5546aa2f19f8ae4e38e, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::LogFileWriter
   logFileName: unity_console_logs.txt
   maxLogEntries: 1000
@@ -489,7 +489,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
   m_SendPointerHoverToParent: 1
   m_MoveRepeatDelay: 0.5
@@ -556,7 +556,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: decf7e884b42e0f4784e22a781f72aa5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::MarchingCubes.MetaballsToSDF
   _dimensions: {x: 64, y: 32, z: 64}
   _gridScale: 0.5
@@ -576,7 +576,7 @@ MonoBehaviour:
     Radius: 0
   - Position: {x: 0, y: 0, z: 0}
     Radius: 0
-  activeMetaballIndices: 
+  activeMetaballIndices:
   _volumeCompute: {fileID: 7200000, guid: 03edc4ed12cb87d489b67fc0356e33e8, type: 3}
   _builderCompute: {fileID: 7200000, guid: 9f19ed91e8aa34430ac0ea80fb20eead, type: 3}
   resolution: 64
@@ -680,8 +680,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_IsGlobal: 1
   priority: 0
   blendDistance: 0
@@ -712,8 +712,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68bdb7ea8bd8f1247b717399059c5379, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::VolumeController
+  particleVolume: {fileID: 1361264292}
+  feedVolume: {fileID: 0}
 --- !u!4 &1605418792 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5015329274369331585, guid: b0c4dc3e76756fc469f01bec98101222,
@@ -730,7 +732,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d4c690e91c9125f4fbb331dd40da9754, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::InGameSettingsMenu
 --- !u!850595691 &1752547826
 LightingSettings:
@@ -848,8 +850,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64e0a8cbe467405488d02a1bef548523, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
+  dummyOnlyMode: 1
+  settingsMenu: {fileID: 1605418794}
+  volumeController: {fileID: 1361264294}
+  projectiveAlignment: 1
+  cameraFeedQuad: {fileID: 0}
+  renderCameraTransform: {fileID: 0}
   g: 0.4
   maxTowardsForce: 0.39999998
   maxAwayFromForce: 1
@@ -1018,10 +1026,6 @@ MonoBehaviour:
     snareSizeRange: {x: 0.016, y: 0.02}
     snareRadiusRandRange: {x: -0.02, y: 0.04}
     snareSpawnVeloSphereRadius: 0.2
-  projectiveAlignment: 1
-  cameraFeedQuad: {fileID: 0}
-  renderCameraTransform: {fileID: 0}
-  skeletonLineMaterial: {fileID: 0}
   particleInitializationDelay: 1.75
   initializationResetDelay: 3
   singleHandOpenThreshold: 0.1
@@ -1153,7 +1157,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  customColors: 1
+  individualColors: 1
   useTrackingStateColors: 1
   skeletonColor: {r: 1, g: 0, b: 1, a: 1}
   particleColor:
@@ -1398,8 +1402,9 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  dummyOnlyMode: 1
+  showCameraFeed: 1
   drawSkeleton: 0
+  skeletonLineMaterial: {fileID: 0}
   showSphereMeshOnHandCollision: 0
   alwaysShowSphereMesh: 0
   showMetaballMesh: 0
@@ -1408,8 +1413,6 @@ MonoBehaviour:
   showAttractionRadius: 0
   showHandTrailDistorters: 0
   showSecondaryAttractor: 0
-  settingsMenu: {fileID: 1605418794}
-  volumeController: {fileID: 1361264294}
   metaballsToSDF: {fileID: 1092279035}
   playerPrefab: {fileID: 673367081158314858, guid: 0fc75339efa2573449288aa1d5103dca,
     type: 3}
@@ -1424,8 +1427,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc670390c0680f540b39feb5ade8d02a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   EnableVerboseLogging: 1
   ColorTexture: {fileID: 0}
   ColorMaterial: {fileID: 0}
@@ -2085,12 +2088,12 @@ PrefabInstance:
     - target: {fileID: 6669253669967695172, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: leftHandSprite
-      value: 
+      value:
       objectReference: {fileID: 1936040745}
     - target: {fileID: 6669253669967695172, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: rightHandSprite
-      value: 
+      value:
       objectReference: {fileID: 875845079}
     - target: {fileID: 6820096119654865522, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2155,7 +2158,7 @@ PrefabInstance:
     - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: hand
-      value: 
+      value:
       objectReference: {fileID: 1771398220}
     - target: {fileID: 7904353339162769027, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2355,7 +2358,7 @@ PrefabInstance:
     - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
       propertyPath: hand
-      value: 
+      value:
       objectReference: {fileID: 29984536}
     - target: {fileID: 8992554032265601270, guid: ea86d9f4511a31e48a2fc3ef17c474f4,
         type: 3}
@@ -2421,8 +2424,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
   m_BlockingMask:
@@ -2438,8 +2441,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_UiScaleMode: 0
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
@@ -3198,7 +3201,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d36bd9bc8c21bc74e8773c0a07018529, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::MetaballBoundsVisualizer
   showGridBoundary: 1
   showForceBoundary: 1

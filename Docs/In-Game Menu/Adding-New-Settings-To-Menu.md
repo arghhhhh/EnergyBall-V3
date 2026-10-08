@@ -29,7 +29,8 @@ Steps 1–8 below are for **scene** settings.
 **Settings that need a feature.** If a setting only makes sense with a live Kinect, or with a camera feed in the scene, gate it on `SceneController.SceneFeature` rather than on a scene name:
 
 - Menu: build the row inside `if (SceneSupports(SceneController.SceneFeature.Kinect)) { ... }` (or `CameraFeed`).
-- Inspector: give the SceneController twin `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`. NaughtyAttributes allows one ShowIf/HideIf per field, so when the field already has a rule, combine them with `EConditionOperator.And`. If a rule needs negation, add a named condition property next to `ShowTrackingStateColorsField`.
+- Inspector: give the SceneController twin `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`. NaughtyAttributes allows one ShowIf/HideIf per field, so when the field already has a rule, combine them with `EConditionOperator.And`. If a rule needs negation, add a named condition property next to `ShowSkeletonColorField`.
+- If a row depends on another setting's value rather than a scene feature (e.g. only while Draw Skeleton is on), call `ShowRowIf("Label", () => runtimeSettings.x)` right after creating the field. The menu re-evaluates these on every settings change.
 - Load, save and copy as usual. The value stays in profiles even where it's hidden, so profiles shared between scenes keep it.
 - A new kind of feature means a new `SceneFeature` flag, set in `SceneController.Features`.
 
