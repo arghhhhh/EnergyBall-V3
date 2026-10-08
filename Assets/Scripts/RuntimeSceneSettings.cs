@@ -192,21 +192,15 @@ public class RuntimeSceneSettings
     public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Style")]
+    // Stored as "_customColors" in profile JSON; the property keeps that key stable. A change is
+    // picked up by SceneController.RebuildEffectiveSettings (it recolors live players) - this
+    // class must not raise events, since scratch copies of it are built on every settings change.
     [SerializeField]
     private bool _customColors = false;
     public bool customColors
     {
         get => _customColors;
-        set
-        {
-            if (_customColors != value)
-            {
-                _customColors = value;
-                // Notify listeners with the new value so handlers don't depend on
-                // timing of other settings updates.
-                Actions.OnCustomColorsChanged?.Invoke(_customColors);
-            }
-        }
+        set => _customColors = value;
     }
     public bool showCameraFeed = true;
     public bool drawSkeleton = false;
@@ -359,7 +353,9 @@ public class RuntimeSceneSettings
         copy.bodySpawnSize = bodySpawnSize;
         copy.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
         copy.particlePostProcessing =
-            particlePostProcessing != null ? particlePostProcessing.DeepCopy() : new PostProcessSettings();
+            particlePostProcessing != null
+                ? particlePostProcessing.DeepCopy()
+                : new PostProcessSettings();
         copy.feedPostProcessing =
             feedPostProcessing != null ? feedPostProcessing.DeepCopy() : new PostProcessSettings();
         copy.showCameraFeed = showCameraFeed;

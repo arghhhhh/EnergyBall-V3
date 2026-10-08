@@ -13,7 +13,9 @@ public class SceneController : MonoBehaviour
     public static SceneController Instance { get; private set; } // singleton pattern
 
     [Header("Runtime Settings")]
-    [Tooltip("Skip the Kinect entirely and drive the scene with dummy players only. Per scene, not part of settings profiles.")]
+    [Tooltip(
+        "Skip the Kinect entirely and drive the scene with dummy players only. Per scene, not part of settings profiles."
+    )]
     public bool dummyOnlyMode = false;
     public InGameSettingsMenu settingsMenu;
     public VolumeController volumeController;
@@ -486,7 +488,6 @@ public class SceneController : MonoBehaviour
         // Actions.OnPlayerRemoved += RemovePlayer;
         Actions.OnDummyAdded += InitializeNewDummy;
         Actions.OnDummyRemoved += RemovePlayer;
-        Actions.OnCustomColorsChanged += OnCustomColorsChanged;
 
         // Debugging setting changes are now handled via OnValidate() when inspector values change
 
@@ -503,7 +504,6 @@ public class SceneController : MonoBehaviour
         // Actions.OnPlayerRemoved -= RemovePlayer;
         Actions.OnDummyAdded -= InitializeNewDummy;
         Actions.OnDummyRemoved -= RemovePlayer;
-        Actions.OnCustomColorsChanged -= OnCustomColorsChanged;
 
         // Debugging setting changes are now handled via OnValidate() when inspector values change
 
@@ -1051,8 +1051,16 @@ public class SceneController : MonoBehaviour
         runtimeSettings ??= CreateFallbackSettings();
         float previousBodyScale =
             cachedCurrentSettings != null ? cachedCurrentSettings.bodyScale : 0f;
+        bool? previousCustomColors = cachedCurrentSettings?.customColors;
         cachedCurrentSettings = BodyScaling.CreateEffective(runtimeSettings);
         ApplyCameraFeedVisibility();
+
+        // Only a real change of the live setting re-picks player colors (palette vs default).
+        if (
+            previousCustomColors.HasValue
+            && previousCustomColors.Value != cachedCurrentSettings.customColors
+        )
+            RecolorAllPlayers();
 
         if (playerScaleApplier == null)
             return;
@@ -1319,7 +1327,7 @@ public class SceneController : MonoBehaviour
         }
     }
 
-    private void OnCustomColorsChanged(bool enabled)
+    private void RecolorAllPlayers()
     {
         foreach (var player in players.Values)
         {
