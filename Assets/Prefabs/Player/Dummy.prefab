@@ -195,11 +195,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dummy
       objectReference: {fileID: 0}
-    - target: {fileID: 986674949393475209, guid: 0fc75339efa2573449288aa1d5103dca,
-        type: 3}
-      propertyPath: m_Property.m_Name
-      value: vfxSphere
-      objectReference: {fileID: 0}
     - target: {fileID: 1366983329138525572, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}
       propertyPath: m_LocalPosition.z
@@ -219,11 +214,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[2].m_Value.z
       value: 19
-      objectReference: {fileID: 0}
-    - target: {fileID: 2458631097427883225, guid: 0fc75339efa2573449288aa1d5103dca,
-        type: 3}
-      propertyPath: m_Property.m_Name
-      value: vfxSphere
       objectReference: {fileID: 0}
     - target: {fileID: 3466596790586548081, guid: 0fc75339efa2573449288aa1d5103dca,
         type: 3}

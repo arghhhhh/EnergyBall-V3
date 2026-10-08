@@ -2308,11 +2308,6 @@ PrefabInstance:
       propertyPath: Target
       value: 
       objectReference: {fileID: 1366983329138525572}
-    - target: {fileID: 5699529866607838136, guid: 7f8acf1838716f946a08727097394d2e,
-        type: 3}
-      propertyPath: m_Property.m_Name
-      value: sphere
-      objectReference: {fileID: 0}
     - target: {fileID: 6165274409370346318, guid: 7f8acf1838716f946a08727097394d2e,
         type: 3}
       propertyPath: m_PropertySheet.m_Float.m_Array.Array.size
@@ -3472,11 +3467,6 @@ PrefabInstance:
       propertyPath: Target
       value: 
       objectReference: {fileID: 1366983329138525572}
-    - target: {fileID: 5128935710454951117, guid: f497d5d0d40136d46b5b968a0cd1cb19,
-        type: 3}
-      propertyPath: m_Property.m_Name
-      value: sphere
-      objectReference: {fileID: 0}
     - target: {fileID: 5788681594145972914, guid: f497d5d0d40136d46b5b968a0cd1cb19,
         type: 3}
       propertyPath: Target
