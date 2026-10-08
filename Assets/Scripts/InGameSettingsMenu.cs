@@ -112,6 +112,17 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private PostProcessingTargetState ActivePPState => GetPPState(activePostProcessingTarget);
 
+    /// <summary>
+    /// The Camera Feed target only exists while there is a feed to post-process: the scene has a
+    /// feed volume and a camera feed, and Show Camera Feed is on. Its values and profile are kept
+    /// while it's unavailable; they just aren't editable and don't count as unsaved changes.
+    /// </summary>
+    private bool IsFeedTargetAvailable =>
+        Controller?.volumeController?.feedVolume != null
+        && SceneSupports(SceneController.SceneFeature.CameraFeed)
+        && runtimeSettings != null
+        && runtimeSettings.showCameraFeed;
+
     /// <summary>The look the Post Processing tab's fields read and write.</summary>
     private PostProcessSettings ActivePP => ActivePPState.get(runtimeSettings);
 
@@ -366,11 +377,7 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             postProcessingTargetFeedButton.clicked += () =>
                 SwitchPostProcessingTarget(PostProcessingTarget.Feed);
-            // Scenes without a separate feed pass have nothing for the feed look to drive.
-            bool hasFeedVolume = Controller?.volumeController?.feedVolume != null;
-            postProcessingTargetFeedButton.style.display = hasFeedVolume
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
+            // The switch row is shown / hidden by UpdatePostProcessingTargetAvailability.
         }
 
         // Auto-load when dropdown selections change
@@ -3077,6 +3084,8 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void UpdateDirtyIndicators()
     {
+        // Feed availability decides both the target switch and whether the feed's changes count.
+        UpdatePostProcessingTargetAvailability();
         SetDirtyLabel(sceneDirtyLabel, isSceneDirty, currentSceneProfilePath);
         SetDirtyLabel(postProcessingDirtyLabel, ActivePPState.isDirty, ActivePPState.profilePath);
         SetTargetButtonText(postProcessingTargetParticlesButton, particlePP);
@@ -3087,6 +3096,21 @@ public class InGameSettingsMenu : MonoBehaviour
             postProcessingTab.text = IsPostProcessingDirty
                 ? "Post Processing *"
                 : "Post Processing";
+    }
+
+    /// <summary>
+    /// Shows the Particles / Camera Feed switch only while <see cref="IsFeedTargetAvailable"/>
+    /// (with one target there is nothing to switch), and falls back to the Particles target if
+    /// the feed was selected when it became unavailable.
+    /// </summary>
+    private void UpdatePostProcessingTargetAvailability()
+    {
+        bool feedAvailable = IsFeedTargetAvailable;
+        var targetRow = postProcessingTargetFeedButton?.parent;
+        if (targetRow != null)
+            targetRow.style.display = feedAvailable ? DisplayStyle.Flex : DisplayStyle.None;
+        if (!feedAvailable && activePostProcessingTarget == PostProcessingTarget.Feed)
+            SwitchPostProcessingTarget(PostProcessingTarget.Particles);
     }
 
     private static void SetTargetButtonText(Button button, PostProcessingTargetState state)
@@ -3104,7 +3128,8 @@ public class InGameSettingsMenu : MonoBehaviour
     }
 
     public bool IsSceneDirty => isSceneDirty;
-    public bool IsPostProcessingDirty => particlePP.isDirty || feedPP.isDirty;
+    public bool IsPostProcessingDirty =>
+        particlePP.isDirty || (IsFeedTargetAvailable && feedPP.isDirty);
 
     /// <summary>
     /// Load the dropdown's profile, asking first when the tab has unsaved changes.

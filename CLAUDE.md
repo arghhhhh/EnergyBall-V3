@@ -184,7 +184,10 @@ following the existing pattern:
   target has its own profile, dirty flag and last-used key
   (`LastUsedPostProcessingProfile_<scene>` / `LastUsedFeedPostProcessingProfile_<scene>`),
   and any PP profile can be loaded into either. With no last-used feed profile, the feed
-  loads the same profile as the particles.
+  loads the same profile as the particles. The switch only shows while the feed target
+  is available (`IsFeedTargetAvailable`: feed volume + CameraFeed feature + Show Camera
+  Feed on). Otherwise the tab falls back to Particles, and the feed's unsaved changes
+  don't count toward `Post Processing *`; its values and profile are kept.
 - Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
   animation-curve presets in `Assets/StreamingAssets/CurvePresets/`, edited via the
   `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor.
