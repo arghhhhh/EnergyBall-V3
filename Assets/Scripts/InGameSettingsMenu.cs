@@ -556,17 +556,17 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = CreateGroup("Gravity Attraction", parentContainer);
 
-        CreateFloatField(group, "G (×s²)", () => runtimeSettings.g, v => runtimeSettings.g = v);
+        CreateFloatField(group, "G", () => runtimeSettings.g, v => runtimeSettings.g = v);
         CreateFloatField(
             group,
-            "Max Towards Force (×s²)",
+            "Max Towards Force",
             () => runtimeSettings.maxTowardsForce,
             v => runtimeSettings.maxTowardsForce = v,
             tooltip: "Cap on the pairwise gravity force (G*m1*m2/r^2) while two balls are moving toward each other. Keeps close balls from slamming together."
         );
         CreateFloatField(
             group,
-            "Max Away Force (×s²)",
+            "Max Away Force",
             () => runtimeSettings.maxAwayFromForce,
             v => runtimeSettings.maxAwayFromForce = v,
             tooltip: "Cap on the pairwise gravity force while two balls are moving apart. Setting it above Max Towards Force lets gravity resist separation more than it accelerates approach."
@@ -580,21 +580,21 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Stop Gravity Distance (×s)",
+            "Stop Gravity Distance",
             () => runtimeSettings.stopGravityDistance,
             v => runtimeSettings.stopGravityDistance = v,
             tooltip: "Center-to-center distance below which gravity stops being applied. Inside this range the balls coast (or get stopped, see Stop Moving Distance)."
         );
         CreateFloatField(
             group,
-            "Stop Moving Distance (×s)",
+            "Stop Moving Distance",
             () => runtimeSettings.stopMovingDistance,
             v => runtimeSettings.stopMovingDistance = v,
             tooltip: "Within this center-to-center distance, if the balls' relative speed is below Stop Velocity, a counter-force cancels their motion so they settle side by side."
         );
         CreateFloatField(
             group,
-            "Stop Velocity (×s)",
+            "Stop Velocity",
             () => runtimeSettings.stopVelocity,
             v => runtimeSettings.stopVelocity = v,
             tooltip: "Relative speed threshold for the settle-in-place behavior. Balls closer than Stop Moving Distance and slower than this are brought to rest."
@@ -628,21 +628,21 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Push Force (×s²)",
+            "Push Force",
             () => runtimeSettings.pushForce,
             v => runtimeSettings.pushForce = v,
             tooltip: "Base rigidbody force driving the ball toward the hand target (midpoint of both hands, or the single open hand). Everything else in this group multiplies it."
         );
         CreateFloatField(
             group,
-            "Torso Max Forward Offset (×s)",
+            "Torso Max Forward Offset",
             () => runtimeSettings.torsoMaxForwardOffset,
             v => runtimeSettings.torsoMaxForwardOffset = v,
             tooltip: "How far the ball's push target is pulled toward the camera when the hands sit at torso depth. 0 disables."
         );
         CreateFloatField(
             group,
-            "Torso Offset Falloff Distance (×s)",
+            "Torso Offset Falloff Distance",
             () => runtimeSettings.torsoOffsetFalloffDistance,
             v => runtimeSettings.torsoOffsetFalloffDistance = v,
             tooltip: "Hand-to-torso z distance at which the torso forward offset fades to zero."
@@ -671,7 +671,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Alignment Vector Strength Scaler (×s)",
+            "Alignment Vector Strength Scaler",
             () => runtimeSettings.alignmentVectorStrengthScaler,
             v => runtimeSettings.alignmentVectorStrengthScaler = v,
             tooltip: "Max distance the hand target is pushed along the hands' pointing direction. Lets players aim the ball by tilting their hands rather than only by moving them."
@@ -692,7 +692,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Pray To Activate Distance (×s)",
+            "Pray To Activate Distance",
             () => runtimeSettings.prayToActivateDistance,
             v => runtimeSettings.prayToActivateDistance = v,
             tooltip: "The distance (in meters) hands must be within to activate the player when Pray To Activate is enabled."
@@ -705,14 +705,14 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Added Boundary Distance (×s)",
+            "Added Boundary Distance",
             () => runtimeSettings.addedBoundaryDistance,
             v => runtimeSettings.addedBoundaryDistance = v,
             tooltip: "Margin added around the metaball grid to define the play boundary. Beyond it Boundary Outward Drag engages and the ball becomes eligible for reset."
         );
         CreateFloatField(
             group,
-            "Boundary Outward Drag (×s)",
+            "Boundary Outward Drag",
             () => runtimeSettings.boundaryOutwardDrag,
             v => runtimeSettings.boundaryOutwardDrag = v,
             tooltip: "Drag that opposes the ball while it is past the boundary and moving away from the hands. 0 disables."
@@ -775,28 +775,28 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Minimum Unscaled Size (×s)",
+            "Minimum Unscaled Size",
             () => runtimeSettings.minimumUnscaledSize,
             v => runtimeSettings.minimumUnscaledSize = v,
             tooltip: "The minimum size that the vfx body can scale down to."
         );
         CreateFloatField(
             group,
-            "Maximum Unscaled Size (×s)",
+            "Maximum Unscaled Size",
             () => runtimeSettings.maximumUnscaledSize,
             v => runtimeSettings.maximumUnscaledSize = v,
             tooltip: "The maximum size that the vfx body can scale up to."
         );
         CreateFloatField(
             group,
-            "Max Hand Velocity (×s)",
+            "Max Hand Velocity",
             () => runtimeSettings.maxHandVelocity,
             v => runtimeSettings.maxHandVelocity = v,
             tooltip: "Hand-velocity sanity gate for movement-based scaling: frames where a hand moves faster than this are ignored as tracking glitches."
         );
         CreateSliderField(
             group,
-            "Min Hand Displacement Per Frame (×s)",
+            "Min Hand Displacement Per Frame",
             () => runtimeSettings.minHandDisplacementPerFrame,
             v => runtimeSettings.minHandDisplacementPerFrame = v,
             0.0001f,
@@ -832,28 +832,28 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Max Distance Between Hands (×s)",
+            "Max Distance Between Hands",
             () => runtimeSettings.maxDistanceBetweenHands,
             v => runtimeSettings.maxDistanceBetweenHands = v,
             tooltip: "Reference hand separation used to normalize several curves (Force To Middle, Alignment Vector Strength, Distance Damper) and the drag remap. Distances beyond it are clamped."
         );
         CreateFloatField(
             group,
-            "Base Z Depth (×s)",
+            "Base Z Depth",
             () => runtimeSettings.baseZDepth,
             v => runtimeSettings.baseZDepth = v,
             tooltip: "World-space depth of the play volume: the metaball grid, boundary and Kinect joints are all placed at this Z. Also sent to the hand VFX."
         );
         CreateFloatField(
             group,
-            "Grid Scale (×s)",
+            "Grid Scale",
             () => runtimeSettings.gridScale,
             v => runtimeSettings.gridScale = v,
             tooltip: "World size of one marching-cubes voxel (volume = 64x32x64 voxels). Scales with bodyScale."
         );
         CreateFloatField(
             group,
-            "Default Unscaled Size (×s)",
+            "Default Unscaled Size",
             () => runtimeSettings.defaultUnscaledSize,
             v => runtimeSettings.defaultUnscaledSize = v,
             tooltip: "Starting diameter of a new player's ball before any pulsation, growing or shrinking is applied."
@@ -863,18 +863,18 @@ public class InGameSettingsMenu : MonoBehaviour
             "Body Scale",
             () => runtimeSettings.bodyScale,
             v => runtimeSettings.bodyScale = v,
-            tooltip: "World scale of the Kinect space. Every setting marked (×s), (×s²) or (×1/s) is stored at 1x and multiplied by this at runtime, so changing it alone keeps gameplay and look identical relative to the body."
+            tooltip: "World scale of the Kinect space. Every size-, speed- or force-related setting is stored at 1x and scaled by this at runtime, so changing it alone keeps gameplay and look identical relative to the body."
         );
         CreateFloatField(
             group,
-            "Max Distance From Camera (×s)",
+            "Max Distance From Camera",
             () => runtimeSettings.maxDistanceFromCamera,
             v => runtimeSettings.maxDistanceFromCamera = v,
             tooltip: "If a player's hands are tracked farther from the camera than this, they are treated as closed and their colliders/skeleton lines are disabled (filters people far in the background)."
         );
         CreateFloatField(
             group,
-            "Sphere Reset Jitter (×s)",
+            "Sphere Reset Jitter",
             () => runtimeSettings.sphereResetJitter,
             v => runtimeSettings.sphereResetJitter = v,
             tooltip: "Random +/- offset added when the ball is reset to the hand midpoint, so overlapping balls don't reset to exactly the same spot."
@@ -931,7 +931,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Metaball Radius Animation Start Size (×s)",
+            "Metaball Radius Animation Start Size",
             () => runtimeSettings.metaballRadiusAnimationStartSize,
             v => runtimeSettings.metaballRadiusAnimationStartSize = v,
             tooltip: "Starting radius for the metaball grow-in animation when a player initializes."
@@ -945,7 +945,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Body Spawn Size (×s)",
+            "Body Spawn Size",
             () => runtimeSettings.bodySpawnSize,
             v => runtimeSettings.bodySpawnSize = v,
             tooltip: "Particle size of the BodyEffects.vfx spawn flash on VFX_Body."
@@ -954,7 +954,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
     // ---- Hand VFX (HandVfxSettings, nested in the scene profile as "handVfx") ----
     // Group names mirror the [Header]s in HandVfxSettings. Every dimensioned row shows the
-    // base value with a unit hint; the effective value is base × bodyScale^exp.
+    // base value; the effective value is base × bodyScale^exp.
 
     private void CreateHandVfxSpawnGroup(ScrollView parentContainer)
     {
@@ -968,19 +968,19 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Spawn Sphere Radius (×s)",
+            "Spawn Sphere Radius",
             () => runtimeSettings.handVfx.spawnSphereRadius,
             v => runtimeSettings.handVfx.spawnSphereRadius = v
         );
         CreateFloatField(
             group,
-            "Spawn Velocity Spread (×s)",
+            "Spawn Velocity Spread",
             () => runtimeSettings.handVfx.spawnVeloSpread,
             v => runtimeSettings.handVfx.spawnVeloSpread = v
         );
         CreateVector2Field(
             group,
-            "Size Range (×s)",
+            "Size Range",
             () => runtimeSettings.handVfx.sizeRange,
             v => runtimeSettings.handVfx.sizeRange = v
         );
@@ -1017,7 +1017,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Length Scaler (×1/s)",
+            "Length Scaler",
             () => runtimeSettings.handVfx.lengthScaler,
             v => runtimeSettings.handVfx.lengthScaler = v
         );
@@ -1090,25 +1090,25 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Main Attraction Speed (×s)",
+            "Main Attraction Speed",
             () => runtimeSettings.handVfx.mainAttractionSpeed,
             v => runtimeSettings.handVfx.mainAttractionSpeed = v
         );
         CreateFloatField(
             group,
-            "Main Attraction Force (×s)",
+            "Main Attraction Force",
             () => runtimeSettings.handVfx.mainAttractionForce,
             v => runtimeSettings.handVfx.mainAttractionForce = v
         );
         CreateFloatField(
             group,
-            "Main Stick Distance (×s)",
+            "Main Stick Distance",
             () => runtimeSettings.handVfx.mainStickDistance,
             v => runtimeSettings.handVfx.mainStickDistance = v
         );
         CreateFloatField(
             group,
-            "Main Stick Force (×s)",
+            "Main Stick Force",
             () => runtimeSettings.handVfx.mainStickForce,
             v => runtimeSettings.handVfx.mainStickForce = v
         );
@@ -1134,7 +1134,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Seek Strength (×s)",
+            "Seek Strength",
             () => runtimeSettings.handVfx.seekStrength,
             v => runtimeSettings.handVfx.seekStrength = v
         );
@@ -1146,37 +1146,37 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "TD Radius (×s)",
+            "TD Radius",
             () => runtimeSettings.handVfx.tdRadius,
             v => runtimeSettings.handVfx.tdRadius = v
         );
         CreateFloatField(
             group,
-            "TD Stick Distance (×s)",
+            "TD Stick Distance",
             () => runtimeSettings.handVfx.tdStickDistance,
             v => runtimeSettings.handVfx.tdStickDistance = v
         );
         CreateFloatField(
             group,
-            "TD Stick Force (×s)",
+            "TD Stick Force",
             () => runtimeSettings.handVfx.tdStickForce,
             v => runtimeSettings.handVfx.tdStickForce = v
         );
         CreateFloatField(
             group,
-            "TD Attraction Force (×s)",
+            "TD Attraction Force",
             () => runtimeSettings.handVfx.tdAttractionForce,
             v => runtimeSettings.handVfx.tdAttractionForce = v
         );
         CreateFloatField(
             group,
-            "TD Attraction Speed (×s)",
+            "TD Attraction Speed",
             () => runtimeSettings.handVfx.tdAttractionSpeed,
             v => runtimeSettings.handVfx.tdAttractionSpeed = v
         );
         CreateFloatField(
             group,
-            "TD Wander Amount (×s)",
+            "TD Wander Amount",
             () => runtimeSettings.handVfx.tdWanderAmount,
             v => runtimeSettings.handVfx.tdWanderAmount = v
         );
@@ -1188,31 +1188,31 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "SA Attraction Speed (×s)",
+            "SA Attraction Speed",
             () => runtimeSettings.handVfx.saAttractionSpeed,
             v => runtimeSettings.handVfx.saAttractionSpeed = v
         );
         CreateFloatField(
             group,
-            "SA Attraction Force (×s)",
+            "SA Attraction Force",
             () => runtimeSettings.handVfx.saAttractionForce,
             v => runtimeSettings.handVfx.saAttractionForce = v
         );
         CreateFloatField(
             group,
-            "SA Stick Distance (×s)",
+            "SA Stick Distance",
             () => runtimeSettings.handVfx.saStickDistance,
             v => runtimeSettings.handVfx.saStickDistance = v
         );
         CreateFloatField(
             group,
-            "SA Stick Force (×s)",
+            "SA Stick Force",
             () => runtimeSettings.handVfx.saStickForce,
             v => runtimeSettings.handVfx.saStickForce = v
         );
         CreateFloatField(
             group,
-            "SA Min Radius (×s)",
+            "SA Min Radius",
             () => runtimeSettings.handVfx.saMinRadius,
             v => runtimeSettings.handVfx.saMinRadius = v
         );
@@ -1224,13 +1224,13 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Noise Scale (×s)",
+            "Noise Scale",
             () => runtimeSettings.handVfx.noiseScale,
             v => runtimeSettings.handVfx.noiseScale = v
         );
         CreateFloatField(
             group,
-            "Noise Frequency (×1/s)",
+            "Noise Frequency",
             () => runtimeSettings.handVfx.noiseFrequency,
             v => runtimeSettings.handVfx.noiseFrequency = v
         );
@@ -1248,13 +1248,13 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Turbulence Intensity (×s)",
+            "Turbulence Intensity",
             () => runtimeSettings.handVfx.turbulenceIntensity,
             v => runtimeSettings.handVfx.turbulenceIntensity = v
         );
         CreateFloatField(
             group,
-            "Turbulence Frequency (×1/s)",
+            "Turbulence Frequency",
             () => runtimeSettings.handVfx.turbulenceFrequency,
             v => runtimeSettings.handVfx.turbulenceFrequency = v
         );
@@ -1266,55 +1266,55 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "CHat Size (×s)",
+            "CHat Size",
             () => runtimeSettings.handVfx.cHatSize,
             v => runtimeSettings.handVfx.cHatSize = v
         );
         CreateFloatField(
             group,
-            "CHat Noise Amp (×s)",
+            "CHat Noise Amp",
             () => runtimeSettings.handVfx.cHatNoiseAmp,
             v => runtimeSettings.handVfx.cHatNoiseAmp = v
         );
         CreateFloatField(
             group,
-            "CHat Noise Freq (×1/s)",
+            "CHat Noise Freq",
             () => runtimeSettings.handVfx.cHatNoiseFreq,
             v => runtimeSettings.handVfx.cHatNoiseFreq = v
         );
         CreateFloatField(
             group,
-            "CHat Noise Y Scroll (×s)",
+            "CHat Noise Y Scroll",
             () => runtimeSettings.handVfx.cHatNoiseYScroll,
             v => runtimeSettings.handVfx.cHatNoiseYScroll = v
         );
         CreateFloatField(
             group,
-            "CHat Spawn Velo Sphere Radius (×s)",
+            "CHat Spawn Velo Sphere Radius",
             () => runtimeSettings.handVfx.cHatSpawnVeloSphereRadius,
             v => runtimeSettings.handVfx.cHatSpawnVeloSphereRadius = v
         );
         CreateFloatField(
             group,
-            "OHat Size (×s)",
+            "OHat Size",
             () => runtimeSettings.handVfx.oHatSize,
             v => runtimeSettings.handVfx.oHatSize = v
         );
         CreateFloatField(
             group,
-            "OHat Noise Amp (×s)",
+            "OHat Noise Amp",
             () => runtimeSettings.handVfx.oHatNoiseAmp,
             v => runtimeSettings.handVfx.oHatNoiseAmp = v
         );
         CreateFloatField(
             group,
-            "OHat Noise Freq (×1/s)",
+            "OHat Noise Freq",
             () => runtimeSettings.handVfx.oHatNoiseFreq,
             v => runtimeSettings.handVfx.oHatNoiseFreq = v
         );
         CreateFloatField(
             group,
-            "OHat Noise Y Scroll (×s)",
+            "OHat Noise Y Scroll",
             () => runtimeSettings.handVfx.oHatNoiseYScroll,
             v => runtimeSettings.handVfx.oHatNoiseYScroll = v
         );
@@ -1326,19 +1326,19 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateVector2Field(
             group,
-            "Snare Size Range (×s)",
+            "Snare Size Range",
             () => runtimeSettings.handVfx.snareSizeRange,
             v => runtimeSettings.handVfx.snareSizeRange = v
         );
         CreateVector2Field(
             group,
-            "Snare Radius Rand Range (×s)",
+            "Snare Radius Rand Range",
             () => runtimeSettings.handVfx.snareRadiusRandRange,
             v => runtimeSettings.handVfx.snareRadiusRandRange = v
         );
         CreateFloatField(
             group,
-            "Snare Spawn Velo Sphere Radius (×s)",
+            "Snare Spawn Velo Sphere Radius",
             () => runtimeSettings.handVfx.snareSpawnVeloSphereRadius,
             v => runtimeSettings.handVfx.snareSpawnVeloSphereRadius = v
         );

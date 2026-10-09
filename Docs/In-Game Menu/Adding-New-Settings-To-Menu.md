@@ -11,7 +11,6 @@ The settings menu system uses `RuntimeSceneSettings` as the central data class. 
 **Base vs. effective values.** Everything the menu, the `SceneController` inspector and the JSON profiles hold is a _base_ value at `bodyScale = 1`. `SceneController.RebuildEffectiveSettings()` derives the object consumers read (`CurrentSettings` / `GetRuntimeSettings()`) as `base × bodyScale^exp` via `BodyScaling.CreateEffective`. So:
 
 - **If the new setting has a dimension** (a length, velocity, per-frame displacement, rigidbody force, spatial frequency), put `[BodyScaled(exp)]` on the `RuntimeSceneSettings` field and store the **1× value**. Exponents: lengths / velocities / per-frame displacements `1`; rigidbody forces (`AddForce`) `2` (mass ∝ s); spatial frequencies `-1`. Time, ratios, rates, curves, bools and counts get no attribute. See `Docs/BodyScale.md` for the derivation and the VFX-specific rules.
-- Append the unit hint to the menu label by hand: `"Push Force (×s²)"`, `"TD Radius (×s)"`, `"Noise Frequency (×1/s)"`.
 - Consumers never rescale anything themselves — they just read the effective object.
 
 **Post-processing settings are different.** The Post Processing tab edits one of two looks, `RuntimeSceneSettings.particlePostProcessing` or `feedPostProcessing` (both `PostProcessSettings`). The tab's **Particles / Camera Feed** switch picks which one. A PP profile file is just a serialized `PostProcessSettings`, so a new PP value needs only three things:
@@ -185,7 +184,7 @@ private void CreateHandsAttractionGroup(ScrollView parentContainer)
 - Add one for any setting whose effect isn't obvious from the label — physics caps, thresholds, dampers, and especially **curves** (state what X = 0 / X = 1 mean, since several are inverted, e.g. `Force To Middle` X = 1 is "ball at target").
 - Skip it for self-explanatory values (most Hand VFX rows).
 - If the field already has a `[Tooltip]` on `RuntimeSceneSettings`, reuse that text so the inspector and menu agree.
-- Describe the behavior, not the units — the `(×s)` label suffix already covers scaling.
+- Describe the behavior, not the body-scale units — those aren't shown to the user.
 
 #### Option B: Create a New Group
 
@@ -196,11 +195,11 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
 {
     var group = CreateGroup("Boundary Drag", parentContainer);
 
-    CreateFloatField(group, "Added Boundary Distance (×s)",
+    CreateFloatField(group, "Added Boundary Distance",
         () => runtimeSettings.addedBoundaryDistance,
         v => runtimeSettings.addedBoundaryDistance = v,
         tooltip: "Margin added around the metaball grid to define the play boundary.");
-    CreateFloatField(group, "Boundary Outward Drag (×s)",
+    CreateFloatField(group, "Boundary Outward Drag",
         () => runtimeSettings.boundaryOutwardDrag,
         v => runtimeSettings.boundaryOutwardDrag = v,
         tooltip: "Drag opposing the ball while it is past the boundary and moving away from the hands. 0 disables.");
@@ -352,7 +351,7 @@ myCurve = new AnimationCurve(source.myCurve.keys);
 
 ```csharp
 CreateIntField(group, "Label", () => runtimeSettings.handVfx.spawnRate, v => runtimeSettings.handVfx.spawnRate = v);
-CreateVector2Field(group, "Label (×s)", () => runtimeSettings.handVfx.sizeRange, v => runtimeSettings.handVfx.sizeRange = v);
+CreateVector2Field(group, "Label", () => runtimeSettings.handVfx.sizeRange, v => runtimeSettings.handVfx.sizeRange = v);
 ```
 
 ### Testing Checklist (curve-specific)
@@ -480,11 +479,11 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
 {
     var group = CreateGroup("Boundary Drag", parentContainer);
 
-    CreateFloatField(group, "Added Boundary Distance (×s)",
+    CreateFloatField(group, "Added Boundary Distance",
         () => runtimeSettings.addedBoundaryDistance,
         v => runtimeSettings.addedBoundaryDistance = v,
         tooltip: "Margin added around the metaball grid to define the play boundary.");
-    CreateFloatField(group, "Boundary Outward Drag (×s)",
+    CreateFloatField(group, "Boundary Outward Drag",
         () => runtimeSettings.boundaryOutwardDrag,
         v => runtimeSettings.boundaryOutwardDrag = v,
         tooltip: "Drag opposing the ball while it is past the boundary and moving away from the hands. 0 disables.");
