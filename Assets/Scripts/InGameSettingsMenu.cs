@@ -1055,7 +1055,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void CreateHandVfxColorGroup(ScrollView parentContainer)
     {
-        var group = CreateGroup("Hand VFX - Colour & Glow", parentContainer);
+        var group = CreateGroup("Hand VFX - Color & Glow", parentContainer);
 
         CreateFloatField(
             group,

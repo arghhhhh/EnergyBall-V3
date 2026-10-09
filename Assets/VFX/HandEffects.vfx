@@ -730,7 +730,7 @@ MonoBehaviour:
     theme: 
     textSize: 
     colorTheme: 1
-  - title: Surface Glow + Colour Cycle
+  - title: Surface Glow + Color Cycle
     position:
       serializedVersion: 2
       x: -995
@@ -738,7 +738,7 @@ MonoBehaviour:
       width: 260
       height: 307
     contents: 'Gradient time = saturate(age / colorCycleTime) - age-based, so collision
-      cutting lifetime no longer jumps the colour.
+      cutting lifetime no longer jumps the color.
 
 
       glow = glowCurve(saturate(1
@@ -773,9 +773,9 @@ MonoBehaviour:
   uiBounds:
     serializedVersion: 2
     x: -5348
-    y: -445
-    width: 8357
-    height: 5288
+    y: -446
+    width: 8358
+    height: 5284
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -45610,7 +45610,7 @@ MonoBehaviour:
     returned. Moving away (vr <= 0) returns all tangential velocity.\n// Pure geometry:
     strength (damping * dt) and the distance fade are applied by the nodes downstream.\nfloat3
     MissingTangentialVelocity(in float3 position, in float3 relVelocity, in float3
-    sphereCenter, in float radius)\n{\n    float3 toCenter = sphereCenter - position;\n   
+    sphereCenter, in float radius)\n{\n    float3 toCenter = sphereCenter - position;\n
     float d = length(toCenter);\n    if (d < 1e-5) return float3(0, 0, 0);\n    float3
     n = toCenter / d;\n    float vr = dot(relVelocity, n);\n    float3 vt = relVelocity
     - vr * n;\n    float vtLen = length(vt);\n    if (vtLen < 1e-6) return float3(0,
@@ -52938,7 +52938,7 @@ MonoBehaviour:
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
+  m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots: []
   m_OutputSlots:

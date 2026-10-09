@@ -93,11 +93,11 @@ public class HandVfxSettings
     )]
     public float collisionDetectionScaleMult = 1.25f;
 
-    [Header("Colour & Glow")]
+    [Header("Color & Glow")]
     [VfxProperty("colorCycleTime")]
     [Tooltip(
         "Seconds for a particle to travel through the player's aura gradient (sampled by age, "
-            + "then held on the last colour). Time - never scaled."
+            + "then held on the last color). Time - never scaled."
     )]
     public float colorCycleTime = 4f;
 
@@ -124,7 +124,7 @@ public class HandVfxSettings
 
     [VfxProperty("surfaceBrightness")]
     [Tooltip(
-        "Colour multiplier at full glow, for the Multiply Color glow block (disabled by default; "
+        "Color multiplier at full glow, for the Multiply Color glow block (disabled by default; "
             + "the Blend Color block is the other option). Ratio - never scaled."
     )]
     public float surfaceBrightness = 3f;
