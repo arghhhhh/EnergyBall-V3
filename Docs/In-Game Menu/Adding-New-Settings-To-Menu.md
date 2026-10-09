@@ -68,6 +68,8 @@ public float boundaryOutwardDrag = 50f;
 - `bool` - Use `CreateToggleField()`
 - `float[]` - Use `CreateFloatArrayField()`
 - `AnimationCurve` - Use `CreateCurveField()` (opens the runtime curve editor popup)
+- `Color` / `Color[]` - Use `CreateColorField()` / `CreateColorArrayField()` (opens the runtime color picker)
+- `Gradient` / `Gradient[]` - Use `CreateGradientField()` / `CreateGradientArrayField()` (opens the runtime gradient editor)
 
 `[BodyScaled]` supports `float`, `Vector2` and `Vector3` fields.
 
@@ -295,6 +297,21 @@ CreateCurveField(group, "Label", () => runtimeSettings.curveProperty, v => runti
 ```
 
 Renders an interactive thumbnail of the curve. Clicking the thumbnail opens the `RuntimeCurveEditorWindow` popup with full keyframe editing, tangent mode controls, and preset support.
+
+### Color / Gradient Fields
+
+```csharp
+CreateColorField(group, "Label", () => runtimeSettings.color, v => runtimeSettings.color = v, hdr: false, showAlpha: true);
+CreateGradientField(group, "Label", () => runtimeSettings.gradient, v => runtimeSettings.gradient = v, hdr: true);
+CreateColorArrayField(group, "Label", () => runtimeSettings.colors, v => runtimeSettings.colors = v);
+CreateGradientArrayField(group, "Label", () => runtimeSettings.gradients, v => runtimeSettings.gradients = v, hdr: true);
+```
+
+A swatch / gradient strip that opens the runtime ports of the editor's pickers (`Assets/Scripts/RuntimeColorEditor/`): `RuntimeColorPickerWindow` (hue ring, RGB 0-255 / RGB 0-1 / HSV sliders, alpha, hex; with `hdr` the Intensity slider and exposure swatches) and `RuntimeGradientEditorWindow` (blend mode, alpha and color keys, max 8 each; a color key opens the color picker on top). Pass `hdr: true` where the inspector field has `[ColorUsage(…, true)]` / `[GradientUsage(true)]`: HDR colors are linear, so the picker shows them gamma-encoded, as in the editor. The gradient editor edits the gradient in place, then calls the setter.
+
+`Gradient` is a reference type: copy it with `ColorSettingsUtility.Clone()` at every plumbing site (DeepCopy, merge, copy, inspector both ways), like curves. The arrays have `Clone()` overloads too.
+
+**Older files.** `JsonUtility` fills a key missing from a profile / working set with the C# default, which would replace real colors with white gradients. The existing colors are therefore grouped behind `hasStyleColors` (false in files written before them) and copied with `CopyStyleColorsFrom()`, which skips a source without colors. A new color setting belongs in that group: add it to `CopyStyleColorsFrom()`, `StyleColorsEqual()` (live players are recolored when it changes) and both `SceneController` copy methods.
 
 ## AnimationCurve Settings — Extra Steps
 

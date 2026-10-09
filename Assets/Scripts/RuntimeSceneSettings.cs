@@ -206,6 +206,48 @@ public class RuntimeSceneSettings
     public bool drawSkeleton = false;
     public bool useTrackingStateColors = true;
 
+    // Colors. Files written before these existed have no "hasStyleColors" key, so JsonUtility
+    // leaves it false: loads then keep the current colors instead of the defaults below.
+    // Colors don't body-scale.
+    [Tooltip("True once the colors below hold real values (false in older profiles).")]
+    public bool hasStyleColors = false;
+
+    public Color skeletonColor = Color.magenta;
+
+    [Tooltip(
+        "Skeleton color for each palette slot (same index as particleColors). Wraps around when "
+            + "shorter than particleColors; empty falls back to the single skeleton color."
+    )]
+    public Color[] skeletonColors = new Color[]
+    {
+        Color.blue,
+        Color.cyan,
+        Color.green,
+        Color.magenta,
+        Color.red,
+        new(1, 0.5f, 0),
+        Color.yellow,
+    };
+
+    [GradientUsage(true)]
+    public Gradient particleColor = new();
+
+    [GradientUsage(true)]
+    [Tooltip(
+        "The individual-colors palette: one particle gradient per slot. Its length is the number "
+            + "of slots; each new player takes a free slot (random among them)."
+    )]
+    public Gradient[] particleColors = new Gradient[]
+    {
+        new(),
+        new(),
+        new(),
+        new(),
+        new(),
+        new(),
+        new(),
+    };
+
     // Post-processing: the particle layer (KinectOverlay, Particles Camera) and the camera feed
     // (Main Camera) each get their own look. PP profiles load into either target.
     public PostProcessSettings particlePostProcessing = new();
@@ -362,6 +404,11 @@ public class RuntimeSceneSettings
         copy.drawSkeleton = drawSkeleton;
         copy._individualColors = _individualColors;
         copy.useTrackingStateColors = useTrackingStateColors;
+        copy.hasStyleColors = hasStyleColors;
+        copy.skeletonColor = skeletonColor;
+        copy.skeletonColors = ColorSettingsUtility.Clone(skeletonColors);
+        copy.particleColor = ColorSettingsUtility.Clone(particleColor);
+        copy.particleColors = ColorSettingsUtility.Clone(particleColors);
         copy.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         copy.alwaysShowSphereMesh = alwaysShowSphereMesh;
         copy.showMetaballMesh = showMetaballMesh;
@@ -372,4 +419,26 @@ public class RuntimeSceneSettings
         copy._showSecondaryAttractor = _showSecondaryAttractor;
         return copy;
     }
+
+    /// <summary>
+    /// Copies the colors from <paramref name="source"/>. Does nothing when the source has none
+    /// (an older file), so the current colors stay.
+    /// </summary>
+    public void CopyStyleColorsFrom(RuntimeSceneSettings source)
+    {
+        if (source == null || !source.hasStyleColors)
+            return;
+        hasStyleColors = true;
+        skeletonColor = source.skeletonColor;
+        skeletonColors = ColorSettingsUtility.Clone(source.skeletonColors);
+        particleColor = ColorSettingsUtility.Clone(source.particleColor);
+        particleColors = ColorSettingsUtility.Clone(source.particleColors);
+    }
+
+    public bool StyleColorsEqual(RuntimeSceneSettings other) =>
+        other != null
+        && skeletonColor == other.skeletonColor
+        && ColorSettingsUtility.Same(skeletonColors, other.skeletonColors)
+        && ColorSettingsUtility.Same(particleColor, other.particleColor)
+        && ColorSettingsUtility.Same(particleColors, other.particleColors);
 }

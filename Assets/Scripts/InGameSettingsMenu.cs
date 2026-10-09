@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using RuntimeColorEditor;
 using RuntimeCurveEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -269,7 +270,7 @@ public class InGameSettingsMenu : MonoBehaviour
         if (
             Input.GetKeyDown(KeyCode.M)
             && !isModalOpen
-            && !RuntimeCurveEditorWindow.IsVisible
+            && !IsAnyPopupVisible
             && !IsTextFieldFocused()
         )
         {
@@ -277,14 +278,19 @@ public class InGameSettingsMenu : MonoBehaviour
         }
 
         // Toggle the invisible blocker overlay so UI Toolkit elements can't be
-        // interacted with while the IMGUI curve editor is visible.
+        // interacted with while an IMGUI popup (curve / gradient / color) is visible.
         if (curveEditorBlocker != null)
         {
-            curveEditorBlocker.style.display = RuntimeCurveEditorWindow.IsVisible
+            curveEditorBlocker.style.display = IsAnyPopupVisible
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
         }
     }
+
+    private static bool IsAnyPopupVisible =>
+        RuntimeCurveEditorWindow.IsVisible
+        || RuntimeGradientEditorWindow.IsVisible
+        || RuntimeColorPickerWindow.IsVisible;
 
     private void InitializeRuntimeSettings()
     {
@@ -312,8 +318,8 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var root = uiDocument.rootVisualElement;
 
-        // Invisible overlay that blocks all UI Toolkit interaction when the
-        // IMGUI curve editor is open (the two input systems are independent).
+        // Invisible overlay that blocks all UI Toolkit interaction when an
+        // IMGUI popup is open (the two input systems are independent).
         curveEditorBlocker = new VisualElement();
         curveEditorBlocker.style.position = Position.Absolute;
         curveEditorBlocker.style.left = 0;
@@ -1565,7 +1571,7 @@ public class InGameSettingsMenu : MonoBehaviour
             "Individual Colors",
             () => runtimeSettings.individualColors,
             v => runtimeSettings.individualColors = v,
-            tooltip: "Give each new player its own color from the palette (set in the SceneController inspector) instead of the shared default gradient."
+            tooltip: "Give each new player its own color from the Particle Colors palette instead of the shared Particle Color gradient."
         );
 
         if (SceneSupports(SceneController.SceneFeature.Kinect))
@@ -1585,7 +1591,57 @@ public class InGameSettingsMenu : MonoBehaviour
                 tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color."
             );
             ShowRowIf("Use Tracking State Colors", () => runtimeSettings.drawSkeleton);
+
+            CreateColorField(
+                group,
+                "Skeleton Color",
+                () => runtimeSettings.skeletonColor,
+                v => runtimeSettings.skeletonColor = v,
+                tooltip: "Bone color for every player while Individual Colors is off."
+            );
+            ShowRowIf(
+                "Skeleton Color",
+                () =>
+                    runtimeSettings.drawSkeleton
+                    && !runtimeSettings.useTrackingStateColors
+                    && !runtimeSettings.individualColors
+            );
+
+            CreateColorArrayField(
+                group,
+                "Skeleton Colors",
+                () => runtimeSettings.skeletonColors,
+                v => runtimeSettings.skeletonColors = v,
+                tooltip: "Skeleton color for each palette slot (same index as Particle Colors). Wraps around when shorter than Particle Colors; empty falls back to the single Skeleton Color."
+            );
+            ShowRowIf(
+                "Skeleton Colors",
+                () =>
+                    runtimeSettings.drawSkeleton
+                    && !runtimeSettings.useTrackingStateColors
+                    && runtimeSettings.individualColors
+            );
         }
+
+        CreateGradientField(
+            group,
+            "Particle Color",
+            () => runtimeSettings.particleColor,
+            v => runtimeSettings.particleColor = v,
+            hdr: true,
+            tooltip: "Hand particle gradient for every player while Individual Colors is off."
+        );
+        ShowRowIf("Particle Color", () => !runtimeSettings.individualColors);
+
+        CreateGradientArrayField(
+            group,
+            "Particle Colors",
+            () => runtimeSettings.particleColors,
+            v => runtimeSettings.particleColors = v,
+            hdr: true,
+            tooltip: "The Individual Colors palette: one particle gradient per slot. Its length is the number of slots; each new player takes a free slot (random among them)."
+        );
+        ShowRowIf("Particle Colors", () => runtimeSettings.individualColors);
     }
 
     /// <summary>
@@ -2172,7 +2228,7 @@ public class InGameSettingsMenu : MonoBehaviour
         // Click to open the curve editor popup
         thumbnail.RegisterCallback<PointerDownEvent>(evt =>
         {
-            if (RuntimeCurveEditorWindow.IsVisible)
+            if (IsAnyPopupVisible)
                 return;
 
             var curve = getter();
@@ -2277,6 +2333,375 @@ public class InGameSettingsMenu : MonoBehaviour
 
         tex.SetPixels32(pixels);
         tex.Apply();
+    }
+
+    /// <summary>
+    /// A color swatch row. Clicking the swatch opens the runtime color picker (HDR adds the
+    /// Intensity control and allows values above 1).
+    /// </summary>
+    private void CreateColorField(
+        VisualElement parent,
+        string label,
+        Func<Color> getter,
+        Action<Color> setter,
+        bool hdr = false,
+        bool showAlpha = true,
+        string tooltip = null
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
+
+        var swatch = CreateColorSwatch(getter, setter, hdr, showAlpha);
+
+        row.Add(labelElement);
+        row.Add(swatch);
+        parent.Add(row);
+
+        settingElements[label] = swatch;
+    }
+
+    /// <summary>
+    /// A gradient strip row. Clicking it opens the runtime gradient editor.
+    /// </summary>
+    private void CreateGradientField(
+        VisualElement parent,
+        string label,
+        Func<Gradient> getter,
+        Action<Gradient> setter,
+        bool hdr = false,
+        string tooltip = null
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
+
+        var thumbnail = CreateGradientThumbnail(getter, setter, hdr);
+
+        row.Add(labelElement);
+        row.Add(thumbnail);
+        parent.Add(row);
+
+        settingElements[label] = thumbnail;
+    }
+
+    private VisualElement CreateColorSwatch(
+        Func<Color> getter,
+        Action<Color> setter,
+        bool hdr,
+        bool showAlpha
+    )
+    {
+        var swatch = new VisualElement();
+        swatch.AddToClassList("color-swatch");
+        var hdrBadge = CreateHdrBadge(swatch);
+
+        Color shown = default;
+        bool hasRendered = false;
+        AttachThumbnailTexture(
+            swatch,
+            (tex, resized) =>
+            {
+                Color color = getter();
+                if (hasRendered && !resized && color == shown)
+                    return;
+                RuntimeColorThumbnails.RenderColorSwatch(tex, color, hdr, showAlpha);
+                hdrBadge.style.display = hdr ? DisplayStyle.Flex : DisplayStyle.None; // like the editor: any HDR color
+                shown = color;
+                hasRendered = true;
+            }
+        );
+
+        swatch.RegisterCallback<PointerDownEvent>(evt =>
+        {
+            if (IsAnyPopupVisible)
+                return;
+            RuntimeColorPickerWindow.Show(
+                getter(),
+                hdr,
+                showAlpha,
+                color =>
+                {
+                    setter(color);
+                    NotifySettingsChanged();
+                }
+            );
+        });
+        return swatch;
+    }
+
+    private VisualElement CreateGradientThumbnail(
+        Func<Gradient> getter,
+        Action<Gradient> setter,
+        bool hdr
+    )
+    {
+        var thumbnail = new VisualElement();
+        thumbnail.AddToClassList("gradient-thumbnail");
+        var hdrBadge = CreateHdrBadge(thumbnail);
+
+        bool hasRendered = false;
+        AttachThumbnailTexture(
+            thumbnail,
+            (tex, resized) =>
+            {
+                // Re-renders only while the gradient editor is open (or on resize); profile
+                // loads rebuild the whole UI, so thumbnails get a fresh first render.
+                if (hasRendered && !resized && !RuntimeGradientEditorWindow.IsVisible)
+                    return;
+                var gradient = getter();
+                if (gradient == null)
+                    return;
+                RuntimeColorThumbnails.RenderGradient(tex, gradient);
+                hdrBadge.style.display =
+                    RuntimeGradientEditorWindow.MaxColorComponent(gradient) > 1f
+                        ? DisplayStyle.Flex
+                        : DisplayStyle.None;
+                hasRendered = true;
+            }
+        );
+
+        thumbnail.RegisterCallback<PointerDownEvent>(evt =>
+        {
+            if (IsAnyPopupVisible)
+                return;
+            var gradient = getter();
+            if (gradient == null)
+                return;
+            RuntimeGradientEditorWindow.Show(
+                gradient,
+                hdr,
+                changed =>
+                {
+                    setter(changed);
+                    NotifySettingsChanged();
+                }
+            );
+        });
+        return thumbnail;
+    }
+
+    private static Label CreateHdrBadge(VisualElement owner)
+    {
+        var badge = new Label("HDR");
+        badge.AddToClassList("hdr-badge");
+        badge.pickingMode = PickingMode.Ignore;
+        badge.style.display = DisplayStyle.None;
+        owner.Add(badge);
+        return badge;
+    }
+
+    /// <summary>
+    /// Gives <paramref name="element"/> a background texture sized to its layout and calls
+    /// <paramref name="render"/> (texture, resized) every 200 ms while laid out. The texture is
+    /// destroyed when the element leaves the panel (UI rebuild, array row removed).
+    /// </summary>
+    private static void AttachThumbnailTexture(
+        VisualElement element,
+        Action<Texture2D, bool> render
+    )
+    {
+        Texture2D tex = null;
+        element
+            .schedule.Execute(() =>
+            {
+                int width = Mathf.RoundToInt(element.resolvedStyle.width);
+                int height = Mathf.RoundToInt(element.resolvedStyle.height);
+                if (width <= 4 || height <= 4)
+                    return;
+
+                bool resized = tex == null || tex.width != width || tex.height != height;
+                if (resized)
+                {
+                    if (tex != null)
+                        Destroy(tex);
+                    tex = RuntimeColorThumbnails.CreateTexture(width, height);
+                }
+                render(tex, resized);
+                element.style.backgroundImage = tex;
+            })
+            .Every(200);
+
+        element.RegisterCallback<DetachFromPanelEvent>(_ =>
+        {
+            if (tex != null)
+                Destroy(tex);
+            tex = null;
+        });
+    }
+
+    /// <summary>
+    /// An array row with Add Element / remove buttons, like <see cref="CreateFloatArrayField"/>,
+    /// where each element is edited by the control <paramref name="createElementEditor"/> builds
+    /// from an element getter/setter.
+    /// </summary>
+    private void CreateArrayField<T>(
+        VisualElement parent,
+        string label,
+        Func<T[]> getter,
+        Action<T[]> setter,
+        Func<Func<T>, Action<T>, VisualElement> createElementEditor,
+        Func<T[], T> createNewElement,
+        string tooltip = null
+    )
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
+
+        var arrayContainer = new VisualElement();
+        arrayContainer.AddToClassList("array-container");
+
+        var headerContainer = new VisualElement();
+        headerContainer.AddToClassList("array-header");
+
+        var collapseButton = new Button { text = "⇑" };
+        collapseButton.AddToClassList("array-collapse-button");
+
+        var countLabel = new Label();
+        countLabel.AddToClassList("array-count-label");
+
+        var contentContainer = new VisualElement();
+        contentContainer.AddToClassList("array-content");
+
+        void Refresh()
+        {
+            var array = getter() ?? Array.Empty<T>();
+            countLabel.text = $"({array.Length} items)";
+            contentContainer.Clear();
+
+            for (int i = 0; i < array.Length; i++)
+            {
+                int index = i; // Capture for closure
+                var elementRow = new VisualElement();
+                elementRow.AddToClassList("array-element");
+
+                var editor = createElementEditor(
+                    () =>
+                    {
+                        var current = getter();
+                        return current != null && index < current.Length ? current[index] : default;
+                    },
+                    value =>
+                    {
+                        var current = getter();
+                        if (current == null || index >= current.Length)
+                            return;
+                        current[index] = value;
+                        setter(current);
+                    }
+                );
+                editor.AddToClassList("array-element-input");
+
+                var removeButton = new Button(() =>
+                {
+                    var current = new List<T>(getter() ?? Array.Empty<T>());
+                    if (index >= current.Count)
+                        return;
+                    current.RemoveAt(index);
+                    setter(current.ToArray());
+                    Refresh();
+                    NotifySettingsChanged();
+                });
+                removeButton.text = "-";
+                removeButton.AddToClassList("array-button");
+
+                elementRow.Add(editor);
+                elementRow.Add(removeButton);
+                contentContainer.Add(elementRow);
+            }
+        }
+
+        var addButton = new Button(() =>
+        {
+            var current = getter() ?? Array.Empty<T>();
+            var list = new List<T>(current) { createNewElement(current) };
+            setter(list.ToArray());
+            Refresh();
+            NotifySettingsChanged();
+        });
+        addButton.text = "Add Element";
+        addButton.AddToClassList("array-button");
+
+        // Starts expanded: the elements are the point of these rows.
+        bool isCollapsed = false;
+        collapseButton.clicked += () =>
+        {
+            isCollapsed = !isCollapsed;
+            collapseButton.text = isCollapsed ? "⇓" : "⇑";
+            contentContainer.EnableInClassList("collapsed", isCollapsed);
+            addButton.EnableInClassList("hidden", isCollapsed);
+        };
+
+        headerContainer.Add(collapseButton);
+        headerContainer.Add(countLabel);
+        headerContainer.Add(addButton);
+        arrayContainer.Add(headerContainer);
+        arrayContainer.Add(contentContainer);
+        Refresh();
+
+        var container = new VisualElement();
+        container.AddToClassList("array-row-subcontainer");
+        container.Add(labelElement);
+        container.Add(arrayContainer);
+        row.Add(container);
+        parent.Add(row);
+
+        // The row's direct child, so ShowRowIf hides the whole row
+        settingElements[label] = container;
+    }
+
+    private void CreateColorArrayField(
+        VisualElement parent,
+        string label,
+        Func<Color[]> getter,
+        Action<Color[]> setter,
+        bool hdr = false,
+        bool showAlpha = true,
+        string tooltip = null
+    )
+    {
+        CreateArrayField(
+            parent,
+            label,
+            getter,
+            setter,
+            (get, set) => CreateColorSwatch(get, set, hdr, showAlpha),
+            current => current.Length > 0 ? current[^1] : Color.white,
+            tooltip
+        );
+    }
+
+    private void CreateGradientArrayField(
+        VisualElement parent,
+        string label,
+        Func<Gradient[]> getter,
+        Action<Gradient[]> setter,
+        bool hdr = false,
+        string tooltip = null
+    )
+    {
+        CreateArrayField(
+            parent,
+            label,
+            getter,
+            setter,
+            (get, set) => CreateGradientThumbnail(get, set, hdr),
+            current =>
+                current.Length > 0 ? ColorSettingsUtility.Clone(current[^1]) : new Gradient(),
+            tooltip
+        );
     }
 
     private void CreateFloatArrayField(
@@ -2778,6 +3203,8 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.individualColors = loadedSettings.individualColors;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
         runtimeSettings.useTrackingStateColors = loadedSettings.useTrackingStateColors;
+        // Older profiles carry no colors; then the current ones stay.
+        runtimeSettings.CopyStyleColorsFrom(loadedSettings);
 
         // Debug settings
         runtimeSettings.showSphereMeshOnHandCollision =
@@ -2873,6 +3300,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.individualColors = source.individualColors;
         destination.drawSkeleton = source.drawSkeleton;
         destination.useTrackingStateColors = source.useTrackingStateColors;
+        destination.CopyStyleColorsFrom(source);
 
         // Debug settings
         destination.showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
@@ -3191,6 +3619,9 @@ public class InGameSettingsMenu : MonoBehaviour
         if (file == null)
             return false;
 
+        // A working set from before the color settings has none: keep the inspector's.
+        if (!file.settings.hasStyleColors)
+            file.settings.CopyStyleColorsFrom(runtimeSettings);
         SetRuntimeSettings(file.settings.DeepCopy());
 
         currentSceneProfilePath = ResolveProfilePath(sceneProfilesDirectory, file.sceneProfileName);

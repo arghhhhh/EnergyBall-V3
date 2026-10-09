@@ -13,7 +13,7 @@ by "dummy" players for development without hardware.
 
 ## Environment
 
-- **Unity**: `6000.3.19f1` (see `ProjectSettings/ProjectVersion.txt`). Unity 6.3.
+- **Unity**: `6000.3.25f1` (see `ProjectSettings/ProjectVersion.txt`). Unity 6.3.
 - **Render pipeline**: URP 17.3 (`com.unity.render-pipelines.universal`).
 - **Main scene**: `Assets/Energy Ball V3.unity`.
 - **Platform**: Windows only (Kinect SDK v2 native plugins). Requires a physical
@@ -196,7 +196,12 @@ following the existing pattern:
   don't count toward `Post Processing *`; its values and profile are kept.
 - Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
   animation-curve presets in `Assets/StreamingAssets/CurvePresets/`, edited via the
-  `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor.
+  `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor. Colors and gradients
+  (skeleton color(s), particle gradient / palette) are edited with the runtime ports of the
+  editor's color picker and gradient editor in `Assets/Scripts/RuntimeColorEditor/` (IMGUI
+  popups like the curve editor; HDR colors are linear and shown gamma-encoded). They live
+  behind `RuntimeSceneSettings.hasStyleColors`, so an older profile or working set without
+  them keeps the current colors instead of loading white defaults.
 - **Working set** (`SettingsWorkingSet.cs`): the single latest copy of the settings,
   per scene, at `Application.persistentDataPath/SettingsWorkingSet/<scene>.json`.
   Every change writes it (menu edits, profile loads, inspector edits in play AND edit

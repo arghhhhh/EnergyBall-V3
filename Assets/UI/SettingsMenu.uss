@@ -191,6 +191,44 @@
     background-color: rgba(44, 44, 44, 1);
 }
 
+/* Color swatch / gradient strip: a CPU-rendered background image, click to edit */
+.color-swatch,
+.gradient-thumbnail {
+    min-width: 200px;
+    max-width: 300px;
+    height: 25px;
+    border-width: 1px;
+    border-color: rgb(80, 80, 80);
+    border-radius: 3px;
+    background-color: rgb(34, 34, 34);
+    -unity-background-scale-mode: stretch-to-fill;
+    cursor: link;
+}
+
+.color-swatch:hover,
+.gradient-thumbnail:hover {
+    border-color: rgb(170, 170, 170);
+}
+
+/* Inside an array the swatch shares the row with the remove button */
+.array-element-input.color-swatch,
+.array-element-input.gradient-thumbnail {
+    min-width: 0;
+}
+
+.hdr-badge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 4px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    color: rgb(128, 128, 128);
+    padding: 0;
+    margin: 0;
+}
+
 .close-button {
     position: absolute;
     top: 15px;

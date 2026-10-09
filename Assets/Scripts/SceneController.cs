@@ -646,10 +646,7 @@ public class SceneController : MonoBehaviour
                 CurrentSettings.defaultUnscaledSize,
                 CurrentSettings.defaultUnscaledSize
             );
-            if (CurrentSettings.individualColors)
-            {
-                ChoosePlayerColor(dummy);
-            }
+            ChoosePlayerColor(dummy);
 
             dummies[dummy.userId] = dummy.gameObject;
             players[dummy.userId] = dummy.gameObject;
@@ -670,10 +667,7 @@ public class SceneController : MonoBehaviour
             newPlayer.name = $"Player {userId}";
             playerConstructor.userId = userId;
             metaballsToSDF.AssignMetaballIndex(playerConstructor);
-            if (CurrentSettings.individualColors)
-            {
-                ChoosePlayerColor(playerConstructor);
-            }
+            ChoosePlayerColor(playerConstructor);
 
             playerScaleApplier.Apply(playerConstructor, CurrentSettings);
             UpdatePlayerDebuggingVisuals(playerConstructor);
@@ -699,13 +693,12 @@ public class SceneController : MonoBehaviour
 
     void ChoosePlayerColor(PlayerConstructor player)
     {
-        int slotCount = particleColors != null ? particleColors.Length : 0;
-        if (!CurrentSettings.individualColors || slotCount == 0)
+        var settings = CurrentSettings;
+        int slotCount = settings.particleColors != null ? settings.particleColors.Length : 0;
+        if (!settings.individualColors || slotCount == 0)
         {
             player.paletteSlot = -1;
-            player.skeletonColor = skeletonColor;
-            player.leftHandVfx.SetGradient("playerAuraBase", particleColor);
-            player.rightHandVfx.SetGradient("playerAuraBase", particleColor);
+            ApplyPlayerColors(player);
             return;
         }
 
@@ -742,13 +735,33 @@ public class SceneController : MonoBehaviour
 
         lastColorIndex = colorIndex;
         player.paletteSlot = colorIndex;
+        ApplyPlayerColors(player);
+    }
+
+    /// <summary>
+    /// Pushes the colors of the player's palette slot (or the shared colors when it has none)
+    /// to its skeleton and hand VFX.
+    /// </summary>
+    void ApplyPlayerColors(PlayerConstructor player)
+    {
+        var settings = CurrentSettings;
+        int slot = player.paletteSlot;
+        bool fromPalette =
+            settings.individualColors
+            && slot >= 0
+            && settings.particleColors != null
+            && slot < settings.particleColors.Length;
+
         // Skeleton colors are optional per slot: wrap a shorter array, fall back when empty.
+        var skeletonPalette = settings.skeletonColors;
         player.skeletonColor =
-            skeletonColors != null && skeletonColors.Length > 0
-                ? skeletonColors[colorIndex % skeletonColors.Length]
-                : skeletonColor;
-        player.leftHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
-        player.rightHandVfx.SetGradient("playerAuraBase", particleColors[colorIndex]);
+            fromPalette && skeletonPalette != null && skeletonPalette.Length > 0
+                ? skeletonPalette[slot % skeletonPalette.Length]
+                : settings.skeletonColor;
+
+        Gradient particle = fromPalette ? settings.particleColors[slot] : settings.particleColor;
+        player.leftHandVfx.SetGradient("playerAuraBase", particle);
+        player.rightHandVfx.SetGradient("playerAuraBase", particle);
     }
 
     void SetPlayerHandStates(Body body, PlayerConstructor player)
@@ -1074,16 +1087,19 @@ public class SceneController : MonoBehaviour
         runtimeSettings ??= CreateFallbackSettings();
         float previousBodyScale =
             cachedCurrentSettings != null ? cachedCurrentSettings.bodyScale : 0f;
-        bool? previousIndividualColors = cachedCurrentSettings?.individualColors;
+        var previousSettings = cachedCurrentSettings;
         cachedCurrentSettings = BodyScaling.CreateEffective(runtimeSettings);
         ApplyCameraFeedVisibility();
 
         // Only a real change of the live setting re-picks player colors (palette vs default).
-        if (
-            previousIndividualColors.HasValue
-            && previousIndividualColors.Value != cachedCurrentSettings.individualColors
-        )
-            RecolorAllPlayers();
+        // An edited color only re-applies, so players keep their palette slots.
+        if (previousSettings != null)
+        {
+            if (previousSettings.individualColors != cachedCurrentSettings.individualColors)
+                RecolorAllPlayers();
+            else if (!previousSettings.StyleColorsEqual(cachedCurrentSettings))
+                RefreshPlayerColors();
+        }
 
         if (playerScaleApplier == null)
             return;
@@ -1206,6 +1222,11 @@ public class SceneController : MonoBehaviour
         target.drawSkeleton = drawSkeleton;
         target.useTrackingStateColors = useTrackingStateColors;
         target.individualColors = individualColors;
+        target.hasStyleColors = true;
+        target.skeletonColor = skeletonColor;
+        target.skeletonColors = ColorSettingsUtility.Clone(skeletonColors);
+        target.particleColor = ColorSettingsUtility.Clone(particleColor);
+        target.particleColors = ColorSettingsUtility.Clone(particleColors);
         target.showSphereMeshOnHandCollision = showSphereMeshOnHandCollision;
         target.alwaysShowSphereMesh = alwaysShowSphereMesh;
         target.showMetaballMesh = showMetaballMesh;
@@ -1295,6 +1316,14 @@ public class SceneController : MonoBehaviour
         drawSkeleton = source.drawSkeleton;
         useTrackingStateColors = source.useTrackingStateColors;
         individualColors = source.individualColors;
+        // Older files carry no colors - keep the inspector's.
+        if (source.hasStyleColors)
+        {
+            skeletonColor = source.skeletonColor;
+            skeletonColors = ColorSettingsUtility.Clone(source.skeletonColors);
+            particleColor = ColorSettingsUtility.Clone(source.particleColor);
+            particleColors = ColorSettingsUtility.Clone(source.particleColors);
+        }
         showSphereMeshOnHandCollision = source.showSphereMeshOnHandCollision;
         alwaysShowSphereMesh = source.alwaysShowSphereMesh;
         showMetaballMesh = source.showMetaballMesh;
@@ -1358,6 +1387,27 @@ public class SceneController : MonoBehaviour
                 continue;
             var pc = player.GetComponent<PlayerConstructor>();
             ChoosePlayerColor(pc);
+        }
+    }
+
+    /// <summary>
+    /// Re-applies the current colors to every player, keeping palette slots. A player whose
+    /// slot no longer exists (palette shrank) picks a new one.
+    /// </summary>
+    private void RefreshPlayerColors()
+    {
+        var settings = CurrentSettings;
+        int slotCount = settings.particleColors != null ? settings.particleColors.Length : 0;
+        foreach (var player in players.Values)
+        {
+            if (player == null)
+                continue;
+            var pc = player.GetComponent<PlayerConstructor>();
+            bool needsSlot = settings.individualColors && slotCount > 0;
+            if (needsSlot && (pc.paletteSlot < 0 || pc.paletteSlot >= slotCount))
+                ChoosePlayerColor(pc);
+            else
+                ApplyPlayerColors(pc);
         }
     }
 
