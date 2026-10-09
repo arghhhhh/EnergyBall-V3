@@ -57,6 +57,12 @@ namespace RuntimeColorEditor
 
         protected abstract void OnEscape();
 
+        /// <summary>
+        /// True when a point belongs to this window: its rect, plus anything it opened that can
+        /// extend past it (a menu). Clicks elsewhere close the window.
+        /// </summary>
+        protected virtual bool OwnsPoint(Vector2 point) => windowRect.Contains(point);
+
         public virtual void Hide()
         {
             isVisible = false;
@@ -66,6 +72,7 @@ namespace RuntimeColorEditor
 
         protected void PlaceWindow(float width, Rect? nextTo)
         {
+            windowRect.width = width; // CalcHeight may depend on it
             float height = CalcHeight();
             if (nextTo.HasValue)
             {
@@ -128,7 +135,7 @@ namespace RuntimeColorEditor
                 // so a slider released off-window still sees its MouseUp.
                 if (
                     e.isMouse
-                    && !windowRect.Contains(e.mousePosition)
+                    && !OwnsPoint(e.mousePosition)
                     && !isDraggingWindow
                     && GUIUtility.hotControl == 0
                 )
@@ -142,7 +149,7 @@ namespace RuntimeColorEditor
                     // Swallow every other mouse event outside the window (drag, up, ...)
                     e.Use();
                 }
-                if (e.type == EventType.ScrollWheel && !windowRect.Contains(e.mousePosition))
+                if (e.type == EventType.ScrollWheel && !OwnsPoint(e.mousePosition))
                     e.Use();
 
                 if (e.type == EventType.KeyDown)

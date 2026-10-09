@@ -61,6 +61,7 @@ namespace RuntimeColorEditor
         private Texture2D preview;
         private bool previewDirty = true;
         private Texture2D alphaSliderTexture;
+        private RuntimeGradientPresets presets;
 
         public static bool IsVisible => s_Instance != null && s_Instance.isVisible;
 
@@ -94,8 +95,11 @@ namespace RuntimeColorEditor
             w.BuildArrays();
             w.selected = w.rgbSwatches.Count > 0 ? w.rgbSwatches[0] : null;
             w.previewDirty = true;
+            w.presets ??= new RuntimeGradientPresets();
+            w.presets.Reload();
             w.isVisible = true;
-            w.PlaceWindow(440f * RuntimeColorGUI.UIScale, null);
+            // The editor's gradient picker opens at its 360px minimum width
+            w.PlaceWindow(360f * RuntimeColorGUI.UIScale, null);
         }
 
         public static void HideWindow()
@@ -107,6 +111,7 @@ namespace RuntimeColorEditor
         public override void Hide()
         {
             RuntimeColorPickerWindow.HideIfOwnedBy(this);
+            presets?.Cleanup();
             base.Hide();
             onGradientChanged = null;
             gradient = null;
@@ -119,10 +124,20 @@ namespace RuntimeColorEditor
 
         protected override bool InputBlocked => RuntimeColorPickerWindow.IsVisible;
 
-        protected override void OnEscape() => Hide();
+        protected override void OnEscape()
+        {
+            // Esc closes an open preset menu / rename first
+            if (presets != null && presets.CancelPopup())
+                return;
+            Hide();
+        }
+
+        protected override bool OwnsPoint(Vector2 point) =>
+            base.OwnsPoint(point) || (presets != null && presets.ContainsPoint(point));
 
         private void OnDestroy()
         {
+            presets?.Cleanup();
             RuntimeColorGUI.DestroyTexture(ref preview);
             RuntimeColorGUI.DestroyTexture(ref alphaSliderTexture);
             if (s_Instance == this)
@@ -150,13 +165,38 @@ namespace RuntimeColorEditor
                 + RowHeight // selected key
                 + 8f * S
                 + 28f * S // hint (two lines)
-                + Padding;
+                + Padding
+                + PresetsHeight;
         }
+
+        private float PresetsHeight =>
+            presets != null ? presets.CalcHeight(windowRect.width) + 2f * S : 0f;
 
         protected override void DrawContents(Rect contentRect)
         {
             if (gradient == null)
                 return;
+
+            // Presets sit along the bottom, full width, like the editor's gradient picker
+            float presetsHeight = PresetsHeight;
+            Rect presetsRect = new Rect(
+                contentRect.x,
+                contentRect.yMax - presetsHeight,
+                contentRect.width,
+                presetsHeight - 2f * S
+            );
+            Event e = Event.current;
+            if (
+                presets != null
+                && presets.IsPopupOpen
+                && e.type != EventType.Repaint
+                && e.type != EventType.Layout
+            )
+            {
+                // A preset menu / rename owns input until it closes
+                presets.OnGUI(presetsRect, gradient, preview, ApplyPreset);
+                return;
+            }
 
             float x = contentRect.x + Padding;
             float y = contentRect.y + Padding;
@@ -187,6 +227,8 @@ namespace RuntimeColorEditor
             );
 
             HandleDeleteKey();
+
+            presets?.OnGUI(presetsRect, gradient, preview, ApplyPreset);
         }
 
         private void DrawModeRow(Rect row)
@@ -220,7 +262,7 @@ namespace RuntimeColorEditor
             RuntimeColorGUI.DrawBorder(rect, RuntimeColorGUI.ControlBorder);
             if (MaxColorComponent(gradient) > 1f)
                 GUI.Label(
-                    new Rect(rect.x, rect.y, rect.width - 4f * S, rect.height),
+                    new Rect(rect.x, rect.y, rect.width - 3f, rect.height),
                     "HDR",
                     HdrLabelStyle
                 );
@@ -237,9 +279,12 @@ namespace RuntimeColorEditor
                     || s_HdrLabel.fontSize != RuntimeColorGUI.MiniCenteredLabel.fontSize
                 )
                 {
+                    // The editor's centeredGreyMiniLabel
                     s_HdrLabel = new GUIStyle(RuntimeColorGUI.MiniCenteredLabel)
                     {
-                        alignment = TextAnchor.MiddleRight,
+                        alignment = TextAnchor.MiddleCenter,
+                        fontStyle = FontStyle.Normal,
+                        wordWrap = false,
                     };
                     s_HdrLabel.normal.textColor = new Color(0.5f, 0.5f, 0.5f, 1f);
                 }
@@ -614,6 +659,19 @@ namespace RuntimeColorEditor
                     new Rect(body.x + 2f, body.y + 2f, body.width - 4f, body.height - 4f),
                     new Color(1f, 1f, 1f, 0.6f)
                 );
+        }
+
+        /// <summary>Copies a preset's keys and mode into the edited gradient (editor: SetCurrentGradient).</summary>
+        private void ApplyPreset(Gradient preset)
+        {
+            if (preset == null || gradient == null)
+                return;
+            gradient.SetKeys(preset.colorKeys, preset.alphaKeys);
+            gradient.mode = preset.mode;
+            BuildArrays();
+            selected = rgbSwatches.Count > 0 ? rgbSwatches[0] : null;
+            previewDirty = true;
+            onGradientChanged?.Invoke(gradient);
         }
 
         // ---- Gradient <-> swatches ----

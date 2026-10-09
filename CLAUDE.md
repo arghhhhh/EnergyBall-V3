@@ -195,6 +195,9 @@ following the existing pattern:
   Feed on). Otherwise the tab falls back to Particles, and the feed's unsaved changes
   don't count toward `Post Processing *`; its values and profile are kept.
 - Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
+  gradient preset libraries in `Assets/StreamingAssets/GradientPresets/` (one ordered JSON
+  file per library, the runtime counterpart of the editor's `.gradients` libraries; Default
+  and VFXGradients were converted from the editor's preference folder),
   animation-curve presets in `Assets/StreamingAssets/CurvePresets/`, edited via the
   `Assets/Scripts/RuntimeCurveEditor/` runtime curve editor. Colors and gradients
   (skeleton color(s), particle gradient / palette) are edited with the runtime ports of the
