@@ -158,7 +158,13 @@ following the existing pattern:
   (auto-converted on load for Scene profiles), 1 = base-at-1×. Saves stamp 1.
   `EnergyBall/Migrate Scene Profiles To Base` (Editor menu) rewrites v0 files.
 - `InGameSettingsMenu.cs` / `SettingsMenuSetup.cs` — live in-game tuning UI (base
-  values, labels carry `(×s)` / `(×s²)` / `(×1/s)` hints).
+  values, labels carry `(×s)` / `(×s²)` / `(×1/s)` hints). UI Toolkit:
+  `Assets/UI/SettingsMenu.uxml` / `.uss`, scaled by `Assets/UI Toolkit/PanelSettings.asset`
+  (Scale With Screen Size, 1280×720 reference, match height, so it keeps the same share of
+  the screen at any resolution). Groups collapse from their header (state in PlayerPrefs
+  `SettingsMenuCollapsedGroups`); each tab has a search field that filters rows by group
+  title + label. The UI is rebuilt on every open / load, so both are re-applied after
+  `CreateSettingsUI()`.
 - **Feature-gated settings**: `SceneController.SceneFeature` (`Kinect` = not
   `dummyOnlyMode`; `CameraFeed` = Kinect + `cameraFeedQuad` assigned). The menu builds
   such rows only inside `if (SceneSupports(SceneFeature.X))`. Their SceneController twins

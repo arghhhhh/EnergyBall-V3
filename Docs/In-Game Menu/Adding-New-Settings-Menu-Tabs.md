@@ -119,10 +119,11 @@ Add your new tab button and content:
     
     <ui:VisualElement name="YourNewTabContent" class="tab-panel">
         <ui:VisualElement name="YourNewTabProfileControls" class="profile-controls">
-            <ui:DropdownField name="YourNewTabProfileDropdown" style="flex-grow: 1;" />
+            <ui:DropdownField name="YourNewTabProfileDropdown" class="profile-dropdown" />
             <ui:Button text="Load" name="YourNewTabLoadButton" class="profile-button" />
             <ui:Button text="Save" name="YourNewTabSaveButton" class="profile-button" />
             <ui:Button text="Save As..." name="YourNewTabSaveAsButton" class="profile-button" />
+            <ui:TextField name="YourNewTabSearchField" class="settings-search" />
         </ui:VisualElement>
         <ui:ScrollView name="YourNewTabPanel" class="settings-scroll">
             <!-- Settings will be populated dynamically -->
@@ -203,10 +204,12 @@ private void SetupUI()
         yourNewTabLoadButton = yourNewTabContent.Q<Button>("YourNewTabLoadButton");
         yourNewTabSaveButton = yourNewTabContent.Q<Button>("YourNewTabSaveButton");
         yourNewTabSaveAsButton = yourNewTabContent.Q<Button>("YourNewTabSaveAsButton");
+        yourNewTabSearchField = yourNewTabContent.Q<TextField>("YourNewTabSearchField");
     }
     
     yourNewTabPanel = root.Q<ScrollView>("YourNewTabPanel");
     yourNewTabTab = root.Q<Button>("YourNewTabTab");
+    SetupSearchField(yourNewTabSearchField, yourNewTabPanel);
     
     // Event handlers
     if (yourNewTabLoadButton != null) yourNewTabLoadButton.clicked += () => LoadSelectedProfile("yournewTab");
@@ -280,6 +283,7 @@ private void CreateSettingsUI()
     postProcessingPanel.Clear();
     yourNewTabPanel.Clear(); // Add this
     settingElements.Clear();
+    // ...the other existing clears (conditionalRows, settingGroups, searchEmptyLabels)
     
     // Scene Settings Tab
     CreateSceneSettingsContent();
@@ -289,8 +293,17 @@ private void CreateSettingsUI()
     
     // Your New Tab
     CreateYourNewTabContent(); // Add this
+
+    AddSearchEmptyLabel(sceneSettingsPanel);
+    AddSearchEmptyLabel(postProcessingPanel);
+    AddSearchEmptyLabel(yourNewTabPanel); // Add this
+    ApplyAllSearches();
 }
 ```
+
+Search is per tab: add the new panel to `SearchFieldFor()` (maps a panel to its search field)
+and to `ApplyAllSearches()`. `CreateGroup()` returns a collapsible group's content element, so
+groups on the new tab collapse and filter with no extra work.
 
 ### 11. Create Profile Management Methods
 

@@ -36,6 +36,23 @@
     margin-bottom: 15px;
 }
 
+/* The profile dropdown and the search field share the row's spare width; the dropdown is capped. */
+.profile-dropdown {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 120px;
+    max-width: 320px;
+}
+
+.settings-search {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 140px;
+    margin-left: 12px;
+}
+
 .profile-dirty-label {
     align-self: center;
     margin-left: 8px;
@@ -79,13 +96,59 @@
 }
 
 .group-header {
-    font-size: 18px;
-    -unity-font-style: bold;
-    color: rgb(200, 200, 200);
+    flex-direction: row;
+    align-items: center;
     margin-bottom: 10px;
     padding-bottom: 5px;
     border-bottom-width: 1px;
     border-bottom-color: rgb(100, 100, 100);
+}
+
+.group-header:hover .group-title,
+.group-header:hover .group-chevron {
+    color: white;
+}
+
+.group-chevron {
+    width: 18px;
+    font-size: 12px;
+    color: rgb(160, 160, 160);
+    -unity-text-align: middle-center;
+    margin-right: 4px;
+}
+
+.group-title {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(200, 200, 200);
+}
+
+/* Collapsed group: header only, no divider or gap under it. */
+.settings-group.collapsed {
+    margin-bottom: 8px;
+}
+
+.settings-group.collapsed .group-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+}
+
+.settings-group.collapsed .group-content {
+    display: none;
+}
+
+/* Rows hidden by a ShowRowIf condition or by the search filter. */
+.condition-hidden,
+.search-hidden {
+    display: none;
+}
+
+.search-empty-label {
+    color: rgb(160, 160, 160);
+    -unity-font-style: italic;
+    -unity-text-align: middle-center;
+    margin-top: 20px;
 }
 
 .setting-row {

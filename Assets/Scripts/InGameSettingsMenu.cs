@@ -126,7 +126,30 @@ public class InGameSettingsMenu : MonoBehaviour
     /// <summary>The look the Post Processing tab's fields read and write.</summary>
     private PostProcessSettings ActivePP => ActivePPState.get(runtimeSettings);
 
-    private readonly List<VisualElement> settingGroups = new();
+    /// <summary>
+    /// A collapsible settings group. <see cref="content"/> holds its rows; the header toggles it.
+    /// Rebuilt with the UI, while the collapsed state lives in <see cref="collapsedGroups"/>.
+    /// </summary>
+    private class SettingGroup
+    {
+        public string key;
+        public string title;
+        public ScrollView panel;
+        public VisualElement root;
+        public VisualElement content;
+        public Label chevron;
+    }
+
+    private readonly List<SettingGroup> settingGroups = new();
+
+    // Keys (panel name + "/" + title) of collapsed groups. Kept across UI rebuilds and sessions.
+    private readonly HashSet<string> collapsedGroups = new();
+    private const string CollapsedGroupsPrefKey = "SettingsMenuCollapsedGroups";
+
+    // Per-tab search: filters that tab's rows by label (or whole groups by title).
+    private TextField sceneSearchField,
+        postProcessingSearchField;
+    private readonly Dictionary<ScrollView, Label> searchEmptyLabels = new();
     private readonly Dictionary<string, VisualElement> settingElements = new();
 
     // Rows whose visibility depends on other settings (the menu's counterpart to the inspector's
@@ -175,6 +198,10 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Initialize scene-specific keys early
         InitializeSceneSpecificKeysFromController();
+
+        var collapsed = PlayerPrefs.GetString(CollapsedGroupsPrefKey, "");
+        foreach (var key in collapsed.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            collapsedGroups.Add(key);
     }
 
     private void Start()
@@ -239,7 +266,12 @@ public class InGameSettingsMenu : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.M) && !isModalOpen && !RuntimeCurveEditorWindow.IsVisible)
+        if (
+            Input.GetKeyDown(KeyCode.M)
+            && !isModalOpen
+            && !RuntimeCurveEditorWindow.IsVisible
+            && !IsTextFieldFocused()
+        )
         {
             ToggleMenu();
         }
@@ -314,6 +346,7 @@ public class InGameSettingsMenu : MonoBehaviour
             sceneLoadButton = sceneTabContent.Q<Button>("SceneLoadButton");
             sceneSaveButton = sceneTabContent.Q<Button>("SceneSaveButton");
             sceneSaveAsButton = sceneTabContent.Q<Button>("SceneSaveAsButton");
+            sceneSearchField = sceneTabContent.Q<TextField>("SceneSearchField");
         }
 
         // Post-processing tab controls
@@ -341,7 +374,13 @@ public class InGameSettingsMenu : MonoBehaviour
             postProcessingTargetFeedButton = postProcessingTabContent.Q<Button>(
                 "PostProcessingTargetFeed"
             );
+            postProcessingSearchField = postProcessingTabContent.Q<TextField>(
+                "PostProcessingSearchField"
+            );
         }
+
+        SetupSearchField(sceneSearchField, sceneSettingsPanel);
+        SetupSearchField(postProcessingSearchField, postProcessingPanel);
 
         closeButton = root.Q<Button>("CloseButton");
         sceneTab = root.Q<Button>("SceneTab");
@@ -428,12 +467,19 @@ public class InGameSettingsMenu : MonoBehaviour
         postProcessingPanel.Clear();
         settingElements.Clear();
         conditionalRows.Clear();
+        settingGroups.Clear();
+        searchEmptyLabels.Clear();
 
         // Scene Settings Tab
         CreateSceneSettingsContent();
 
         // Post Processing Tab
         CreatePostProcessingContent();
+
+        // The search fields live outside the rebuilt panels, so their queries survive a rebuild.
+        AddSearchEmptyLabel(sceneSettingsPanel);
+        AddSearchEmptyLabel(postProcessingPanel);
+        ApplyAllSearches();
     }
 
     private void CreateSceneSettingsContent()
@@ -1551,13 +1597,17 @@ public class InGameSettingsMenu : MonoBehaviour
         if (!settingElements.TryGetValue(label, out var field) || field.parent == null)
             return;
         conditionalRows.Add((field.parent, isVisible));
-        field.parent.style.display = isVisible() ? DisplayStyle.Flex : DisplayStyle.None;
+        field.parent.EnableInClassList("condition-hidden", !isVisible());
     }
 
     private void UpdateConditionalRows()
     {
         foreach (var (row, isVisible) in conditionalRows)
-            row.style.display = isVisible() ? DisplayStyle.Flex : DisplayStyle.None;
+            row.EnableInClassList("condition-hidden", !isVisible());
+
+        // A row appearing or disappearing can change which groups have search matches.
+        if (conditionalRows.Count > 0)
+            ApplyAllSearches();
     }
 
     private void CreateDebuggingGroup(ScrollView parentContainer)
@@ -1622,19 +1672,180 @@ public class InGameSettingsMenu : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Adds a collapsible group to <paramref name="parentContainer"/> and returns the element
+    /// its setting rows go into. Clicking the header collapses / expands it.
+    /// </summary>
     private VisualElement CreateGroup(string title, ScrollView parentContainer)
     {
         var group = new VisualElement();
         group.AddToClassList("settings-group");
 
-        var header = new Label(title);
+        var header = new VisualElement();
         header.AddToClassList("group-header");
+        var chevron = new Label();
+        chevron.AddToClassList("group-chevron");
+        var titleLabel = new Label(title);
+        titleLabel.AddToClassList("group-title");
+        header.Add(chevron);
+        header.Add(titleLabel);
         group.Add(header);
 
-        parentContainer.Add(group);
-        settingGroups.Add(group);
+        var content = new VisualElement();
+        content.AddToClassList("group-content");
+        group.Add(content);
 
-        return group;
+        parentContainer.Add(group);
+
+        var entry = new SettingGroup
+        {
+            key = parentContainer.name + "/" + title,
+            title = title,
+            panel = parentContainer,
+            root = group,
+            content = content,
+            chevron = chevron,
+        };
+        settingGroups.Add(entry);
+        header.RegisterCallback<ClickEvent>(_ => ToggleGroupCollapsed(entry));
+        ApplyGroupCollapsed(entry, searching: false);
+
+        return content;
+    }
+
+    private void ToggleGroupCollapsed(SettingGroup group)
+    {
+        // While searching every group with matches is forced open, so collapsing does nothing.
+        if (IsSearching(group.panel))
+            return;
+
+        if (!collapsedGroups.Remove(group.key))
+            collapsedGroups.Add(group.key);
+        PlayerPrefs.SetString(CollapsedGroupsPrefKey, string.Join("\n", collapsedGroups));
+
+        ApplyGroupCollapsed(group, searching: false);
+    }
+
+    private void ApplyGroupCollapsed(SettingGroup group, bool searching)
+    {
+        bool collapsed = !searching && collapsedGroups.Contains(group.key);
+        group.root.EnableInClassList("collapsed", collapsed);
+        group.chevron.text = collapsed ? "▶" : "▼";
+    }
+
+    // ---- Search ----
+
+    private void SetupSearchField(TextField field, ScrollView panel)
+    {
+        if (field == null || panel == null)
+            return;
+
+        field.textEdition.placeholder = "Search settings...";
+        field.RegisterValueChangedCallback(_ =>
+        {
+            ApplySearch(panel);
+            panel.scrollOffset = Vector2.zero;
+        });
+        field.RegisterCallback<KeyDownEvent>(evt =>
+        {
+            if (evt.keyCode == KeyCode.Escape)
+                field.value = "";
+        });
+    }
+
+    private TextField SearchFieldFor(ScrollView panel) =>
+        panel == sceneSettingsPanel ? sceneSearchField
+        : panel == postProcessingPanel ? postProcessingSearchField
+        : null;
+
+    private string[] SearchTerms(ScrollView panel) =>
+        (SearchFieldFor(panel)?.value ?? "")
+            .ToLowerInvariant()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+    private bool IsSearching(ScrollView panel) => SearchTerms(panel).Length > 0;
+
+    private static bool MatchesAllTerms(string text, string[] terms)
+    {
+        if (string.IsNullOrEmpty(text))
+            return false;
+        text = text.ToLowerInvariant();
+        foreach (var term in terms)
+            if (!text.Contains(term))
+                return false;
+        return true;
+    }
+
+    private void ApplyAllSearches()
+    {
+        ApplySearch(sceneSettingsPanel);
+        ApplySearch(postProcessingPanel);
+    }
+
+    /// <summary>
+    /// Filters <paramref name="panel"/> to the rows whose group title + label contain every search
+    /// term, so a group whose title matches shows all its rows. Groups with matches are expanded;
+    /// clearing the search restores each group's collapsed state.
+    /// </summary>
+    private void ApplySearch(ScrollView panel)
+    {
+        if (panel == null)
+            return;
+
+        var terms = SearchTerms(panel);
+        bool searching = terms.Length > 0;
+        bool anyMatch = false;
+
+        foreach (var group in settingGroups)
+        {
+            if (group.panel != panel)
+                continue;
+
+            bool groupHasMatch = false;
+            foreach (var row in group.content.Children())
+            {
+                // Terms can come from the group title and the label together ("lens scale").
+                bool show =
+                    !searching
+                    || MatchesAllTerms(
+                        group.title + " " + row.Q<Label>(className: "setting-label")?.text,
+                        terms
+                    );
+                row.EnableInClassList("search-hidden", !show);
+                if (show && !row.ClassListContains("condition-hidden"))
+                    groupHasMatch = true;
+            }
+
+            bool showGroup = !searching || groupHasMatch;
+            group.root.EnableInClassList("search-hidden", !showGroup);
+            ApplyGroupCollapsed(group, searching);
+            anyMatch |= showGroup;
+        }
+
+        if (searchEmptyLabels.TryGetValue(panel, out var emptyLabel))
+            emptyLabel.EnableInClassList("hidden", !searching || anyMatch);
+    }
+
+    private void AddSearchEmptyLabel(ScrollView panel)
+    {
+        var label = new Label("No matching settings");
+        label.AddToClassList("search-empty-label");
+        label.AddToClassList("hidden");
+        panel.Add(label);
+        searchEmptyLabels[panel] = label;
+    }
+
+    /// <summary>
+    /// True while a text-entry field (search, number fields, ...) has keyboard focus, so typing
+    /// doesn't trigger the menu's hotkey.
+    /// </summary>
+    private bool IsTextFieldFocused()
+    {
+        var focused = uiDocument?.rootVisualElement?.panel?.focusController?.focusedElement;
+        for (var element = focused as VisualElement; element != null; element = element.parent)
+            if (element.ClassListContains("unity-base-text-field"))
+                return true;
+        return false;
     }
 
     // ---- Tooltips ----
@@ -2240,6 +2451,7 @@ public class InGameSettingsMenu : MonoBehaviour
     private void CloseMenu()
     {
         settingsPanel.AddToClassList("hidden");
+        settingsPanel.panel?.focusController?.focusedElement?.Blur();
 
         // Hide cursor when menu is closed (only outside Unity editor)
         if (!Application.isEditor)
