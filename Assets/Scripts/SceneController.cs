@@ -13,9 +13,7 @@ public class SceneController : MonoBehaviour
     public static SceneController Instance { get; private set; } // singleton pattern
 
     [Header("Runtime Settings")]
-    [Tooltip(
-        "Skip the Kinect entirely and drive the scene with dummy players only. Per scene, not part of settings profiles."
-    )]
+    [Tooltip("Skip the Kinect entirely and drive the scene with dummy players only.")]
     public bool dummyOnlyMode = false;
     public InGameSettingsMenu settingsMenu;
     public VolumeController volumeController;
