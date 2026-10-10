@@ -88,6 +88,55 @@
     flex-grow: 1;
 }
 
+/* A Scene-tab section (Space, Kinect, Ball, ...): a large header over its run of groups. */
+.settings-section {
+    margin-bottom: 16px;
+}
+
+.section-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(150, 150, 150);
+}
+
+.section-header:hover .section-title,
+.section-header:hover .section-chevron {
+    color: white;
+}
+
+.section-chevron {
+    width: 20px;
+    font-size: 14px;
+    color: rgb(190, 190, 190);
+    -unity-text-align: middle-center;
+    margin-right: 4px;
+}
+
+.section-title {
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(230, 230, 230);
+}
+
+/* Groups sit indented under their section's header. */
+.section-content {
+    padding-left: 12px;
+    border-left-width: 2px;
+    border-left-color: rgb(70, 70, 70);
+}
+
+.settings-section.collapsed .section-header {
+    margin-bottom: 0;
+}
+
+.settings-section.collapsed .section-content {
+    display: none;
+}
+
 .settings-group {
     margin-bottom: 20px;
     padding: 10px;

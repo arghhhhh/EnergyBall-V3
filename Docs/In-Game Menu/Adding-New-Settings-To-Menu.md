@@ -4,7 +4,7 @@ This guide explains how to add new settings fields to an existing tab in the in-
 
 ## Overview
 
-The settings menu system uses `RuntimeSceneSettings` as the central data class. Settings are organized into groups within tabs, and changes are persisted through JSON profile files.
+The settings menu system uses `RuntimeSceneSettings` as the central data class. The Scene tab is organized into **sections** (Space, Kinect, Ball, Hands, Particles, Debug — `SettingSections` in `SettingGroupAttribute.cs`), each holding collapsible **groups**; the Post Processing tab has groups only. The `SceneController` inspector shows the same sections, groups and labels (drawn by `Assets/Editor/SceneControllerEditor.cs` from `[SettingGroup]` attributes). Changes are persisted through JSON profile files.
 
 **Working set.** Independently of profiles, every change (menu, profile load, inspector in play or edit mode) is written to a per-scene working-set file (`SettingsWorkingSet.cs`, under `Application.persistentDataPath`). It is restored at play start and copied back into the inspector when play stops, so the latest change always sticks; the menu marks the tab dirty (`Scene *`, "Unsaved changes") until you Save. New fields need nothing extra for this - the whole `RuntimeSceneSettings` object is serialized - but **a field missing from `CopySceneSettings` is invisible to dirty tracking and to profiles**, so steps 7-8 matter. Always go through `NotifySettingsChanged()` (never invoke `OnSettingsChanged` directly) so the working set and dirty state stay current.
 
@@ -27,9 +27,9 @@ Steps 1–8 below are for **scene** settings.
 
 **Settings that need a feature.** If a setting only makes sense with a live Kinect, or with a camera feed in the scene, gate it on `SceneController.SceneFeature` rather than on a scene name:
 
-- Menu: build the row inside `if (SceneSupports(SceneController.SceneFeature.Kinect)) { ... }` (or `CameraFeed`).
-- Inspector: give the SceneController twin `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`. NaughtyAttributes allows one ShowIf/HideIf per field, so when the field already has a rule, combine them with `EConditionOperator.And`. If a rule needs negation, add a named condition property next to `ShowSkeletonColorField`.
-- If a row depends on another setting's value rather than a scene feature (e.g. only while Draw Skeleton is on), call `ShowRowIf("Label", () => runtimeSettings.x)` right after creating the field. The menu re-evaluates these on every settings change. It hides the row with the `condition-hidden` class, not an inline `style.display`, so it combines with the search filter's `search-hidden` (an inline display would override the class and un-hide filtered rows).
+- Menu: build the row inside `if (SceneSupports(SceneController.SceneFeature.Kinect)) { ... }` (or `CameraFeed`). The whole Kinect section is only built with a Kinect, and its Camera Feed group only with a camera feed, so a setting that belongs there needs no extra check.
+- Inspector: give the SceneController twin `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`. A section or group whose fields are all hidden is left out of the inspector. NaughtyAttributes allows one ShowIf/HideIf per field, so when the field already has a rule, combine them with `EConditionOperator.And`. If a rule needs negation, add a named condition property next to `ShowSkeletonColorField`.
+- If a row depends on another setting's value rather than a scene feature (e.g. only while Draw Skeleton is on), call `ShowRowIf(group, "Label", () => runtimeSettings.x)` right after creating the field (`group` is the element `CreateGroup` returned; rows are looked up by group + label, since labels repeat across groups). The menu re-evaluates these on every settings change. It hides the row with the `condition-hidden` class, not an inline `style.display`, so it combines with the search filter's `search-hidden` (an inline display would override the class and un-hide filtered rows).
 - Load, save and copy as usual. The value stays in profiles even where it's hidden, so profiles shared between scenes keep it.
 - A new kind of feature means a new `SceneFeature` flag, set in `SceneController.Features`.
 
@@ -39,7 +39,7 @@ Steps 1–8 below are for **scene** settings.
 | ---- | ------------------------- | ---------------------------------------------------------------- |
 | 1    | `RuntimeSceneSettings.cs` | Add the property                                                 |
 | 2    | `RuntimeSceneSettings.cs` | Update `DeepCopy()` method                                       |
-| 3    | `SceneController.cs`      | Add inspector field in appropriate BoxGroup                      |
+| 3    | `SceneController.cs`      | Add inspector field with `[SettingGroup(section, group)]`        |
 | 4    | `SceneController.cs`      | Update `CopyInspectorToRuntime()` method                         |
 | 5    | `SceneController.cs`      | Update `CopyRuntimeToInspector()` method                         |
 | 6    | `InGameSettingsMenu.cs`   | Add UI field in appropriate group method                         |
@@ -52,11 +52,12 @@ Steps 1–8 below are for **scene** settings.
 
 **File:** `Assets/Scripts/RuntimeSceneSettings.cs`
 
-Add your new property under the appropriate `[Header]` section:
+Add your new property. Field order here is only the JSON order; where the setting shows up is decided by `[SettingGroup]` on the inspector twin (step 3) and by the menu (step 6).
 
 ```csharp
-[Header("Boundary Drag")]
+[BodyScaled(1)]
 public float addedBoundaryDistance = 1.5f;
+[BodyScaled(1)]
 public float boundaryOutwardDrag = 50f;
 ```
 
@@ -73,7 +74,7 @@ public float boundaryOutwardDrag = 50f;
 
 `[BodyScaled]` supports `float`, `Vector2` and `Vector3` fields.
 
-**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching `CreateHandVfx*Group` in the menu. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write (`float`, `int`, `Vector2`, `Vector3`, `AnimationCurve`). Curves in `HandVfxSettings` must be copied by keys in its `DeepCopy()`.
+**Nested groups.** `HandVfxSettings` is a `[Serializable]` class nested in `RuntimeSceneSettings` as `handVfx` (JSON: `"handVfx": { ... }`). Its fields carry `[BodyScaled]` / `[VfxProperty("graphName")]` and are pushed to the hand VFX graphs by `PlayerScaleApplier`. At every plumbing site the nested object is copied **as one object** (`target.handVfx = source.handVfx.DeepCopy()`), so adding a value to it only needs: the field in `HandVfxSettings` (+ tooltip, attributes) and a row in the matching Particles group method in the menu (`CreateGlowGroup`, `CreateBallAttractionGroup`, ...). Give the field `[SettingGroup(SettingSections.Particles, "<group>")]` (+ `[Label]` when the menu label differs) and declare it among that group's fields: the inspector flattens `handVfx` into the Particles groups in declaration order, and only does so while **every** `HandVfxSettings` field has a `[SettingGroup]`. To push a value to the graph, name the exposed property in `[VfxProperty]` — the applier discovers it by reflection and `Has*`-guards the write (`float`, `int`, `Vector2`, `Vector3`, `AnimationCurve`). Curves in `HandVfxSettings` must be copied by keys in its `DeepCopy()`.
 
 **For properties with change notifications:**
 
@@ -118,13 +119,16 @@ public RuntimeSceneSettings DeepCopy()
 
 **File:** `Assets/Scripts/SceneController.cs`
 
-Add your new property in the appropriate `[BoxGroup]` section in the inspector region:
+Add your new property in the inspector region with the section and group it has in the menu. `SceneControllerEditor` draws the sections in `SettingSections.Order` and each group's fields in declaration order, so place the field next to the rest of its group. Add NaughtyAttributes `[Label]` when the menu label isn't the field's nicified name:
 
 ```csharp
-[BoxGroup("Debugging")]
+[SettingGroup(SettingSections.Debug, "Visualizers")]
+[Label("My New Setting")]
 [Tooltip("Description of what this setting does.")]
 public bool myNewSetting = false;
 ```
+
+Fields without `[SettingGroup]` (scene references such as `playerPrefab`) are drawn above the sections. Don't use `[BoxGroup]` / `[Foldout]` on settings fields: the custom editor ignores them.
 
 ### 4. Update CopyInspectorToRuntime() Method
 
@@ -167,9 +171,9 @@ private void CopyRuntimeToInspector(RuntimeSceneSettings source)
 Find the appropriate `Create*Group()` method and add your field:
 
 ```csharp
-private void CreateHandsAttractionGroup(ScrollView parentContainer)
+private void CreatePushGroup(SettingSection section)
 {
-    var group = CreateGroup("Hands Attraction", parentContainer);
+    var group = CreateGroup("Push", section);
 
     // ... existing fields ...
 
@@ -184,41 +188,45 @@ private void CreateHandsAttractionGroup(ScrollView parentContainer)
 **Hover tooltips.** Every `Create*Field` helper takes an optional trailing `string tooltip = null`. When set, hovering the setting's label shows a runtime popup (`AttachTooltip` / `ShowTooltip` in `InGameSettingsMenu.cs`, styled by `.setting-tooltip` in `Assets/UI/SettingsMenu.uss`). This is a custom popup because UI Toolkit's built-in `VisualElement.tooltip` only renders inside the Editor. Guidelines:
 
 - Add one for any setting whose effect isn't obvious from the label — physics caps, thresholds, dampers, and especially **curves** (state what X = 0 / X = 1 mean, since several are inverted, e.g. `Force To Middle` X = 1 is "ball at target").
-- Skip it for self-explanatory values (most Hand VFX rows).
-- If the field already has a `[Tooltip]` on `RuntimeSceneSettings`, reuse that text so the inspector and menu agree.
+- Skip it for self-explanatory values (most Particles rows).
+- If the field already has a `[Tooltip]` on its `SceneController` twin, reuse that text so the inspector and menu agree. For a long shared text, put it in a `const` and use it in both places (`SceneController.ReArmDelayTooltip`).
 - Describe the behavior, not the body-scale units — those aren't shown to the user.
 
 #### Option B: Create a New Group
 
-If your settings deserve their own category, create a new group method:
+If your settings deserve their own category, create a new group method. Name groups by what they control, and keep the section's name out of the title (the section header already says it). Row labels only need to be unique within their group: search matches the section title + group title + label, so a shared label like "Stick Force" is found per group ("trail stick").
 
 ```csharp
-private void CreateBoundaryDragGroup(ScrollView parentContainer)
+private void CreatePlayBoundaryGroup(SettingSection section)
 {
-    var group = CreateGroup("Boundary Drag", parentContainer);
+    var group = CreateGroup("Play Boundary", section);
 
-    CreateFloatField(group, "Added Boundary Distance",
+    CreateFloatField(group, "Margin",
         () => runtimeSettings.addedBoundaryDistance,
         v => runtimeSettings.addedBoundaryDistance = v,
         tooltip: "Margin added around the metaball grid to define the play boundary.");
-    CreateFloatField(group, "Boundary Outward Drag",
+    CreateFloatField(group, "Outward Drag",
         () => runtimeSettings.boundaryOutwardDrag,
         v => runtimeSettings.boundaryOutwardDrag = v,
         tooltip: "Drag opposing the ball while it is past the boundary and moving away from the hands. 0 disables.");
 }
 ```
 
-Then add it to `CreateSceneSettingsContent()` or `CreatePostProcessingContent()`:
+Then call it inside its section in `CreateSceneSettingsContent()` (or, for the Post Processing tab, with `CreateGroup(title, postProcessingPanel)` in `CreatePostProcessingGroup()`):
 
 ```csharp
 private void CreateSceneSettingsContent()
 {
-    CreateGravityAttractionGroup(sceneSettingsPanel);
-    CreateHandsAttractionGroup(sceneSettingsPanel);
-    CreateBoundaryDragGroup(sceneSettingsPanel);  // Add your new group
-    // ... rest of groups ...
+    var panel = sceneSettingsPanel;
+
+    var space = CreateSection(SettingSections.Space, panel);
+    CreateWorldGroup(space);
+    CreatePlayBoundaryGroup(space);  // Add your new group
+    // ... rest of the sections ...
 }
 ```
+
+A new section needs a constant in `SettingSections` and a place in `SettingSections.Order`, so the inspector draws it in the same position.
 
 ### 7. Update Merge Method for Loading
 
@@ -233,7 +241,7 @@ private void MergeSceneSettings(RuntimeSceneSettings loadedSettings)
 {
     // ... existing properties ...
 
-    // Boundary Drag settings
+    // Play Boundary settings
     runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
     runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 }
@@ -252,7 +260,7 @@ private void CopySceneSettings(RuntimeSceneSettings source, RuntimeSceneSettings
 {
     // ... existing properties ...
 
-    // Boundary Drag settings
+    // Play Boundary settings
     destination.addedBoundaryDistance = source.addedBoundaryDistance;
     destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
 
@@ -384,20 +392,18 @@ In addition to the general checklist:
 
 ## Group Organization
 
-The settings menu follows this group structure to match the SceneController inspector:
+The settings menu and the SceneController inspector share this structure (sections in `SettingSections.Order`):
 
 **Scene Tab:**
 
-- Gravity Attraction
-- Hands Attraction
-- Boundary Drag
-- Intrinsic Pulsation
-- Movement-Based Pulsation
-- Miscellaneous
-- Animation
-- Hand VFX - Spawn & Size / Main Attractor / Trail Distorters / Secondary Attractor / Noise & Turbulence / Stretch / Bursts (CHat/OHat) / Snare (mirror the `[Header]`s in `HandVfxSettings`)
-- Style
-- Debugging
+- **Space** — World (Body Scale, Base Z Depth, Grid Scale) · Play Boundary (margin, outward drag, out-of-bounds reset)
+- **Kinect** (only with a Kinect) — Tracking · Camera Feed (only with a feed) · Skeleton
+- **Ball** — Size · Breathing (intrinsic pulsation) · Spawn (grow-in, spawn flash) · Gravity
+- **Hands** — Activation · Push · Aim · One Hand · Grow & Shrink (movement-based scaling)
+- **Particles** (the hand VFX; mostly `HandVfxSettings`) — Color · Glow · Emission · Lifetime · Stretch · Ball Attraction · Secondary Attractor · Trail Distorters · Noise & Turbulence · Hi-Hat Bursts · Snare Bursts
+- **Debug** — Visualizers
+
+Color Per Player (`individualColors`) lives in Particles > Color with the gradient / palette it switches between; the Skeleton Palette (Kinect > Skeleton) follows the same palette slots and only shows while it's on.
 
 **Post-Processing Tab:**
 
@@ -429,7 +435,7 @@ The settings menu follows this group structure to match the SceneController insp
 
 After adding your new setting:
 
-- [ ] Setting appears in the SceneController inspector in the correct BoxGroup
+- [ ] Setting appears in the SceneController inspector in the same section and group as in the menu
 - [ ] Setting appears in the correct group in the in-game settings UI
 - [ ] Hovering the label shows the tooltip (if one was given)
 - [ ] Changing the value in inspector updates runtime (in play mode)
@@ -446,10 +452,11 @@ Here's a complete example of adding `addedBoundaryDistance` and `boundaryOutward
 ### RuntimeSceneSettings.cs
 
 ```csharp
-[Header("Boundary Drag")]
-[Tooltip("Multiplier for max distance calculation.")]
+[BodyScaled(1)]
+[Tooltip("Margin added around the metaball grid to define the play boundary.")]
 public float addedBoundaryDistance = 1.5f;
 
+[BodyScaled(1)]
 [Tooltip("Drag applied when moving away from hands while past the boundary.")]
 public float boundaryOutwardDrag = 50f;
 ```
@@ -464,11 +471,13 @@ copy.boundaryOutwardDrag = boundaryOutwardDrag;
 ### SceneController.cs - Inspector Fields
 
 ```csharp
-[BoxGroup("Boundary Drag")]
-[Tooltip("Multiplier for max distance calculation.")]
+[SettingGroup(SettingSections.Space, "Play Boundary")]
+[Label("Margin")]
+[Tooltip("Margin added around the metaball grid to define the play boundary.")]
 public float addedBoundaryDistance = 1.5f;
 
-[BoxGroup("Boundary Drag")]
+[SettingGroup(SettingSections.Space, "Play Boundary")]
+[Label("Outward Drag")]
 [Tooltip("Drag applied when moving away from hands while past the boundary.")]
 public float boundaryOutwardDrag = 50f;
 ```
@@ -476,7 +485,7 @@ public float boundaryOutwardDrag = 50f;
 ### SceneController.cs - CopyInspectorToRuntime()
 
 ```csharp
-// Boundary Drag
+// Play Boundary
 target.addedBoundaryDistance = addedBoundaryDistance;
 target.boundaryOutwardDrag = boundaryOutwardDrag;
 ```
@@ -484,7 +493,7 @@ target.boundaryOutwardDrag = boundaryOutwardDrag;
 ### SceneController.cs - CopyRuntimeToInspector()
 
 ```csharp
-// Boundary Drag
+// Play Boundary
 addedBoundaryDistance = source.addedBoundaryDistance;
 boundaryOutwardDrag = source.boundaryOutwardDrag;
 ```
@@ -492,15 +501,15 @@ boundaryOutwardDrag = source.boundaryOutwardDrag;
 ### InGameSettingsMenu.cs - New Group Method
 
 ```csharp
-private void CreateBoundaryDragGroup(ScrollView parentContainer)
+private void CreatePlayBoundaryGroup(SettingSection section)
 {
-    var group = CreateGroup("Boundary Drag", parentContainer);
+    var group = CreateGroup("Play Boundary", section);
 
-    CreateFloatField(group, "Added Boundary Distance",
+    CreateFloatField(group, "Margin",
         () => runtimeSettings.addedBoundaryDistance,
         v => runtimeSettings.addedBoundaryDistance = v,
         tooltip: "Margin added around the metaball grid to define the play boundary.");
-    CreateFloatField(group, "Boundary Outward Drag",
+    CreateFloatField(group, "Outward Drag",
         () => runtimeSettings.boundaryOutwardDrag,
         v => runtimeSettings.boundaryOutwardDrag = v,
         tooltip: "Drag opposing the ball while it is past the boundary and moving away from the hands. 0 disables.");
@@ -512,9 +521,11 @@ private void CreateBoundaryDragGroup(ScrollView parentContainer)
 ```csharp
 private void CreateSceneSettingsContent()
 {
-    CreateGravityAttractionGroup(sceneSettingsPanel);
-    CreateHandsAttractionGroup(sceneSettingsPanel);
-    CreateBoundaryDragGroup(sceneSettingsPanel);  // Added
+    var panel = sceneSettingsPanel;
+
+    var space = CreateSection(SettingSections.Space, panel);
+    CreateWorldGroup(space);
+    CreatePlayBoundaryGroup(space);  // Added
     // ... rest ...
 }
 ```
@@ -522,7 +533,7 @@ private void CreateSceneSettingsContent()
 ### InGameSettingsMenu.cs - MergeSceneSettings()
 
 ```csharp
-// Boundary Drag settings
+// Play Boundary settings
 runtimeSettings.addedBoundaryDistance = loadedSettings.addedBoundaryDistance;
 runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 ```
@@ -530,7 +541,7 @@ runtimeSettings.boundaryOutwardDrag = loadedSettings.boundaryOutwardDrag;
 ### InGameSettingsMenu.cs - CopySceneSettings()
 
 ```csharp
-// Boundary Drag settings
+// Play Boundary settings
 destination.addedBoundaryDistance = source.addedBoundaryDistance;
 destination.boundaryOutwardDrag = source.boundaryOutwardDrag;
 ```

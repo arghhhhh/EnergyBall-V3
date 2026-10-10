@@ -27,7 +27,6 @@
     "defaultUnscaledSize": 0.0,
     "bodyScale": 0.0,
     "maxDistanceFromCamera": 0.0,
-    "particleInitializationDelay": 0.0,
     "_individualColors": false,
     "drawSkeleton": false,
     "useTrackingStateColors": true,

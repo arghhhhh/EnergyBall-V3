@@ -249,7 +249,6 @@
         },
         "snareSpawnVeloSphereRadius": 0.20000000298023225
     },
-    "particleInitializationDelay": 1.75,
     "initializationResetDelay": 3.0,
     "singleHandOpenThreshold": 0.10000000149011612,
     "singleHandForceLerpDuration": 0.3499999940395355,

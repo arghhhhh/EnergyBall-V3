@@ -43,15 +43,16 @@ public enum TabType
 Add your new settings directly to the SceneController for inspector editing. **IMPORTANT:** Follow the existing patterns:
 
 ```csharp
-[Header("Your New Settings Category")]
-[BoxGroup("Your New Settings")]
+[SettingGroup("Your Section", "Your Group")]
 public float yourNewFloatSetting = 1.0f;
-[BoxGroup("Your New Settings")]
+[SettingGroup("Your Section", "Your Group")]
 public bool yourNewBoolSetting = false;
-[BoxGroup("Your New Settings")]
+[SettingGroup("Your Section", "Your Group")]
 [Range(0, 10f)]
 public float yourRangedSetting = 5.0f;
 ```
+
+`SceneControllerEditor` draws `[SettingGroup]` fields by section and group. Add the section to `SettingSections` (and `SettingSections.Order`) so the inspector places it; see [Adding-New-Settings-To-Menu.md](Adding-New-Settings-To-Menu.md).
 
 ### 3. Add Settings Properties to RuntimeSceneSettings
 
@@ -60,7 +61,6 @@ public float yourRangedSetting = 5.0f;
 Add corresponding properties in RuntimeSceneSettings. **IMPORTANT:** Follow the serialization patterns:
 
 ```csharp
-[Header("Your New Settings Category")]
 // For simple properties, use public fields:
 public float yourNewFloatSetting = 1.0f;
 public bool yourNewBoolSetting = false;

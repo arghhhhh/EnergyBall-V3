@@ -35,7 +35,7 @@ package is missing:
   (`Windows.Kinect` namespace). Native plugins live in `Assets/Plugins/`
   (`Metro/`, `x86/`, `x86_64/`).
 - **NaughtyAttributes**: vendored in `Assets/Added Packages/NaughtyAttributes/`
-  (inspector decorators — `[BoxGroup]`, `[Foldout]`, etc. — used throughout).
+  (inspector decorators — `[ShowIf]`, `[Label]`, etc. — used throughout).
 - **unity-cli bridge**: embedded at `Packages/unity-cli-bridge/` (a VFX-Graph-capable
   fork). This is what backs the unity-cli automation tooling for this repo.
 
@@ -157,14 +157,28 @@ following the existing pattern:
 - `settingsVersion` on the settings class: 0 = legacy effective-value profile
   (auto-converted on load for Scene profiles), 1 = base-at-1×. Saves stamp 1.
   `EnergyBall/Migrate Scene Profiles To Base` (Editor menu) rewrites v0 files.
+- **Settings layout (menu = inspector).** The Scene tab is split into sections, in
+  `SettingSections.Order` (`SettingGroupAttribute.cs`): Space (World, Play Boundary),
+  Kinect (Tracking, Camera Feed, Skeleton; built only with a Kinect), Ball (Size,
+  Breathing, Spawn, Gravity), Hands (Activation, Push, Aim, One Hand, Grow & Shrink),
+  Particles (the hand VFX: Color, Glow, Emission, Lifetime, Stretch, Ball Attraction,
+  Secondary Attractor, Trail Distorters, Noise & Turbulence, Hi-Hat Bursts, Snare Bursts),
+  Debug (Visualizers). The SceneController inspector mirrors it:
+  `Assets/Editor/SceneControllerEditor.cs` (a `NaughtyInspector` subclass) draws fields
+  tagged `[SettingGroup(section, group)]` as collapsible sections of group boxes, labelled
+  with NaughtyAttributes `[Label]` to match the menu, and flattens `handVfx` (every
+  `HandVfxSettings` field is tagged) into the Particles groups. Group order within a
+  section and row order within a group follow declaration order. Color Per Player
+  (`individualColors`) sits in Particles > Color; the Skeleton Palette follows its slots.
 - `InGameSettingsMenu.cs` / `SettingsMenuSetup.cs` — live in-game tuning UI (base
   values at `bodyScale = 1`). UI Toolkit:
   `Assets/UI/SettingsMenu.uxml` / `.uss`, scaled by `Assets/UI Toolkit/PanelSettings.asset`
   (Scale With Screen Size, 1280×720 reference, match height, so it keeps the same share of
-  the screen at any resolution). Groups collapse from their header (state in PlayerPrefs
-  `SettingsMenuCollapsedGroups`); each tab has a search field that filters rows by group
-  title + label. The UI is rebuilt on every open / load, so both are re-applied after
-  `CreateSettingsUI()`.
+  the screen at any resolution). Sections and groups collapse from their header (state in
+  PlayerPrefs `SettingsMenuCollapsedGroups`); each tab has a search field that filters rows
+  by section title + group title + label, so rows sharing a label ("Stick Force") are told
+  apart by where they live. The UI is rebuilt on every open / load, so both are re-applied
+  after `CreateSettingsUI()`.
 - **Feature-gated settings**: `SceneController.SceneFeature` (`Kinect` = not
   `dummyOnlyMode`; `CameraFeed` = Kinect + `cameraFeedQuad` assigned). The menu builds
   such rows only inside `if (SceneSupports(SceneFeature.X))`. Their SceneController twins
@@ -175,14 +189,14 @@ following the existing pattern:
   it can't be gated on it. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
   material, tracking-state colors, the single skeleton color. CameraFeed:
   `showCameraFeed` (toggles the feed quad's renderer in play mode),
-  `projectiveAlignment`, `renderCameraTransform`. Individual colors: `particleColors` is
+  `projectiveAlignment`, `renderCameraTransform`. Color Per Player: `particleColors` is
   the palette (its length is the slot count). Each player keeps its
   `PlayerConstructor.paletteSlot`, and `skeletonColors[slot]` is optional (wraps,
   falls back to `skeletonColor`), so it shows only when bones use it.
 - Menu rows that depend on another setting's value (not on a scene feature) use
-  `ShowRowIf(label, condition)` right after the field is created. It's re-evaluated on
-  every settings change, e.g. Use Tracking State Colors shows only while Draw Skeleton is
-  on.
+  `ShowRowIf(group, label, condition)` right after the field is created (rows are keyed by
+  group + label, since labels repeat across groups). It's re-evaluated on every settings
+  change, e.g. Tracking State Colors shows only while Draw Skeleton is on.
 - Post-processing values live in `PostProcessSettings.cs`, held twice on the settings
   (`particlePostProcessing`, `feedPostProcessing`). PP profile files are serialized
   straight from `PostProcessSettings`, and older files with flat keys load unchanged.

@@ -7,6 +7,8 @@ using UnityEngine;
 /// <see cref="BodyScaledAttribute"/> and <see cref="BodyScaling.CreateEffective"/>
 /// derives the effective object (base x bodyScale^exp) that consumers read via
 /// <c>SceneController.CurrentSettings</c> / <c>GetRuntimeSettings()</c>.
+/// Field order here is storage (JSON) order only. The inspector and the in-game menu group the
+/// settings into sections (see <see cref="SettingGroupAttribute"/> on the SceneController twins).
 /// </summary>
 [System.Serializable]
 public class RuntimeSceneSettings
@@ -21,7 +23,6 @@ public class RuntimeSceneSettings
     public int settingsVersion = 0;
     public const int CurrentSettingsVersion = 1;
 
-    [Header("Gravity Attraction")]
     [BodyScaled(2)]
     public float g = 0.48f;
 
@@ -42,11 +43,9 @@ public class RuntimeSceneSettings
     public float stopVelocity = 0.1f;
     public float attractionRadiusMultiplier = 1f;
 
-    [Header("Hands Attraction")]
     public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
     public float singleHandOpenForceDamper = 1f;
 
-    [Header("Boundary Drag")]
     [BodyScaled(1)]
     [Tooltip("Distance added to the grid extents to get the boundary (world units at 1x).")]
     public float addedBoundaryDistance = 0.26f;
@@ -85,14 +84,12 @@ public class RuntimeSceneSettings
     [BodyScaled(1)]
     public float prayToActivateDistance = 0.14f;
 
-    [Header("Intrinsic Pulsation")]
     [Range(0, 10f)]
     public float pulseAmount = 1f;
     public float pulseSpeed = 1f;
     public float graphLimit = 10f;
     public float[] pulseFreqs = new float[] { 1f, 2f, 3f };
 
-    [Header("Movement-Based Pulsation")]
     public bool singleHandScaling = true;
 
     [BodyScaled(1)]
@@ -115,7 +112,6 @@ public class RuntimeSceneSettings
     public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
     public float pulseScaleDamper = 1f;
 
-    [Header("Miscellaneous")]
     public float mergeSizeScalerDamper = 1f;
 
     [BodyScaled(1)]
@@ -145,14 +141,12 @@ public class RuntimeSceneSettings
     )]
     public float sphereResetJitter = 0.1f;
 
-    [Header("Hand VFX")]
     [Tooltip(
         "Per-hand HandEffects.vfx values (base at 1x). Copied as one object at every plumbing site."
     )]
     public HandVfxSettings handVfx = new HandVfxSettings();
 
-    [Header("Animation")]
-    public float particleInitializationDelay = 1f;
+    [Tooltip(SceneController.ReArmDelayTooltip)]
     public float initializationResetDelay = 3f;
 
     [Tooltip(
@@ -191,7 +185,6 @@ public class RuntimeSceneSettings
     )]
     public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("Style")]
     // Stored as "_individualColors" in profile JSON. A change is picked up by
     // SceneController.RebuildEffectiveSettings (it recolors live players) - this class must not
     // raise events, since scratch copies of it are built on every settings change.
@@ -253,7 +246,6 @@ public class RuntimeSceneSettings
     public PostProcessSettings particlePostProcessing = new();
     public PostProcessSettings feedPostProcessing = new();
 
-    [Header("Debugging")]
     public bool showSphereMeshOnHandCollision = false;
     public bool alwaysShowSphereMesh = false;
     public bool showMetaballMesh = false;
@@ -385,7 +377,6 @@ public class RuntimeSceneSettings
         copy.maxDistanceFromCamera = maxDistanceFromCamera;
         copy.sphereResetJitter = sphereResetJitter;
         copy.handVfx = handVfx != null ? handVfx.DeepCopy() : new HandVfxSettings();
-        copy.particleInitializationDelay = particleInitializationDelay;
         copy.initializationResetDelay = initializationResetDelay;
         copy.singleHandOpenThreshold = singleHandOpenThreshold;
         copy.singleHandForceLerpDuration = singleHandForceLerpDuration;

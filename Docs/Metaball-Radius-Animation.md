@@ -27,7 +27,7 @@ public float metaballRadiusAnimationStartSize = 0.1f; // Starting radius for the
 public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1); // Animation easing curve
 ```
 
-Note: The animation curve is controlled via the SceneController inspector and is NOT exposed in the in-game menu (feature planned for later).
+In the inspector and the in-game menu these are **Ball > Spawn**: Grow-In Duration, Grow-In Start Radius and Grow-In Curve. The curve is edited with the runtime curve editor and saved in profiles like the other two.
 
 ---
 
@@ -90,12 +90,12 @@ Followed the conventions in [Adding-New-Settings-To-Menu.md](In-Game%20Menu/Addi
 
 | Step | File                      | Method/Location                                     |
 | ---- | ------------------------- | --------------------------------------------------- |
-| 1    | `RuntimeSceneSettings.cs` | Added properties under `[Header("Animation")]`      |
+| 1    | `RuntimeSceneSettings.cs` | Added properties                                    |
 | 2    | `RuntimeSceneSettings.cs` | Updated `DeepCopy()`                                |
-| 3    | `SceneController.cs`      | Added inspector fields in `[BoxGroup("Animation")]` |
+| 3    | `SceneController.cs`      | Added inspector fields (`Ball` > `Spawn` group)     |
 | 4    | `SceneController.cs`      | Updated `CopyInspectorToRuntime()`                  |
 | 5    | `SceneController.cs`      | Updated `CopyRuntimeToInspector()`                  |
-| 6    | `InGameSettingsMenu.cs`   | Added UI fields in `CreateAnimationGroup()`         |
+| 6    | `InGameSettingsMenu.cs`   | Added UI fields in `CreateSpawnGroup()`             |
 | 7    | `InGameSettingsMenu.cs`   | Updated `MergeSceneSettings()`                      |
 | 8    | `InGameSettingsMenu.cs`   | Updated `CopySceneSettings()`                       |
 | 8b   | `InGameSettingsMenu.cs`   | Zeroed out in `CopyPostProcessingSettings()`        |
@@ -132,8 +132,6 @@ Followed the conventions in [Adding-New-Settings-To-Menu.md](In-Game%20Menu/Addi
 
 ## Testing
 
--   Settings appear in Unity Inspector under **SceneController → Animation**
--   Duration and start size appear in-game menu under **Scene Tab → Animation**
--   Animation curve is only editable in the Unity Inspector (in-game curve editing planned for later)
+-   Settings appear in the SceneController inspector and the in-game menu under **Ball → Spawn**
 -   Changing values updates the animation behavior in real-time
--   Profiles save/load duration and start size (curve is excluded from JSON profiles)
+-   Profiles save/load duration, start size and curve

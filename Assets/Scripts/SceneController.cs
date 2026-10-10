@@ -70,7 +70,87 @@ public class SceneController : MonoBehaviour
         ShowSkeletonSettings && !useTrackingStateColors && individualColors;
 
     #region Inspector Settings
-    [BoxGroup("Camera Feed Alignment")]
+    // Grouped by [SettingGroup] into the same sections / groups / labels as the in-game menu
+    // (drawn by SceneControllerEditor). The handVfx fields are flattened into Particles.
+
+    // ---- Space ----
+    [SettingGroup(SettingSections.Space, "World")]
+    [Tooltip(
+        "World scale of the Kinect space. Every size-, speed- or force-related setting is stored "
+            + "at 1x and derived x bodyScale^exp at runtime (see BodyScaling), so changing it alone "
+            + "keeps gameplay and look identical relative to the body."
+    )]
+    public float bodyScale = 1f;
+
+    [SettingGroup(SettingSections.Space, "World")]
+    [Tooltip(
+        "World-space depth of the play volume: the metaball grid, boundary and Kinect joints are "
+            + "all placed at this Z. Also sent to the hand VFX. Base at 1x."
+    )]
+    public float baseZDepth = 2f;
+
+    [SettingGroup(SettingSections.Space, "World")]
+    [Tooltip(
+        "World size of one marching-cubes voxel at 1x; the metaball volume spans 64x32x64 voxels. "
+            + "Scales with bodyScale automatically."
+    )]
+    public float gridScale = 0.06f;
+
+    [SettingGroup(SettingSections.Space, "Play Boundary")]
+    [Label("Margin")]
+    [Tooltip(
+        "Margin added around the metaball grid to define the play boundary (world units at 1x). "
+            + "Beyond it Outward Drag engages and the ball becomes eligible for reset."
+    )]
+    public float addedBoundaryDistance = 0.26f;
+
+    [SettingGroup(SettingSections.Space, "Play Boundary")]
+    [Label("Outward Drag")]
+    [Tooltip(
+        "Drag that opposes the ball while it is past the boundary and moving away from the hands. "
+            + "0 disables. Base at 1x (scaled x s)."
+    )]
+    public float boundaryOutwardDrag = 4f;
+
+    [SettingGroup(SettingSections.Space, "Play Boundary")]
+    [Label("Reset Delay")]
+    [Tooltip(
+        "Seconds the ball must stay out of bounds before opening both hands snaps it back to the "
+            + "hand midpoint (plus Reset Jitter)."
+    )]
+    public float outOfBoundsResetDelay = 3f;
+
+    [SettingGroup(SettingSections.Space, "Play Boundary")]
+    [Label("Reset Jitter")]
+    [Tooltip(
+        "Random +/- offset (world units at 1x) added when the ball is reset to the hand midpoint, "
+            + "so overlapping balls don't reset to exactly the same spot."
+    )]
+    public float sphereResetJitter = 0.1f;
+
+    // ---- Kinect ----
+    [SettingGroup(SettingSections.Kinect, "Tracking")]
+    [Label("Max Player Distance")]
+    [ShowIf("HasKinect")]
+    [Tooltip(
+        "If a player's hands are tracked farther from the camera than this, they are treated as "
+            + "closed and their colliders/skeleton lines are disabled (filters people far in the "
+            + "background). Base at 1x."
+    )]
+    public float maxDistanceFromCamera = 2.6f;
+
+    // Gated on Kinect, not CameraFeed: assigning this is what turns the CameraFeed feature on.
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("HasKinect")]
+    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
+    public Transform cameraFeedQuad;
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("HasCameraFeed")]
+    [Tooltip("Show the Kinect color feed behind the players. Off leaves a black background.")]
+    public bool showCameraFeed = true;
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("HasCameraFeed")]
     [Tooltip(
         "Project joints through the Kinect color-camera intrinsics onto the camera feed quad "
@@ -79,13 +159,7 @@ public class SceneController : MonoBehaviour
     )]
     public bool projectiveAlignment = true;
 
-    // Gated on Kinect, not CameraFeed: assigning this is what turns the CameraFeed feature on.
-    [BoxGroup("Camera Feed Alignment")]
-    [ShowIf("HasKinect")]
-    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
-    public Transform cameraFeedQuad;
-
-    [BoxGroup("Camera Feed Alignment")]
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("HasCameraFeed")]
     [Tooltip(
         "Transform of the camera the players are rendered through (Main Camera — the Particles "
@@ -93,253 +167,13 @@ public class SceneController : MonoBehaviour
     )]
     public Transform renderCameraTransform;
 
-    [BoxGroup("Gravity Attraction")]
-    [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
-    public float g = 0.48f;
-
-    [BoxGroup("Gravity Attraction")]
-    [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
-    public float maxTowardsForce = 0.4f;
-
-    [BoxGroup("Gravity Attraction")]
-    [Tooltip("Base value at bodyScale 1 (scaled x s^2 at runtime).")]
-    public float maxAwayFromForce = 1f;
-
-    [BoxGroup("Gravity Attraction")]
-    public float gravityForceDamper = 1f;
-
-    [BoxGroup("Gravity Attraction")]
-    public float stopGravityDistance = 0.024f;
-
-    [BoxGroup("Gravity Attraction")]
-    public float stopMovingDistance = 0.01f;
-
-    [BoxGroup("Gravity Attraction")]
-    public float stopVelocity = 0.1f;
-
-    [BoxGroup("Gravity Attraction")]
-    public float attractionRadiusMultiplier = 1f;
-
-    [BoxGroup("Hands Attraction")]
-    public float singleHandOpenForceDamper = 1f;
-
-    [BoxGroup("Boundary Drag")]
-    [Tooltip("Distance added to the grid extents to get the boundary (world units at 1x).")]
-    public float addedBoundaryDistance = 0.26f;
-
-    [BoxGroup("Boundary Drag")]
-    [Tooltip(
-        "Drag applied to stop the sphere when moving away from hands while past the boundary. Set to 0 to disable. Base at 1x (scaled x s)."
-    )]
-    public float boundaryOutwardDrag = 4f;
-
-    [BoxGroup("Boundary Drag")]
-    [Tooltip(
-        "Time in seconds the sphere must be out of bounds before it can be reset to hand midpoint when both hands open."
-    )]
-    public float outOfBoundsResetDelay = 3f;
-
-    [BoxGroup("Hands Attraction")]
-    [Tooltip("Rigidbody push force toward the hands. Base at 1x (scaled x s^2 at runtime).")]
-    public float pushForce = 2.8f;
-
-    [BoxGroup("Hands Attraction")]
-    [Tooltip(
-        "How far the ball's push target is pulled toward the camera when the hands sit at torso "
-            + "depth, so the ball isn't occluded by the player's own body. 0 disables."
-    )]
-    public float torsoMaxForwardOffset = 0.2f;
-
-    [BoxGroup("Hands Attraction")]
-    [Tooltip(
-        "How far (in z) the hands must be from the torso plane, forward or backward, for the "
-            + "torso forward offset to fade to zero."
-    )]
-    public float torsoOffsetFalloffDistance = 0.4f;
-
-    [BoxGroup("Hands Attraction")]
-    public float minDrag = 0.1f;
-
-    [BoxGroup("Hands Attraction")]
-    public float maxDrag = 5f;
-
-    [BoxGroup("Hands Attraction")]
-    public float alignmentVectorStrengthScaler = 0.07f;
-
-    [BoxGroup("Hands Attraction")]
-    public float handPushScaler = 1f;
-
-    [BoxGroup("Hands Attraction")]
-    public bool prayToActivate = false;
-
-    [BoxGroup("Hands Attraction")]
-    [ShowIf("prayToActivate")]
-    public float prayToActivateDistance = 0.14f;
-
-    [BoxGroup("Intrinsic Pulsation")]
-    [Range(0, 10f)]
-    public float pulseAmount = 1f;
-
-    [BoxGroup("Intrinsic Pulsation")]
-    public float pulseSpeed = 1f;
-
-    [BoxGroup("Intrinsic Pulsation")]
-    public float graphLimit = 10f;
-
-    [BoxGroup("Intrinsic Pulsation")]
-    public float[] pulseFreqs = new float[] { 1f, 2f, 3f };
-
-    [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("Allow scaling to occur with only one hand's velocity.")]
-    public bool singleHandScaling = true;
-
-    [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The minimum size that the vfx body can scale down to (base at 1x).")]
-    public float minimumUnscaledSize = 0.3f;
-
-    [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("The maximum size that the vfx body can scale up to (base at 1x).")]
-    public float maximumUnscaledSize = 0.6f;
-
-    [BoxGroup("Movement-Based Pulsation")]
-    [Range(0.0001f, 5f)]
-    [Tooltip(
-        "Used to mask false velocity readings due to position jitter from inaccurate sensor readings."
-    )]
-    public float minHandDisplacementPerFrame = 0.01f;
-
-    [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip(
-        "Hand-velocity sanity gate for movement-based scaling: frames where a hand moves faster "
-            + "than this (world units/s at 1x) are ignored as tracking glitches."
-    )]
-    public float maxHandVelocity = 3.0f;
-
-    [BoxGroup("Movement-Based Pulsation")]
-    [Tooltip("An overall damper for the movement-based pulsation scaling.")]
-    public float pulseScaleDamper = 1f;
-
-    [BoxGroup("Miscellaneous")]
-    [Tooltip("A damper for the scaling that occurs when multiple bodies merge together.")]
-    public float mergeSizeScalerDamper = 1f;
-
-    [BoxGroup("Miscellaneous")]
-    public float maxDistanceBetweenHands = 1.6f;
-
-    [BoxGroup("Miscellaneous")]
-    public float baseZDepth = 2f;
-
-    [BoxGroup("Miscellaneous")]
-    [Tooltip(
-        "World size of one marching-cubes voxel at 1x; the metaball volume spans 64x32x64 voxels. "
-            + "Scales with bodyScale automatically."
-    )]
-    public float gridScale = 0.06f;
-
-    [BoxGroup("Miscellaneous")]
-    public float defaultUnscaledSize = 0.5f;
-
-    [BoxGroup("Miscellaneous")]
-    [Tooltip(
-        "World scale of the Kinect space. All dimensioned settings are stored at 1x and derived "
-            + "x bodyScale^exp at runtime (see BodyScaling)."
-    )]
-    public float bodyScale = 1f;
-
-    [BoxGroup("Miscellaneous")]
-    public float maxDistanceFromCamera = 2.6f;
-
-    [BoxGroup("Miscellaneous")]
-    [Tooltip(
-        "Random +/- jitter (world units at 1x) added when the sphere is reset to the hand midpoint."
-    )]
-    public float sphereResetJitter = 0.1f;
-
-    [BoxGroup("Hand VFX")]
-    [Tooltip("Per-hand HandEffects.vfx values (base at 1x). See HandVfxSettings.")]
-    public HandVfxSettings handVfx = new();
-
-    [BoxGroup("Animation")]
-    [Tooltip(
-        "The amount of time it takes for the particle initialization animation to play once a new player is added to the scene."
-    )]
-    public float particleInitializationDelay = 1f;
-
-    [BoxGroup("Animation")]
-    [Tooltip(
-        "Time in seconds the hands must be closed before the initialization animation plays once both hands are opened."
-    )]
-    public float initializationResetDelay = 3f;
-
-    [BoxGroup("Animation")]
-    [Tooltip(
-        "Minimum time in single-hand-open state before the final push uses that hand's position. "
-            + "Accounts for slight timing discrepancies with real Kinect users."
-    )]
-    public float singleHandOpenThreshold = 0.1f;
-
-    [BoxGroup("Animation")]
-    [Tooltip(
-        "Duration in seconds to lerp the force damper from single-hand to both-hands strength "
-            + "when transitioning from single-hand-open to both-hands-open."
-    )]
-    public float singleHandForceLerpDuration = 0.35f;
-
-    [BoxGroup("Animation")]
-    [Range(0f, 1f)]
-    [Tooltip(
-        "Speed of the hand opening animation during initialization. Lower values = slower animation."
-    )]
-    public float initializationSpeed = 0.05f;
-
-    [BoxGroup("Animation")]
-    [Tooltip(
-        "Duration in seconds for the metaball radius to animate from minimum to full size during initialization."
-    )]
-    public float metaballRadiusAnimationDuration = 2f;
-
-    [BoxGroup("Animation")]
-    [Tooltip("The starting radius for the metaball animation during initialization (base at 1x).")]
-    public float metaballRadiusAnimationStartSize = 0.02f;
-
-    [BoxGroup("Animation")]
-    [Tooltip("Particle size of the BodyEffects.vfx spawn flash on VFX_Body (world units at 1x).")]
-    public float bodySpawnSize = 0.2f;
-
-    [BoxGroup("Animation")]
-    [Tooltip(
-        "Animation curve for the metaball radius transition (0-1 input maps to animation progress)."
-    )]
-    public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
-    [Header("Curve Settings")]
-    [BoxGroup("Hands Attraction Curves")]
-    [Tooltip("Force curve that controls attraction to the middle point between hands")]
-    public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
-
-    [BoxGroup("Hands Attraction Curves")]
-    [Tooltip("Alignment vector strength curve based on hand distance")]
-    public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
-
-    [BoxGroup("Movement-Based Pulsation Curves")]
-    [Tooltip(
-        "Dampen the ratio between vfx body scale and hand distance based on hand distance relative to maxDistanceBetweenHands"
-    )]
-    public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
-
-    [BoxGroup("Style Settings")]
-    [ShowIf("HasCameraFeed")]
-    [Tooltip("Show the Kinect color feed behind the players. Off leaves a black background.")]
-    public bool showCameraFeed = true;
-
-    [BoxGroup("Style Settings")]
-    public bool individualColors = false;
-
-    [BoxGroup("Style Settings")]
+    [SettingGroup(SettingSections.Kinect, "Skeleton")]
     [ShowIf("HasKinect")]
+    [Tooltip("Draw line-renderer bones between tracked Kinect joints for each player.")]
     public bool drawSkeleton = false;
 
-    [BoxGroup("Style Settings")]
+    [SettingGroup(SettingSections.Kinect, "Skeleton")]
+    [Label("Line Material")]
     [ShowIf("ShowSkeletonSettings")]
     [Tooltip(
         "Material applied to skeleton LineRenderers at player creation. Uses ZTest Always so "
@@ -348,20 +182,27 @@ public class SceneController : MonoBehaviour
     public Material skeletonLineMaterial;
 
     // Applies with individual colors too: tracking-state colors override the player's color.
-    [BoxGroup("Style Settings")]
+    [SettingGroup(SettingSections.Kinect, "Skeleton")]
+    [Label("Tracking State Colors")]
     [ShowIf("ShowSkeletonSettings")]
-    [Tooltip("Use tracking state colors for the skeleton")]
+    [Tooltip(
+        "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) "
+            + "instead of the player's color."
+    )]
     public bool useTrackingStateColors = true;
 
-    [BoxGroup("Style Settings")]
+    [SettingGroup(SettingSections.Kinect, "Skeleton")]
     [ShowIf("ShowSkeletonColorField")]
+    [Tooltip("Bone color for every player while Color Per Player is off.")]
     public Color skeletonColor = Color.magenta;
 
+    [SettingGroup(SettingSections.Kinect, "Skeleton")]
+    [Label("Skeleton Palette")]
     [ShowIf("ShowSkeletonPaletteField")]
-    [BoxGroup("Style Settings")]
     [Tooltip(
-        "Skeleton color for each palette slot (same index as particleColors). Wraps around when "
-            + "shorter than particleColors; empty falls back to the single skeleton color."
+        "Skeleton color for each Color Per Player slot (same index as Particle Palette). Wraps "
+            + "around when shorter than the Particle Palette; empty falls back to the single "
+            + "Skeleton Color."
     )]
     public Color[] skeletonColors = new Color[]
     {
@@ -374,18 +215,336 @@ public class SceneController : MonoBehaviour
         Color.yellow,
     };
 
-    [BoxGroup("Style Settings")]
+    // ---- Ball ----
+    [SettingGroup(SettingSections.Ball, "Size")]
+    [Label("Start Size")]
+    [Tooltip(
+        "Starting diameter of a new player's ball before any pulsation, growing or shrinking is "
+            + "applied (base at 1x)."
+    )]
+    public float defaultUnscaledSize = 0.5f;
+
+    [SettingGroup(SettingSections.Ball, "Size")]
+    [Label("Min Size")]
+    [Tooltip("The minimum size the ball can shrink to (base at 1x).")]
+    public float minimumUnscaledSize = 0.3f;
+
+    [SettingGroup(SettingSections.Ball, "Size")]
+    [Label("Max Size")]
+    [Tooltip("The maximum size the ball can grow to (base at 1x).")]
+    public float maximumUnscaledSize = 0.6f;
+
+    [SettingGroup(SettingSections.Ball, "Size")]
+    [Label("Merge Size Damper")]
+    [Tooltip(
+        "A damper for the scaling that occurs when multiple balls merge together. 0 disables merging."
+    )]
+    public float mergeSizeScalerDamper = 1f;
+
+    [SettingGroup(SettingSections.Ball, "Breathing")]
+    [Label("Amount")]
+    [Range(0, 10f)]
+    [Tooltip(
+        "Amplitude of the idle 'breathing' size wobble, as a fraction of the ball's size "
+            + "(value/10). 0 disables it."
+    )]
+    public float pulseAmount = 1f;
+
+    [SettingGroup(SettingSections.Ball, "Breathing")]
+    [Label("Speed")]
+    [Tooltip("Time multiplier for the breathing wobble. Higher = faster oscillation.")]
+    public float pulseSpeed = 1f;
+
+    [SettingGroup(SettingSections.Ball, "Breathing")]
+    [Tooltip(
+        "Expected peak of the summed sine waves, used to normalize the wobble into 0..Amount. "
+            + "Roughly the number of Frequencies entries; lower values clip, higher values flatten "
+            + "the pulse."
+    )]
+    public float graphLimit = 10f;
+
+    [SettingGroup(SettingSections.Ball, "Breathing")]
+    [Label("Frequencies")]
+    [Tooltip(
+        "Frequencies of the sine waves summed to make the breathing wobble "
+            + "(y = sin(f1*t) + sin(f2*t) + ...). Mixed, non-integer values give a less regular pulse."
+    )]
+    public float[] pulseFreqs = new float[] { 1f, 2f, 3f };
+
+    [SettingGroup(SettingSections.Ball, "Spawn")]
+    [Label("Grow-In Duration")]
+    [Tooltip(
+        "Seconds for the metaball radius to grow from Grow-In Start Radius to full size when a "
+            + "player initializes."
+    )]
+    public float metaballRadiusAnimationDuration = 2f;
+
+    [SettingGroup(SettingSections.Ball, "Spawn")]
+    [Label("Grow-In Start Radius")]
+    [Tooltip("Metaball radius the grow-in starts from (base at 1x).")]
+    public float metaballRadiusAnimationStartSize = 0.02f;
+
+    [SettingGroup(SettingSections.Ball, "Spawn")]
+    [Label("Grow-In Curve")]
+    [Tooltip(
+        "Easing curve for the metaball grow-in (X: 0-1 normalized time, Y: 0-1 progress from "
+            + "start radius to full size)."
+    )]
+    public AnimationCurve metaballRadiusAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [SettingGroup(SettingSections.Ball, "Spawn")]
+    [Label("Spawn Flash Size")]
+    [Tooltip("Particle size of the BodyEffects.vfx spawn flash on VFX_Body (world units at 1x).")]
+    public float bodySpawnSize = 0.2f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Tooltip(
+        "Gravitational constant of the pairwise attraction between balls. Base at 1x (scaled x s^2)."
+    )]
+    public float g = 0.48f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Tooltip(
+        "Cap on the pairwise gravity force (G*m1*m2/r^2) while two balls are moving toward each "
+            + "other. Keeps close balls from slamming together. Base at 1x (scaled x s^2)."
+    )]
+    public float maxTowardsForce = 0.4f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Label("Max Away Force")]
+    [Tooltip(
+        "Cap on the pairwise gravity force while two balls are moving apart. Above Max Towards "
+            + "Force, gravity resists separation more than it accelerates approach. Base at 1x "
+            + "(scaled x s^2)."
+    )]
+    public float maxAwayFromForce = 1f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Label("Damper")]
+    [Tooltip(
+        "Multiplier applied to Max Towards Force when that cap kicks in. Below 1 softens the final "
+            + "approach; 1 = no extra damping."
+    )]
+    public float gravityForceDamper = 1f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Tooltip(
+        "Center-to-center distance below which gravity stops being applied. Inside this range the "
+            + "balls coast (or get stopped, see Stop Moving Distance)."
+    )]
+    public float stopGravityDistance = 0.024f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Tooltip(
+        "Within this center-to-center distance, if the balls' relative speed is below Stop "
+            + "Velocity, a counter-force cancels their motion so they settle side by side."
+    )]
+    public float stopMovingDistance = 0.01f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Tooltip(
+        "Relative speed threshold for the settle-in-place behavior. Balls closer than Stop Moving "
+            + "Distance and slower than this are brought to rest."
+    )]
+    public float stopVelocity = 0.1f;
+
+    [SettingGroup(SettingSections.Ball, "Gravity")]
+    [Tooltip(
+        "Scales each ball's attraction radius (relative to its current diameter). Gravity only "
+            + "starts once another ball's body enters this radius. Also sizes the debug radius sprite."
+    )]
+    public float attractionRadiusMultiplier = 1f;
+
+    // ---- Hands ----
+    [SettingGroup(SettingSections.Hands, "Activation")]
+    [Tooltip(
+        "When enabled, players must bring their hands together to initialize. When disabled, "
+            + "players start initialized."
+    )]
+    public bool prayToActivate = false;
+
+    [SettingGroup(SettingSections.Hands, "Activation")]
+    [Label("Pray Distance")]
+    [ShowIf("prayToActivate")]
+    [Tooltip("How close the hands must come to activate the player (base at 1x).")]
+    public float prayToActivateDistance = 0.14f;
+
+    [SettingGroup(SettingSections.Hands, "Activation")]
+    [Label("Hand Open Speed")]
+    [Range(0f, 1f)]
+    [Tooltip("Playback speed of the hand-open animation. Lower values = slower animation.")]
+    public float initializationSpeed = 0.05f;
+
+    [SettingGroup(SettingSections.Hands, "Activation")]
+    [Label("Re-arm Delay")]
+    [Tooltip(ReArmDelayTooltip)]
+    public float initializationResetDelay = 3f;
+
+    public const string ReArmDelayTooltip =
+        "Seconds a hand must stay closed before opening it replays the full hand-open animation. "
+        + "Shorter closes just cross-fade back open, so flickering Kinect hand states don't "
+        + "retrigger it. When both hands were closed this long, opening also replays the ball's "
+        + "grow-in.";
+
+    [SettingGroup(SettingSections.Hands, "Push")]
+    [Tooltip(
+        "Base rigidbody force driving the ball toward the hand target (midpoint of both hands, or "
+            + "the single open hand). Everything else in Push multiplies it. Base at 1x (scaled x s^2)."
+    )]
+    public float pushForce = 2.8f;
+
+    [SettingGroup(SettingSections.Hands, "Push")]
+    [Tooltip(
+        "Curve of push-force strength vs. how close the ball is to its target. X: 0 = ball is Max "
+            + "Hand Spread away, 1 = ball is at the target. Y multiplies Push Force."
+    )]
+    public AnimationCurve forceToMiddle = AnimationCurve.Linear(0, 0, 1, 1);
+
+    [SettingGroup(SettingSections.Hands, "Push")]
+    [Tooltip(
+        "Rigidbody linear damping when the ball is far from the hand target (at Max Hand Spread). "
+            + "Lower = ball keeps its momentum longer."
+    )]
+    public float minDrag = 0.1f;
+
+    [SettingGroup(SettingSections.Hands, "Push")]
+    [Tooltip(
+        "Rigidbody linear damping when the ball is right at the hand target. Higher = ball "
+            + "settles quickly instead of overshooting."
+    )]
+    public float maxDrag = 5f;
+
+    [SettingGroup(SettingSections.Hands, "Push")]
+    [Label("Final Push Scaler")]
+    [Tooltip(
+        "Extra multiplier on the push force applied while both hands are closed (the final flick "
+            + "that sends the ball off). Drag is set to 0 during this push."
+    )]
+    public float handPushScaler = 1f;
+
+    [SettingGroup(SettingSections.Hands, "Push")]
+    [Label("Max Hand Spread")]
+    [Tooltip(
+        "Reference hand separation used to normalize several curves (Force To Middle, Alignment "
+            + "Strength, Distance Damper) and the drag remap. Distances beyond it are clamped. "
+            + "Base at 1x."
+    )]
+    public float maxDistanceBetweenHands = 1.6f;
+
+    [SettingGroup(SettingSections.Hands, "Aim")]
+    [Label("Alignment Strength")]
+    [Tooltip(
+        "Curve of how far the target is offset along the direction the hands point (wrist to "
+            + "fingertip). X: 0 = hands together, 1 = hands at Max Hand Spread. Y multiplies "
+            + "Alignment Scaler."
+    )]
+    public AnimationCurve alignmentVectorStrength = AnimationCurve.Linear(0, 0, 1, 1);
+
+    [SettingGroup(SettingSections.Hands, "Aim")]
+    [Label("Alignment Scaler")]
+    [Tooltip(
+        "Max distance the hand target is pushed along the hands' pointing direction. Lets players "
+            + "aim the ball by tilting their hands rather than only by moving them. Base at 1x."
+    )]
+    public float alignmentVectorStrengthScaler = 0.07f;
+
+    [SettingGroup(SettingSections.Hands, "Aim")]
+    [Label("Torso Forward Offset")]
+    [Tooltip(
+        "How far the ball's push target is pulled toward the camera when the hands sit at torso "
+            + "depth, so the ball isn't occluded by the player's own body. 0 disables."
+    )]
+    public float torsoMaxForwardOffset = 0.2f;
+
+    [SettingGroup(SettingSections.Hands, "Aim")]
+    [Label("Torso Offset Falloff")]
+    [Tooltip(
+        "How far (in z) the hands must be from the torso plane, forward or backward, for the "
+            + "torso forward offset to fade to zero."
+    )]
+    public float torsoOffsetFalloffDistance = 0.4f;
+
+    [SettingGroup(SettingSections.Hands, "One Hand")]
+    [Label("Open Force Damper")]
+    [Tooltip(
+        "Multiplier on Push Force while only one hand is open (0-1). Lets one-handed steering be "
+            + "gentler than two-handed."
+    )]
+    public float singleHandOpenForceDamper = 1f;
+
+    [SettingGroup(SettingSections.Hands, "One Hand")]
+    [Label("Open Threshold")]
+    [Tooltip(
+        "Minimum time in single-hand-open state before the final push uses that hand's position. "
+            + "Accounts for slight timing discrepancies with real Kinect users."
+    )]
+    public float singleHandOpenThreshold = 0.1f;
+
+    [SettingGroup(SettingSections.Hands, "One Hand")]
+    [Label("Force Blend Time")]
+    [Tooltip(
+        "Seconds to blend the push force from Open Force Damper back to full strength after the "
+            + "second hand opens."
+    )]
+    public float singleHandForceLerpDuration = 0.35f;
+
+    [SettingGroup(SettingSections.Hands, "Grow & Shrink")]
+    [Tooltip("Allow scaling to occur with only one hand's velocity.")]
+    public bool singleHandScaling = true;
+
+    [SettingGroup(SettingSections.Hands, "Grow & Shrink")]
+    [Tooltip(
+        "Curve scaling the grow/shrink effect by hand separation. X: 0 = hands at Max Hand Spread, "
+            + "1 = hands together. Y multiplies the scale change, so hands close to the ball have "
+            + "more effect."
+    )]
+    public AnimationCurve distanceDamper = AnimationCurve.Linear(0, 0, 1, 1);
+
+    [SettingGroup(SettingSections.Hands, "Grow & Shrink")]
+    [Label("Strength")]
+    [Tooltip("An overall multiplier on how much hand movement grows or shrinks the ball.")]
+    public float pulseScaleDamper = 1f;
+
+    [SettingGroup(SettingSections.Hands, "Grow & Shrink")]
+    [Label("Min Hand Displacement")]
+    [Range(0.0001f, 5f)]
+    [Tooltip(
+        "Per-frame hand movement below this is ignored, masking false velocity readings from "
+            + "sensor position jitter."
+    )]
+    public float minHandDisplacementPerFrame = 0.01f;
+
+    [SettingGroup(SettingSections.Hands, "Grow & Shrink")]
+    [Tooltip(
+        "Hand-velocity sanity gate: frames where a hand moves faster than this (world units/s at "
+            + "1x) are ignored as tracking glitches."
+    )]
+    public float maxHandVelocity = 3.0f;
+
+    // ---- Particles ----
+    [SettingGroup(SettingSections.Particles, "Color")]
+    [Label("Color Per Player")]
+    [Tooltip(
+        "Give each new player its own slot in the Particle Palette (and the Skeleton Palette) "
+            + "instead of the shared Particle Gradient."
+    )]
+    public bool individualColors = false;
+
+    [SettingGroup(SettingSections.Particles, "Color")]
+    [Label("Particle Gradient")]
     [HideIf("individualColors")]
     [GradientUsage(true)]
+    [Tooltip("Hand particle gradient for every player while Color Per Player is off.")]
     public Gradient particleColor = new();
     private int lastColorIndex;
 
     // The palette: its length is the number of slots, and each player keeps its slot index.
+    [SettingGroup(SettingSections.Particles, "Color")]
+    [Label("Particle Palette")]
     [ShowIf("individualColors")]
-    [BoxGroup("Style Settings")]
     [GradientUsage(true)]
     [Tooltip(
-        "The individual-colors palette: one particle gradient per slot. Its length is the number "
+        "The Color Per Player palette: one particle gradient per slot. Its length is the number "
             + "of slots; each new player takes a free slot (random among them)."
     )]
     public Gradient[] particleColors = new Gradient[]
@@ -399,38 +558,55 @@ public class SceneController : MonoBehaviour
         new(),
     };
 
-    [BoxGroup("Debugging")]
+    // Flattened into the Particles groups by SceneControllerEditor (see HandVfxSettings).
+    [Tooltip("Per-hand HandEffects.vfx values (base at 1x). See HandVfxSettings.")]
+    public HandVfxSettings handVfx = new();
+
+    // ---- Debug ----
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
+    [Tooltip(
+        "Temporarily show the physics sphere mesh whenever a hand's scaling ray hits the ball, to "
+            + "visualize the grow/shrink hit test."
+    )]
     public bool showSphereMeshOnHandCollision = false;
 
-    [BoxGroup("Debugging")]
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
     [Tooltip("When enabled, the sphere mesh is always visible regardless of hand collision state.")]
     public bool alwaysShowSphereMesh = false;
 
-    [BoxGroup("Debugging")]
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
     [Tooltip("When enabled, the metaball mesh renderer is visible for debugging.")]
     public bool showMetaballMesh = false;
 
-    [BoxGroup("Debugging")]
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
     [Tooltip(
         "When enabled, the Kinect depth point cloud (the body occlusion geometry) is rendered "
             + "visibly, colored by depth — body pixels warm, environment cool."
     )]
     public bool showPointCloud = false;
 
-    [BoxGroup("Debugging")]
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
     [Tooltip(
         "When enabled, the metaball volume's bounding box is drawn as a wireframe for checking "
             + "grid placement while tuning baseZDepth."
     )]
     public bool showMetaballBounds = false;
 
-    [BoxGroup("Debugging")]
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
+    [Tooltip("Show a sprite around each ball indicating its gravity attraction radius.")]
     public bool showAttractionRadius = false;
 
-    [BoxGroup("Debugging")]
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
+    [Tooltip(
+        "Render the TD1/TD2 trail distorter debug spheres that orbit each hand and shape the hand "
+            + "particles."
+    )]
     public bool showHandTrailDistorters = false;
 
-    [BoxGroup("Debugging")]
+    [SettingGroup(SettingSections.Debug, "Visualizers")]
+    [Tooltip(
+        "Render the secondary attractor debug sphere on each hand that the hand particles conform to."
+    )]
     public bool showSecondaryAttractor = false;
     #endregion
 
@@ -1148,7 +1324,7 @@ public class SceneController : MonoBehaviour
         // Inspector values are base values at bodyScale = 1
         target.settingsVersion = RuntimeSceneSettings.CurrentSettingsVersion;
 
-        // Gravity Attraction
+        // Gravity
         target.g = g;
         target.maxTowardsForce = maxTowardsForce;
         target.maxAwayFromForce = maxAwayFromForce;
@@ -1158,11 +1334,11 @@ public class SceneController : MonoBehaviour
         target.stopVelocity = stopVelocity;
         target.attractionRadiusMultiplier = attractionRadiusMultiplier;
 
-        // Hands Attraction (curves and other settings)
+        // Hands
         target.forceToMiddle = new AnimationCurve(forceToMiddle.keys);
         target.singleHandOpenForceDamper = singleHandOpenForceDamper;
 
-        // Boundary Drag
+        // Play Boundary
         target.addedBoundaryDistance = addedBoundaryDistance;
         target.boundaryOutwardDrag = boundaryOutwardDrag;
         target.outOfBoundsResetDelay = outOfBoundsResetDelay;
@@ -1178,13 +1354,13 @@ public class SceneController : MonoBehaviour
         target.prayToActivate = prayToActivate;
         target.prayToActivateDistance = prayToActivateDistance;
 
-        // Intrinsic Pulsation
+        // Breathing
         target.pulseAmount = pulseAmount;
         target.pulseSpeed = pulseSpeed;
         target.graphLimit = graphLimit;
         target.pulseFreqs = (float[])pulseFreqs.Clone();
 
-        // Movement-Based Pulsation
+        // Size / Grow & Shrink
         target.singleHandScaling = singleHandScaling;
         target.minimumUnscaledSize = minimumUnscaledSize;
         target.maximumUnscaledSize = maximumUnscaledSize;
@@ -1193,7 +1369,7 @@ public class SceneController : MonoBehaviour
         target.distanceDamper = new AnimationCurve(distanceDamper.keys);
         target.pulseScaleDamper = pulseScaleDamper;
 
-        // Miscellaneous
+        // World, size, push spread, tracking, reset
         target.mergeSizeScalerDamper = mergeSizeScalerDamper;
         target.maxDistanceBetweenHands = maxDistanceBetweenHands;
         target.baseZDepth = baseZDepth;
@@ -1203,11 +1379,10 @@ public class SceneController : MonoBehaviour
         target.maxDistanceFromCamera = maxDistanceFromCamera;
         target.sphereResetJitter = sphereResetJitter;
 
-        // Hand VFX (nested group, copied as one object)
+        // Hand VFX (nested, copied as one object)
         target.handVfx = handVfx != null ? handVfx.DeepCopy() : new HandVfxSettings();
 
-        // Animation
-        target.particleInitializationDelay = particleInitializationDelay;
+        // Activation, One Hand, Spawn
         target.initializationResetDelay = initializationResetDelay;
         target.singleHandOpenThreshold = singleHandOpenThreshold;
         target.singleHandForceLerpDuration = singleHandForceLerpDuration;
@@ -1217,7 +1392,7 @@ public class SceneController : MonoBehaviour
         target.bodySpawnSize = bodySpawnSize;
         target.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
 
-        // Debugging
+        // Kinect, colors, debug visualizers
         target.showCameraFeed = showCameraFeed;
         target.drawSkeleton = drawSkeleton;
         target.useTrackingStateColors = useTrackingStateColors;
@@ -1242,7 +1417,7 @@ public class SceneController : MonoBehaviour
     /// </summary>
     public void CopyRuntimeToInspector(RuntimeSceneSettings source)
     {
-        // Gravity Attraction
+        // Gravity
         g = source.g;
         maxTowardsForce = source.maxTowardsForce;
         maxAwayFromForce = source.maxAwayFromForce;
@@ -1252,11 +1427,11 @@ public class SceneController : MonoBehaviour
         stopVelocity = source.stopVelocity;
         attractionRadiusMultiplier = source.attractionRadiusMultiplier;
 
-        // Hands Attraction
+        // Hands
         forceToMiddle = new AnimationCurve(source.forceToMiddle.keys);
         singleHandOpenForceDamper = source.singleHandOpenForceDamper;
 
-        // Boundary Drag
+        // Play Boundary
         addedBoundaryDistance = source.addedBoundaryDistance;
         boundaryOutwardDrag = source.boundaryOutwardDrag;
         outOfBoundsResetDelay = source.outOfBoundsResetDelay;
@@ -1272,13 +1447,13 @@ public class SceneController : MonoBehaviour
         prayToActivate = source.prayToActivate;
         prayToActivateDistance = source.prayToActivateDistance;
 
-        // Intrinsic Pulsation
+        // Breathing
         pulseAmount = source.pulseAmount;
         pulseSpeed = source.pulseSpeed;
         graphLimit = source.graphLimit;
         pulseFreqs = (float[])source.pulseFreqs.Clone();
 
-        // Movement-Based Pulsation
+        // Size / Grow & Shrink
         singleHandScaling = source.singleHandScaling;
         minimumUnscaledSize = source.minimumUnscaledSize;
         maximumUnscaledSize = source.maximumUnscaledSize;
@@ -1287,7 +1462,7 @@ public class SceneController : MonoBehaviour
         distanceDamper = new AnimationCurve(source.distanceDamper.keys);
         pulseScaleDamper = source.pulseScaleDamper;
 
-        // Miscellaneous
+        // World, size, push spread, tracking, reset
         mergeSizeScalerDamper = source.mergeSizeScalerDamper;
         maxDistanceBetweenHands = source.maxDistanceBetweenHands;
         baseZDepth = source.baseZDepth;
@@ -1297,11 +1472,10 @@ public class SceneController : MonoBehaviour
         maxDistanceFromCamera = source.maxDistanceFromCamera;
         sphereResetJitter = source.sphereResetJitter;
 
-        // Hand VFX (nested group, copied as one object)
+        // Hand VFX (nested, copied as one object)
         handVfx = source.handVfx != null ? source.handVfx.DeepCopy() : new HandVfxSettings();
 
-        // Animation
-        particleInitializationDelay = source.particleInitializationDelay;
+        // Activation, One Hand, Spawn
         initializationResetDelay = source.initializationResetDelay;
         singleHandOpenThreshold = source.singleHandOpenThreshold;
         singleHandForceLerpDuration = source.singleHandForceLerpDuration;
@@ -1311,7 +1485,7 @@ public class SceneController : MonoBehaviour
         bodySpawnSize = source.bodySpawnSize;
         metaballRadiusAnimationCurve = new AnimationCurve(source.metaballRadiusAnimationCurve.keys);
 
-        // Debugging
+        // Kinect, colors, debug visualizers
         showCameraFeed = source.showCameraFeed;
         drawSkeleton = source.drawSkeleton;
         useTrackingStateColors = source.useTrackingStateColors;
