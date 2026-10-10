@@ -399,7 +399,7 @@ The settings menu and the SceneController inspector share this structure (sectio
 **Scene Tab:**
 
 - **Space** — World (Body Scale, Base Z Depth, Grid Scale) · Play Boundary (margin, outward drag, out-of-bounds reset)
-- **Kinect** (only with a Kinect) — Tracking · Camera Feed (only with a feed) · Skeleton
+- **Kinect** (only with a Kinect) — Tracking · Camera Feed (only with a feed; show feed, sync particles to feed) · Skeleton
 - **Ball** — Size · Breathing (intrinsic pulsation) · Spawn (grow-in, spawn flash) · Gravity
 - **Hands** — Activation · Push · Aim · One Hand · Grow & Shrink (movement-based scaling)
 - **Particles** (the hand VFX; mostly `HandVfxSettings`) — Color · Glow · Emission · Lifetime · Stretch · Ball Attraction · Secondary Attractor · Trail Distorters · Noise & Turbulence · Hi-Hat Bursts · Snare Bursts

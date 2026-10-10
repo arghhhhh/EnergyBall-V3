@@ -46,6 +46,9 @@ public class BodySourceManager : MonoBehaviour
     public int ColorHeight { get; private set; } = 1080;
     public bool DepthFramesReady { get; private set; }
 
+    // Color frames received so far. They arrive during Update (the Kinect event pump).
+    public int ColorFrameCount => _colorFrameCount;
+
     public CoordinateMapper Mapper => _sensor != null ? _sensor.CoordinateMapper : null;
 
     public Body[] GetData()

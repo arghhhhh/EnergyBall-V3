@@ -1367,30 +1367,36 @@ MonoBehaviour:
   dummyOnlyMode: 0
   settingsMenu: {fileID: 125572181}
   volumeController: {fileID: 1361264294}
-  projectiveAlignment: 1
-  cameraFeedQuad: {fileID: 1766269651}
-  renderCameraTransform: {fileID: 118562682}
-  g: 0.4
-  maxTowardsForce: 0.39999998
-  maxAwayFromForce: 1
-  gravityForceDamper: 0.95
-  stopGravityDistance: 0.024
-  stopMovingDistance: 0.010000001
-  stopVelocity: 0.1
-  attractionRadiusMultiplier: 1.2
-  singleHandOpenForceDamper: 0.5
+  bodyScale: 5
+  baseZDepth: 1
+  gridScale: 0.06
   addedBoundaryDistance: 0.22000001
   boundaryOutwardDrag: 4
   outOfBoundsResetDelay: 3
-  pushForce: 2.8
-  torsoMaxForwardOffset: 0.2
-  torsoOffsetFalloffDistance: 0.4
-  minDrag: 0.25
-  maxDrag: 0.75
-  alignmentVectorStrengthScaler: 0.07
-  handPushScaler: 10
-  prayToActivate: 0
-  prayToActivateDistance: 0.13
+  sphereResetJitter: 0.1
+  maxDistanceFromCamera: 12
+  cameraFeedQuad: {fileID: 1766269651}
+  showCameraFeed: 1
+  syncParticlesToFeed: 0
+  projectiveAlignment: 1
+  renderCameraTransform: {fileID: 118562682}
+  drawSkeleton: 1
+  skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
+    type: 2}
+  useTrackingStateColors: 0
+  skeletonColor: {r: 1, g: 0, b: 1, a: 1}
+  skeletonColors:
+  - {r: 0, g: 0, b: 1, a: 1}
+  - {r: 0, g: 1, b: 1, a: 1}
+  - {r: 0, g: 1, b: 0, a: 1}
+  - {r: 1, g: 0, b: 1, a: 1}
+  - {r: 1, g: 0, b: 0, a: 1}
+  - {r: 1, g: 0.5, b: 0, a: 1}
+  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  defaultUnscaledSize: 0.33
+  minimumUnscaledSize: 0.25
+  maximumUnscaledSize: 0.6
+  mergeSizeScalerDamper: 0.15
   pulseAmount: 2
   pulseSpeed: 3
   graphLimit: 3.883
@@ -1399,153 +1405,8 @@ MonoBehaviour:
   - 0.8
   - 2
   - 3
-  singleHandScaling: 1
-  minimumUnscaledSize: 0.25
-  maximumUnscaledSize: 0.6
-  minHandDisplacementPerFrame: 0.010000001
-  maxHandVelocity: 3
-  pulseScaleDamper: 0.3
-  mergeSizeScalerDamper: 0.15
-  maxDistanceBetweenHands: 1
-  baseZDepth: 1
-  gridScale: 0.06
-  defaultUnscaledSize: 0.33
-  bodyScale: 5
-  maxDistanceFromCamera: 12
-  sphereResetJitter: 0.1
-  handVfx:
-    spawnRate: 1500
-    spawnSphereRadius: 0.012
-    spawnVeloSpread: 0.8
-    sizeRange: {x: 0.008, y: 0.014}
-    maxLifetime: 4
-    maxLifetimeClosed: 1
-    fadeInTime: 0.3
-    fadeInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 2
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    fadeOutTime: 3
-    lengthScaler: 1.25
-    minStretchLength: 0.01
-    vfxSphereCollisionScaleMult: 0.93
-    collisionDetectionScaleMult: 1.25
-    colorCycleTime: 0.3
-    glowFullRadius: 0.9
-    glowRange: 0.42
-    glowCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 2
-        outSlope: 2
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    surfaceBrightness: 10
-    mainAttractionSpeed: 0.95
-    mainAttractionForce: 43
-    mainStickDistance: 0.02
-    mainStickForce: 0.4
-    tangentialDamping: 10
-    tangentialDampingFade: {x: 1.2, y: 1.6}
-    tangentialDampingFadeCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    seekStrength: 1
-    tdRadius: 0.05
-    tdStickDistance: 0.02
-    tdStickForce: 1
-    tdAttractionForce: 8
-    tdAttractionSpeed: 80
-    tdWanderAmount: 0.15
-    saAttractionSpeed: 0.95
-    saAttractionForce: 10
-    saStickDistance: 0.02
-    saStickForce: 1
-    saMinRadius: 0
-    noiseScale: 0.02
-    noiseFrequency: 4.5
-    noiseRoughness: 0.5
-    noiseOctaves: 1
-    turbulenceIntensity: 1
-    turbulenceFrequency: 5
-    cHatSize: 0.005
-    cHatNoiseAmp: 1
-    cHatNoiseFreq: 20
-    cHatNoiseYScroll: 0.08
-    cHatSpawnVeloSphereRadius: 1
-    oHatSize: 0.004
-    oHatNoiseAmp: 0.008
-    oHatNoiseFreq: 10
-    oHatNoiseYScroll: 0.2
-    snareSizeRange: {x: 0.016, y: 0.02}
-    snareRadiusRandRange: {x: -0.02, y: 0.04}
-    snareSpawnVeloSphereRadius: 0.2
-  particleInitializationDelay: 1.75
-  initializationResetDelay: 3
-  singleHandOpenThreshold: 0.1
-  singleHandForceLerpDuration: 0.35
-  initializationSpeed: 0.037
   metaballRadiusAnimationDuration: 2
   metaballRadiusAnimationStartSize: 0.020000001
-  bodySpawnSize: 0.2
   metaballRadiusAnimationCurve:
     serializedVersion: 2
     m_Curve:
@@ -1579,6 +1440,20 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  bodySpawnSize: 0.2
+  g: 0.4
+  maxTowardsForce: 0.39999998
+  maxAwayFromForce: 1
+  gravityForceDamper: 0.95
+  stopGravityDistance: 0.024
+  stopMovingDistance: 0.010000001
+  stopVelocity: 0.1
+  attractionRadiusMultiplier: 1.2
+  prayToActivate: 0
+  prayToActivateDistance: 0.13
+  initializationSpeed: 0.037
+  initializationResetDelay: 3
+  pushForce: 2.8
   forceToMiddle:
     serializedVersion: 2
     m_Curve:
@@ -1612,6 +1487,10 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  minDrag: 0.25
+  maxDrag: 0.75
+  handPushScaler: 10
+  maxDistanceBetweenHands: 1
   alignmentVectorStrength:
     serializedVersion: 2
     m_Curve:
@@ -1636,6 +1515,13 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  alignmentVectorStrengthScaler: 0.07
+  torsoMaxForwardOffset: 0.2
+  torsoOffsetFalloffDistance: 0.4
+  singleHandOpenForceDamper: 0.5
+  singleHandOpenThreshold: 0.1
+  singleHandForceLerpDuration: 0.35
+  singleHandScaling: 1
   distanceDamper:
     serializedVersion: 2
     m_Curve:
@@ -1669,21 +1555,10 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  showCameraFeed: 1
+  pulseScaleDamper: 0.3
+  minHandDisplacementPerFrame: 0.010000001
+  maxHandVelocity: 3
   individualColors: 1
-  drawSkeleton: 1
-  skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
-    type: 2}
-  useTrackingStateColors: 0
-  skeletonColor: {r: 1, g: 0, b: 1, a: 1}
-  skeletonColors:
-  - {r: 0, g: 0, b: 1, a: 1}
-  - {r: 0, g: 1, b: 1, a: 1}
-  - {r: 0, g: 1, b: 0, a: 1}
-  - {r: 1, g: 0, b: 1, a: 1}
-  - {r: 1, g: 0, b: 0, a: 1}
-  - {r: 1, g: 0.5, b: 0, a: 1}
-  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   particleColor:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}
@@ -1918,6 +1793,131 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
+  handVfx:
+    colorCycleTime: 0.3
+    glowFullRadius: 0.9
+    glowRange: 0.42
+    glowCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    surfaceBrightness: 10
+    spawnRate: 1500
+    spawnSphereRadius: 0.012
+    spawnVeloSpread: 0.8
+    sizeRange: {x: 0.008, y: 0.014}
+    maxLifetime: 4
+    maxLifetimeClosed: 1
+    fadeInTime: 0.3
+    fadeInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    fadeOutTime: 3
+    lengthScaler: 1.25
+    minStretchLength: 0.01
+    mainAttractionSpeed: 0.95
+    mainAttractionForce: 43
+    mainStickDistance: 0.02
+    mainStickForce: 0.4
+    seekStrength: 1
+    tangentialDamping: 10
+    tangentialDampingFade: {x: 1.2, y: 1.6}
+    tangentialDampingFadeCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    vfxSphereCollisionScaleMult: 0.93
+    collisionDetectionScaleMult: 1.25
+    saAttractionSpeed: 0.95
+    saAttractionForce: 10
+    saStickDistance: 0.02
+    saStickForce: 1
+    saMinRadius: 0
+    tdRadius: 0.05
+    tdAttractionSpeed: 80
+    tdAttractionForce: 8
+    tdStickDistance: 0.02
+    tdStickForce: 1
+    tdWanderAmount: 0.15
+    noiseScale: 0.02
+    noiseFrequency: 4.5
+    noiseRoughness: 0.5
+    noiseOctaves: 1
+    turbulenceIntensity: 1
+    turbulenceFrequency: 5
+    cHatSize: 0.005
+    cHatNoiseAmp: 1
+    cHatNoiseFreq: 20
+    cHatNoiseYScroll: 0.08
+    cHatSpawnVeloSphereRadius: 1
+    oHatSize: 0.004
+    oHatNoiseAmp: 0.008
+    oHatNoiseFreq: 10
+    oHatNoiseYScroll: 0.2
+    snareSizeRange: {x: 0.016, y: 0.02}
+    snareRadiusRandRange: {x: -0.02, y: 0.04}
+    snareSpawnVeloSphereRadius: 0.2
   showSphereMeshOnHandCollision: 0
   alwaysShowSphereMesh: 0
   showMetaballMesh: 0
@@ -2301,6 +2301,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ParticleLayerCompositor
   compositeImage: {fileID: 153174109}
   depthBits: 24
+  feedStallTimeout: 0.2
 --- !u!1 &1977404203
 GameObject:
   m_ObjectHideFlags: 0

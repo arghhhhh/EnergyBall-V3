@@ -196,6 +196,7 @@ public class RuntimeSceneSettings
         set => _individualColors = value;
     }
     public bool showCameraFeed = true;
+    public bool syncParticlesToFeed = false;
     public bool drawSkeleton = false;
     public bool useTrackingStateColors = true;
 
@@ -392,6 +393,7 @@ public class RuntimeSceneSettings
         copy.feedPostProcessing =
             feedPostProcessing != null ? feedPostProcessing.DeepCopy() : new PostProcessSettings();
         copy.showCameraFeed = showCameraFeed;
+        copy.syncParticlesToFeed = syncParticlesToFeed;
         copy.drawSkeleton = drawSkeleton;
         copy._individualColors = _individualColors;
         copy.useTrackingStateColors = useTrackingStateColors;

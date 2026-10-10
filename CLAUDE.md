@@ -124,6 +124,13 @@ following the existing pattern:
     by the `Particle Layer Composite` canvas (Screen Space Overlay, sort −1, drawn after
     the Main Camera's PP) using the premultiplied `EnergyBall/UIPremultipliedComposite`
     shader.
+  - **Sync Particles To Feed** (`syncParticlesToFeed`, Kinect > Camera Feed): the
+    compositor turns the Particles Camera off on frames with no new Kinect color frame
+    (`BodySourceManager.ColorFrameCount`), so the texture holds and the particles change
+    on the same frames as the feed (30 fps, 15 in low light). Only the drawing is held:
+    both VFX graphs are Always Simulate (a graph that culls its simulation would slow
+    down instead). After `feedStallTimeout` without a feed frame it draws every frame
+    again.
   - Not a camera stack on purpose: an overlay camera's PP runs on the whole stack
     (feed included), so it can't separate the looks.
   - Needs URP **Alpha Processing** (`m_AllowPostProcessAlphaOutput`). It's project
@@ -194,7 +201,8 @@ following the existing pattern:
   it can't be gated on it. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
   material, tracking-state colors, the single skeleton color. CameraFeed:
   `showCameraFeed` (toggles the feed quad's renderer in play mode),
-  `projectiveAlignment`, `renderCameraTransform`. Color Per Player: `particleColors` is
+  `projectiveAlignment`, `renderCameraTransform`. CameraFeed + `showCameraFeed`
+  (`ShowFeedSyncField`): `syncParticlesToFeed`. Color Per Player: `particleColors` is
   the palette (its length is the slot count). Each player keeps its
   `PlayerConstructor.paletteSlot`, and `skeletonColors[slot]` is optional (wraps,
   falls back to `skeletonColor`), so it shows only when bones use it.

@@ -709,6 +709,14 @@ public class InGameSettingsMenu : MonoBehaviour
             v => runtimeSettings.showCameraFeed = v,
             tooltip: "Show the Kinect color feed behind the players. Off leaves a black background."
         );
+        CreateToggleField(
+            group,
+            "Sync Particles To Feed",
+            () => runtimeSettings.syncParticlesToFeed,
+            v => runtimeSettings.syncParticlesToFeed = v,
+            tooltip: SceneController.SyncParticlesToFeedTooltip
+        );
+        ShowRowIf(group, "Sync Particles To Feed", () => runtimeSettings.showCameraFeed);
     }
 
     private void CreateSkeletonGroup(SettingSection section)
@@ -3454,6 +3462,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Camera feed, skeleton and colors
         runtimeSettings.showCameraFeed = loadedSettings.showCameraFeed;
+        runtimeSettings.syncParticlesToFeed = loadedSettings.syncParticlesToFeed;
         runtimeSettings.individualColors = loadedSettings.individualColors;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
         runtimeSettings.useTrackingStateColors = loadedSettings.useTrackingStateColors;
@@ -3550,6 +3559,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Camera feed, skeleton and colors
         destination.showCameraFeed = source.showCameraFeed;
+        destination.syncParticlesToFeed = source.syncParticlesToFeed;
         destination.individualColors = source.individualColors;
         destination.drawSkeleton = source.drawSkeleton;
         destination.useTrackingStateColors = source.useTrackingStateColors;

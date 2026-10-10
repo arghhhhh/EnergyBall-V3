@@ -60,6 +60,9 @@ public class SceneController : MonoBehaviour
     private bool HasCameraFeed => HasFeature(SceneFeature.CameraFeed);
     private bool ShowSkeletonSettings => HasKinect && drawSkeleton;
 
+    // Syncing the particles to the feed only applies while the feed is shown.
+    private bool ShowFeedSyncField => HasCameraFeed && showCameraFeed;
+
     // The single skeleton color is only used when bones aren't tracking-state colored and players
     // don't get individual palette colors.
     private bool ShowSkeletonColorField =>
@@ -149,6 +152,16 @@ public class SceneController : MonoBehaviour
     [ShowIf("HasCameraFeed")]
     [Tooltip("Show the Kinect color feed behind the players. Off leaves a black background.")]
     public bool showCameraFeed = true;
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("ShowFeedSyncField")]
+    [Tooltip(SyncParticlesToFeedTooltip)]
+    public bool syncParticlesToFeed = false;
+
+    public const string SyncParticlesToFeedTooltip =
+        "Redraw the particle layer only when a new camera feed frame arrives (30 fps, 15 in low "
+        + "light), so particles and video change on the same frames. Off draws particles every "
+        + "frame.";
 
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("HasCameraFeed")]
@@ -1394,6 +1407,7 @@ public class SceneController : MonoBehaviour
 
         // Kinect, colors, debug visualizers
         target.showCameraFeed = showCameraFeed;
+        target.syncParticlesToFeed = syncParticlesToFeed;
         target.drawSkeleton = drawSkeleton;
         target.useTrackingStateColors = useTrackingStateColors;
         target.individualColors = individualColors;
@@ -1487,6 +1501,7 @@ public class SceneController : MonoBehaviour
 
         // Kinect, colors, debug visualizers
         showCameraFeed = source.showCameraFeed;
+        syncParticlesToFeed = source.syncParticlesToFeed;
         drawSkeleton = source.drawSkeleton;
         useTrackingStateColors = source.useTrackingStateColors;
         individualColors = source.individualColors;
