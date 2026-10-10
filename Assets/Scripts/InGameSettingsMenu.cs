@@ -139,12 +139,13 @@ public class InGameSettingsMenu : MonoBehaviour
         public SettingSection section; // null for groups placed straight in a panel
         public VisualElement root;
         public VisualElement content;
-        public Label chevron;
     }
 
     /// <summary>
-    /// A collapsible section of the Scene tab (Space, Kinect, Ball, ...) holding its groups in
-    /// <see cref="content"/>. Rebuilt with the UI, like <see cref="SettingGroup"/>.
+    /// A page of the Scene tab (Space, Kinect, Ball, ...) holding its groups in
+    /// <see cref="content"/>, picked from the sidebar by <see cref="navItem"/>. One page shows at
+    /// a time; while searching, every page with matches is listed. Rebuilt with the UI, like
+    /// <see cref="SettingGroup"/>.
     /// </summary>
     private class SettingSection
     {
@@ -153,16 +154,21 @@ public class InGameSettingsMenu : MonoBehaviour
         public ScrollView panel;
         public VisualElement root;
         public VisualElement content;
-        public Label chevron;
+        public Button navItem;
     }
 
     private readonly List<SettingGroup> settingGroups = new();
     private readonly List<SettingSection> settingSections = new();
 
-    // Keys of collapsed sections (panel name + "/" + title) and groups (section or panel key +
-    // "/" + title). Kept across UI rebuilds and sessions.
+    // Keys of collapsed groups (section or panel key + "/" + title). Kept across UI rebuilds and
+    // sessions.
     private readonly HashSet<string> collapsedGroups = new();
     private const string CollapsedGroupsPrefKey = "SettingsMenuCollapsedGroups";
+
+    // Title of the Scene tab page shown when not searching. Kept across UI rebuilds and sessions.
+    private string selectedSection;
+    private const string SelectedSectionPrefKey = "SettingsMenuSelectedSection";
+    private VisualElement sceneSectionNav;
 
     // Per-tab search: filters that tab's rows by label (or whole groups by title).
     private TextField sceneSearchField,
@@ -224,6 +230,7 @@ public class InGameSettingsMenu : MonoBehaviour
         var collapsed = PlayerPrefs.GetString(CollapsedGroupsPrefKey, "");
         foreach (var key in collapsed.Split('\n', StringSplitOptions.RemoveEmptyEntries))
             collapsedGroups.Add(key);
+        selectedSection = PlayerPrefs.GetString(SelectedSectionPrefKey, "");
     }
 
     private void Start()
@@ -374,6 +381,7 @@ public class InGameSettingsMenu : MonoBehaviour
             sceneSaveButton = sceneTabContent.Q<Button>("SceneSaveButton");
             sceneSaveAsButton = sceneTabContent.Q<Button>("SceneSaveAsButton");
             sceneSearchField = sceneTabContent.Q<TextField>("SceneSearchField");
+            sceneSectionNav = sceneTabContent.Q<VisualElement>("SceneSectionNav");
         }
 
         // Post-processing tab controls
@@ -492,6 +500,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         sceneSettingsPanel.Clear();
         postProcessingPanel.Clear();
+        sceneSectionNav?.Clear();
         settingRows.Clear();
         conditionalRows.Clear();
         settingGroups.Clear();
@@ -518,7 +527,7 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var panel = sceneSettingsPanel;
 
-        var space = CreateSection(SettingSections.Space, panel);
+        var space = CreateSection(SettingSections.Space, panel, sceneSectionNav);
         CreateWorldGroup(space);
         CreatePlayBoundaryGroup(space);
 
@@ -526,27 +535,27 @@ public class InGameSettingsMenu : MonoBehaviour
         // their values still load and save with the profile, so shared profiles keep them.
         if (SceneSupports(SceneController.SceneFeature.Kinect))
         {
-            var kinect = CreateSection(SettingSections.Kinect, panel);
+            var kinect = CreateSection(SettingSections.Kinect, panel, sceneSectionNav);
             CreateTrackingGroup(kinect);
             if (SceneSupports(SceneController.SceneFeature.CameraFeed))
                 CreateCameraFeedGroup(kinect);
             CreateSkeletonGroup(kinect);
         }
 
-        var ball = CreateSection(SettingSections.Ball, panel);
+        var ball = CreateSection(SettingSections.Ball, panel, sceneSectionNav);
         CreateBallSizeGroup(ball);
         CreateBreathingGroup(ball);
         CreateSpawnGroup(ball);
         CreateGravityGroup(ball);
 
-        var hands = CreateSection(SettingSections.Hands, panel);
+        var hands = CreateSection(SettingSections.Hands, panel, sceneSectionNav);
         CreateActivationGroup(hands);
         CreatePushGroup(hands);
         CreateAimGroup(hands);
         CreateOneHandGroup(hands);
         CreateGrowShrinkGroup(hands);
 
-        var particles = CreateSection(SettingSections.Particles, panel);
+        var particles = CreateSection(SettingSections.Particles, panel, sceneSectionNav);
         CreateParticleColorGroup(particles);
         CreateGlowGroup(particles);
         CreateEmissionGroup(particles);
@@ -559,7 +568,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateHiHatBurstsGroup(particles);
         CreateSnareBurstsGroup(particles);
 
-        var debug = CreateSection(SettingSections.Debug, panel);
+        var debug = CreateSection(SettingSections.Debug, panel, sceneSectionNav);
         CreateVisualizersGroup(debug);
     }
 
@@ -1854,23 +1863,18 @@ public class InGameSettingsMenu : MonoBehaviour
     }
 
     /// <summary>
-    /// Adds a collapsible section (a titled run of groups, e.g. "Ball") to
-    /// <paramref name="panel"/>. Clicking the header collapses / expands it.
+    /// Adds a section (a titled page of groups, e.g. "Ball") to <paramref name="panel"/> and its
+    /// entry to the sidebar <paramref name="nav"/>. Which page shows is applied by
+    /// <see cref="ApplySearch"/>.
     /// </summary>
-    private SettingSection CreateSection(string title, ScrollView panel)
+    private SettingSection CreateSection(string title, ScrollView panel, VisualElement nav)
     {
         var root = new VisualElement();
         root.AddToClassList("settings-section");
 
-        var header = new VisualElement();
-        header.AddToClassList("section-header");
-        var chevron = new Label();
-        chevron.AddToClassList("section-chevron");
         var titleLabel = new Label(title);
         titleLabel.AddToClassList("section-title");
-        header.Add(chevron);
-        header.Add(titleLabel);
-        root.Add(header);
+        root.Add(titleLabel);
 
         var content = new VisualElement();
         content.AddToClassList("section-content");
@@ -1885,13 +1889,52 @@ public class InGameSettingsMenu : MonoBehaviour
             panel = panel,
             root = root,
             content = content,
-            chevron = chevron,
         };
         settingSections.Add(section);
-        header.RegisterCallback<ClickEvent>(_ => ToggleSectionCollapsed(section));
-        ApplySectionCollapsed(section, searching: false);
+
+        if (nav != null)
+        {
+            section.navItem = new Button(() => SelectSection(section)) { text = title };
+            section.navItem.AddToClassList("section-nav-item");
+            nav.Add(section.navItem);
+        }
 
         return section;
+    }
+
+    private void SelectSection(SettingSection section)
+    {
+        // While searching every page with matches is listed, so jump to this one instead.
+        if (IsSearching(section.panel))
+        {
+            if (!section.root.ClassListContains("search-hidden"))
+                section.panel.ScrollTo(section.root);
+            return;
+        }
+
+        selectedSection = section.title;
+        PlayerPrefs.SetString(SelectedSectionPrefKey, selectedSection);
+        ApplySectionSelection(section.panel, searching: false);
+        section.panel.scrollOffset = Vector2.zero;
+    }
+
+    /// <summary>
+    /// Shows the selected page of <paramref name="panel"/> (the first when the selected one isn't
+    /// built, e.g. Kinect in dummy-only mode) and marks its sidebar entry. While searching, the
+    /// search decides which pages show.
+    /// </summary>
+    private void ApplySectionSelection(ScrollView panel, bool searching)
+    {
+        var sections = settingSections.FindAll(s => s.panel == panel);
+        if (sections.Count == 0)
+            return;
+
+        var selected = sections.Find(s => s.title == selectedSection) ?? sections[0];
+        foreach (var section in sections)
+        {
+            section.root.EnableInClassList("section-inactive", !searching && section != selected);
+            section.navItem?.EnableInClassList("active", !searching && section == selected);
+        }
     }
 
     /// <summary>Adds a collapsible group to <paramref name="section"/>; see the panel overload.</summary>
@@ -1910,9 +1953,11 @@ public class InGameSettingsMenu : MonoBehaviour
 
         var header = new VisualElement();
         header.AddToClassList("group-header");
-        var chevron = new Label();
+        // Points down while expanded; the stylesheet rotates it by the collapsed class.
+        var chevron = new Label("▶");
         chevron.AddToClassList("group-chevron");
-        var titleLabel = new Label(title);
+        // A small all-caps caption over the group's card (USS has no text-transform).
+        var titleLabel = new Label(title.ToUpperInvariant());
         titleLabel.AddToClassList("group-title");
         header.Add(chevron);
         header.Add(titleLabel);
@@ -1932,23 +1977,12 @@ public class InGameSettingsMenu : MonoBehaviour
             section = section,
             root = group,
             content = content,
-            chevron = chevron,
         };
         settingGroups.Add(entry);
         header.RegisterCallback<ClickEvent>(_ => ToggleGroupCollapsed(entry));
         ApplyGroupCollapsed(entry, searching: false);
 
         return content;
-    }
-
-    private void ToggleSectionCollapsed(SettingSection section)
-    {
-        // While searching every section with matches is forced open, so collapsing does nothing.
-        if (IsSearching(section.panel))
-            return;
-
-        ToggleCollapsedKey(section.key);
-        ApplySectionCollapsed(section, searching: false);
     }
 
     private void ToggleGroupCollapsed(SettingGroup group)
@@ -1968,18 +2002,10 @@ public class InGameSettingsMenu : MonoBehaviour
         PlayerPrefs.SetString(CollapsedGroupsPrefKey, string.Join("\n", collapsedGroups));
     }
 
-    private void ApplySectionCollapsed(SettingSection section, bool searching)
-    {
-        bool collapsed = !searching && collapsedGroups.Contains(section.key);
-        section.root.EnableInClassList("collapsed", collapsed);
-        section.chevron.text = collapsed ? "▶" : "▼";
-    }
-
     private void ApplyGroupCollapsed(SettingGroup group, bool searching)
     {
         bool collapsed = !searching && collapsedGroups.Contains(group.key);
         group.root.EnableInClassList("collapsed", collapsed);
-        group.chevron.text = collapsed ? "▶" : "▼";
     }
 
     // ---- Search ----
@@ -2034,8 +2060,9 @@ public class InGameSettingsMenu : MonoBehaviour
     /// <summary>
     /// Filters <paramref name="panel"/> to the rows whose section title + group title + label
     /// contain every search term, so a matching section or group title shows all its rows, and
-    /// rows sharing a label are told apart by where they live ("trail stick force"). Sections and
-    /// groups with matches are expanded; clearing the search restores their collapsed state.
+    /// rows sharing a label are told apart by where they live ("trail stick force"). Every page
+    /// with matches is listed and its groups expanded; clearing the search restores the selected
+    /// page and the collapsed groups.
     /// </summary>
     private void ApplySearch(ScrollView panel)
     {
@@ -2065,8 +2092,12 @@ public class InGameSettingsMenu : MonoBehaviour
                         terms
                     );
                 row.EnableInClassList("search-hidden", !show);
-                if (show && !row.ClassListContains("condition-hidden"))
-                    groupHasMatch = true;
+
+                // Rows are divided by a top border, which the first visible one drops
+                // (USS has no :first-child).
+                bool visible = show && !row.ClassListContains("condition-hidden");
+                row.EnableInClassList("row-first", visible && !groupHasMatch);
+                groupHasMatch |= visible;
             }
 
             bool showGroup = !searching || groupHasMatch;
@@ -2081,12 +2112,11 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             if (section.panel != panel)
                 continue;
-            section.root.EnableInClassList(
-                "search-hidden",
-                searching && !sectionsWithMatches.Contains(section)
-            );
-            ApplySectionCollapsed(section, searching);
+            bool noMatch = searching && !sectionsWithMatches.Contains(section);
+            section.root.EnableInClassList("search-hidden", noMatch);
+            section.navItem?.EnableInClassList("no-match", noMatch);
         }
+        ApplySectionSelection(panel, searching);
 
         if (searchEmptyLabels.TryGetValue(panel, out var emptyLabel))
             emptyLabel.EnableInClassList("hidden", !searching || anyMatch);
@@ -2314,15 +2344,12 @@ public class InGameSettingsMenu : MonoBehaviour
         inputContainer.style.alignItems = Align.Center;
         inputContainer.AddToClassList("setting-input");
 
-        var slider = new Slider(min, max);
+        var slider = new Slider(min, max) { fill = true };
         slider.style.flexGrow = 1;
         slider.value = getter();
 
         var valueLabel = new Label($"{getter():F2}");
-        valueLabel.style.minWidth = 50;
-        valueLabel.style.unityTextAlign = TextAnchor.MiddleRight;
-        valueLabel.style.color = Color.gray;
-        valueLabel.style.marginLeft = 5;
+        valueLabel.AddToClassList("slider-value");
 
         slider.RegisterValueChangedCallback(evt =>
         {
@@ -3547,47 +3574,24 @@ public class InGameSettingsMenu : MonoBehaviour
 
         // Create modal dialog for save as
         var modal = new VisualElement();
-        modal.style.position = Position.Absolute;
-        modal.style.left = 0;
-        modal.style.top = 0;
-        modal.style.right = 0;
-        modal.style.bottom = 0;
-        modal.style.backgroundColor = new Color(0, 0, 0, 0.8f);
-        modal.style.alignItems = Align.Center;
-        modal.style.justifyContent = Justify.Center;
+        modal.AddToClassList("modal-overlay");
 
         var panel = new VisualElement();
-        panel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
-        panel.style.borderTopWidth = 2;
-        panel.style.borderBottomWidth = 2;
-        panel.style.borderLeftWidth = 2;
-        panel.style.borderRightWidth = 2;
-        panel.style.borderTopColor = Color.gray;
-        panel.style.borderBottomColor = Color.gray;
-        panel.style.borderLeftColor = Color.gray;
-        panel.style.borderRightColor = Color.gray;
-        panel.style.paddingTop = 20;
-        panel.style.paddingBottom = 20;
-        panel.style.paddingLeft = 20;
-        panel.style.paddingRight = 20;
+        panel.AddToClassList("modal-panel");
         panel.style.width = 400;
 
         var title = new Label("Save Profile As...");
-        title.style.fontSize = 18;
-        title.style.color = Color.white;
-        title.style.marginBottom = 15;
+        title.AddToClassList("modal-title");
         panel.Add(title);
 
-        var nameField = new TextField("Profile Name:");
-        nameField.style.marginBottom = 15;
+        var nameField = new TextField("Profile Name");
+        nameField.AddToClassList("modal-field");
         nameField.value = $"Profile_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
         nameField.SelectAll();
         panel.Add(nameField);
 
         var buttonContainer = new VisualElement();
-        buttonContainer.style.flexDirection = FlexDirection.Row;
-        buttonContainer.style.justifyContent = Justify.Center;
-        buttonContainer.style.marginTop = 10;
+        buttonContainer.AddToClassList("modal-buttons");
 
         var saveButton = new Button(() =>
         {
@@ -3606,9 +3610,8 @@ public class InGameSettingsMenu : MonoBehaviour
             }
         });
         saveButton.text = "Save";
-        saveButton.style.marginRight = 10;
-        saveButton.style.paddingLeft = 15;
-        saveButton.style.paddingRight = 15;
+        saveButton.AddToClassList("modal-button");
+        saveButton.AddToClassList("primary");
 
         var cancelButton = new Button(() =>
         {
@@ -3616,11 +3619,11 @@ public class InGameSettingsMenu : MonoBehaviour
             isModalOpen = false;
         });
         cancelButton.text = "Cancel";
-        cancelButton.style.paddingLeft = 15;
-        cancelButton.style.paddingRight = 15;
+        cancelButton.AddToClassList("modal-button");
 
-        buttonContainer.Add(saveButton);
+        // Platform order: dismiss on the left, the action on the right.
         buttonContainer.Add(cancelButton);
+        buttonContainer.Add(saveButton);
         panel.Add(buttonContainer);
 
         modal.Add(panel);
@@ -4027,46 +4030,22 @@ public class InGameSettingsMenu : MonoBehaviour
         isModalOpen = true;
 
         var modal = new VisualElement();
-        modal.style.position = Position.Absolute;
-        modal.style.left = 0;
-        modal.style.top = 0;
-        modal.style.right = 0;
-        modal.style.bottom = 0;
-        modal.style.backgroundColor = new Color(0, 0, 0, 0.8f);
-        modal.style.alignItems = Align.Center;
-        modal.style.justifyContent = Justify.Center;
+        modal.AddToClassList("modal-overlay");
 
         var panel = new VisualElement();
-        panel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
-        panel.style.borderTopWidth = 2;
-        panel.style.borderBottomWidth = 2;
-        panel.style.borderLeftWidth = 2;
-        panel.style.borderRightWidth = 2;
-        panel.style.borderTopColor = Color.gray;
-        panel.style.borderBottomColor = Color.gray;
-        panel.style.borderLeftColor = Color.gray;
-        panel.style.borderRightColor = Color.gray;
-        panel.style.paddingTop = 20;
-        panel.style.paddingBottom = 20;
-        panel.style.paddingLeft = 20;
-        panel.style.paddingRight = 20;
+        panel.AddToClassList("modal-panel");
         panel.style.width = 440;
 
         var title = new Label(titleText);
-        title.style.fontSize = 18;
-        title.style.color = Color.white;
-        title.style.marginBottom = 10;
+        title.AddToClassList("modal-title");
         panel.Add(title);
 
         var message = new Label(messageText);
-        message.style.color = new Color(0.85f, 0.85f, 0.85f);
-        message.style.whiteSpace = WhiteSpace.Normal;
-        message.style.marginBottom = 15;
+        message.AddToClassList("modal-message");
         panel.Add(message);
 
         var buttons = new VisualElement();
-        buttons.style.flexDirection = FlexDirection.Row;
-        buttons.style.justifyContent = Justify.Center;
+        buttons.AddToClassList("modal-buttons");
 
         void Close()
         {
@@ -4080,9 +4059,8 @@ public class InGameSettingsMenu : MonoBehaviour
             onConfirm?.Invoke();
         });
         confirm.text = confirmText;
-        confirm.style.marginRight = 10;
-        confirm.style.paddingLeft = 15;
-        confirm.style.paddingRight = 15;
+        confirm.AddToClassList("modal-button");
+        confirm.AddToClassList("primary");
 
         var cancel = new Button(() =>
         {
@@ -4090,11 +4068,10 @@ public class InGameSettingsMenu : MonoBehaviour
             onCancel?.Invoke();
         });
         cancel.text = "Cancel";
-        cancel.style.paddingLeft = 15;
-        cancel.style.paddingRight = 15;
+        cancel.AddToClassList("modal-button");
 
-        buttons.Add(confirm);
         buttons.Add(cancel);
+        buttons.Add(confirm);
         panel.Add(buttons);
         modal.Add(panel);
         settingsPanel.Add(modal);

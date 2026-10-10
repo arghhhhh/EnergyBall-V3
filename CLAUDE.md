@@ -174,11 +174,16 @@ following the existing pattern:
   values at `bodyScale = 1`). UI Toolkit:
   `Assets/UI/SettingsMenu.uxml` / `.uss`, scaled by `Assets/UI Toolkit/PanelSettings.asset`
   (Scale With Screen Size, 1280×720 reference, match height, so it keeps the same share of
-  the screen at any resolution). Sections and groups collapse from their header (state in
-  PlayerPrefs `SettingsMenuCollapsedGroups`); each tab has a search field that filters rows
-  by section title + group title + label, so rows sharing a label ("Stick Force") are told
-  apart by where they live. The UI is rebuilt on every open / load, so both are re-applied
-  after `CreateSettingsUI()`.
+  the screen at any resolution). The Scene tab shows one section at a time, picked from a
+  sidebar (`SceneSectionNav`; last page in PlayerPrefs `SettingsMenuSelectedSection`); groups
+  are an all-caps caption over a card of rows and collapse from the caption (state in
+  PlayerPrefs `SettingsMenuCollapsedGroups`). Only groups collapse: one disclosure level.
+  Each tab has a search field that filters rows by section title + group title + label, so
+  rows sharing a label ("Stick Force") are told apart by where they live; while searching,
+  every section with matches is listed and the sidebar dims the rest. The UI is rebuilt on
+  every open / load, so all of this is re-applied after `CreateSettingsUI()`. Styling is all
+  in the USS (design tokens on `:root`, dark overrides of the runtime theme's fields, dialog
+  classes `modal-*`); keep new elements on classes rather than inline styles.
 - **Feature-gated settings**: `SceneController.SceneFeature` (`Kinect` = not
   `dummyOnlyMode`; `CameraFeed` = Kinect + `cameraFeedQuad` assigned). The menu builds
   such rows only inside `if (SceneSupports(SceneFeature.X))`. Their SceneController twins

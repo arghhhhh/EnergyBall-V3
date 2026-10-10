@@ -21,9 +21,13 @@
                     <ui:Button text="Save As..." name="SceneSaveAsButton" class="profile-button" />
                     <ui:TextField name="SceneSearchField" class="settings-search" />
                 </ui:VisualElement>
-                <ui:ScrollView name="SceneSettingsPanel" class="settings-scroll">
-                    <!-- Scene settings will be populated dynamically -->
-                </ui:ScrollView>
+                <ui:VisualElement name="SceneBody" class="settings-body">
+                    <!-- One entry per section, populated with the settings -->
+                    <ui:VisualElement name="SceneSectionNav" class="section-nav" />
+                    <ui:ScrollView name="SceneSettingsPanel" class="settings-scroll">
+                        <!-- Scene settings will be populated dynamically -->
+                    </ui:ScrollView>
+                </ui:VisualElement>
             </ui:VisualElement>
             
             <ui:VisualElement name="PostProcessingTabContent" class="tab-panel">

@@ -1,3 +1,23 @@
+/* Design tokens. Hierarchy comes from type and spacing, not nested boxes: tabs > sidebar page >
+   group caption over a card of rows. Only one level (groups) collapses. */
+:root {
+    --surface: rgba(14, 14, 16, 0.94);
+    --card: rgba(255, 255, 255, 0.045);
+    --card-hover: rgba(255, 255, 255, 0.07);
+    --divider: rgba(255, 255, 255, 0.07);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --input: rgb(24, 24, 27);
+    --button: rgb(44, 44, 48);
+    --button-hover: rgb(58, 58, 63);
+    --text: rgb(232, 232, 236);
+    --text-muted: rgb(150, 150, 158);
+    --text-faint: rgb(105, 105, 112);
+    --accent: rgb(96, 165, 250);
+    --accent-soft: rgba(96, 165, 250, 0.16);
+    --accent-text: rgb(160, 200, 255);
+}
+
 .settings-panel {
     position: absolute;
     top: 5%;
@@ -6,34 +26,97 @@
     width: auto;
     height: 90%;
     max-height: 800px;
-    background-color: rgba(0, 0, 0, 0.9);
-    border-width: 2px;
-    border-color: rgb(100, 100, 100);
-    border-radius: 10px;
-    padding: 20px;
+    background-color: var(--surface);
+    border-width: 1px;
+    border-color: var(--border);
+    border-radius: 12px;
+    padding: 18px 24px 20px 24px;
     display: flex;
     flex-direction: column;
+    color: var(--text);
 }
 
 .settings-header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgb(60, 60, 60);
+    margin-bottom: 6px;
 }
 
 .settings-title {
-    font-size: 24px;
-    color: white;
+    font-size: 20px;
+    color: var(--text);
     -unity-font-style: bold;
 }
 
+.close-button {
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 6px;
+    font-size: 20px;
+    color: var(--text-muted);
+}
+
+.close-button:hover {
+    background-color: var(--button);
+    color: var(--text);
+}
+
+/* ---- Tabs: text with an accent underline ---- */
+
+.tab-container {
+    flex-direction: row;
+    margin-bottom: 14px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--divider);
+}
+
+.tab-button {
+    margin: 0 20px -1px 0;
+    padding: 8px 2px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0 0 2px 0;
+    border-radius: 0;
+    border-color: rgba(0, 0, 0, 0);
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.tab-button:hover {
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--text);
+}
+
+.tab-button.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+    -unity-font-style: bold;
+}
+
+.tab-content {
+    flex-grow: 1;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/* ---- Toolbar: profile + search ---- */
+
 .profile-controls {
     flex-direction: row;
-    margin-bottom: 15px;
+    align-items: center;
+    margin-bottom: 16px;
 }
 
 /* The profile dropdown and the search field share the row's spare width; the dropdown is capped. */
@@ -43,6 +126,7 @@
     flex-basis: 0;
     min-width: 120px;
     max-width: 320px;
+    margin-left: 0;
 }
 
 .settings-search {
@@ -50,137 +134,168 @@
     flex-shrink: 1;
     flex-basis: 0;
     min-width: 140px;
-    margin-left: 12px;
+    margin-left: 16px;
+    margin-right: 0;
 }
 
 .profile-dirty-label {
     align-self: center;
     margin-left: 8px;
-    margin-right: 8px;
+    margin-right: 4px;
     padding: 2px 8px;
     border-radius: 4px;
-    background-color: rgba(200, 120, 30, 0.35);
+    background-color: rgba(200, 120, 30, 0.25);
     border-width: 1px;
-    border-color: rgb(220, 140, 40);
+    border-color: rgba(220, 140, 40, 0.6);
     color: rgb(255, 210, 150);
     font-size: 12px;
     -unity-font-style: italic;
 }
 
 .profile-button {
-    padding: 5px 10px;
-    background-color: rgb(50, 50, 50);
+    height: 28px;
+    margin: 0 0 0 6px;
+    padding: 0 12px;
+    background-color: var(--button);
     border-width: 1px;
-    border-color: rgb(80, 80, 80);
-    border-radius: 5px;
-    color: white;
+    border-color: var(--border);
+    border-radius: 6px;
+    color: var(--text);
 }
 
 .profile-button:hover {
-    background-color: rgb(70, 70, 70);
+    background-color: var(--button-hover);
 }
 
 .profile-button:active {
-    background-color: rgb(30, 30, 30);
+    background-color: var(--input);
+}
+
+/* ---- Body: sidebar + page ---- */
+
+.settings-body {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.section-nav {
+    width: 150px;
+    flex-shrink: 0;
+    margin-right: 20px;
+    padding-right: 12px;
+    border-right-width: 1px;
+    border-right-color: var(--divider);
+}
+
+.section-nav-item {
+    height: 34px;
+    margin: 0 0 2px 0;
+    padding: 0 12px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 14px;
+    -unity-text-align: middle-left;
+}
+
+.section-nav-item:hover {
+    background-color: var(--card);
+    color: var(--text);
+}
+
+.section-nav-item.active {
+    background-color: var(--accent-soft);
+    color: var(--accent-text);
+    -unity-font-style: bold;
+}
+
+/* While searching: sections without matches. */
+.section-nav-item.no-match {
+    color: var(--text-faint);
+    opacity: 0.5;
 }
 
 .settings-scroll {
     flex-grow: 1;
 }
 
-/* A Scene-tab section (Space, Kinect, Ball, ...): a large header over its run of groups. */
+/* Keep the rows clear of the scrollbar. */
+.settings-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    padding-right: 12px;
+}
+
+/* One page per section; while searching, every page with matches is stacked. */
 .settings-section {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
-.section-header {
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom-width: 2px;
-    border-bottom-color: rgb(150, 150, 150);
-}
-
-.section-header:hover .section-title,
-.section-header:hover .section-chevron {
-    color: white;
-}
-
-.section-chevron {
-    width: 20px;
-    font-size: 14px;
-    color: rgb(190, 190, 190);
-    -unity-text-align: middle-center;
-    margin-right: 4px;
-}
-
-.section-title {
-    font-size: 22px;
-    -unity-font-style: bold;
-    letter-spacing: 2px;
-    color: rgb(230, 230, 230);
-}
-
-/* Groups sit indented under their section's header. */
-.section-content {
-    padding-left: 12px;
-    border-left-width: 2px;
-    border-left-color: rgb(70, 70, 70);
-}
-
-.settings-section.collapsed .section-header {
-    margin-bottom: 0;
-}
-
-.settings-section.collapsed .section-content {
+.section-inactive {
     display: none;
 }
 
+.section-title {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: var(--text);
+    margin: 0 0 14px 2px;
+    padding: 0;
+}
+
+/* ---- Groups: caption over a card of rows ---- */
+
 .settings-group {
-    margin-bottom: 20px;
-    padding: 10px;
-    background-color: rgba(40, 40, 40, 0.5);
-    border-radius: 5px;
+    margin-bottom: 18px;
 }
 
 .group-header {
     flex-direction: row;
     align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgb(100, 100, 100);
+    margin: 0 0 6px 0;
+    padding: 2px 2px;
+}
+
+.group-chevron {
+    width: 14px;
+    margin: 0 4px 0 0;
+    padding: 0;
+    font-size: 8px;
+    color: var(--text-faint);
+    -unity-text-align: middle-center;
+    rotate: 90deg;
+    transition-property: rotate;
+    transition-duration: 0.12s;
+}
+
+.group-title {
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin: 0;
+    padding: 0;
 }
 
 .group-header:hover .group-title,
 .group-header:hover .group-chevron {
-    color: white;
+    color: var(--text);
 }
 
-.group-chevron {
-    width: 18px;
-    font-size: 12px;
-    color: rgb(160, 160, 160);
-    -unity-text-align: middle-center;
-    margin-right: 4px;
+.group-content {
+    background-color: var(--card);
+    border-width: 1px;
+    border-color: var(--divider);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.group-title {
-    font-size: 18px;
-    -unity-font-style: bold;
-    color: rgb(200, 200, 200);
-}
-
-/* Collapsed group: header only, no divider or gap under it. */
 .settings-group.collapsed {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
-.settings-group.collapsed .group-header {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom-width: 0;
+.settings-group.collapsed .group-chevron {
+    rotate: 0deg;
 }
 
 .settings-group.collapsed .group-content {
@@ -194,74 +309,247 @@
 }
 
 .search-empty-label {
-    color: rgb(160, 160, 160);
+    color: var(--text-muted);
     -unity-font-style: italic;
     -unity-text-align: middle-center;
     margin-top: 20px;
 }
 
+/* ---- Rows ---- */
+
 .setting-row {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
-    min-height: 25px;
+    min-height: 38px;
+    padding: 5px 12px 5px 14px;
+    border-top-width: 1px;
+    border-top-color: var(--divider);
+}
+
+.setting-row.row-first {
+    border-top-width: 0;
+}
+
+.setting-row:hover {
+    background-color: rgba(255, 255, 255, 0.025);
 }
 
 .setting-label {
     flex-grow: 1;
-    color: white;
-    font-size: 14px;
-    min-width: 200px;
+    flex-shrink: 1;
+    color: var(--text);
+    font-size: 13px;
+    min-width: 160px;
+    margin: 0;
+    padding: 0 12px 0 0;
 }
 
 .setting-input {
-    min-width: 200px;
-    max-width: 300px;
+    width: 260px;
+    flex-shrink: 0;
+    margin: 0;
 }
 
 .toggle {
-    min-width: 20px;
+    margin: 0;
 }
 
-.curve-thumbnail {
-    min-width: 200px;
-    max-width: 300px;
-    height: 25px;
-    background-color: rgba(34, 34, 34, 1);
+/* ---- Inputs: dark versions of the runtime theme's light fields ---- */
+
+.settings-panel .unity-base-text-field__input,
+.settings-panel .unity-base-popup-field__input {
+    min-height: 26px;
+    padding: 0 8px;
+    background-color: var(--input);
     border-width: 1px;
-    border-color: rgb(80, 80, 80);
+    border-color: var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.settings-panel .unity-base-text-field__input:hover,
+.settings-panel .unity-base-popup-field__input:hover {
+    border-color: var(--border-strong);
+}
+
+.settings-panel .unity-base-text-field:focus .unity-base-text-field__input {
+    border-color: var(--accent);
+}
+
+.settings-panel .unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: var(--text-muted);
+}
+
+.settings-panel .unity-base-text-field__input--placeholder {
+    color: var(--text-faint);
+}
+
+/* Vector fields: X / Y / Z side by side with muted labels. */
+/* Gaps go before each field, so the input steps left by one gap (USS has no :first-child). */
+.settings-panel .unity-composite-field__input {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    margin-left: -6px;
+}
+
+.settings-panel .unity-composite-field__field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
+    margin: 0 0 0 6px;
+}
+
+.settings-panel .unity-composite-field__field > .unity-base-field__label {
+    min-width: 14px;
+    padding: 0 4px 0 0;
+    color: var(--text-faint);
+}
+
+.settings-panel .unity-toggle__checkmark {
+    width: 18px;
+    height: 18px;
+    background-color: var(--input);
+    border-width: 1px;
+    border-color: var(--border-strong);
+    border-radius: 4px;
+}
+
+.settings-panel .unity-toggle:hover .unity-toggle__checkmark {
+    border-color: var(--text-muted);
+}
+
+.settings-panel .unity-toggle:checked .unity-toggle__checkmark {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    -unity-background-image-tint-color: rgb(14, 14, 16);
+}
+
+/* Sliders in rows (not the scrollbars): a track with an accent fill up to a round thumb. The
+   runtime theme's slider selectors are specific, hence the long ones here. */
+.settings-panel .setting-row .unity-base-slider--horizontal {
+    margin: 0;
+    height: 20px;
+}
+
+.settings-panel .setting-row .unity-base-slider--horizontal .unity-base-slider__tracker {
+    height: 4px;
+    margin-top: -2px;
+    background-color: rgba(255, 255, 255, 0.14);
+    border-width: 0;
+    border-radius: 2px;
+}
+
+.settings-panel .setting-row .unity-base-slider--horizontal .unity-base-slider__fill {
+    background-color: var(--accent);
+    border-radius: 2px;
+}
+
+.settings-panel .setting-row .unity-base-slider--horizontal .unity-base-slider__dragger {
+    width: 14px;
+    height: 14px;
+    margin-top: -7px;
+    background-color: var(--text);
+    border-width: 0;
+    border-radius: 7px;
+}
+
+.settings-panel .setting-row .unity-base-slider--horizontal .unity-base-slider__dragger:hover {
+    background-color: rgb(255, 255, 255);
+}
+
+.settings-panel .setting-row .unity-base-slider__dragger-border {
+    display: none;
+}
+
+.slider-value {
+    min-width: 44px;
+    margin: 0 0 0 10px;
+    padding: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    -unity-text-align: middle-right;
+}
+
+/* ---- Scrollbars: thin thumb, no arrow buttons ---- */
+
+.settings-panel .unity-scroller--vertical {
+    width: 8px;
+    min-width: 8px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-panel .unity-scroller--vertical .unity-scroller__low-button,
+.settings-panel .unity-scroller--vertical .unity-scroller__high-button {
+    display: none;
+}
+
+.settings-panel .unity-scroller--vertical .unity-base-slider__tracker {
+    width: 8px;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.settings-panel .unity-scroller--vertical .unity-base-slider__dragger {
+    width: 6px;
+    left: 1px;
+    border-width: 0;
     border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+.settings-panel .unity-scroller--vertical .unity-base-slider__dragger:hover {
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
+.settings-panel .unity-scroller--vertical .unity-base-slider__dragger-border {
+    display: none;
+}
+
+/* ---- Curve / color / gradient thumbnails ---- */
+
+.curve-thumbnail {
+    width: 260px;
+    flex-shrink: 0;
+    height: 26px;
+    background-color: var(--input);
+    border-width: 1px;
+    border-color: var(--border);
+    border-radius: 5px;
     cursor: link;
 }
 
 .curve-thumbnail:hover {
-    border-color: rgb(120, 120, 120);
-    background-color: rgba(44, 44, 44, 1);
+    border-color: var(--border-strong);
 }
 
 /* Color swatch / gradient strip: a CPU-rendered background image, click to edit */
 .color-swatch,
 .gradient-thumbnail {
-    min-width: 200px;
-    max-width: 300px;
-    height: 25px;
+    width: 260px;
+    flex-shrink: 0;
+    height: 26px;
     border-width: 1px;
-    border-color: rgb(80, 80, 80);
-    border-radius: 3px;
-    background-color: rgb(34, 34, 34);
+    border-color: var(--border);
+    border-radius: 5px;
+    background-color: var(--input);
     -unity-background-scale-mode: stretch-to-fill;
     cursor: link;
 }
 
 .color-swatch:hover,
 .gradient-thumbnail:hover {
-    border-color: rgb(170, 170, 170);
+    border-color: var(--text-muted);
 }
 
 /* Inside an array the swatch shares the row with the remove button */
 .array-element-input.color-swatch,
 .array-element-input.gradient-thumbnail {
+    width: auto;
+    flex-shrink: 1;
     min-width: 0;
 }
 
@@ -279,98 +567,87 @@
     margin: 0;
 }
 
-.close-button {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 30px;
-    height: 30px;
-    background-color: rgb(200, 50, 50);
-    border-width: 0;
-    border-radius: 15px;
-    font-size: 16px;
-    color: white;
-}
-
-.close-button:hover {
-    background-color: rgb(220, 70, 70);
-}
+/* ---- Arrays ---- */
 
 .array-row-subcontainer {
     flex-direction: row;
     align-items: flex-start;
     justify-content: space-between;
     width: 100%;
+    padding: 4px 0;
+}
+
+.array-row-subcontainer > .setting-label {
+    margin-top: 6px;
 }
 
 .array-container {
     flex-direction: column;
-    margin-top: 5px;
-    margin-right: 5px;
-    padding: 5px;
+    width: 260px;
+    flex-shrink: 0;
+    padding: 6px;
     border-width: 1px;
-    border-color: rgb(80, 80, 80);
-    border-radius: 3px;
-    background-color: rgba(20, 20, 20, 0.5);
-    min-width: 210px;
-    max-width: 300px;
+    border-color: var(--divider);
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.25);
 }
 
 .array-element {
     flex-direction: row;
     align-items: center;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 .array-element-input {
     flex-grow: 1;
-    margin-right: 5px;
+    margin: 0 6px 0 0;
 }
 
 .array-button {
-    width: auto;
-    height: 25px;
-    background-color: rgb(80, 80, 80);
+    height: 24px;
+    margin: 0;
+    padding: 0 8px;
+    background-color: var(--button);
     border-width: 1px;
-    border-color: rgb(100, 100, 100);
-    border-radius: 3px;
-    color: white;
+    border-color: var(--border);
+    border-radius: 5px;
+    color: var(--text);
     font-size: 12px;
-    padding: 2px 8px;
 }
 
 .array-button:hover {
-    background-color: rgb(100, 100, 100);
+    background-color: var(--button-hover);
 }
 
 .array-header {
     flex-direction: row;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 .array-collapse-button {
-    width: 20px;
-    height: 20px;
-    background-color: rgb(60, 60, 60);
-    border-width: 1px;
-    border-color: rgb(100, 100, 100);
-    border-radius: 3px;
-    color: white;
-    font-size: 12px;
-    margin-right: 8px;
+    width: 22px;
+    height: 22px;
+    margin: 0 8px 0 0;
     padding: 0;
     flex-shrink: 0;
+    background-color: var(--button);
+    border-width: 1px;
+    border-color: var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 12px;
 }
 
 .array-collapse-button:hover {
-    background-color: rgb(80, 80, 80);
+    background-color: var(--button-hover);
 }
 
 .array-count-label {
-    color: rgb(180, 180, 180);
+    flex-grow: 1;
+    color: var(--text-muted);
     font-size: 12px;
-    margin-right: 10px;
+    margin-right: 8px;
     flex-shrink: 0;
 }
 
@@ -386,89 +663,131 @@
     display: none;
 }
 
-.tab-container {
-    flex-direction: row;
-    margin-bottom: 15px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgb(60, 60, 60);
-    padding-bottom: 10px;
-}
+/* ---- Tooltip ---- */
 
-.tab-button {
-    padding: 10px 20px;
-    background-color: rgb(40, 40, 40);
-    border-width: 1px;
-    border-color: rgb(80, 80, 80);
-    border-radius: 5px 5px 0 0;
-    color: rgb(180, 180, 180);
-    margin-right: 5px;
-}
-
-.tab-button:hover {
-    background-color: rgb(60, 60, 60);
-    color: white;
-}
-
-.tab-button.active {
-    background-color: rgb(80, 80, 80);
-    color: white;
-    border-bottom-color: rgb(80, 80, 80);
-}
-
-.tab-content {
-    flex-grow: 1;
-}
-
-.tab-panel {
-    display: none;
-}
-
-.tab-panel.active {
-    display: flex;
-    flex-direction: column;
-}
 .setting-tooltip {
     position: absolute;
     max-width: 360px;
-    padding: 6px 10px;
-    background-color: rgba(20, 20, 20, 0.95);
+    padding: 7px 10px;
+    background-color: rgb(30, 30, 34);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
-    color: white;
+    border-color: var(--border-strong);
+    border-radius: 6px;
+    color: var(--text);
     font-size: 12px;
     white-space: normal;
 }
 
-/* Post Processing tab: which look (particle layer / camera feed) the controls below edit. */
+/* ---- Dialogs (Save As, unsaved-changes confirm) ---- */
+
+.modal-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.72);
+    border-radius: 12px;
+}
+
+.modal-panel {
+    padding: 20px 22px 18px 22px;
+    background-color: rgb(28, 28, 32);
+    border-width: 1px;
+    border-color: var(--border-strong);
+    border-radius: 10px;
+}
+
+.modal-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: var(--text);
+    margin: 0 0 10px 0;
+    padding: 0;
+}
+
+.modal-message {
+    color: var(--text-muted);
+    white-space: normal;
+    margin: 0 0 18px 0;
+    padding: 0;
+}
+
+.modal-field {
+    margin: 0 0 18px 0;
+}
+
+.modal-field > .unity-base-field__label {
+    min-width: 0;
+    margin-right: 12px;
+    color: var(--text-muted);
+}
+
+.modal-buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.modal-button {
+    height: 30px;
+    margin: 0 0 0 8px;
+    padding: 0 16px;
+    background-color: var(--button);
+    border-width: 1px;
+    border-color: var(--border);
+    border-radius: 6px;
+    color: var(--text);
+}
+
+.modal-button:hover {
+    background-color: var(--button-hover);
+}
+
+.modal-button.primary {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: rgb(10, 20, 35);
+    -unity-font-style: bold;
+}
+
+.modal-button.primary:hover {
+    background-color: rgb(130, 185, 255);
+}
+
+/* ---- Post Processing tab: which look (particle layer / camera feed) the controls below edit ---- */
+
 .pp-target-controls {
     flex-direction: row;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .pp-target-label {
-    color: rgb(180, 180, 180);
-    margin-right: 8px;
+    color: var(--text-muted);
+    margin-right: 10px;
 }
 
+/* A segmented control. */
 .pp-target-button {
-    padding: 6px 14px;
-    background-color: rgb(40, 40, 40);
+    height: 28px;
+    margin: 0 4px 0 0;
+    padding: 0 14px;
+    background-color: var(--button);
     border-width: 1px;
-    border-color: rgb(80, 80, 80);
-    border-radius: 4px;
-    color: rgb(180, 180, 180);
-    margin-right: 5px;
+    border-color: var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
 }
 
 .pp-target-button:hover {
-    background-color: rgb(60, 60, 60);
-    color: white;
+    background-color: var(--button-hover);
+    color: var(--text);
 }
 
 .pp-target-button.active {
-    background-color: rgb(80, 80, 80);
-    border-color: rgb(140, 140, 140);
-    color: white;
+    background-color: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-text);
 }

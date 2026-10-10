@@ -4,7 +4,7 @@ This guide explains how to add new settings fields to an existing tab in the in-
 
 ## Overview
 
-The settings menu system uses `RuntimeSceneSettings` as the central data class. The Scene tab is organized into **sections** (Space, Kinect, Ball, Hands, Particles, Debug — `SettingSections` in `SettingGroupAttribute.cs`), each holding collapsible **groups**; the Post Processing tab has groups only. The `SceneController` inspector shows the same sections, groups and labels (drawn by `Assets/Editor/SceneControllerEditor.cs` from `[SettingGroup]` attributes). Changes are persisted through JSON profile files.
+The settings menu system uses `RuntimeSceneSettings` as the central data class. The Scene tab is organized into **sections** (Space, Kinect, Ball, Hands, Particles, Debug — `SettingSections` in `SettingGroupAttribute.cs`), each holding collapsible **groups**; the menu shows one section at a time, picked from a sidebar. The Post Processing tab has groups only. The `SceneController` inspector shows the same sections, groups and labels (drawn by `Assets/Editor/SceneControllerEditor.cs` from `[SettingGroup]` attributes). Changes are persisted through JSON profile files.
 
 **Working set.** Independently of profiles, every change (menu, profile load, inspector in play or edit mode) is written to a per-scene working-set file (`SettingsWorkingSet.cs`, under `Application.persistentDataPath`). It is restored at play start and copied back into the inspector when play stops, so the latest change always sticks; the menu marks the tab dirty (`Scene *`, "Unsaved changes") until you Save. New fields need nothing extra for this - the whole `RuntimeSceneSettings` object is serialized - but **a field missing from `CopySceneSettings` is invisible to dirty tracking and to profiles**, so steps 7-8 matter. Always go through `NotifySettingsChanged()` (never invoke `OnSettingsChanged` directly) so the working set and dirty state stay current.
 
@@ -194,7 +194,7 @@ private void CreatePushGroup(SettingSection section)
 
 #### Option B: Create a New Group
 
-If your settings deserve their own category, create a new group method. Name groups by what they control, and keep the section's name out of the title (the section header already says it). Row labels only need to be unique within their group: search matches the section title + group title + label, so a shared label like "Stick Force" is found per group ("trail stick").
+If your settings deserve their own category, create a new group method. Name groups by what they control, and keep the section's name out of the title (the section's page title already says it). Row labels only need to be unique within their group: search matches the section title + group title + label, so a shared label like "Stick Force" is found per group ("trail stick").
 
 ```csharp
 private void CreatePlayBoundaryGroup(SettingSection section)
@@ -219,14 +219,14 @@ private void CreateSceneSettingsContent()
 {
     var panel = sceneSettingsPanel;
 
-    var space = CreateSection(SettingSections.Space, panel);
+    var space = CreateSection(SettingSections.Space, panel, sceneSectionNav);
     CreateWorldGroup(space);
     CreatePlayBoundaryGroup(space);  // Add your new group
     // ... rest of the sections ...
 }
 ```
 
-A new section needs a constant in `SettingSections` and a place in `SettingSections.Order`, so the inspector draws it in the same position.
+A new section needs a constant in `SettingSections` and a place in `SettingSections.Order`, so the inspector draws it in the same position. `CreateSection` adds its sidebar entry; call it in that same order.
 
 ### 7. Update Merge Method for Loading
 
@@ -523,7 +523,7 @@ private void CreateSceneSettingsContent()
 {
     var panel = sceneSettingsPanel;
 
-    var space = CreateSection(SettingSections.Space, panel);
+    var space = CreateSection(SettingSections.Space, panel, sceneSectionNav);
     CreateWorldGroup(space);
     CreatePlayBoundaryGroup(space);  // Added
     // ... rest ...
