@@ -2348,18 +2348,38 @@ public class InGameSettingsMenu : MonoBehaviour
         slider.style.flexGrow = 1;
         slider.value = getter();
 
-        var valueLabel = new Label($"{getter():F2}");
-        valueLabel.AddToClassList("slider-value");
+        // A number box beside the slider, like the inspector's [Range] field: it follows the
+        // slider, and a typed value (committed on Enter / blur) is clamped to the range.
+        var valueField = new FloatField { isDelayed = true, value = getter() };
+        valueField.name = label;
+        valueField.AddToClassList("slider-value");
+
+        // Dragging lands on about 1/500 of the range, so the box doesn't show float noise.
+        int decimals = Mathf.Clamp(
+            Mathf.CeilToInt(-Mathf.Log10(Mathf.Abs(max - min) / 500f)),
+            0,
+            6
+        );
 
         slider.RegisterValueChangedCallback(evt =>
         {
-            setter(evt.newValue);
-            valueLabel.text = $"{evt.newValue:F2}";
+            float value = (float)Math.Round(evt.newValue, decimals);
+            valueField.SetValueWithoutNotify(value);
+            setter(value);
+            NotifySettingsChanged();
+        });
+
+        valueField.RegisterValueChangedCallback(evt =>
+        {
+            float value = Mathf.Clamp(evt.newValue, Mathf.Min(min, max), Mathf.Max(min, max));
+            valueField.SetValueWithoutNotify(value);
+            slider.SetValueWithoutNotify(value);
+            setter(value);
             NotifySettingsChanged();
         });
 
         inputContainer.Add(slider);
-        inputContainer.Add(valueLabel);
+        inputContainer.Add(valueField);
 
         row.Add(labelElement);
         row.Add(inputContainer);

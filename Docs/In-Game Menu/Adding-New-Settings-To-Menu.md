@@ -286,6 +286,8 @@ CreateFloatField(group, "Label", () => runtimeSettings.property, v => runtimeSet
 CreateSliderField(group, "Label", () => runtimeSettings.property, v => runtimeSettings.property = v, minValue, maxValue);
 ```
 
+Like the inspector's `[Range]` field, the slider has a number box beside it. Dragging rounds to about 1/500 of the range; a typed value is kept as typed (committed on Enter or when the box loses focus) and clamped to `minValue`..`maxValue`. Use `CreateFloatField()` instead when values outside the range must be allowed.
+
 ### Toggle Field (boolean)
 
 ```csharp

@@ -464,13 +464,11 @@
     display: none;
 }
 
+/* The number box beside a slider. */
 .slider-value {
-    min-width: 44px;
+    width: 64px;
+    flex-shrink: 0;
     margin: 0 0 0 10px;
-    padding: 0;
-    font-size: 12px;
-    color: var(--text-muted);
-    -unity-text-align: middle-right;
 }
 
 /* ---- Scrollbars: thin thumb, no arrow buttons ---- */
