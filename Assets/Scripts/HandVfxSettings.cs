@@ -17,7 +17,6 @@ public class HandVfxSettings
 {
     // ---- Color (the player's particle gradient lives on RuntimeSceneSettings) ----
     [SettingGroup(SettingSections.Particles, "Color")]
-    [Label("Color Cycle Time (s)")]
     [VfxProperty("colorCycleTime")]
     [Tooltip(
         "Seconds for a particle to travel through the player's aura gradient (sampled by age, "
@@ -27,7 +26,7 @@ public class HandVfxSettings
 
     // ---- Glow ----
     [SettingGroup(SettingSections.Particles, "Glow")]
-    [Label("Full Radius (radii)")]
+    [Label("Full Radius")]
     [VfxProperty("glowFullRadius")]
     [Tooltip(
         "Distance from the vfxSphere centre, in vfxSphere radii, at which the surface glow is "
@@ -37,7 +36,7 @@ public class HandVfxSettings
     public float glowFullRadius = 1.1f;
 
     [SettingGroup(SettingSections.Particles, "Glow")]
-    [Label("Range (radii)")]
+    [Label("Range")]
     [VfxProperty("glowRange")]
     [Tooltip(
         "How far outside glowFullRadius the surface glow starts ramping in, in vfxSphere radii. "
@@ -80,13 +79,21 @@ public class HandVfxSettings
     public float spawnVeloSpread = 0.1f;
 
     [SettingGroup(SettingSections.Particles, "Emission")]
+    [VfxProperty("handVelocityScale")]
+    [Tooltip(
+        "How much of the emitting hand's velocity a particle starts with, on top of the "
+            + "velocity spread. 0 = none, 1 = matches the hand, above 1 throws particles ahead "
+            + "of it, negative trails them behind. Ratio - never scaled."
+    )]
+    public float handVelocityScale = 1f;
+
+    [SettingGroup(SettingSections.Particles, "Emission")]
     [BodyScaled(1), VfxProperty("sizeRange")]
     [Tooltip("Random per-particle size range (m at 1x).")]
     public Vector2 sizeRange = new(0.008f, 0.014f);
 
     // ---- Lifetime ----
     [SettingGroup(SettingSections.Particles, "Lifetime")]
-    [Label("Max Lifetime (s)")]
     [VfxProperty("maxLifetime")]
     [Tooltip(
         "Fallback lifetime (s) for particles that never reach the ball, at closeProgress 0. "
@@ -95,7 +102,6 @@ public class HandVfxSettings
     public float maxLifetime = 4f;
 
     [SettingGroup(SettingSections.Particles, "Lifetime")]
-    [Label("Max Lifetime Closed (s)")]
     [VfxProperty("maxLifetimeClosed")]
     [Tooltip(
         "Fallback lifetime (s) at closeProgress 1; blended linearly from maxLifetime. Sampled at "
@@ -104,7 +110,6 @@ public class HandVfxSettings
     public float maxLifetimeClosed = 1f;
 
     [SettingGroup(SettingSections.Particles, "Lifetime")]
-    [Label("Fade In Time (s)")]
     [VfxProperty("fadeInTime")]
     [Tooltip(
         "Seconds after spawn for a particle to grow from size 0 to full size. Time - never scaled."
@@ -123,7 +128,6 @@ public class HandVfxSettings
     );
 
     [SettingGroup(SettingSections.Particles, "Lifetime")]
-    [Label("Fade Out Time (s)")]
     [VfxProperty("fadeOutTime")]
     [Tooltip(
         "Seconds a particle takes to shrink and fade to 0 before death. On first contact with "
@@ -146,6 +150,47 @@ public class HandVfxSettings
     [VfxProperty("minStretchLength")]
     [Tooltip("Floor on the dimensionless _Scale.y stretch multiplier.")]
     public float minStretchLength = 0.01f;
+
+    // ---- Hand Grip (drag toward the emitting hand's velocity, until the ball is reached) ----
+    [SettingGroup(SettingSections.Particles, "Hand Grip")]
+    [Label("Strength")]
+    [VfxProperty("handGripStrength")]
+    [Tooltip(
+        "Rate (1/s) at which a particle that hasn't reached the ball yet is pulled toward the "
+            + "velocity of the hand it came from, like water following a hand. Higher = the hand "
+            + "keeps a tighter hold; 0 = off. Fades with distance (Radius, Falloff Curve) and "
+            + "with hand speed (Full Grip Speed). Released on first contact with the ball. "
+            + "Never scaled."
+    )]
+    public float handGripStrength = 4f;
+
+    [SettingGroup(SettingSections.Particles, "Hand Grip")]
+    [Label("Full Grip Speed")]
+    [BodyScaled(1), VfxProperty("handGripFullSpeed")]
+    [Tooltip(
+        "Hand speed at which the grip reaches full strength (m/s at 1x). Slower hands grip "
+            + "proportionally less, and a still hand lets go completely."
+    )]
+    public float handGripFullSpeed = 0.3f;
+
+    [SettingGroup(SettingSections.Particles, "Hand Grip")]
+    [Label("Radius")]
+    [BodyScaled(1), VfxProperty("handGripRadius")]
+    [Tooltip("Distance from the hand beyond which it has no grip (m at 1x).")]
+    public float handGripRadius = 0.5f;
+
+    [SettingGroup(SettingSections.Particles, "Hand Grip")]
+    [Label("Falloff Curve")]
+    [VfxProperty("handGripFalloffCurve")]
+    [Tooltip(
+        "Grip across the radius. X 0 = at the hand, X 1 = Radius away. Y = fraction of the "
+            + "grip applied there: both how hard the particle is pulled and how much of the "
+            + "hand's velocity it is pulled toward."
+    )]
+    public AnimationCurve handGripFalloffCurve = new(
+        new Keyframe(0f, 1f, 0f, 0f),
+        new Keyframe(1f, 0f, 0f, 0f)
+    );
 
     // ---- Ball Attraction (the main attractor, plus the collision shapes it uses) ----
     [SettingGroup(SettingSections.Particles, "Ball Attraction")]
@@ -178,7 +223,6 @@ public class HandVfxSettings
     public float seekStrength = 1f;
 
     [SettingGroup(SettingSections.Particles, "Ball Attraction")]
-    [Label("Tangential Damping (1/s)")]
     [VfxProperty("tangentialDamping")]
     [Tooltip(
         "Rate (1/s) at which tangential velocity is damped on collision; min(rate x dt, 1) blend. Never scaled."
@@ -401,6 +445,7 @@ public class HandVfxSettings
         copy.tangentialDampingFadeCurve = new AnimationCurve(tangentialDampingFadeCurve.keys);
         copy.fadeInCurve = new AnimationCurve(fadeInCurve.keys);
         copy.glowCurve = new AnimationCurve(glowCurve.keys);
+        copy.handGripFalloffCurve = new AnimationCurve(handGripFalloffCurve.keys);
         return copy;
     }
 }

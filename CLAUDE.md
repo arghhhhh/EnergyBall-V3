@@ -166,9 +166,9 @@ following the existing pattern:
   `EnergyBall/Migrate Scene Profiles To Base` (Editor menu) rewrites v0 files.
 - **Settings layout (menu = inspector).** The Scene tab is split into sections, in
   `SettingSections.Order` (`SettingGroupAttribute.cs`): Space (World, Play Boundary),
-  Kinect (Tracking, Camera Feed, Skeleton; built only with a Kinect), Ball (Size,
+  Kinect (Tracking, Camera Feed, Occlusion, Skeleton; built only with a Kinect), Ball (Size,
   Breathing, Spawn, Gravity), Hands (Activation, Push, Aim, One Hand, Grow & Shrink),
-  Particles (the hand VFX: Color, Glow, Emission, Lifetime, Stretch, Ball Attraction,
+  Particles (the hand VFX: Color, Glow, Emission, Lifetime, Stretch, Hand Grip, Ball Attraction,
   Secondary Attractor, Trail Distorters, Noise & Turbulence, Hi-Hat Bursts, Snare Bursts),
   Debug (Visualizers). The SceneController inspector mirrors it:
   `Assets/Editor/SceneControllerEditor.cs` (a `NaughtyInspector` subclass) draws fields
@@ -197,9 +197,12 @@ following the existing pattern:
   use NaughtyAttributes `[ShowIf("HasKinect")]` / `[ShowIf("HasCameraFeed")]`, or a named
   condition property when combined with another rule (NaughtyAttributes allows one
   ShowIf/HideIf per field). Hidden settings still load and save with profiles. Kinect:
-  `drawSkeleton` and the `cameraFeedQuad` slot. That slot is what enables CameraFeed, so
-  it can't be gated on it. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
-  material, tracking-state colors, the single skeleton color. CameraFeed:
+  `bodyOcclusion` (toggles the `Body Occluder` renderer; the point cloud debug view
+  still draws it), `drawSkeleton` and the `cameraFeedQuad` slot. That slot is what enables CameraFeed, so
+  it can't be gated on it. Kinect + `bodyOcclusion` (`ShowOcclusionSettings`):
+  `occluderDepthBias`, `occluderMinDepth`, `occluderBodiesOnly`, read by
+  `BodyDepthOccluder`. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
+  material, line width, tracking-state colors, the single skeleton color. CameraFeed:
   `showCameraFeed` (toggles the feed quad's renderer in play mode),
   `projectiveAlignment`, `renderCameraTransform`. CameraFeed + `showCameraFeed`
   (`ShowFeedSyncField`): `syncParticlesToFeed`. Color Per Player: `particleColors` is

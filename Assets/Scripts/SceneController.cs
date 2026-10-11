@@ -57,6 +57,7 @@ public class SceneController : MonoBehaviour
     private bool HasKinect => HasFeature(SceneFeature.Kinect);
     private bool HasCameraFeed => HasFeature(SceneFeature.CameraFeed);
     private bool ShowSkeletonSettings => HasKinect && drawSkeleton;
+    private bool ShowOcclusionSettings => HasKinect && bodyOcclusion;
 
     // Syncing the particles to the feed only applies while the feed is shown.
     private bool ShowFeedSyncField => HasCameraFeed && showCameraFeed;
@@ -178,6 +179,45 @@ public class SceneController : MonoBehaviour
     )]
     public Transform renderCameraTransform;
 
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [ShowIf("HasKinect")]
+    [Tooltip(BodyOcclusionTooltip)]
+    public bool bodyOcclusion = true;
+
+    public const string BodyOcclusionTooltip =
+        "Hide particles behind people (the Body Occluder draws the Kinect depth image into the "
+        + "particle layer's depth). Off draws every particle on top of the camera feed.";
+
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [Label("Depth Bias")]
+    [ShowIf("ShowOcclusionSettings")]
+    [Tooltip(OccluderDepthBiasTooltip)]
+    public float occluderDepthBias = 0f;
+
+    public const string OccluderDepthBiasTooltip =
+        "Pushes the occluder away from the camera, so particles at body depth stay in front of "
+        + "the body instead of flickering against it.";
+
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [Label("Min Depth")]
+    [ShowIf("ShowOcclusionSettings")]
+    [Min(0f)]
+    [Tooltip(OccluderMinDepthTooltip)]
+    public float occluderMinDepth = 0.4f;
+
+    public const string OccluderMinDepthTooltip =
+        "Depth samples closer to the sensor than this many meters are ignored by the occluder.";
+
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [Label("Bodies Only")]
+    [ShowIf("ShowOcclusionSettings")]
+    [Tooltip(OccluderBodiesOnlyTooltip)]
+    public bool occluderBodiesOnly = false;
+
+    public const string OccluderBodiesOnlyTooltip =
+        "On: only Kinect-tracked human bodies occlude particles. Off: anything the depth camera "
+        + "sees (chairs, walls, floor) occludes.";
+
     [SettingGroup(SettingSections.Kinect, "Skeleton")]
     [ShowIf("HasKinect")]
     [Tooltip("Draw line-renderer bones between tracked Kinect joints for each player.")]
@@ -191,6 +231,13 @@ public class SceneController : MonoBehaviour
             + "the debug skeleton is never hidden by the body depth occluder."
     )]
     public Material skeletonLineMaterial;
+
+    [SettingGroup(SettingSections.Kinect, "Skeleton")]
+    [Label("Line Width")]
+    [ShowIf("ShowSkeletonSettings")]
+    [Min(0f)]
+    [Tooltip("Thickness of the skeleton bones. Each bone tapers slightly toward its far joint.")]
+    public float skeletonLineWidth = 0.02f;
 
     // Applies with individual colors too: tracking-state colors override the player's color.
     [SettingGroup(SettingSections.Kinect, "Skeleton")]
@@ -1069,6 +1116,7 @@ public class SceneController : MonoBehaviour
             playerConstructor.SetAttractionRadius();
             playerConstructor.SetMass();
             playerConstructor.SetVfxSphereVelocity();
+            playerConstructor.SetVfxHandVelocity();
             playerConstructor.SetPulseSize();
             playerConstructor.SetScale();
             handForceController.ManageHandForce(playerConstructor);
@@ -1388,6 +1436,10 @@ public class SceneController : MonoBehaviour
         target.defaultUnscaledSize = defaultUnscaledSize;
         target.bodyScale = bodyScale;
         target.maxDistanceFromCamera = maxDistanceFromCamera;
+        target.bodyOcclusion = bodyOcclusion;
+        target.occluderDepthBias = occluderDepthBias;
+        target.occluderMinDepth = occluderMinDepth;
+        target.occluderBodiesOnly = occluderBodiesOnly;
         target.sphereResetJitter = sphereResetJitter;
 
         // Hand VFX (nested, copied as one object)
@@ -1407,6 +1459,7 @@ public class SceneController : MonoBehaviour
         target.showCameraFeed = showCameraFeed;
         target.syncParticlesToFeed = syncParticlesToFeed;
         target.drawSkeleton = drawSkeleton;
+        target.skeletonLineWidth = skeletonLineWidth;
         target.useTrackingStateColors = useTrackingStateColors;
         target.individualColors = individualColors;
         target.hasStyleColors = true;
@@ -1482,6 +1535,10 @@ public class SceneController : MonoBehaviour
         defaultUnscaledSize = source.defaultUnscaledSize;
         bodyScale = source.bodyScale;
         maxDistanceFromCamera = source.maxDistanceFromCamera;
+        bodyOcclusion = source.bodyOcclusion;
+        occluderDepthBias = source.occluderDepthBias;
+        occluderMinDepth = source.occluderMinDepth;
+        occluderBodiesOnly = source.occluderBodiesOnly;
         sphereResetJitter = source.sphereResetJitter;
 
         // Hand VFX (nested, copied as one object)
@@ -1501,6 +1558,7 @@ public class SceneController : MonoBehaviour
         showCameraFeed = source.showCameraFeed;
         syncParticlesToFeed = source.syncParticlesToFeed;
         drawSkeleton = source.drawSkeleton;
+        skeletonLineWidth = source.skeletonLineWidth;
         useTrackingStateColors = source.useTrackingStateColors;
         individualColors = source.individualColors;
         // Older files carry no colors - keep the inspector's.

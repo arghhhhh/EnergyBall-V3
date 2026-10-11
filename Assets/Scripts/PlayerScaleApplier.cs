@@ -7,7 +7,8 @@ using UnityEngine.VFX;
 /// <summary>
 /// The one per-player scale step. Pushes the effective <see cref="HandVfxSettings"/>
 /// to a player's hand VFX graphs and applies the bodyScale-dependent transforms
-/// (TD debug spheres, TD BrownianMotion wander, hand raycast collider). Plain
+/// (TD debug spheres, TD BrownianMotion wander, hand raycast collider, skeleton
+/// line width). Plain
 /// class in the force-class style: owned by <see cref="SceneController"/>, invoked
 /// on player spawn and whenever the effective settings are rebuilt. All values
 /// passed in are already effective (base × bodyScale^exp) — nothing here rescales.
@@ -214,6 +215,18 @@ public class PlayerScaleApplier
             player.leftHandSecondaryAttractor.localScale = saScale;
         if (player.rightHandSecondaryAttractor != null)
             player.rightHandSecondaryAttractor.localScale = saScale;
+
+        // Skeleton lines: the Joint prefab's width curve (world space) starts at 0.1 and
+        // tapers to 0.08, so the multiplier is the effective width over that 0.1.
+        if (player.jointMap != null)
+        {
+            float lineWidth = effective.skeletonLineWidth / 0.1f;
+            foreach (var joint in player.jointMap.Values)
+            {
+                if (joint != null && joint.TryGetComponent<LineRenderer>(out var lr))
+                    lr.widthMultiplier = lineWidth;
+            }
+        }
     }
 
     /// <summary>

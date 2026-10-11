@@ -191,6 +191,7 @@ private void CreatePushGroup(SettingSection section)
 - Skip it for self-explanatory values (most Particles rows).
 - If the field already has a `[Tooltip]` on its `SceneController` twin, reuse that text so the inspector and menu agree. For a long shared text, put it in a `const` and use it in both places (`SceneController.ReArmDelayTooltip`).
 - Describe the behavior, not the body-scale units — those aren't shown to the user.
+- Keep units out of row labels too: "Strength", not "Strength (1/s)"; "Fade In Time", not "Fade In Time (s)". Give the row a tooltip that states the unit in words ("Seconds after spawn...").
 
 #### Option B: Create a New Group
 
@@ -399,10 +400,10 @@ The settings menu and the SceneController inspector share this structure (sectio
 **Scene Tab:**
 
 - **Space** — World (Body Scale, Base Z Depth, Grid Scale) · Play Boundary (margin, outward drag, out-of-bounds reset)
-- **Kinect** (only with a Kinect) — Tracking · Camera Feed (only with a feed; show feed, sync particles to feed) · Skeleton
+- **Kinect** (only with a Kinect) — Tracking · Camera Feed (only with a feed; show feed, sync particles to feed) · Occlusion (body occlusion on/off, depth bias, min depth, bodies only) · Skeleton
 - **Ball** — Size · Breathing (intrinsic pulsation) · Spawn (grow-in, spawn flash) · Gravity
 - **Hands** — Activation · Push · Aim · One Hand · Grow & Shrink (movement-based scaling)
-- **Particles** (the hand VFX; mostly `HandVfxSettings`) — Color · Glow · Emission · Lifetime · Stretch · Ball Attraction · Secondary Attractor · Trail Distorters · Noise & Turbulence · Hi-Hat Bursts · Snare Bursts
+- **Particles** (the hand VFX; mostly `HandVfxSettings`) — Color · Glow · Emission · Lifetime · Stretch · Hand Grip · Ball Attraction · Secondary Attractor · Trail Distorters · Noise & Turbulence · Hi-Hat Bursts · Snare Bursts
 - **Debug** — Visualizers
 
 Color Per Player (`individualColors`) lives in Particles > Color with the gradient / palette it switches between; the Skeleton Palette (Kinect > Skeleton) follows the same palette slots and only shows while it's on.
