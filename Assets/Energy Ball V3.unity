@@ -789,9 +789,6 @@ MonoBehaviour:
   bodySourceManager: {fileID: 1790478705}
   cameraFeedQuad: {fileID: 1766269651}
   occluderShader: {fileID: 4800000, guid: 66ae137861a1766409a0fa8797304a5d, type: 3}
-  depthBias: 0
-  minDepth: 0.4
-  bodiesOnly: 0
 --- !u!23 &893759430
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1380,10 +1377,15 @@ MonoBehaviour:
   syncParticlesToFeed: 0
   projectiveAlignment: 1
   renderCameraTransform: {fileID: 118562682}
+  bodyOcclusion: 1
+  occluderDepthBias: 0
+  occluderMinDepth: 0.4
+  occluderBodiesOnly: 0
   drawSkeleton: 0
   skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
     type: 2}
-  useTrackingStateColors: 1
+  skeletonLineWidth: 0.005
+  useTrackingStateColors: 0
   skeletonColor: {r: 1, g: 0, b: 1, a: 1}
   skeletonColors:
   - {r: 0, g: 0, b: 1, a: 1}
@@ -1518,7 +1520,7 @@ MonoBehaviour:
   alignmentVectorStrengthScaler: 0.07
   torsoMaxForwardOffset: 0.2
   torsoOffsetFalloffDistance: 0.4
-  singleHandOpenForceDamper: 0.25
+  singleHandOpenForceDamper: 0.5
   singleHandOpenThreshold: 0.1
   singleHandForceLerpDuration: 0.35
   singleHandScaling: 1
@@ -1825,7 +1827,7 @@ MonoBehaviour:
     spawnRate: 1500
     spawnSphereRadius: 0.012
     spawnVeloSpread: 0.8
-    handVelocityScale: 0.5
+    handVelocityScale: 1
     sizeRange: {x: 0.008, y: 0.014}
     maxLifetime: 4
     maxLifetimeClosed: 1

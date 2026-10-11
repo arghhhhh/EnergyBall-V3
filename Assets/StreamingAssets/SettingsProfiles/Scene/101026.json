@@ -156,6 +156,9 @@
     "bodyScale": 5.0,
     "maxDistanceFromCamera": 12.0,
     "bodyOcclusion": true,
+    "occluderDepthBias": 0.0,
+    "occluderMinDepth": 0.4000000059604645,
+    "occluderBodiesOnly": false,
     "sphereResetJitter": 0.10000000149011612,
     "handVfx": {
         "colorCycleTime": 0.30000001192092898,
@@ -398,9 +401,9 @@
     "_individualColors": true,
     "showCameraFeed": true,
     "syncParticlesToFeed": false,
-    "drawSkeleton": true,
-    "skeletonLineWidth": 0.019999999552965165,
-    "useTrackingStateColors": true,
+    "drawSkeleton": false,
+    "skeletonLineWidth": 0.004999999888241291,
+    "useTrackingStateColors": false,
     "hasStyleColors": true,
     "skeletonColor": {
         "r": 1.0,
