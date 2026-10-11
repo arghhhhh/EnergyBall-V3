@@ -1380,10 +1380,10 @@ MonoBehaviour:
   syncParticlesToFeed: 0
   projectiveAlignment: 1
   renderCameraTransform: {fileID: 118562682}
-  drawSkeleton: 1
+  drawSkeleton: 0
   skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
     type: 2}
-  useTrackingStateColors: 0
+  useTrackingStateColors: 1
   skeletonColor: {r: 1, g: 0, b: 1, a: 1}
   skeletonColors:
   - {r: 0, g: 0, b: 1, a: 1}
@@ -1453,7 +1453,7 @@ MonoBehaviour:
   prayToActivateDistance: 0.13
   initializationSpeed: 0.037
   initializationResetDelay: 3
-  pushForce: 2.8
+  pushForce: 4.5
   forceToMiddle:
     serializedVersion: 2
     m_Curve:
@@ -1488,7 +1488,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   minDrag: 0.25
-  maxDrag: 0.75
+  maxDrag: 2
   handPushScaler: 10
   maxDistanceBetweenHands: 1
   alignmentVectorStrength:
@@ -1518,7 +1518,7 @@ MonoBehaviour:
   alignmentVectorStrengthScaler: 0.07
   torsoMaxForwardOffset: 0.2
   torsoOffsetFalloffDistance: 0.4
-  singleHandOpenForceDamper: 0.5
+  singleHandOpenForceDamper: 0.25
   singleHandOpenThreshold: 0.1
   singleHandForceLerpDuration: 0.35
   singleHandScaling: 1
@@ -1561,10 +1561,10 @@ MonoBehaviour:
   individualColors: 1
   particleColor:
     serializedVersion: 2
-    key0: {r: 1, g: 1, b: 1, a: 1}
-    key1: {r: 0.5471698, g: 0.5471698, b: 0.5471698, a: 1}
-    key2: {r: 3.0017462, g: 3.0017462, b: 3.0017462, a: 0}
-    key3: {r: 3.195545, g: 3.195545, b: 3.195545, a: 0}
+    key0: {r: 2, g: 2, b: 2, a: 1}
+    key1: {r: 1.0943396, g: 1.0943396, b: 1.0943396, a: 1}
+    key2: {r: 6.0034924, g: 6.0034924, b: 6.0034924, a: 0}
+    key3: {r: 6.39109, g: 6.39109, b: 6.39109, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
     key6: {r: 0, g: 0, b: 0, a: 0}
@@ -1708,8 +1708,8 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   - serializedVersion: 2
     key0: {r: 7.856836, g: 6.011182, b: 0.12340557, a: 1}
-    key1: {r: 11.493665, g: 8.7649555, b: 0.060176373, a: 1}
-    key2: {r: 6.7611556, g: 4.4594226, b: 0.07079758, a: 0}
+    key1: {r: 5.7468324, g: 4.3824778, b: 0.030088186, a: 1}
+    key2: {r: 3.3805778, g: 2.2297113, b: 0.03539879, a: 0}
     key3: {r: 4.544387, g: 6.9085293, b: 0.07234076, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
     key5: {r: 0, g: 0, b: 0, a: 0}
@@ -1717,7 +1717,7 @@ MonoBehaviour:
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 0
     ctime1: 21203
-    ctime2: 45104
+    ctime2: 44847
     ctime3: 65535
     ctime4: 0
     ctime5: 0
@@ -1825,6 +1825,7 @@ MonoBehaviour:
     spawnRate: 1500
     spawnSphereRadius: 0.012
     spawnVeloSpread: 0.8
+    handVelocityScale: 0.5
     sizeRange: {x: 0.008, y: 0.014}
     maxLifetime: 4
     maxLifetimeClosed: 1
@@ -1856,12 +1857,39 @@ MonoBehaviour:
     fadeOutTime: 3
     lengthScaler: 1.25
     minStretchLength: 0.01
+    handGripStrength: 4
+    handGripFullSpeed: 1.2
+    handGripRadius: 0.5
+    handGripFalloffCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     mainAttractionSpeed: 0.95
     mainAttractionForce: 43
     mainStickDistance: 0.02
     mainStickForce: 0.4
-    seekStrength: 1
-    tangentialDamping: 10
+    seekStrength: 10
+    tangentialDamping: 6
     tangentialDampingFade: {x: 1.2, y: 1.6}
     tangentialDampingFadeCurve:
       serializedVersion: 2

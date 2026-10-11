@@ -1345,7 +1345,7 @@ MonoBehaviour:
     lengthScaler: 1.25
     minStretchLength: 0.01
     handGripStrength: 4
-    handGripFullSpeed: 0.2
+    handGripFullSpeed: 1.2
     handGripRadius: 0.5
     handGripFalloffCurve:
       serializedVersion: 2
