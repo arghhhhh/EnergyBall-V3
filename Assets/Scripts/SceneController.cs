@@ -57,6 +57,7 @@ public class SceneController : MonoBehaviour
     private bool HasKinect => HasFeature(SceneFeature.Kinect);
     private bool HasCameraFeed => HasFeature(SceneFeature.CameraFeed);
     private bool ShowSkeletonSettings => HasKinect && drawSkeleton;
+    private bool ShowOcclusionSettings => HasKinect && bodyOcclusion;
 
     // Syncing the particles to the feed only applies while the feed is shown.
     private bool ShowFeedSyncField => HasCameraFeed && showCameraFeed;
@@ -177,6 +178,45 @@ public class SceneController : MonoBehaviour
             + "Camera must share its position for alignment to hold)."
     )]
     public Transform renderCameraTransform;
+
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [ShowIf("HasKinect")]
+    [Tooltip(BodyOcclusionTooltip)]
+    public bool bodyOcclusion = true;
+
+    public const string BodyOcclusionTooltip =
+        "Hide particles behind people (the Body Occluder draws the Kinect depth image into the "
+        + "particle layer's depth). Off draws every particle on top of the camera feed.";
+
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [Label("Depth Bias")]
+    [ShowIf("ShowOcclusionSettings")]
+    [Tooltip(OccluderDepthBiasTooltip)]
+    public float occluderDepthBias = 0f;
+
+    public const string OccluderDepthBiasTooltip =
+        "Pushes the occluder away from the camera, so particles at body depth stay in front of "
+        + "the body instead of flickering against it.";
+
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [Label("Min Depth")]
+    [ShowIf("ShowOcclusionSettings")]
+    [Min(0f)]
+    [Tooltip(OccluderMinDepthTooltip)]
+    public float occluderMinDepth = 0.4f;
+
+    public const string OccluderMinDepthTooltip =
+        "Depth samples closer to the sensor than this many meters are ignored by the occluder.";
+
+    [SettingGroup(SettingSections.Kinect, "Occlusion")]
+    [Label("Bodies Only")]
+    [ShowIf("ShowOcclusionSettings")]
+    [Tooltip(OccluderBodiesOnlyTooltip)]
+    public bool occluderBodiesOnly = false;
+
+    public const string OccluderBodiesOnlyTooltip =
+        "On: only Kinect-tracked human bodies occlude particles. Off: anything the depth camera "
+        + "sees (chairs, walls, floor) occludes.";
 
     [SettingGroup(SettingSections.Kinect, "Skeleton")]
     [ShowIf("HasKinect")]
@@ -1396,6 +1436,10 @@ public class SceneController : MonoBehaviour
         target.defaultUnscaledSize = defaultUnscaledSize;
         target.bodyScale = bodyScale;
         target.maxDistanceFromCamera = maxDistanceFromCamera;
+        target.bodyOcclusion = bodyOcclusion;
+        target.occluderDepthBias = occluderDepthBias;
+        target.occluderMinDepth = occluderMinDepth;
+        target.occluderBodiesOnly = occluderBodiesOnly;
         target.sphereResetJitter = sphereResetJitter;
 
         // Hand VFX (nested, copied as one object)
@@ -1491,6 +1535,10 @@ public class SceneController : MonoBehaviour
         defaultUnscaledSize = source.defaultUnscaledSize;
         bodyScale = source.bodyScale;
         maxDistanceFromCamera = source.maxDistanceFromCamera;
+        bodyOcclusion = source.bodyOcclusion;
+        occluderDepthBias = source.occluderDepthBias;
+        occluderMinDepth = source.occluderMinDepth;
+        occluderBodiesOnly = source.occluderBodiesOnly;
         sphereResetJitter = source.sphereResetJitter;
 
         // Hand VFX (nested, copied as one object)

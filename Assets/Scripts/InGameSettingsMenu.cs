@@ -539,6 +539,7 @@ public class InGameSettingsMenu : MonoBehaviour
             CreateTrackingGroup(kinect);
             if (SceneSupports(SceneController.SceneFeature.CameraFeed))
                 CreateCameraFeedGroup(kinect);
+            CreateOcclusionGroup(kinect);
             CreateSkeletonGroup(kinect);
         }
 
@@ -718,6 +719,43 @@ public class InGameSettingsMenu : MonoBehaviour
             tooltip: SceneController.SyncParticlesToFeedTooltip
         );
         ShowRowIf(group, "Sync Particles To Feed", () => runtimeSettings.showCameraFeed);
+    }
+
+    private void CreateOcclusionGroup(SettingSection section)
+    {
+        var group = CreateGroup("Occlusion", section);
+
+        CreateToggleField(
+            group,
+            "Body Occlusion",
+            () => runtimeSettings.bodyOcclusion,
+            v => runtimeSettings.bodyOcclusion = v,
+            tooltip: SceneController.BodyOcclusionTooltip
+        );
+        CreateFloatField(
+            group,
+            "Depth Bias",
+            () => runtimeSettings.occluderDepthBias,
+            v => runtimeSettings.occluderDepthBias = v,
+            tooltip: SceneController.OccluderDepthBiasTooltip
+        );
+        ShowRowIf(group, "Depth Bias", () => runtimeSettings.bodyOcclusion);
+        CreateFloatField(
+            group,
+            "Min Depth",
+            () => runtimeSettings.occluderMinDepth,
+            v => runtimeSettings.occluderMinDepth = Mathf.Max(0f, v),
+            tooltip: SceneController.OccluderMinDepthTooltip
+        );
+        ShowRowIf(group, "Min Depth", () => runtimeSettings.bodyOcclusion);
+        CreateToggleField(
+            group,
+            "Bodies Only",
+            () => runtimeSettings.occluderBodiesOnly,
+            v => runtimeSettings.occluderBodiesOnly = v,
+            tooltip: SceneController.OccluderBodiesOnlyTooltip
+        );
+        ShowRowIf(group, "Bodies Only", () => runtimeSettings.bodyOcclusion);
     }
 
     private void CreateSkeletonGroup(SettingSection section)
@@ -3496,6 +3534,10 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.defaultUnscaledSize = loadedSettings.defaultUnscaledSize;
         runtimeSettings.bodyScale = loadedSettings.bodyScale;
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
+        runtimeSettings.bodyOcclusion = loadedSettings.bodyOcclusion;
+        runtimeSettings.occluderDepthBias = loadedSettings.occluderDepthBias;
+        runtimeSettings.occluderMinDepth = loadedSettings.occluderMinDepth;
+        runtimeSettings.occluderBodiesOnly = loadedSettings.occluderBodiesOnly;
         runtimeSettings.sphereResetJitter = loadedSettings.sphereResetJitter;
 
         // Hand VFX (nested, copied as one object; old files without the key get C# defaults)
@@ -3602,6 +3644,10 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.defaultUnscaledSize = source.defaultUnscaledSize;
         destination.bodyScale = source.bodyScale;
         destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
+        destination.bodyOcclusion = source.bodyOcclusion;
+        destination.occluderDepthBias = source.occluderDepthBias;
+        destination.occluderMinDepth = source.occluderMinDepth;
+        destination.occluderBodiesOnly = source.occluderBodiesOnly;
         destination.sphereResetJitter = source.sphereResetJitter;
 
         // Hand VFX (nested, copied as one object)

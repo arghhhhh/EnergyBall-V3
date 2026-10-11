@@ -135,6 +135,20 @@ public class RuntimeSceneSettings
     [BodyScaled(1)]
     public float maxDistanceFromCamera = 2.6f;
 
+    [Tooltip(SceneController.BodyOcclusionTooltip)]
+    public bool bodyOcclusion = true;
+
+    [BodyScaled(1)]
+    [Tooltip(SceneController.OccluderDepthBiasTooltip)]
+    public float occluderDepthBias = 0f;
+
+    // Kinect meters, compared before the bodyScale multiply: not body-scaled.
+    [Tooltip(SceneController.OccluderMinDepthTooltip)]
+    public float occluderMinDepth = 0.4f;
+
+    [Tooltip(SceneController.OccluderBodiesOnlyTooltip)]
+    public bool occluderBodiesOnly = false;
+
     [BodyScaled(1)]
     [Tooltip(
         "Random +/- jitter (world units at 1x) added when the sphere is reset to the hand midpoint."
@@ -380,6 +394,10 @@ public class RuntimeSceneSettings
         copy.defaultUnscaledSize = defaultUnscaledSize;
         copy.bodyScale = bodyScale;
         copy.maxDistanceFromCamera = maxDistanceFromCamera;
+        copy.bodyOcclusion = bodyOcclusion;
+        copy.occluderDepthBias = occluderDepthBias;
+        copy.occluderMinDepth = occluderMinDepth;
+        copy.occluderBodiesOnly = occluderBodiesOnly;
         copy.sphereResetJitter = sphereResetJitter;
         copy.handVfx = handVfx != null ? handVfx.DeepCopy() : new HandVfxSettings();
         copy.initializationResetDelay = initializationResetDelay;

@@ -21,19 +21,7 @@ public class BodyDepthOccluder : MonoBehaviour
     [Tooltip("The EnergyBall/BodyDepthOccluder shader asset.")]
     public Shader occluderShader;
 
-    [Tooltip(
-        "Push occluder slightly away from camera to avoid z-fighting with particles at body depth. "
-            + "World units at bodyScale 1 (multiplied by bodyScale at runtime)."
-    )]
-    public float depthBias = 0.0f;
-
-    [Tooltip("Ignore depth samples closer than this (meters).")]
-    public float minDepth = 0.4f;
-
-    [Tooltip(
-        "On: only Kinect-tracked human bodies occlude particles. Off: anything the depth camera sees (chairs, walls, floor) occludes."
-    )]
-    public bool bodiesOnly = false;
+    // Depth bias, min depth and bodies-only are scene settings (Kinect > Occlusion).
 
     private Material _material;
     private MeshRenderer _renderer;
@@ -53,7 +41,8 @@ public class BodyDepthOccluder : MonoBehaviour
         if (!_initialized)
         {
             TryInitialize();
-            return;
+            if (!_initialized)
+                return;
         }
 
         // Quad is a child of the camera, but keep the matrix fresh in case
@@ -62,20 +51,30 @@ public class BodyDepthOccluder : MonoBehaviour
 
         float bodyScale = 1f;
         bool showPointCloud = false;
+        bool occlude = true;
+        float depthBias = 0f;
+        float minDepth = 0.4f;
+        bool bodiesOnly = false;
         if (SceneController.Instance != null)
         {
             // Effective settings (rebuilt on every settings change).
             var settings = SceneController.Instance.GetRuntimeSettings();
             bodyScale = settings.bodyScale;
             showPointCloud = settings.showPointCloud;
+            occlude = settings.bodyOcclusion;
+            depthBias = settings.occluderDepthBias;
+            minDepth = settings.occluderMinDepth;
+            bodiesOnly = settings.occluderBodiesOnly;
         }
+        // The point cloud debug view is this same mesh, so it still draws with occlusion off.
+        _renderer.enabled = occlude || showPointCloud;
         _material.SetFloat("_BodyScale", bodyScale);
         // NOTE: must be SetInt, not SetInteger — ShaderLab "Int" properties are
         // float-backed, and SetInteger writes a separate integer slot that the
         // ColorMask [_ColorMask] state binding never reads.
         _material.SetInt("_ColorMask", showPointCloud ? 15 : 0);
-        // depthBias is a world-unit bias authored at 1x; minDepth is Kinect meters (pre-scale).
-        _material.SetFloat("_DepthBias", depthBias * bodyScale);
+        // depthBias is already effective (x bodyScale); minDepth is Kinect meters (pre-scale).
+        _material.SetFloat("_DepthBias", depthBias);
         _material.SetFloat("_MinDepth", minDepth);
         _material.SetFloat("_BodiesOnly", bodiesOnly ? 1f : 0f);
     }
@@ -106,7 +105,6 @@ public class BodyDepthOccluder : MonoBehaviour
             bodySourceManager.DepthHeight
         );
         _renderer.sharedMaterial = _material;
-        _renderer.enabled = true;
         _initialized = true;
     }
 
