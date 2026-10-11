@@ -561,6 +561,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateEmissionGroup(particles);
         CreateLifetimeGroup(particles);
         CreateStretchGroup(particles);
+        CreateHandGripGroup(particles);
         CreateBallAttractionGroup(particles);
         CreateSecondaryAttractorGroup(particles);
         CreateTrailDistortersGroup(particles);
@@ -1168,7 +1169,7 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Color Cycle Time (s)",
+            "Color Cycle Time",
             () => runtimeSettings.handVfx.colorCycleTime,
             v => runtimeSettings.handVfx.colorCycleTime = v,
             tooltip: "Seconds for a particle to travel through the player's gradient (sampled by age, then held on the last color)."
@@ -1181,14 +1182,14 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Full Radius (radii)",
+            "Full Radius",
             () => runtimeSettings.handVfx.glowFullRadius,
             v => runtimeSettings.handVfx.glowFullRadius = v,
             tooltip: "Distance from the ball's (vfxSphere's) centre, in its radii, at which the surface glow is full (1 = surface)."
         );
         CreateFloatField(
             group,
-            "Range (radii)",
+            "Range",
             () => runtimeSettings.handVfx.glowRange,
             v => runtimeSettings.handVfx.glowRange = v,
             tooltip: "How far outside Full Radius the glow starts ramping in, in vfxSphere radii."
@@ -1230,6 +1231,15 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.handVfx.spawnVeloSpread,
             v => runtimeSettings.handVfx.spawnVeloSpread = v
         );
+        CreateFloatField(
+            group,
+            "Hand Velocity Scale",
+            () => runtimeSettings.handVfx.handVelocityScale,
+            v => runtimeSettings.handVfx.handVelocityScale = v,
+            tooltip: "How much of the emitting hand's velocity a particle starts with, on top of the "
+                + "velocity spread. 0 = none, 1 = matches the hand, above 1 throws particles ahead "
+                + "of it, negative trails them behind."
+        );
         CreateVector2Field(
             group,
             "Size Range",
@@ -1244,21 +1254,24 @@ public class InGameSettingsMenu : MonoBehaviour
 
         CreateFloatField(
             group,
-            "Max Lifetime (s)",
+            "Max Lifetime",
             () => runtimeSettings.handVfx.maxLifetime,
-            v => runtimeSettings.handVfx.maxLifetime = v
+            v => runtimeSettings.handVfx.maxLifetime = v,
+            tooltip: "Seconds a particle lives if it never reaches the ball, while the hand is open. Particles that arrive die Fade Out Time after contact instead."
         );
         CreateFloatField(
             group,
-            "Max Lifetime Closed (s)",
+            "Max Lifetime Closed",
             () => runtimeSettings.handVfx.maxLifetimeClosed,
-            v => runtimeSettings.handVfx.maxLifetimeClosed = v
+            v => runtimeSettings.handVfx.maxLifetimeClosed = v,
+            tooltip: "Seconds a particle lives if it never reaches the ball, while the hand is fully closed. Blended with Max Lifetime as the hand closes."
         );
         CreateFloatField(
             group,
-            "Fade In Time (s)",
+            "Fade In Time",
             () => runtimeSettings.handVfx.fadeInTime,
-            v => runtimeSettings.handVfx.fadeInTime = v
+            v => runtimeSettings.handVfx.fadeInTime = v,
+            tooltip: "Seconds after spawn for a particle to grow from nothing to full size."
         );
         CreateCurveField(
             group,
@@ -1269,9 +1282,10 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Fade Out Time (s)",
+            "Fade Out Time",
             () => runtimeSettings.handVfx.fadeOutTime,
-            v => runtimeSettings.handVfx.fadeOutTime = v
+            v => runtimeSettings.handVfx.fadeOutTime = v,
+            tooltip: "Seconds a particle takes to shrink and fade out before it dies. Starts on first contact with the ball, or over the end of its lifetime if it never arrives."
         );
     }
 
@@ -1290,6 +1304,46 @@ public class InGameSettingsMenu : MonoBehaviour
             "Min Stretch Length",
             () => runtimeSettings.handVfx.minStretchLength,
             v => runtimeSettings.handVfx.minStretchLength = v
+        );
+    }
+
+    private void CreateHandGripGroup(SettingSection section)
+    {
+        var group = CreateGroup("Hand Grip", section);
+
+        CreateFloatField(
+            group,
+            "Strength",
+            () => runtimeSettings.handVfx.handGripStrength,
+            v => runtimeSettings.handVfx.handGripStrength = v,
+            tooltip: "Rate at which a particle that hasn't reached the ball yet is pulled toward the "
+                + "velocity of the hand it came from, like water following a hand. Higher = the hand "
+                + "keeps a tighter hold; 0 = off. Fades with distance (Radius, Falloff Curve) and "
+                + "with hand speed (Full Grip Speed). Released on first contact with the ball."
+        );
+        CreateFloatField(
+            group,
+            "Full Grip Speed",
+            () => runtimeSettings.handVfx.handGripFullSpeed,
+            v => runtimeSettings.handVfx.handGripFullSpeed = v,
+            tooltip: "Hand speed at which the grip reaches full strength. Slower hands grip "
+                + "proportionally less, and a still hand lets go completely."
+        );
+        CreateFloatField(
+            group,
+            "Radius",
+            () => runtimeSettings.handVfx.handGripRadius,
+            v => runtimeSettings.handVfx.handGripRadius = v,
+            tooltip: "Distance from the hand beyond which it has no grip."
+        );
+        CreateCurveField(
+            group,
+            "Falloff Curve",
+            () => runtimeSettings.handVfx.handGripFalloffCurve,
+            v => runtimeSettings.handVfx.handGripFalloffCurve = v,
+            tooltip: "Grip across the radius. X 0 = at the hand, X 1 = Radius away. Y = fraction of the "
+                + "grip applied there: both how hard the particle is pulled and how much of the "
+                + "hand's velocity it is pulled toward."
         );
     }
 
@@ -1329,7 +1383,7 @@ public class InGameSettingsMenu : MonoBehaviour
         );
         CreateFloatField(
             group,
-            "Tangential Damping (1/s)",
+            "Tangential Damping",
             () => runtimeSettings.handVfx.tangentialDamping,
             v => runtimeSettings.handVfx.tangentialDamping = v
         );

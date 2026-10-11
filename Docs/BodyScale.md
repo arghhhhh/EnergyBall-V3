@@ -64,7 +64,7 @@ when a new value doesn't obviously fit a row of the table.
 The graph's VisualEffect objects have identity transforms, so graph-local units
 equal world units. Values that are driven from C# (`handPos`, `vfxSphere`,
 `sdfScale`, `sdfTexture`, `zDepth`, `TD1`/`TD2`, `isInBounds`,
-`vfxSphereVelocity`) arrive already world-scaled and need nothing in the graph.
+`vfxSphereVelocity`, `handVelocity`) arrive already world-scaled and need nothing in the graph.
 The three collision proxies (play-bounds box, ball SDF collision, trigger
 sphere) are composed at runtime from `sdfScale` / `vfxSphere` and the ratio
 settings above.
@@ -101,6 +101,11 @@ settings above.
 - **`lengthScaler`** is ×1/s even though it looks like a multiplier: it converts a
   world velocity (×s) into the dimensionless `_Scale.y` stretch. `minStretchLength`,
   the floor on that stretch, stays unscaled (the ×s already lives in `_Size`).
+- **Hand Grip** (Force block, Relative mode, on particles that have not collided yet):
+  `handGripStrength` is a drag rate (1/s) and stays unscaled, `handGripRadius` is a
+  length (×s) and `handGripFullSpeed` a velocity (×s). The target velocity is
+  `handVelocity` (already world-scaled) times a dimensionless falloff curve sampled at
+  distance ÷ radius; the drag is strength × falloff × saturate(hand speed ÷ full speed).
 - **Secondary Attractor `Divide` by literal 5** (`vfxSphere.z ÷ 5`, feeding the
   radius / lerp chain): looks like a bodyScale-5 assumption but is not. Reviewed
   by the author on 2026-08-13 and confirmed to work at any world scale. **Do not

@@ -473,6 +473,45 @@ public class PlayerConstructor : MonoBehaviour
         );
     }
 
+    // Kinect joints update at 30 Hz against the 50 Hz fixed step, so the raw per-step hand
+    // displacement alternates between zero and an overshoot. Smoothed over this time (s).
+    const float HandVfxVelocitySmoothingTime = 0.1f;
+    Vector3 leftHandVfxVelocity;
+    Vector3 rightHandVfxVelocity;
+    bool handVfxVelocityPrimed;
+
+    public void SetVfxHandVelocity()
+    {
+        // Must run before PlayerScaler.ScaleSetup, which advances the prev positions.
+        // They aren't valid until it has run once, so the first step sends zero.
+        if (handVfxVelocityPrimed)
+        {
+            float dt = Time.fixedDeltaTime;
+            float blend = 1f - Mathf.Exp(-dt / HandVfxVelocitySmoothingTime);
+            leftHandVfxVelocity = Vector3.Lerp(
+                leftHandVfxVelocity,
+                (HandLeft.transform.position - leftHandPrevPosition) / dt,
+                blend
+            );
+            rightHandVfxVelocity = Vector3.Lerp(
+                rightHandVfxVelocity,
+                (HandRight.transform.position - rightHandPrevPosition) / dt,
+                blend
+            );
+        }
+        handVfxVelocityPrimed = true;
+
+        // Hand velocity in each VFX's local space (the graphs simulate in local space).
+        leftHandVfx.SetVector3(
+            "handVelocity",
+            leftHandVfx.transform.InverseTransformVector(leftHandVfxVelocity)
+        );
+        rightHandVfx.SetVector3(
+            "handVelocity",
+            rightHandVfx.transform.InverseTransformVector(rightHandVfxVelocity)
+        );
+    }
+
     public void SetPulseSize()
     {
         var runtimeSettings = controller.GetRuntimeSettings();
