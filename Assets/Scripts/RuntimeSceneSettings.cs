@@ -198,6 +198,10 @@ public class RuntimeSceneSettings
     public bool showCameraFeed = true;
     public bool syncParticlesToFeed = false;
     public bool drawSkeleton = false;
+
+    [BodyScaled(1)]
+    [Tooltip("Thickness of the skeleton bones. Each bone tapers slightly toward its far joint.")]
+    public float skeletonLineWidth = 0.02f;
     public bool useTrackingStateColors = true;
 
     // Colors. Files written before these existed have no "hasStyleColors" key, so JsonUtility
@@ -396,6 +400,7 @@ public class RuntimeSceneSettings
         copy.syncParticlesToFeed = syncParticlesToFeed;
         copy.drawSkeleton = drawSkeleton;
         copy._individualColors = _individualColors;
+        copy.skeletonLineWidth = skeletonLineWidth;
         copy.useTrackingStateColors = useTrackingStateColors;
         copy.hasStyleColors = hasStyleColors;
         copy.skeletonColor = skeletonColor;

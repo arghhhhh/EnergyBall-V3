@@ -192,6 +192,13 @@ public class SceneController : MonoBehaviour
     )]
     public Material skeletonLineMaterial;
 
+    [SettingGroup(SettingSections.Kinect, "Skeleton")]
+    [Label("Line Width")]
+    [ShowIf("ShowSkeletonSettings")]
+    [Min(0f)]
+    [Tooltip("Thickness of the skeleton bones. Each bone tapers slightly toward its far joint.")]
+    public float skeletonLineWidth = 0.02f;
+
     // Applies with individual colors too: tracking-state colors override the player's color.
     [SettingGroup(SettingSections.Kinect, "Skeleton")]
     [Label("Tracking State Colors")]
@@ -1408,6 +1415,7 @@ public class SceneController : MonoBehaviour
         target.showCameraFeed = showCameraFeed;
         target.syncParticlesToFeed = syncParticlesToFeed;
         target.drawSkeleton = drawSkeleton;
+        target.skeletonLineWidth = skeletonLineWidth;
         target.useTrackingStateColors = useTrackingStateColors;
         target.individualColors = individualColors;
         target.hasStyleColors = true;
@@ -1502,6 +1510,7 @@ public class SceneController : MonoBehaviour
         showCameraFeed = source.showCameraFeed;
         syncParticlesToFeed = source.syncParticlesToFeed;
         drawSkeleton = source.drawSkeleton;
+        skeletonLineWidth = source.skeletonLineWidth;
         useTrackingStateColors = source.useTrackingStateColors;
         individualColors = source.individualColors;
         // Older files carry no colors - keep the inspector's.

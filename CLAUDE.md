@@ -199,7 +199,7 @@ following the existing pattern:
   ShowIf/HideIf per field). Hidden settings still load and save with profiles. Kinect:
   `drawSkeleton` and the `cameraFeedQuad` slot. That slot is what enables CameraFeed, so
   it can't be gated on it. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
-  material, tracking-state colors, the single skeleton color. CameraFeed:
+  material, line width, tracking-state colors, the single skeleton color. CameraFeed:
   `showCameraFeed` (toggles the feed quad's renderer in play mode),
   `projectiveAlignment`, `renderCameraTransform`. CameraFeed + `showCameraFeed`
   (`ShowFeedSyncField`): `syncParticlesToFeed`. Color Per Player: `particleColors` is

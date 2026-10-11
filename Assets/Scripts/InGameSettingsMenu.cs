@@ -731,6 +731,14 @@ public class InGameSettingsMenu : MonoBehaviour
             v => runtimeSettings.drawSkeleton = v,
             tooltip: "Draw line-renderer bones between tracked Kinect joints for each player."
         );
+        CreateFloatField(
+            group,
+            "Line Width",
+            () => runtimeSettings.skeletonLineWidth,
+            v => runtimeSettings.skeletonLineWidth = Mathf.Max(0f, v),
+            tooltip: "Thickness of the skeleton bones. Each bone tapers slightly toward its far joint."
+        );
+        ShowRowIf(group, "Line Width", () => runtimeSettings.drawSkeleton);
         CreateToggleField(
             group,
             "Tracking State Colors",
@@ -3519,6 +3527,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.syncParticlesToFeed = loadedSettings.syncParticlesToFeed;
         runtimeSettings.individualColors = loadedSettings.individualColors;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
+        runtimeSettings.skeletonLineWidth = loadedSettings.skeletonLineWidth;
         runtimeSettings.useTrackingStateColors = loadedSettings.useTrackingStateColors;
         // Older profiles carry no colors; then the current ones stay.
         runtimeSettings.CopyStyleColorsFrom(loadedSettings);
@@ -3616,6 +3625,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.syncParticlesToFeed = source.syncParticlesToFeed;
         destination.individualColors = source.individualColors;
         destination.drawSkeleton = source.drawSkeleton;
+        destination.skeletonLineWidth = source.skeletonLineWidth;
         destination.useTrackingStateColors = source.useTrackingStateColors;
         destination.CopyStyleColorsFrom(source);
 
