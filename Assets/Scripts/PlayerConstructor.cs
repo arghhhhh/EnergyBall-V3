@@ -217,6 +217,55 @@ public class PlayerConstructor : MonoBehaviour
     #endregion
     public Dictionary<JointType, GameObject> jointMap;
 
+    #region Kinect tracking
+    // Written by SceneController for Kinect players only (dummies set their hand states directly).
+
+    // Turn the raw Kinect hand states into the Open / Closed leftHandState / rightHandState.
+    [System.NonSerialized]
+    public readonly HandStateFilter leftHandFilter = new();
+
+    [System.NonSerialized]
+    public readonly HandStateFilter rightHandFilter = new();
+
+    // Per JointType: the joint's transform holds a real reading. Until then a NotTracked joint
+    // may be placed (there's nothing better), but after it a NotTracked joint keeps its place.
+    [System.NonSerialized]
+    public readonly bool[] jointSeen = new bool[(int)JointType.ThumbRight + 1];
+
+    // Where the body was last seen (SpineShoulder, world space): a body the Kinect re-acquires
+    // under a new tracking id near here takes this player back over.
+    [System.NonSerialized]
+    public Vector3 bodyAnchor;
+
+    [System.NonSerialized]
+    public bool hasBodyAnchor;
+
+    // The Kinect lost this body: the player is held at its last pose for the grace period.
+    [System.NonSerialized]
+    public bool bodyLost;
+
+    [ShowNativeProperty]
+    HandState LeftHandRaw => leftHandFilter.Raw;
+
+    [ShowNativeProperty]
+    TrackingConfidence LeftHandConfidence => leftHandFilter.RawConfidence;
+
+    [ShowNativeProperty]
+    HandState LeftHandFiltered => leftHandFilter.State;
+
+    [ShowNativeProperty]
+    HandState RightHandRaw => rightHandFilter.Raw;
+
+    [ShowNativeProperty]
+    TrackingConfidence RightHandConfidence => rightHandFilter.RawConfidence;
+
+    [ShowNativeProperty]
+    HandState RightHandFiltered => rightHandFilter.State;
+
+    [ShowNativeProperty]
+    bool BodyLost => bodyLost;
+    #endregion
+
     [HideInInspector]
     public Color skeletonColor;
 
@@ -332,6 +381,10 @@ public class PlayerConstructor : MonoBehaviour
 
     private void Awake()
     {
+        // SceneController updates a new Kinect player in the same physics step that creates it,
+        // before Start runs (ResetSphereToHandMidpoint reads settings through this).
+        controller = SceneController.Instance;
+
         jointMap = new Dictionary<JointType, GameObject>()
         {
             { JointType.SpineBase, SpineBase },
@@ -360,6 +413,21 @@ public class PlayerConstructor : MonoBehaviour
             { JointType.HandTipRight, HandtipRight },
             { JointType.ThumbRight, ThumbRight },
         };
+
+        // Skeleton bones are drawn only while Draw Skeleton is on (SceneController enables them).
+        // A plain two-key gradient lets startColor / endColor color the whole bone: the Joint
+        // prefab's five-key gradient kept its middle keys and faded out at the far end, so
+        // per-bone colors only tinted the tips.
+        var boneGradient = new Gradient();
+        boneGradient.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) }
+        );
+        foreach (LineRenderer lr in GetComponentsInChildren<LineRenderer>(true))
+        {
+            lr.colorGradient = boneGradient;
+            lr.enabled = false;
+        }
     }
 
     private void Start()

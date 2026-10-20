@@ -11,13 +11,9 @@ public class HandForce
         // controller.debugText.text =
         //     $"leftHandState: {player.leftHandState}\nrightHandState: {player.rightHandState}";
 
-        if (
-            (player.leftHandState == HandState.Closed || player.leftHandState == HandState.Unknown)
-            && (
-                player.rightHandState == HandState.Closed
-                || player.rightHandState == HandState.Unknown
-            )
-        )
+        // Kinect hand states arrive filtered (HandStateFilter): a hand the Kinect can't read
+        // keeps its last Open / Closed state instead of counting as closed.
+        if (player.leftHandState == HandState.Closed && player.rightHandState == HandState.Closed)
         {
             player.pushParticles = true;
             // Apply one final push when transitioning to both-hands-closed.
@@ -141,7 +137,7 @@ public class HandForce
         ).normalized;
         // do same for right hand
         Vector3 rightHandVector = (
-            player.HandtipLeft.transform.position - player.WristRight.transform.position
+            player.HandtipRight.transform.position - player.WristRight.transform.position
         ).normalized;
         // lerp halfway between the two vectors
         Vector3 alignmentVector = Vector3.Lerp(leftHandVector, rightHandVector, 0.5f);

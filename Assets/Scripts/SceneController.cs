@@ -59,6 +59,9 @@ public class SceneController : MonoBehaviour
     private bool ShowSkeletonSettings => HasKinect && drawSkeleton;
     private bool ShowOcclusionSettings => HasKinect && bodyOcclusion;
 
+    // Reacquiring only happens while a lost player is still held.
+    private bool ShowReacquireDistanceField => HasKinect && bodyLossGracePeriod > 0f;
+
     // Syncing the particles to the feed only applies while the feed is shown.
     private bool ShowFeedSyncField => HasCameraFeed && showCameraFeed;
 
@@ -140,6 +143,77 @@ public class SceneController : MonoBehaviour
             + "background). Base at 1x."
     )]
     public float maxDistanceFromCamera = 2.6f;
+
+    [SettingGroup(SettingSections.Kinect, "Tracking")]
+    [Label("Body Loss Grace")]
+    [ShowIf("HasKinect")]
+    [Min(0f)]
+    [Tooltip(BodyLossGraceTooltip)]
+    public float bodyLossGracePeriod = 1f;
+
+    public const string BodyLossGraceTooltip =
+        "Seconds a player is kept, frozen at its last pose, after the Kinect loses their body. "
+        + "If the body comes back in that time the player carries on with their ball; after it "
+        + "the player is removed. 0 removes players as soon as the body is lost.";
+
+    [SettingGroup(SettingSections.Kinect, "Tracking")]
+    [Label("Reacquire Distance")]
+    [ShowIf("ShowReacquireDistanceField")]
+    [Min(0f)]
+    [Tooltip(BodyReacquireDistanceTooltip)]
+    public float bodyReacquireDistance = 0.5f;
+
+    public const string BodyReacquireDistanceTooltip =
+        "The Kinect gives a body it finds again a new id. A new body this close to where a "
+        + "player was lost (measured at the base of the neck) takes that player back over "
+        + "instead of starting a new one.";
+
+    [SettingGroup(SettingSections.Kinect, "Tracking")]
+    [Label("Inferred Joint Smoothing")]
+    [ShowIf("HasKinect")]
+    [Min(0f)]
+    [Tooltip(InferredJointSmoothingTooltip)]
+    public float inferredJointSmoothing = 0.1f;
+
+    public const string InferredJointSmoothingTooltip =
+        "Seconds of smoothing for joints the Kinect only infers (e.g. a hand hidden behind the "
+        + "body), whose guessed positions jump around. Tracked joints are never smoothed. "
+        + "Joints the Kinect doesn't track at all keep their last position. 0 uses inferred "
+        + "positions as they come.";
+
+    [SettingGroup(SettingSections.Kinect, "Hand State")]
+    [Label("Debounce Frames")]
+    [ShowIf("HasKinect")]
+    [Min(1)]
+    [Tooltip(HandStateDebounceTooltip)]
+    public int handStateDebounceFrames = 2;
+
+    public const string HandStateDebounceTooltip =
+        "Consecutive Kinect frames (30 per second) a hand must read open, or closed, before it "
+        + "counts as opened or closed. Filters single misread frames. 1 reacts to every frame.";
+
+    [SettingGroup(SettingSections.Kinect, "Hand State")]
+    [Label("Hold Time")]
+    [ShowIf("HasKinect")]
+    [Min(0f)]
+    [Tooltip(HandStateHoldTimeTooltip)]
+    public float handStateHoldTime = 1f;
+
+    public const string HandStateHoldTimeTooltip =
+        "While the Kinect can't tell whether a hand is open or closed (unknown, not tracked or "
+        + "lasso), the hand keeps its last state. After this many seconds without a reading, an "
+        + "open hand counts as closed. 0 holds the last state indefinitely.";
+
+    [SettingGroup(SettingSections.Kinect, "Hand State")]
+    [Label("High Confidence Only")]
+    [ShowIf("HasKinect")]
+    [Tooltip(HandStateHighConfidenceOnlyTooltip)]
+    public bool handStateHighConfidenceOnly = false;
+
+    public const string HandStateHighConfidenceOnlyTooltip =
+        "Ignore open / closed readings the Kinect reports with low confidence (the hand keeps "
+        + "its state, as for an unknown reading). Steadier, but slower to react at a distance, "
+        + "where low confidence is common.";
 
     // Gated on Kinect, not CameraFeed: assigning this is what turns the CameraFeed feature on.
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
@@ -243,11 +317,13 @@ public class SceneController : MonoBehaviour
     [SettingGroup(SettingSections.Kinect, "Skeleton")]
     [Label("Tracking State Colors")]
     [ShowIf("ShowSkeletonSettings")]
-    [Tooltip(
-        "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) "
-            + "instead of the player's color."
-    )]
+    [Tooltip(TrackingStateColorsTooltip)]
     public bool useTrackingStateColors = true;
+
+    public const string TrackingStateColorsTooltip =
+        "Color each end of a bone by its joint's Kinect tracking state instead of the player's "
+        + "color: green tracked, yellow inferred, red not tracked (held at its last position). "
+        + "A lost body held for Body Loss Grace turns magenta.";
 
     [SettingGroup(SettingSections.Kinect, "Skeleton")]
     [ShowIf("ShowSkeletonColorField")]
@@ -690,6 +766,12 @@ public class SceneController : MonoBehaviour
     Body[] bodyData;
     List<ulong> trackedIds = new();
     List<ulong> knownIds = new();
+
+    // Kinect players whose body the Kinect lost, by tracking id -> Time.time it was lost. They're
+    // held at their last pose for bodyLossGracePeriod (see UpdateLostPlayers).
+    private readonly Dictionary<ulong, float> lostPlayers = new();
+    private readonly List<ulong> expiredPlayerIds = new();
+    private int lastBodyFrameCount = -1;
     public GameObject playerPrefab;
     public TextMeshProUGUI debugText;
     private readonly Dictionary<ulong, GameObject> players = new();
@@ -912,9 +994,10 @@ public class SceneController : MonoBehaviour
 
     void RemovePlayer(ulong userId)
     {
-        if (players[userId])
+        lostPlayers.Remove(userId);
+        if (players.TryGetValue(userId, out GameObject player) && player)
         {
-            PlayerConstructor playerConstructor = players[userId].GetComponent<PlayerConstructor>();
+            PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
             if (playerConstructor.isDummy)
             {
                 dummies.Remove(userId);
@@ -998,12 +1081,6 @@ public class SceneController : MonoBehaviour
         player.rightHandVfx.SetGradient("playerAuraBase", particle);
     }
 
-    void SetPlayerHandStates(Body body, PlayerConstructor player)
-    {
-        player.leftHandState = body.HandLeftState;
-        player.rightHandState = body.HandRightState;
-    }
-
     private Vector3 GetVector3FromJoint(Joint joint)
     {
         if (projectiveAlignment && TryProjectJointThroughColorCamera(joint, out Vector3 projected))
@@ -1076,13 +1153,19 @@ public class SceneController : MonoBehaviour
         return true;
     }
 
-    private static Color ColorSkeleton(TrackingState state)
+    // Tracking State Colors (see TrackingStateColorsTooltip).
+    private static readonly Color TrackedJointColor = new(0.2f, 1f, 0.3f);
+    private static readonly Color InferredJointColor = new(1f, 0.85f, 0.1f);
+    private static readonly Color NotTrackedJointColor = new(1f, 0.15f, 0.15f);
+    private static readonly Color LostBodyColor = new(1f, 0.25f, 1f);
+
+    private static Color TrackingStateColor(TrackingState state)
     {
         return state switch
         {
-            TrackingState.Tracked => Color.white,
-            TrackingState.Inferred => Color.grey,
-            _ => Color.black,
+            TrackingState.Tracked => TrackedJointColor,
+            TrackingState.Inferred => InferredJointColor,
+            _ => NotTrackedJointColor,
         };
     }
 
@@ -1142,79 +1225,296 @@ public class SceneController : MonoBehaviour
         }
     }
 
-    void UpdateKinectPlayerData(Body body, GameObject player)
+    // Joints gameplay reads that aren't bone ends: HandForce aims the push along wrist -> hand tip.
+    private static readonly JointType[] extraPositionedJoints =
     {
-        if (!body.IsRestricted)
+        JointType.HandTipLeft,
+        JointType.HandTipRight,
+    };
+
+    // Joints placed for Kinect players: both ends of every boneMap bone, plus
+    // extraPositionedJoints. The rest keep their prefab positions, so gameplay must not read them.
+    private JointType[] positionedJoints;
+
+    private JointType[] PositionedJoints
+    {
+        get
         {
-            PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
-
-            foreach (JointType joint in boneMap.Keys)
+            if (positionedJoints == null)
             {
-                Joint sourceJoint = body.Joints[joint];
-                Vector3 targetPosition = GetVector3FromJoint(sourceJoint);
+                var joints = new HashSet<JointType>(boneMap.Keys);
+                joints.UnionWith(boneMap.Values);
+                joints.UnionWith(extraPositionedJoints);
+                positionedJoints = new JointType[joints.Count];
+                joints.CopyTo(positionedJoints);
+            }
+            return positionedJoints;
+        }
+    }
 
-                // debugText.text = $"userId: {playerConstructor.userId}\n" +
-                //     $"joint: {joint}\n" +
-                //     $"position: {player}\n" +
-                //     $"maxDistanceFromCamera: {CurrentSettings.maxDistanceFromCamera}";
+    /// <summary>
+    /// Places a Kinect player's joints, filters its hand states and draws its skeleton.
+    /// <paramref name="newBodyFrame"/> is false on a physics step that sees the same Kinect
+    /// frame again (frames arrive at 30 Hz, steps run at 50 Hz).
+    /// </summary>
+    void UpdateKinectPlayerData(Body body, GameObject player, bool newBodyFrame)
+    {
+        if (body.IsRestricted)
+            return;
 
-                Transform jointObject = playerConstructor.jointMap[joint].transform;
-                jointObject.position = targetPosition;
+        PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
+        var settings = CurrentSettings;
+        // Body.Joints marshals all 25 joints into a new dictionary on every access: read it once.
+        var joints = body.Joints;
 
-                if (
-                    (joint == JointType.HandLeft || joint == JointType.HandRight)
-                    && targetPosition.z > CurrentSettings.maxDistanceFromCamera
-                )
-                {
-                    playerConstructor.leftHandState = HandState.Closed;
-                    playerConstructor.rightHandState = HandState.Closed;
-                    foreach (LineRenderer lr in player.GetComponentsInChildren<LineRenderer>())
-                    {
-                        lr.enabled = false;
-                    }
-                    playerConstructor.leftHandCollider.gameObject.SetActive(false);
-                    playerConstructor.rightHandCollider.gameObject.SetActive(false);
+        foreach (JointType jointType in PositionedJoints)
+        {
+            PlaceJoint(playerConstructor, jointType, joints[jointType], settings);
+        }
 
-                    return;
-                }
+        if (TryGetBodyAnchor(joints, out Vector3 anchor))
+        {
+            playerConstructor.bodyAnchor = anchor;
+            playerConstructor.hasBodyAnchor = true;
+        }
 
-                playerConstructor.leftHandCollider.gameObject.SetActive(true);
-                playerConstructor.rightHandCollider.gameObject.SetActive(true);
+        if (newBodyFrame)
+        {
+            float now = Time.time;
+            playerConstructor.leftHandFilter.Update(
+                body.HandLeftState,
+                body.HandLeftConfidence,
+                settings.handStateDebounceFrames,
+                settings.handStateHighConfidenceOnly,
+                settings.handStateHoldTime,
+                now
+            );
+            playerConstructor.rightHandFilter.Update(
+                body.HandRightState,
+                body.HandRightConfidence,
+                settings.handStateDebounceFrames,
+                settings.handStateHighConfidenceOnly,
+                settings.handStateHoldTime,
+                now
+            );
+        }
 
-                if (CurrentSettings.drawSkeleton)
-                {
-                    if (boneMap.ContainsKey(joint))
-                    {
-                        Joint? targetJoint = body.Joints[boneMap[joint]];
+        // Hands far in the background (someone behind the players): closed and hidden.
+        if (
+            playerConstructor.HandLeft.transform.position.z > settings.maxDistanceFromCamera
+            || playerConstructor.HandRight.transform.position.z > settings.maxDistanceFromCamera
+        )
+        {
+            playerConstructor.leftHandState = HandState.Closed;
+            playerConstructor.rightHandState = HandState.Closed;
+            SetSkeletonVisible(playerConstructor, false);
+            playerConstructor.leftHandCollider.gameObject.SetActive(false);
+            playerConstructor.rightHandCollider.gameObject.SetActive(false);
+            return;
+        }
 
-                        if (targetJoint.HasValue)
-                        {
-                            LineRenderer lr = jointObject.GetComponent<LineRenderer>();
-                            lr.enabled = true;
-                            lr.SetPosition(0, jointObject.localPosition);
-                            lr.SetPosition(1, GetVector3FromJoint(targetJoint.Value));
-                            if (CurrentSettings.useTrackingStateColors)
-                            {
-                                lr.startColor = ColorSkeleton(sourceJoint.TrackingState);
-                                lr.endColor = ColorSkeleton(targetJoint.Value.TrackingState);
-                            }
-                            else
-                            {
-                                lr.startColor = playerConstructor.skeletonColor;
-                                lr.endColor = playerConstructor.skeletonColor;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    LineRenderer lr = jointObject.GetComponent<LineRenderer>();
-                    lr.enabled = false;
-                }
+        playerConstructor.leftHandCollider.gameObject.SetActive(true);
+        playerConstructor.rightHandCollider.gameObject.SetActive(true);
+
+        playerConstructor.leftHandState = playerConstructor.leftHandFilter.State;
+        playerConstructor.rightHandState = playerConstructor.rightHandFilter.State;
+
+        UpdateSkeleton(playerConstructor, joints, settings);
+    }
+
+    /// <summary>
+    /// Moves a joint's transform to its Kinect position according to its tracking state:
+    /// tracked joints go straight there, inferred joints (guessed, so jumpy) are eased there
+    /// over Inferred Joint Smoothing, and not-tracked joints stay where they last were.
+    /// </summary>
+    void PlaceJoint(
+        PlayerConstructor player,
+        JointType jointType,
+        Joint joint,
+        RuntimeSceneSettings settings
+    )
+    {
+        Transform jointTransform = player.jointMap[jointType].transform;
+        int index = (int)jointType;
+        bool seen = player.jointSeen[index];
+
+        if (joint.TrackingState == TrackingState.NotTracked)
+        {
+            // Before the joint's first real reading there's no better place for it.
+            if (!seen)
+                jointTransform.position = GetVector3FromJoint(joint);
+            return;
+        }
+
+        Vector3 target = GetVector3FromJoint(joint);
+        if (
+            seen
+            && joint.TrackingState == TrackingState.Inferred
+            && settings.inferredJointSmoothing > 0f
+        )
+        {
+            float blend = 1f - Mathf.Exp(-Time.fixedDeltaTime / settings.inferredJointSmoothing);
+            target = Vector3.Lerp(jointTransform.position, target, blend);
+        }
+        jointTransform.position = target;
+        player.jointSeen[index] = true;
+    }
+
+    /// <summary>
+    /// The point a lost player is matched to a re-acquired body by: the base of the neck
+    /// (SpineShoulder), which stays put while the arms move. False when it isn't tracked.
+    /// </summary>
+    bool TryGetBodyAnchor(Dictionary<JointType, Joint> joints, out Vector3 anchor)
+    {
+        Joint neckBase = joints[JointType.SpineShoulder];
+        if (neckBase.TrackingState == TrackingState.NotTracked)
+        {
+            anchor = default;
+            return false;
+        }
+        anchor = GetVector3FromJoint(neckBase);
+        return true;
+    }
+
+    void UpdateSkeleton(
+        PlayerConstructor player,
+        Dictionary<JointType, Joint> joints,
+        RuntimeSceneSettings settings
+    )
+    {
+        foreach (var bone in boneMap)
+        {
+            GameObject jointObject = player.jointMap[bone.Key];
+            LineRenderer lr = jointObject.GetComponent<LineRenderer>();
+            lr.enabled = settings.drawSkeleton;
+            if (!settings.drawSkeleton)
+                continue;
+
+            lr.SetPosition(0, jointObject.transform.position);
+            lr.SetPosition(1, player.jointMap[bone.Value].transform.position);
+            if (settings.useTrackingStateColors)
+            {
+                lr.startColor = TrackingStateColor(joints[bone.Key].TrackingState);
+                lr.endColor = TrackingStateColor(joints[bone.Value].TrackingState);
+            }
+            else
+            {
+                lr.startColor = player.skeletonColor;
+                lr.endColor = player.skeletonColor;
+            }
+        }
+    }
+
+    /// <summary>A lost player's skeleton stays at its last pose; Tracking State Colors marks it.</summary>
+    void UpdateLostSkeleton(PlayerConstructor player, RuntimeSceneSettings settings)
+    {
+        foreach (JointType jointType in boneMap.Keys)
+        {
+            LineRenderer lr = player.jointMap[jointType].GetComponent<LineRenderer>();
+            lr.enabled = settings.drawSkeleton;
+            if (settings.drawSkeleton && settings.useTrackingStateColors)
+            {
+                lr.startColor = LostBodyColor;
+                lr.endColor = LostBodyColor;
+            }
+        }
+    }
+
+    void SetSkeletonVisible(PlayerConstructor player, bool visible)
+    {
+        foreach (JointType jointType in boneMap.Keys)
+        {
+            player.jointMap[jointType].GetComponent<LineRenderer>().enabled = visible;
+        }
+    }
+
+    /// <summary>
+    /// Holds Kinect players whose body dropped out instead of removing them at once. The Kinect
+    /// loses bodies for a moment (occlusion, someone walking past, turning sideways) and gives a
+    /// body it finds again a new tracking id. A lost player is removed after
+    /// bodyLossGracePeriod; a body that comes back first takes it over (the same id here, a new
+    /// id in <see cref="ReacquireLostPlayer"/>).
+    /// </summary>
+    void UpdateLostPlayers()
+    {
+        float now = Time.time;
+        float grace = CurrentSettings.bodyLossGracePeriod;
+        expiredPlayerIds.Clear();
+
+        foreach (ulong trackingId in knownIds)
+        {
+            if (dummies.ContainsKey(trackingId))
+                continue;
+            if (!players.TryGetValue(trackingId, out GameObject player) || !player)
+                continue;
+
+            PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
+            if (trackedIds.Contains(trackingId))
+            {
+                // Back under the same id.
+                lostPlayers.Remove(trackingId);
+                playerConstructor.bodyLost = false;
+                continue;
             }
 
-            SetPlayerHandStates(body, playerConstructor);
+            if (!lostPlayers.TryGetValue(trackingId, out float lostAt))
+            {
+                lostAt = now;
+                lostPlayers[trackingId] = lostAt;
+                playerConstructor.bodyLost = true;
+            }
+            if (now - lostAt >= grace)
+            {
+                expiredPlayerIds.Add(trackingId);
+            }
         }
+
+        foreach (ulong trackingId in expiredPlayerIds)
+        {
+            RemovePlayer(trackingId);
+        }
+    }
+
+    /// <summary>
+    /// A newly tracked body near where a lost player was last seen is most likely that person,
+    /// found again under a new tracking id: give them their player back (ball, activation, hand
+    /// states) instead of starting a new one. Returns null when no lost player is close enough.
+    /// </summary>
+    GameObject ReacquireLostPlayer(Body body)
+    {
+        if (lostPlayers.Count == 0 || !TryGetBodyAnchor(body.Joints, out Vector3 anchor))
+            return null;
+
+        float maxDistance = CurrentSettings.bodyReacquireDistance;
+        ulong closestId = 0;
+        GameObject closest = null;
+        float closestDistance = float.MaxValue;
+        foreach (var lost in lostPlayers)
+        {
+            if (!players.TryGetValue(lost.Key, out GameObject player) || !player)
+                continue;
+            PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
+            if (!playerConstructor.hasBodyAnchor)
+                continue;
+
+            float distance = Vector3.Distance(playerConstructor.bodyAnchor, anchor);
+            if (distance <= maxDistance && distance < closestDistance)
+            {
+                closestId = lost.Key;
+                closest = player;
+                closestDistance = distance;
+            }
+        }
+        if (closest == null)
+            return null;
+
+        players.Remove(closestId);
+        lostPlayers.Remove(closestId);
+        PlayerConstructor reacquired = closest.GetComponent<PlayerConstructor>();
+        reacquired.userId = body.TrackingId;
+        reacquired.bodyLost = false;
+        closest.name = $"Player {body.TrackingId}";
+        return closest;
     }
 
     private void DeleteAllBodies(List<ulong> ids)
@@ -1238,6 +1538,10 @@ public class SceneController : MonoBehaviour
                 return;
             }
 
+            int bodyFrameCount = bodySourceManager.BodyFrameCount;
+            bool newBodyFrame = bodyFrameCount != lastBodyFrameCount;
+            lastBodyFrameCount = bodyFrameCount;
+
             trackedIds.Clear();
             foreach (var body in bodyData)
             {
@@ -1248,14 +1552,9 @@ public class SceneController : MonoBehaviour
                     trackedIds.Add(body.TrackingId);
             }
 
-            knownIds = new List<ulong>(players.Keys);
-            foreach (ulong trackingId in knownIds)
-            {
-                if (!trackedIds.Contains(trackingId) && !dummies.ContainsKey(trackingId))
-                {
-                    RemovePlayer(trackingId);
-                }
-            }
+            knownIds.Clear();
+            knownIds.AddRange(players.Keys);
+            UpdateLostPlayers();
 
             if (Input.GetMouseButtonDown(0) && (settingsMenu == null || !settingsMenu.IsMenuOpen))
             {
@@ -1268,18 +1567,34 @@ public class SceneController : MonoBehaviour
 
             foreach (var body in bodyData)
             {
-                if (body == null)
+                if (body == null || !body.IsTracked)
                     continue;
 
-                if (body.IsTracked)
+                ulong trackingId = body.TrackingId;
+                if (!players.TryGetValue(trackingId, out GameObject player))
                 {
-                    if (!players.ContainsKey(body.TrackingId))
+                    player = ReacquireLostPlayer(body);
+                    if (player == null)
                     {
-                        players[body.TrackingId] = InitializeNewPlayer(body.TrackingId);
+                        player = InitializeNewPlayer(trackingId);
                     }
+                    players[trackingId] = player;
+                }
 
-                    UpdateKinectPlayerData(body, players[body.TrackingId]);
-                    UpdateOtherPlayerData(players[body.TrackingId]);
+                UpdateKinectPlayerData(body, player, newBodyFrame);
+                UpdateOtherPlayerData(player);
+            }
+
+            // Lost players keep their last pose and hand states; their ball keeps simulating.
+            foreach (ulong trackingId in lostPlayers.Keys)
+            {
+                if (players.TryGetValue(trackingId, out GameObject lostPlayer) && lostPlayer)
+                {
+                    UpdateLostSkeleton(
+                        lostPlayer.GetComponent<PlayerConstructor>(),
+                        CurrentSettings
+                    );
+                    UpdateOtherPlayerData(lostPlayer);
                 }
             }
         }
@@ -1436,6 +1751,12 @@ public class SceneController : MonoBehaviour
         target.defaultUnscaledSize = defaultUnscaledSize;
         target.bodyScale = bodyScale;
         target.maxDistanceFromCamera = maxDistanceFromCamera;
+        target.bodyLossGracePeriod = bodyLossGracePeriod;
+        target.bodyReacquireDistance = bodyReacquireDistance;
+        target.inferredJointSmoothing = inferredJointSmoothing;
+        target.handStateDebounceFrames = handStateDebounceFrames;
+        target.handStateHoldTime = handStateHoldTime;
+        target.handStateHighConfidenceOnly = handStateHighConfidenceOnly;
         target.bodyOcclusion = bodyOcclusion;
         target.occluderDepthBias = occluderDepthBias;
         target.occluderMinDepth = occluderMinDepth;
@@ -1535,6 +1856,12 @@ public class SceneController : MonoBehaviour
         defaultUnscaledSize = source.defaultUnscaledSize;
         bodyScale = source.bodyScale;
         maxDistanceFromCamera = source.maxDistanceFromCamera;
+        bodyLossGracePeriod = source.bodyLossGracePeriod;
+        bodyReacquireDistance = source.bodyReacquireDistance;
+        inferredJointSmoothing = source.inferredJointSmoothing;
+        handStateDebounceFrames = source.handStateDebounceFrames;
+        handStateHoldTime = source.handStateHoldTime;
+        handStateHighConfidenceOnly = source.handStateHighConfidenceOnly;
         bodyOcclusion = source.bodyOcclusion;
         occluderDepthBias = source.occluderDepthBias;
         occluderMinDepth = source.occluderMinDepth;

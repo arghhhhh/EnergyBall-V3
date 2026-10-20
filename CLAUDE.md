@@ -51,7 +51,11 @@ Singleton (`SceneController.Instance`), `[DefaultExecutionOrder(-200)]`,
 `FixedUpdate`:
 1. Pulls Kinect bodies via `bodySourceManager.GetData()`.
 2. Diffs tracked `TrackingId`s against the `Players` dictionary — creates a player
-   for each new tracked body, removes players whose body is gone.
+   for each new tracked body. A player whose body is gone is held (frozen at its last
+   pose, ball still simulating) for `bodyLossGracePeriod`, then removed; a new body
+   within `bodyReacquireDistance` of where it was lost (SpineShoulder) takes it over
+   under its new id (`UpdateLostPlayers` / `ReacquireLostPlayer`). The Kinect gives a
+   body it finds again a new `TrackingId`, so matching by id alone never recovers one.
 3. Updates each player's Kinect-driven data, then runs the per-player gameplay
    logic.
 4. Runs `gravityForceController.ManageGravity()` for inter-player attraction.
@@ -62,7 +66,25 @@ reloads the scene. Honors `dummyOnlyMode` to skip Kinect entirely.
 ### Kinect input
 - `BodySourceManager.cs` (`[RequireComponent(typeof(SceneController))]`): opens the
   Kinect sensor, color + body frame readers, exposes `Body[] GetData()`.
+  `BodyFrameCount` tells `FixedUpdate` (50 Hz) a new body frame (30 Hz) from a repeat.
 - `KinectManager.cs`: a simpler standalone sensor reader (color + body).
+- **Joints** (`SceneController.PlaceJoint`): only both ends of each `boneMap` bone
+  (arms + SpineShoulder) and the hand tips (`extraPositionedJoints`, HandForce aims
+  along wrist -> hand tip) are placed; other joint transforms sit at prefab defaults
+  (the world origin), so gameplay must not read them. Tracked joints go straight to the Kinect position,
+  inferred ones are eased there over `inferredJointSmoothing`, not-tracked ones keep
+  their last position. Read `body.Joints` once per body per step: it marshals a new
+  dictionary on every access.
+- **Hand states** (`HandStateFilter.cs`, one per hand on `PlayerConstructor`): the raw
+  state drops to Unknown (low confidence) every few hundred ms even on a held hand.
+  The filter, fed once per new body frame, only accepts Open / Closed readings
+  (Unknown / NotTracked / Lasso hold the state), needs `handStateDebounceFrames`
+  consecutive readings to change, can ignore low-confidence readings, and closes an
+  open hand after `handStateHoldTime` without a reading. `leftHandState` /
+  `rightHandState` therefore only ever hold Open / Closed for Kinect players after the
+  first reading (NotTracked before it), the same values dummies set, so the hand
+  logic (HandForce, HandEffects, one-hand tracking) never sees Unknown. Raw vs
+  filtered states show read-only in the PlayerConstructor inspector.
 
 ### Per-player entity: `PlayerConstructor.cs`
 `[DefaultExecutionOrder(100)]`. One per tracked/dummy person. Holds the `Rigidbody`
@@ -166,7 +188,7 @@ following the existing pattern:
   `EnergyBall/Migrate Scene Profiles To Base` (Editor menu) rewrites v0 files.
 - **Settings layout (menu = inspector).** The Scene tab is split into sections, in
   `SettingSections.Order` (`SettingGroupAttribute.cs`): Space (World, Play Boundary),
-  Kinect (Tracking, Camera Feed, Occlusion, Skeleton; built only with a Kinect), Ball (Size,
+  Kinect (Tracking, Hand State, Camera Feed, Occlusion, Skeleton; built only with a Kinect), Ball (Size,
   Breathing, Spawn, Gravity), Hands (Activation, Push, Aim, One Hand, Grow & Shrink),
   Particles (the hand VFX: Color, Glow, Emission, Lifetime, Stretch, Hand Grip, Ball Attraction,
   Secondary Attractor, Trail Distorters, Noise & Turbulence, Hi-Hat Bursts, Snare Bursts),
@@ -201,7 +223,8 @@ following the existing pattern:
   still draws it), `drawSkeleton` and the `cameraFeedQuad` slot. That slot is what enables CameraFeed, so
   it can't be gated on it. Kinect + `bodyOcclusion` (`ShowOcclusionSettings`):
   `occluderDepthBias`, `occluderMinDepth`, `occluderBodiesOnly`, read by
-  `BodyDepthOccluder`. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
+  `BodyDepthOccluder`. Kinect + `bodyLossGracePeriod > 0` (`ShowReacquireDistanceField`):
+  `bodyReacquireDistance`. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
   material, line width, tracking-state colors, the single skeleton color. CameraFeed:
   `showCameraFeed` (toggles the feed quad's renderer in play mode),
   `projectiveAlignment`, `renderCameraTransform`. CameraFeed + `showCameraFeed`

@@ -49,6 +49,10 @@ public class BodySourceManager : MonoBehaviour
     // Color frames received so far. They arrive during Update (the Kinect event pump).
     public int ColorFrameCount => _colorFrameCount;
 
+    // Body frames received so far (acquired in Update, 30 per second). Lets FixedUpdate consumers
+    // tell a new frame from the same one seen on a second physics step.
+    public int BodyFrameCount => _bodyFrameCount;
+
     public CoordinateMapper Mapper => _sensor != null ? _sensor.CoordinateMapper : null;
 
     public Body[] GetData()

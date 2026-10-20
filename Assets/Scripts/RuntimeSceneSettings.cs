@@ -135,6 +135,25 @@ public class RuntimeSceneSettings
     [BodyScaled(1)]
     public float maxDistanceFromCamera = 2.6f;
 
+    [Tooltip(SceneController.BodyLossGraceTooltip)]
+    public float bodyLossGracePeriod = 1f;
+
+    [BodyScaled(1)]
+    [Tooltip(SceneController.BodyReacquireDistanceTooltip)]
+    public float bodyReacquireDistance = 0.5f;
+
+    [Tooltip(SceneController.InferredJointSmoothingTooltip)]
+    public float inferredJointSmoothing = 0.1f;
+
+    [Tooltip(SceneController.HandStateDebounceTooltip)]
+    public int handStateDebounceFrames = 2;
+
+    [Tooltip(SceneController.HandStateHoldTimeTooltip)]
+    public float handStateHoldTime = 1f;
+
+    [Tooltip(SceneController.HandStateHighConfidenceOnlyTooltip)]
+    public bool handStateHighConfidenceOnly = false;
+
     [Tooltip(SceneController.BodyOcclusionTooltip)]
     public bool bodyOcclusion = true;
 
@@ -394,6 +413,12 @@ public class RuntimeSceneSettings
         copy.defaultUnscaledSize = defaultUnscaledSize;
         copy.bodyScale = bodyScale;
         copy.maxDistanceFromCamera = maxDistanceFromCamera;
+        copy.bodyLossGracePeriod = bodyLossGracePeriod;
+        copy.bodyReacquireDistance = bodyReacquireDistance;
+        copy.inferredJointSmoothing = inferredJointSmoothing;
+        copy.handStateDebounceFrames = handStateDebounceFrames;
+        copy.handStateHoldTime = handStateHoldTime;
+        copy.handStateHighConfidenceOnly = handStateHighConfidenceOnly;
         copy.bodyOcclusion = bodyOcclusion;
         copy.occluderDepthBias = occluderDepthBias;
         copy.occluderMinDepth = occluderMinDepth;

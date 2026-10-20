@@ -537,6 +537,7 @@ public class InGameSettingsMenu : MonoBehaviour
         {
             var kinect = CreateSection(SettingSections.Kinect, panel, sceneSectionNav);
             CreateTrackingGroup(kinect);
+            CreateHandStateGroup(kinect);
             if (SceneSupports(SceneController.SceneFeature.CameraFeed))
                 CreateCameraFeedGroup(kinect);
             CreateOcclusionGroup(kinect);
@@ -698,6 +699,55 @@ public class InGameSettingsMenu : MonoBehaviour
             v => runtimeSettings.maxDistanceFromCamera = v,
             tooltip: "If a player's hands are tracked farther from the camera than this, they are treated as closed and their colliders/skeleton lines are disabled (filters people far in the background)."
         );
+        CreateFloatField(
+            group,
+            "Body Loss Grace",
+            () => runtimeSettings.bodyLossGracePeriod,
+            v => runtimeSettings.bodyLossGracePeriod = Mathf.Max(0f, v),
+            tooltip: SceneController.BodyLossGraceTooltip
+        );
+        CreateFloatField(
+            group,
+            "Reacquire Distance",
+            () => runtimeSettings.bodyReacquireDistance,
+            v => runtimeSettings.bodyReacquireDistance = Mathf.Max(0f, v),
+            tooltip: SceneController.BodyReacquireDistanceTooltip
+        );
+        ShowRowIf(group, "Reacquire Distance", () => runtimeSettings.bodyLossGracePeriod > 0f);
+        CreateFloatField(
+            group,
+            "Inferred Joint Smoothing",
+            () => runtimeSettings.inferredJointSmoothing,
+            v => runtimeSettings.inferredJointSmoothing = Mathf.Max(0f, v),
+            tooltip: SceneController.InferredJointSmoothingTooltip
+        );
+    }
+
+    private void CreateHandStateGroup(SettingSection section)
+    {
+        var group = CreateGroup("Hand State", section);
+
+        CreateIntField(
+            group,
+            "Debounce Frames",
+            () => runtimeSettings.handStateDebounceFrames,
+            v => runtimeSettings.handStateDebounceFrames = Mathf.Max(1, v),
+            tooltip: SceneController.HandStateDebounceTooltip
+        );
+        CreateFloatField(
+            group,
+            "Hold Time",
+            () => runtimeSettings.handStateHoldTime,
+            v => runtimeSettings.handStateHoldTime = Mathf.Max(0f, v),
+            tooltip: SceneController.HandStateHoldTimeTooltip
+        );
+        CreateToggleField(
+            group,
+            "High Confidence Only",
+            () => runtimeSettings.handStateHighConfidenceOnly,
+            v => runtimeSettings.handStateHighConfidenceOnly = v,
+            tooltip: SceneController.HandStateHighConfidenceOnlyTooltip
+        );
     }
 
     private void CreateCameraFeedGroup(SettingSection section)
@@ -782,7 +832,7 @@ public class InGameSettingsMenu : MonoBehaviour
             "Tracking State Colors",
             () => runtimeSettings.useTrackingStateColors,
             v => runtimeSettings.useTrackingStateColors = v,
-            tooltip: "Color skeleton bones by Kinect joint tracking state (tracked / inferred / not tracked) instead of the player's color."
+            tooltip: SceneController.TrackingStateColorsTooltip
         );
         ShowRowIf(group, "Tracking State Colors", () => runtimeSettings.drawSkeleton);
 
@@ -3534,6 +3584,12 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.defaultUnscaledSize = loadedSettings.defaultUnscaledSize;
         runtimeSettings.bodyScale = loadedSettings.bodyScale;
         runtimeSettings.maxDistanceFromCamera = loadedSettings.maxDistanceFromCamera;
+        runtimeSettings.bodyLossGracePeriod = loadedSettings.bodyLossGracePeriod;
+        runtimeSettings.bodyReacquireDistance = loadedSettings.bodyReacquireDistance;
+        runtimeSettings.inferredJointSmoothing = loadedSettings.inferredJointSmoothing;
+        runtimeSettings.handStateDebounceFrames = loadedSettings.handStateDebounceFrames;
+        runtimeSettings.handStateHoldTime = loadedSettings.handStateHoldTime;
+        runtimeSettings.handStateHighConfidenceOnly = loadedSettings.handStateHighConfidenceOnly;
         runtimeSettings.bodyOcclusion = loadedSettings.bodyOcclusion;
         runtimeSettings.occluderDepthBias = loadedSettings.occluderDepthBias;
         runtimeSettings.occluderMinDepth = loadedSettings.occluderMinDepth;
@@ -3644,6 +3700,12 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.defaultUnscaledSize = source.defaultUnscaledSize;
         destination.bodyScale = source.bodyScale;
         destination.maxDistanceFromCamera = source.maxDistanceFromCamera;
+        destination.bodyLossGracePeriod = source.bodyLossGracePeriod;
+        destination.bodyReacquireDistance = source.bodyReacquireDistance;
+        destination.inferredJointSmoothing = source.inferredJointSmoothing;
+        destination.handStateDebounceFrames = source.handStateDebounceFrames;
+        destination.handStateHoldTime = source.handStateHoldTime;
+        destination.handStateHighConfidenceOnly = source.handStateHighConfidenceOnly;
         destination.bodyOcclusion = source.bodyOcclusion;
         destination.occluderDepthBias = source.occluderDepthBias;
         destination.occluderMinDepth = source.occluderMinDepth;
