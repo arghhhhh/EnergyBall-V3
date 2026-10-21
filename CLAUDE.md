@@ -30,7 +30,13 @@ package is missing:
   1.19, Timeline, Collections, Newtonsoft JSON, and Keijiro packages from the
   `jp.keijiro` scoped npm registry (`klak.motion`, `klutter-tools`, `metamesh`,
   `metawire`, `noiseshader`, `shadergraphassets`, `vfxgraphassets`).
-- **Git dependency**: `com.maligan.unity-zed` (from GitHub).
+- **Zed integration**: `com.maligan.unity-zed`, embedded at
+  `Packages/com.maligan.unity-zed/` (not the GitHub package). Upstream only finds Zed
+  on macOS/Linux, so on Windows Unity fell back to its generic editor and never
+  regenerated the `.csproj` files, which left Roslyn in Zed on stale references. The
+  embedded copy adds Windows discovery (`%LOCALAPPDATA%\Programs\Zed\Zed.exe`,
+  `Program Files\Zed\Zed.exe`), slash/case-insensitive path matching, and opens files
+  through `bin\zed.exe`. Keep it embedded unless upstream gains Windows support.
 - **Kinect SDK v2**: vendored in `Assets/Scripts/Kinect Standard Assets/`
   (`Windows.Kinect` namespace). Native plugins live in `Assets/Plugins/`
   (`Metro/`, `x86/`, `x86_64/`).

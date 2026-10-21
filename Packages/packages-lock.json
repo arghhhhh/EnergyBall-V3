@@ -13,13 +13,12 @@
       "hash": "7f45d7aec2a866abda88ba3768bf4057c5f23053"
     },
     "com.maligan.unity-zed": {
-      "version": "https://github.com/maligan/unity-zed.git",
+      "version": "file:com.maligan.unity-zed",
       "depth": 0,
-      "source": "git",
+      "source": "embedded",
       "dependencies": {
         "com.unity.ide.visualstudio": "2.0.20"
-      },
-      "hash": "25f1b97fedb6cf7b4b566c4a83ec8311b68d3e82"
+      }
     },
     "com.unity.burst": {
       "version": "1.8.30",

@@ -1,0 +1,9 @@
+{
+  "name": "com.maligan.unity-zed",
+  "displayName": "Zed Editor",
+  "description": "Zed Editor integration for Unity. Embedded copy of maligan/unity-zed 0.2.3-preview (25f1b97) with Windows support added: Zed install discovery, path matching, and launching through bin\\zed.exe.",
+  "version": "0.2.3-preview.1",
+  "dependencies": {
+    "com.unity.ide.visualstudio": "2.0.20"
+  }
+}
