@@ -202,7 +202,9 @@ public class SceneController : MonoBehaviour
     public const string HandStateHoldTimeTooltip =
         "While the Kinect can't tell whether a hand is open or closed (unknown, not tracked or "
         + "lasso), the hand keeps its last state. After this many seconds without a reading, an "
-        + "open hand counts as closed. 0 holds the last state indefinitely.";
+        + "open hand counts as closed, and a hand the Kinect stopped tracking altogether goes "
+        + "back to not tracked (it only reads hands for the two bodies nearest the sensor; the "
+        + "ball follows the hands of everyone else). 0 holds the last state indefinitely.";
 
     [SettingGroup(SettingSections.Kinect, "Hand State")]
     [Label("High Confidence Only")]

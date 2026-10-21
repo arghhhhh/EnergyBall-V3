@@ -11,7 +11,13 @@ using Windows.Kinect;
 ///   and don't cancel a pending change.
 /// - A change needs <c>debounceFrames</c> consecutive readings of the new state.
 /// - With <c>highConfidenceOnly</c>, a low-confidence reading counts as no reading.
-/// - An open hand with no reading for <c>holdTime</c> seconds counts as closed (0 = hold).
+/// - After <c>holdTime</c> seconds with no reading (0 = hold forever):
+///   - a hand reported NotTracked all that time goes back to NotTracked. The Kinect only
+///     tracks hand states for the two bodies nearest the sensor; everyone else's hands read
+///     NotTracked. Gameplay treats NotTracked as "not closed" (HandForce pulls the ball to the
+///     hands), which is how players beyond the first two still steer their ball. Holding a
+///     Closed state instead would leave them pushing it away indefinitely.
+///   - an open hand that is tracked but unreadable (Unknown / Lasso) counts as closed.
 /// Before its first confirmed reading the state is NotTracked.
 ///
 /// Feed it once per new Kinect body frame, not per physics step, or debouncing would count
@@ -19,7 +25,10 @@ using Windows.Kinect;
 /// </summary>
 public class HandStateFilter
 {
-    /// <summary>The filtered state: NotTracked until the first confirmed reading, then Open or Closed.</summary>
+    /// <summary>
+    /// The filtered state: Open or Closed, or NotTracked before the first confirmed reading and
+    /// while the Kinect isn't tracking the hand.
+    /// </summary>
     public HandState State { get; private set; } = HandState.NotTracked;
 
     /// <summary>The last raw state from the Kinect (for debugging).</summary>
@@ -31,6 +40,7 @@ public class HandStateFilter
     HandState pending = HandState.NotTracked;
     int pendingFrames;
     float lastReadingTime;
+    float lastHandTrackedTime;
 
     public void Update(
         HandState raw,
@@ -43,6 +53,8 @@ public class HandStateFilter
     {
         Raw = raw;
         RawConfidence = confidence;
+        if (raw != HandState.NotTracked)
+            lastHandTrackedTime = now;
 
         bool isReading =
             (raw == HandState.Open || raw == HandState.Closed)
@@ -66,9 +78,15 @@ public class HandStateFilter
                 pendingFrames = 0;
             }
         }
+        else if (holdTime > 0f && now - lastHandTrackedTime >= holdTime)
+        {
+            // The Kinect isn't tracking this hand (e.g. not one of the two nearest bodies).
+            State = HandState.NotTracked;
+            pendingFrames = 0;
+        }
         else if (holdTime > 0f && State == HandState.Open && now - lastReadingTime >= holdTime)
         {
-            // Lost the hand for too long: stop steering with it.
+            // Tracked but unreadable for too long: stop steering with it.
             State = HandState.Closed;
             pendingFrames = 0;
         }
