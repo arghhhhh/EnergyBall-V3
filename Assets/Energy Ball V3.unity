@@ -1372,6 +1372,12 @@ MonoBehaviour:
   outOfBoundsResetDelay: 3
   sphereResetJitter: 0.1
   maxDistanceFromCamera: 12
+  bodyLossGracePeriod: 1
+  bodyReacquireDistance: 0.5
+  inferredJointSmoothing: 0.1
+  handStateDebounceFrames: 2
+  handStateHoldTime: 1
+  handStateHighConfidenceOnly: 0
   cameraFeedQuad: {fileID: 1766269651}
   showCameraFeed: 1
   syncParticlesToFeed: 0
@@ -1381,11 +1387,11 @@ MonoBehaviour:
   occluderDepthBias: 0
   occluderMinDepth: 0.4
   occluderBodiesOnly: 0
-  drawSkeleton: 0
+  drawSkeleton: 1
   skeletonLineMaterial: {fileID: 2100000, guid: b784168916b633645b63d3774403f1f0,
     type: 2}
   skeletonLineWidth: 0.005
-  useTrackingStateColors: 0
+  useTrackingStateColors: 1
   skeletonColor: {r: 1, g: 0, b: 1, a: 1}
   skeletonColors:
   - {r: 0, g: 0, b: 1, a: 1}
