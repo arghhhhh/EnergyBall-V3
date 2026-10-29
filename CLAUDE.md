@@ -42,8 +42,11 @@ package is missing:
   (`Metro/`, `x86/`, `x86_64/`).
 - **NaughtyAttributes**: vendored in `Assets/Added Packages/NaughtyAttributes/`
   (inspector decorators — `[ShowIf]`, `[Label]`, etc. — used throughout).
-- **unity-cli bridge**: embedded at `Packages/unity-cli-bridge/` (a VFX-Graph-capable
-  fork). This is what backs the unity-cli automation tooling for this repo.
+- **unity-cli bridge**: `com.akiojin.unity-cli-bridge`, a git dependency on the
+  VFX-Graph-capable fork (`arghhhhh/unity-cli`, branch `stable`), pinned by commit in
+  `manifest.json`. Keep the pin on the commit the local `unity-cli` binary was built
+  from, so CLI and bridge versions match. This is what backs the unity-cli automation
+  tooling for this repo.
 
 ## Architecture
 
@@ -286,7 +289,7 @@ metaballs, gravity, scaling, and VFX from the editor. Test scenes live in
 
 ## Working in this repo
 
-- **Unity automation**: the unity-cli bridge is installed (embedded package). Use
+- **Unity automation**: the unity-cli bridge is installed (git package). Use
   the `unity` agent / unity-cli skills for scene inspection, GameObject/component
   edits, C# navigation, and play-mode testing. For `.vfx` graph work use the VFX
   Graph bridge skill — the general unity-cli skills don't cover VFX Graph.

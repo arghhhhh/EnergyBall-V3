@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.akiojin.unity-cli-bridge": {
-      "version": "https://github.com/arghhhhh/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge#7f45d7aec2a866abda88ba3768bf4057c5f23053",
+      "version": "https://github.com/arghhhhh/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge#1d021ffb23d6960f9eae501d54a23e32057f6b81",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -10,7 +10,7 @@
         "com.unity.inputsystem": "1.14.2",
         "com.unity.ugui": "1.0.0"
       },
-      "hash": "7f45d7aec2a866abda88ba3768bf4057c5f23053"
+      "hash": "1d021ffb23d6960f9eae501d54a23e32057f6b81"
     },
     "com.maligan.unity-zed": {
       "version": "file:com.maligan.unity-zed",
@@ -21,7 +21,7 @@
       }
     },
     "com.unity.burst": {
-      "version": "1.8.30",
+      "version": "1.8.31",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -30,15 +30,8 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.collab-proxy": {
-      "version": "2.13.6",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
     "com.unity.collections": {
-      "version": "2.6.8",
+      "version": "2.7.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -66,7 +59,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.inputsystem": {
-      "version": "1.20.0",
+      "version": "1.20.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
