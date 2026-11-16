@@ -274,6 +274,32 @@ public class HandVfxSettings
     )]
     public float collisionDetectionScaleMult = 1.25f;
 
+    // ---- Speed Contrast ----
+    [SettingGroup(SettingSections.Particles, "Speed Contrast")]
+    [Label("Speed Range")]
+    [BodyScaled(1), VfxProperty("stragglerSpeedRange")]
+    [Tooltip(
+        "Ball speed range (m/s at 1x) over which straggler dimming and faster fading ramp in. x = no effect below, y = full effect above."
+    )]
+    public Vector2 stragglerSpeedRange = new Vector2(0.75f, 2.5f);
+
+    [SettingGroup(SettingSections.Particles, "Speed Contrast")]
+    [Label("Straggler Dim")]
+    [VfxProperty("stragglerDim")]
+    [Tooltip(
+        "Brightness removed, at full ball speed, from particles that reached the ball and then fell off its shell (past Carry Fade). Particles still travelling from the hands are never dimmed. Ratio - never scaled."
+    )]
+    [Range(0f, 1f)]
+    public float stragglerDim = 0.7f;
+
+    [SettingGroup(SettingSections.Particles, "Speed Contrast")]
+    [Label("Straggler Fade Boost")]
+    [VfxProperty("stragglerFadeBoost")]
+    [Tooltip(
+        "Extra ageing rate (x normal) for those stragglers at full ball speed, so they finish fading out sooner. 0 = off. Never scaled."
+    )]
+    public float stragglerFadeBoost = 2f;
+
     // ---- Secondary Attractor ----
     [SettingGroup(SettingSections.Particles, "Secondary Attractor")]
     [Label("Attraction Speed")]

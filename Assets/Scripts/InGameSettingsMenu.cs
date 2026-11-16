@@ -567,6 +567,7 @@ public class InGameSettingsMenu : MonoBehaviour
         CreateStretchGroup(particles);
         CreateHandGripGroup(particles);
         CreateBallAttractionGroup(particles);
+        CreateSpeedContrastGroup(particles);
         CreateSecondaryAttractorGroup(particles);
         CreateTrailDistortersGroup(particles);
         CreateNoiseGroup(particles);
@@ -1528,6 +1529,35 @@ public class InGameSettingsMenu : MonoBehaviour
             () => runtimeSettings.handVfx.collisionDetectionScaleMult,
             v => runtimeSettings.handVfx.collisionDetectionScaleMult = v,
             tooltip: "Size of the collision-trigger sphere relative to the ball (vfxSphere)."
+        );
+    }
+
+    private void CreateSpeedContrastGroup(SettingSection section)
+    {
+        var group = CreateGroup("Speed Contrast", section);
+
+        CreateVector2Field(
+            group,
+            "Speed Range",
+            () => runtimeSettings.handVfx.stragglerSpeedRange,
+            v => runtimeSettings.handVfx.stragglerSpeedRange = v,
+            tooltip: "Ball speed range (m/s at 1x) over which straggler dimming and faster fading ramp in. X = no effect below, Y = full effect above."
+        );
+        CreateSliderField(
+            group,
+            "Straggler Dim",
+            () => runtimeSettings.handVfx.stragglerDim,
+            v => runtimeSettings.handVfx.stragglerDim = v,
+            0f,
+            1f,
+            tooltip: "Brightness removed, at full ball speed, from particles that reached the ball and then fell off its shell (past Carry Fade). Particles still travelling from the hands are never dimmed."
+        );
+        CreateFloatField(
+            group,
+            "Straggler Fade Boost",
+            () => runtimeSettings.handVfx.stragglerFadeBoost,
+            v => runtimeSettings.handVfx.stragglerFadeBoost = v,
+            tooltip: "Extra ageing rate (x normal) for those stragglers at full ball speed, so they finish fading out sooner. 0 = off."
         );
     }
 

@@ -199,7 +199,7 @@ following the existing pattern:
   `SettingSections.Order` (`SettingGroupAttribute.cs`): Space (World, Play Boundary),
   Kinect (Tracking, Hand State, Camera Feed, Occlusion, Skeleton; built only with a Kinect), Ball (Size,
   Breathing, Spawn, Gravity), Hands (Activation, Push, Aim, One Hand, Grow & Shrink),
-  Particles (the hand VFX: Color, Glow, Emission, Lifetime, Stretch, Hand Grip, Ball Attraction,
+  Particles (the hand VFX: Color, Glow, Emission, Lifetime, Stretch, Hand Grip, Ball Attraction, Speed Contrast,
   Secondary Attractor, Trail Distorters, Noise & Turbulence, Hi-Hat Bursts, Snare Bursts),
   Debug (Visualizers). The SceneController inspector mirrors it:
   `Assets/Editor/SceneControllerEditor.cs` (a `NaughtyInspector` subclass) draws fields

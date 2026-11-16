@@ -53,11 +53,11 @@
     "addedBoundaryDistance": 0.2200000137090683,
     "boundaryOutwardDrag": 4.0,
     "outOfBoundsResetDelay": 3.0,
-    "pushForce": 4.5,
+    "pushForce": 4.0,
     "torsoMaxForwardOffset": 0.20000000298023225,
     "torsoOffsetFalloffDistance": 0.4000000059604645,
-    "minDrag": 0.25,
-    "maxDrag": 2.0,
+    "minDrag": 0.75,
+    "maxDrag": 3.5,
     "alignmentVectorStrength": {
         "serializedVersion": "2",
         "m_Curve": [
@@ -325,6 +325,12 @@
         },
         "vfxSphereCollisionScaleMult": 0.9300000071525574,
         "collisionDetectionScaleMult": 1.25,
+        "stragglerSpeedRange": {
+            "x": 0.75,
+            "y": 2.5
+        },
+        "stragglerDim": 0.5,
+        "stragglerFadeBoost": 2.0,
         "saAttractionSpeed": 0.949999988079071,
         "saAttractionForce": 10.0,
         "saStickDistance": 0.019999999552965165,
