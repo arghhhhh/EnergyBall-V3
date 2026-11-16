@@ -244,6 +244,21 @@ public class HandVfxSettings
     public AnimationCurve tangentialDampingFadeCurve = AnimationCurve.Linear(0, 0, 1, 1);
 
     [SettingGroup(SettingSections.Particles, "Ball Attraction")]
+    [VfxProperty("carryStrength")]
+    [Tooltip(
+        "How much particles near the ball are carried along with it (0 = off, 1 = they move with the ball), so the shell holds at high ball speed. Their own velocity is then relative to the ball. Ratio - never scaled."
+    )]
+    [Range(0f, 1f)]
+    public float carryStrength = 1f;
+
+    [SettingGroup(SettingSections.Particles, "Ball Attraction")]
+    [VfxProperty("carryFade")]
+    [Tooltip(
+        "Distance range over which the carry fades out, as multiples of the ball's radius from its centre (1 = its surface). x = full carry closer than this, y = no carry beyond. Ratio - never scaled."
+    )]
+    public Vector2 carryFade = new Vector2(1f, 1.6f);
+
+    [SettingGroup(SettingSections.Particles, "Ball Attraction")]
     [Label("Collision Shape Scale")]
     [VfxProperty("vfxSphereCollisionScaleMult")]
     [Tooltip(

@@ -1499,6 +1499,22 @@ public class InGameSettingsMenu : MonoBehaviour
             v => runtimeSettings.handVfx.tangentialDampingFadeCurve = v,
             tooltip: "Damping weight across the fade range. X 0 = fade start, X 1 = fade end (remapped, so the shape is independent of the distances). Y = fraction of tangential damping applied."
         );
+        CreateSliderField(
+            group,
+            "Carry Strength",
+            () => runtimeSettings.handVfx.carryStrength,
+            v => runtimeSettings.handVfx.carryStrength = v,
+            0f,
+            1f,
+            tooltip: "How much particles near the ball are carried along with it (0 = off, 1 = they move with the ball), so the shell holds at high ball speed."
+        );
+        CreateVector2Field(
+            group,
+            "Carry Fade",
+            () => runtimeSettings.handVfx.carryFade,
+            v => runtimeSettings.handVfx.carryFade = v,
+            tooltip: "Distance range over which the carry fades out, as multiples of the ball's radius from its centre (1 = its surface). X = full carry closer than this, Y = no carry beyond."
+        );
         CreateFloatField(
             group,
             "Collision Shape Scale",
