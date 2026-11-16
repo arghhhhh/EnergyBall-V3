@@ -155,6 +155,12 @@
     "defaultUnscaledSize": 0.33000001311302187,
     "bodyScale": 5.0,
     "maxDistanceFromCamera": 12.0,
+    "bodyLossGracePeriod": 1.0,
+    "bodyReacquireDistance": 0.5,
+    "inferredJointSmoothing": 0.10000000149011612,
+    "handStateDebounceFrames": 2,
+    "handStateHoldTime": 1.0,
+    "handStateHighConfidenceOnly": false,
     "bodyOcclusion": true,
     "occluderDepthBias": 0.0,
     "occluderMinDepth": 0.4000000059604645,
@@ -312,6 +318,11 @@
             "m_PostInfinity": 2,
             "m_RotationOrder": 4
         },
+        "carryStrength": 1.0,
+        "carryFade": {
+            "x": 1.0,
+            "y": 1.600000023841858
+        },
         "vfxSphereCollisionScaleMult": 0.9300000071525574,
         "collisionDetectionScaleMult": 1.25,
         "saAttractionSpeed": 0.949999988079071,
@@ -402,8 +413,8 @@
     "showCameraFeed": true,
     "syncParticlesToFeed": false,
     "drawSkeleton": false,
-    "skeletonLineWidth": 0.004999999888241291,
-    "useTrackingStateColors": false,
+    "skeletonLineWidth": 0.019999999552965165,
+    "useTrackingStateColors": true,
     "hasStyleColors": true,
     "skeletonColor": {
         "r": 1.0,
