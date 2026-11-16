@@ -431,10 +431,10 @@ MonoBehaviour:
   vfx: {fileID: 1654180882}
   spawnParameter: SpawnOn
   spawnAnimStartTimeParameter: SpawnAnimStartTime
-  spawnToggleKey: 115
+  spawnToggleKey: 33
   moveParameter: MoveToEnd
   moveAnimStartTimeParameter: MoveAnimStartTime
-  moveToggleKey: 109
+  moveToggleKey: 27
 --- !u!1 &777949103
 GameObject:
   m_ObjectHideFlags: 0

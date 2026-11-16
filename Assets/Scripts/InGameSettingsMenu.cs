@@ -5,6 +5,7 @@ using System.Linq;
 using RuntimeColorEditor;
 using RuntimeCurveEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 [DefaultExecutionOrder(-100)]
@@ -296,7 +297,8 @@ public class InGameSettingsMenu : MonoBehaviour
     private void Update()
     {
         if (
-            Input.GetKeyDown(KeyCode.M)
+            Keyboard.current != null
+            && Keyboard.current.mKey.wasPressedThisFrame
             && !isModalOpen
             && !IsAnyPopupVisible
             && !IsTextFieldFocused()

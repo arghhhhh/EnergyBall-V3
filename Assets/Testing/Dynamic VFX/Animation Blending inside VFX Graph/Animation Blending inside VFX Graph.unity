@@ -434,7 +434,7 @@ MonoBehaviour:
   prevStartTimeParameter: PrevStartTime
   prevValueParameter: PrevValue
   currentValueParameter: CurrentValue
-  animToggleKey: 115
+  animToggleKey: 33
 --- !u!1 &777949103
 GameObject:
   m_ObjectHideFlags: 0

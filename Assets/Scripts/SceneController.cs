@@ -3,6 +3,7 @@ using MarchingCubes;
 using NaughtyAttributes;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using Windows.Kinect;
 using Joint = Windows.Kinect.Joint;
@@ -1558,11 +1559,16 @@ public class SceneController : MonoBehaviour
             knownIds.AddRange(players.Keys);
             UpdateLostPlayers();
 
-            if (Input.GetMouseButtonDown(0) && (settingsMenu == null || !settingsMenu.IsMenuOpen))
+            var mouse = Mouse.current;
+            if (
+                mouse != null
+                && mouse.leftButton.wasPressedThisFrame
+                && (settingsMenu == null || !settingsMenu.IsMenuOpen)
+            )
             {
                 DeleteAllBodies(knownIds);
             }
-            else if (Input.GetMouseButtonDown(1))
+            else if (mouse != null && mouse.rightButton.wasPressedThisFrame)
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.VFX;
 
 public class DynamicVFXAnimTesting2 : MonoBehaviour
@@ -9,7 +10,7 @@ public class DynamicVFXAnimTesting2 : MonoBehaviour
     public string prevStartTimeParameter = "PrevStartTime";
     public string prevValueParameter = "PrevValue";
     public string currentValueParameter = "CurrentValue";
-    public KeyCode animToggleKey = KeyCode.S;
+    public Key animToggleKey = Key.S;
 
     private bool animDirection = false;
     private float prevStartTime = 0f; // Track the previous start time
@@ -22,7 +23,11 @@ public class DynamicVFXAnimTesting2 : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(animToggleKey))
+        var keyboard = Keyboard.current;
+        if (keyboard == null)
+            return;
+
+        if (keyboard[animToggleKey].wasPressedThisFrame)
         {
             // Store the current start time as the previous start time
             prevStartTime = vfx.GetFloat(StartTimeParameter);
