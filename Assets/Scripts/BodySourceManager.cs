@@ -1,5 +1,9 @@
 ﻿using System;
+using Unity.Burst;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Profiling;
 using UnityEngine;
 using Windows.Kinect;
 
@@ -35,6 +39,30 @@ public class BodySourceManager : MonoBehaviour
     private int _depthFrameCount = 0;
     private bool _loggedColorConversion;
 
+    // Occluder hole fill scratch (see FillOccluderHolesJob), one entry per depth pixel;
+    // allocated on first use, disposed in OnDestroy.
+    private NativeArray<int> _holeStack;
+    private NativeArray<int> _holePixels;
+    private NativeArray<byte> _holeSeen;
+
+    // Body index value for "no tracked person" (0-5 are players).
+    private const byte NoBody = 255;
+
+    // The fill runs on a worker thread: scheduled in Update as soon as the depth frame is in,
+    // completed in LateUpdate (before rendering). These mark the main thread's share.
+    private static readonly ProfilerMarker ScheduleFillMarker = new(
+        "BodySourceManager.FillOccluderHoles.Schedule"
+    );
+    private static readonly ProfilerMarker CompleteFillMarker = new(
+        "BodySourceManager.FillOccluderHoles.Complete"
+    );
+    private JobHandle _fillHandle;
+    private bool _fillPending;
+
+    // Aligned in color space, the depth-to-color map places the occluder, so it's built from
+    // the filled depth once the fill completes.
+    private bool _mapFromFilledPending;
+
     /// <summary>
     /// The color camera image, still YUY2: each RGBA32 texel is two pixels (Y0, U, Y1, V), so
     /// it's half the color width. Decoded in the KinectFeed shader, which saves the CPU
@@ -52,6 +80,11 @@ public class BodySourceManager : MonoBehaviour
     public Texture2D DepthTexture { get; private set; }
     public Texture2D BodyIndexTexture { get; private set; }
     public Texture2D DepthToColorTexture { get; private set; }
+
+    // What BodyDepthOccluder draws: depth and body index with holes on tracked people filled
+    // (see FillOccluderHoles). Updated only while the occluder draws.
+    public Texture2D OccluderDepthTexture { get; private set; }
+    public Texture2D OccluderBodyIndexTexture { get; private set; }
     public int DepthWidth { get; private set; } = 512;
     public int DepthHeight { get; private set; } = 424;
     public int ColorWidth { get; private set; } = 1920;
@@ -199,6 +232,14 @@ public class BodySourceManager : MonoBehaviour
             for (int i = 0; i < unmapped.Length; i++)
                 unmapped[i] = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
             DepthToColorTexture.Apply(false);
+            OccluderDepthTexture = CreateDepthSpaceTexture(
+                "Kinect Occluder Depth",
+                TextureFormat.R16
+            );
+            OccluderBodyIndexTexture = CreateDepthSpaceTexture(
+                "Kinect Occluder Body Index",
+                TextureFormat.R8
+            );
             InfraredTexture = CreateDepthSpaceTexture("Kinect Infrared", TextureFormat.R16);
             // The backdrop is upscaled about 2x, so the infrared image is filtered.
             InfraredTexture.filterMode = FilterMode.Bilinear;
@@ -313,6 +354,8 @@ public class BodySourceManager : MonoBehaviour
             return;
         }
 
+        CompleteOccluderFill();
+
         var multiFrame = _depthReader.AcquireLatestFrame();
         if (multiFrame == null)
         {
@@ -360,17 +403,45 @@ public class BodySourceManager : MonoBehaviour
                 InfraredTexture.Apply(false);
             }
 
+            bool occluderFilled = OccluderDraws;
+            if (occluderFilled)
+            {
+                using (ScheduleFillMarker.Auto())
+                {
+                    // Fill in place, in the occluder textures' own memory, on a worker thread.
+                    var occluderDepth = OccluderDepthTexture.GetRawTextureData<ushort>();
+                    var occluderBodyIndex = OccluderBodyIndexTexture.GetRawTextureData<byte>();
+                    occluderDepth.CopyFrom(depthData);
+                    occluderBodyIndex.CopyFrom(bodyIndexData);
+                    EnsureHoleScratch(depthData.Length);
+                    _fillHandle = new FillOccluderHolesJob
+                    {
+                        depth = occluderDepth,
+                        bodyIndex = occluderBodyIndex,
+                        stack = _holeStack,
+                        pixels = _holePixels,
+                        seen = _holeSeen,
+                        width = DepthWidth,
+                    }.Schedule();
+                    JobHandle.ScheduleBatchedJobs();
+                    _fillPending = true;
+                }
+            }
+
             if (NeedsDepthToColor(backdrop))
             {
-                // One ColorSpacePoint (two floats) per RGFloat texel.
-                var mapData = DepthToColorTexture.GetRawTextureData<Vector2>();
-                _sensor.CoordinateMapper.MapDepthFrameToColorSpaceUsingIntPtr(
-                    depthPtr,
-                    (int)depthBytes,
-                    BufferPointer(mapData),
-                    (uint)mapData.Length
-                );
-                DepthToColorTexture.Apply(false);
+                // Aligned in color space, the map only places the occluder, so it's built from
+                // the filled depth, after the fill (CompleteOccluderFill). Otherwise from the
+                // real depth: the Infrared + Color tint needs its holes (they stay untinted).
+                if (occluderFilled && backdrop.Space() == FeedSpace.Color)
+                {
+                    _mapFromFilledPending = true;
+                }
+                else
+                {
+                    var mapData = DepthToColorTexture.GetRawTextureData<Vector2>();
+                    MapDepthToColor(depthPtr, (int)depthBytes, mapData);
+                }
             }
 
             DepthTexture.Apply(false);
@@ -379,6 +450,263 @@ public class BodySourceManager : MonoBehaviour
 
         _depthFrameCount++;
         DepthFramesReady = true;
+    }
+
+    void LateUpdate()
+    {
+        // A fill still running is left for the next rendered frame instead of waited for:
+        // depth arrives at 30 fps, so the occluder is at most one rendered frame late and the
+        // main thread never waits. Except with Sync Particles To Feed on: the particle layer
+        // only redraws on this frame (a new depth frame), so it waits to use this frame's fill.
+        if (_fillPending && !_fillHandle.IsCompleted && !ParticlesSyncedToDepth)
+            return;
+        CompleteOccluderFill();
+    }
+
+    /// <summary>The particle layer only redraws on new depth-camera frames.</summary>
+    private bool ParticlesSyncedToDepth
+    {
+        get
+        {
+            var settings = controller.GetRuntimeSettings();
+            return settings.syncParticlesToFeed
+                && settings.feedBackdrop.IsShown()
+                && settings.feedBackdrop.Space() == FeedSpace.Depth;
+        }
+    }
+
+    /// <summary>
+    /// Completes the occluder fill scheduled in Update and uploads its textures. Called from
+    /// LateUpdate (before rendering) once the job is done, and at the start of the next depth
+    /// frame, which must not overwrite the textures while the job still writes them.
+    /// </summary>
+    private void CompleteOccluderFill()
+    {
+        if (!_fillPending)
+            return;
+
+        using (CompleteFillMarker.Auto())
+        {
+            _fillHandle.Complete();
+            _fillPending = false;
+            OccluderDepthTexture.Apply(false);
+            OccluderBodyIndexTexture.Apply(false);
+
+            if (_mapFromFilledPending)
+            {
+                _mapFromFilledPending = false;
+                var occluderDepth = OccluderDepthTexture.GetRawTextureData<ushort>();
+                MapDepthToColor(
+                    BufferPointer(occluderDepth),
+                    occluderDepth.Length * sizeof(ushort),
+                    DepthToColorTexture.GetRawTextureData<Vector2>()
+                );
+            }
+        }
+    }
+
+    private void MapDepthToColor(IntPtr depth, int depthBytes, NativeArray<Vector2> map)
+    {
+        // One ColorSpacePoint (two floats) per RGFloat texel.
+        _sensor.CoordinateMapper.MapDepthFrameToColorSpaceUsingIntPtr(
+            depth,
+            depthBytes,
+            BufferPointer(map),
+            (uint)map.Length
+        );
+        DepthToColorTexture.Apply(false);
+    }
+
+    /// <summary>The body occluder draws: Body Occlusion on, or the point cloud debug view.</summary>
+    private bool OccluderDraws
+    {
+        get
+        {
+            var settings = controller.GetRuntimeSettings();
+            return settings.bodyOcclusion || settings.showPointCloud;
+        }
+    }
+
+    private void EnsureHoleScratch(int length)
+    {
+        if (_holeStack.IsCreated && _holeStack.Length == length)
+            return;
+        DisposeHoleScratch();
+        _holeStack = new NativeArray<int>(length, Allocator.Persistent);
+        _holePixels = new NativeArray<int>(length, Allocator.Persistent);
+        _holeSeen = new NativeArray<byte>(length, Allocator.Persistent);
+    }
+
+    private void DisposeHoleScratch()
+    {
+        if (_holeStack.IsCreated)
+            _holeStack.Dispose();
+        if (_holePixels.IsCreated)
+            _holePixels.Dispose();
+        if (_holeSeen.IsCreated)
+            _holeSeen.Dispose();
+    }
+
+    /// <summary>
+    /// Fills holes in a tracked person's depth so the occluder still hides particles behind
+    /// them. A hole is a connected area without a depth reading: a face too close or so bright
+    /// the sensor saturated, IR-absorbing fabric. Only a hole whose border is mostly a tracked
+    /// person is filled (windows, out-of-range walls and the like stay open, rather than
+    /// becoming invisible walls). It gets the nearest depth on that person's part of its border
+    /// (the part of the person the hole is on is nearer than its edges, if anything, and an
+    /// occluder slightly in front hides less wrongly than one behind) and that border pixel's
+    /// body index, so Bodies Only still counts it.
+    ///
+    /// Burst-compiled, on a worker thread (see CompleteOccluderFill), in place on the occluder
+    /// textures. Only holes touching a tracked person
+    /// are traced (others can't pass the guard), and a frame without one does nothing, so big
+    /// out-of-range backgrounds cost nothing unless someone stands in front of them.
+    /// </summary>
+    [BurstCompile]
+    private struct FillOccluderHolesJob : IJob
+    {
+        public NativeArray<ushort> depth;
+        public NativeArray<byte> bodyIndex;
+        public NativeArray<int> stack;
+        public NativeArray<int> pixels;
+        public NativeArray<byte> seen;
+        public int width;
+
+        private static readonly ProfilerMarker JobMarker = new(
+            "BodySourceManager.FillOccluderHolesJob"
+        );
+
+        public void Execute()
+        {
+            using (JobMarker.Auto())
+                Fill();
+        }
+
+        private void Fill()
+        {
+            int n = depth.Length;
+
+            bool anyPerson = false;
+            for (int i = 0; i < n && !anyPerson; i++)
+                anyPerson = bodyIndex[i] != NoBody;
+            if (!anyPerson)
+                return;
+
+            for (int i = 0; i < n; i++)
+                seen[i] = 0;
+
+            for (int start = 0; start < n; start++)
+            {
+                if (depth[start] != 0 || seen[start] != 0 || !TouchesPerson(start))
+                    continue;
+
+                // Flood the hole (4-connected). Pixels are marked when pushed, so each is pushed
+                // once. Two holes are never adjacent, so every border pixel has a reading. A
+                // border pixel touching the hole on two sides counts twice, which only weights
+                // the vote.
+                int count = 0;
+                int top = 0;
+                int total = 0;
+                int person = 0;
+                int nearestDepth = int.MaxValue;
+                byte nearestBody = NoBody;
+                stack[top++] = start;
+                seen[start] = 1;
+                while (top > 0)
+                {
+                    int i = stack[--top];
+                    pixels[count++] = i;
+                    int x = i % width;
+                    if (x > 0)
+                        Visit(
+                            i - 1,
+                            ref top,
+                            ref total,
+                            ref person,
+                            ref nearestDepth,
+                            ref nearestBody
+                        );
+                    if (x < width - 1)
+                        Visit(
+                            i + 1,
+                            ref top,
+                            ref total,
+                            ref person,
+                            ref nearestDepth,
+                            ref nearestBody
+                        );
+                    if (i >= width)
+                        Visit(
+                            i - width,
+                            ref top,
+                            ref total,
+                            ref person,
+                            ref nearestDepth,
+                            ref nearestBody
+                        );
+                    if (i + width < n)
+                        Visit(
+                            i + width,
+                            ref top,
+                            ref total,
+                            ref person,
+                            ref nearestDepth,
+                            ref nearestBody
+                        );
+                }
+
+                // Mostly a person around it (at least half its border): fill.
+                if (person == 0 || person * 2 < total)
+                    continue;
+                for (int k = 0; k < count; k++)
+                {
+                    depth[pixels[k]] = (ushort)nearestDepth;
+                    bodyIndex[pixels[k]] = nearestBody;
+                }
+            }
+        }
+
+        private bool TouchesPerson(int i)
+        {
+            int x = i % width;
+            return (x > 0 && IsPerson(i - 1))
+                || (x < width - 1 && IsPerson(i + 1))
+                || (i >= width && IsPerson(i - width))
+                || (i + width < depth.Length && IsPerson(i + width));
+        }
+
+        private bool IsPerson(int j) => depth[j] != 0 && bodyIndex[j] != NoBody;
+
+        private void Visit(
+            int j,
+            ref int top,
+            ref int total,
+            ref int person,
+            ref int nearestDepth,
+            ref byte nearestBody
+        )
+        {
+            ushort d = depth[j];
+            if (d != 0)
+            {
+                total++;
+                byte body = bodyIndex[j];
+                if (body != NoBody)
+                {
+                    person++;
+                    if (d < nearestDepth)
+                    {
+                        nearestDepth = d;
+                        nearestBody = body;
+                    }
+                }
+            }
+            else if (seen[j] == 0)
+            {
+                seen[j] = 1;
+                stack[top++] = j;
+            }
+        }
     }
 
     private static unsafe IntPtr BufferPointer<T>(Unity.Collections.NativeArray<T> data)
@@ -461,11 +789,17 @@ public class BodySourceManager : MonoBehaviour
 
     void OnDestroy()
     {
+        // A fill still running would write into textures and scratch freed below.
+        _fillHandle.Complete();
+        _fillPending = false;
         DestroyTexture(ColorTexture);
         DestroyTexture(InfraredTexture);
         DestroyTexture(DepthTexture);
         DestroyTexture(BodyIndexTexture);
         DestroyTexture(DepthToColorTexture);
+        DestroyTexture(OccluderDepthTexture);
+        DestroyTexture(OccluderBodyIndexTexture);
+        DisposeHoleScratch();
     }
 
     private static void DestroyTexture(Texture2D texture)
