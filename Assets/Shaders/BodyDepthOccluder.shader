@@ -14,10 +14,13 @@
 // Silhouette therefore matches the image by construction, independent of
 // camera FOV.
 //
-// Specks: a pixel without a depth reading (up to about 3 pixels across)
-// takes the depth, body index and map entry of the nearest pixel with one,
-// at most 2 pixels away, so it doesn't punch a pinhole in the occluder. Real
-// holes are bigger and stay open.
+// Holes: the depth and body index come hole-filled from
+// BodySourceManager.FillOccluderHoles (holes on a tracked person take the
+// nearest depth on that person's border). What's left without a reading is
+// either away from people (stays open) or a speck: a pixel without a depth
+// reading (up to about 3 pixels across) takes the depth, body index and map
+// entry of the nearest pixel with one, at most 2 pixels away, so it doesn't
+// punch a pinhole in the occluder.
 Shader "EnergyBall/BodyDepthOccluder"
 {
     Properties

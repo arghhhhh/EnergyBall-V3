@@ -263,8 +263,15 @@ following the existing pattern:
   still draws it), `drawSkeleton` and the `cameraFeedQuad` slot. That slot is what enables CameraFeed, so
   it can't be gated on it. Kinect + `bodyOcclusion` (`ShowOcclusionSettings`):
   `occluderDepthBias`, `occluderMinDepth`, `occluderBodiesOnly`, read by
-  `BodyDepthOccluder` (its shader fills specks up to ~3 px from the nearest reading up to 2
-  px away; bigger depth holes, e.g. a face too close, don't occlude). Kinect + `bodyLossGracePeriod > 0` (`ShowReacquireDistanceField`):
+  `BodyDepthOccluder`. Holes in depth: `BodySourceManager.FillOccluderHolesJob` (Burst,
+  per depth frame, while the occluder draws, in place on `OccluderDepthTexture` /
+  `OccluderBodyIndexTexture`) fills each hole whose border is mostly a tracked person (a
+  face too close or saturated) with the nearest depth on that person's border; other holes
+  stay open so they don't become invisible walls. Only holes touching a tracked person are
+  traced, and frames with nobody tracked skip it. The occluder shader also fills specks up
+  to ~3 px from the nearest reading up to 2 px away. The point cloud view draws the filled
+  copy. The real `DepthTexture` keeps its holes (tint fade, and the color-space map only
+  uses the filled one when it's just placing the occluder). Kinect + `bodyLossGracePeriod > 0` (`ShowReacquireDistanceField`):
   `bodyReacquireDistance`. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
   material, line width, tracking-state colors, the single skeleton color. CameraFeed:
   `feedBackdrop`, `feedFraming`, `projectiveAlignment`, `renderCameraTransform`.

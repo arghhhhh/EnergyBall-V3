@@ -96,8 +96,10 @@ public class BodyDepthOccluder : MonoBehaviour
         }
 
         _material = new Material(occluderShader);
-        _material.SetTexture("_DepthTex", bodySourceManager.DepthTexture);
-        _material.SetTexture("_BodyIndexTex", bodySourceManager.BodyIndexTexture);
+        // The hole-filled copies (BodySourceManager.FillOccluderHoles): a person's face
+        // too close for a depth reading still hides the particles behind it.
+        _material.SetTexture("_DepthTex", bodySourceManager.OccluderDepthTexture);
+        _material.SetTexture("_BodyIndexTex", bodySourceManager.OccluderBodyIndexTexture);
         _material.SetTexture("_DepthToColorTex", bodySourceManager.DepthToColorTexture);
         _material.SetVector(
             "_ColorDims",
