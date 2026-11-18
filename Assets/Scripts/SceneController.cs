@@ -765,8 +765,30 @@ public class SceneController : MonoBehaviour
         "The MetaballsToSDF component (lives on the Metaballs GameObject; auto-found if empty)."
     )]
     MetaballsToSDF metaballsToSDF = null;
-    BodySourceManager bodySourceManager = null;
-    Body[] bodyData;
+    IBodySource bodySource = null;
+    TrackedBody[] bodyData;
+    RecordedBodySource recordedBodySource;
+    bool recordedBodySourceResolved;
+
+    /// <summary>
+    /// True when an enabled <see cref="RecordedBodySource"/> on this GameObject replaces the
+    /// Kinect: its clip drives the players and the camera feed, and the sensor isn't opened.
+    /// </summary>
+    public bool UsesRecordedBodies
+    {
+        get
+        {
+            if (!recordedBodySourceResolved)
+            {
+                recordedBodySource = GetComponent<RecordedBodySource>();
+                recordedBodySourceResolved = true;
+            }
+            return recordedBodySource != null && recordedBodySource.enabled;
+        }
+    }
+
+    /// <summary>Where Kinect-style players come from: the live Kinect or a recording.</summary>
+    public IBodySource BodySource => bodySource;
     List<ulong> trackedIds = new();
     List<ulong> knownIds = new();
 
@@ -889,7 +911,9 @@ public class SceneController : MonoBehaviour
                 metaballsToSDF = FindFirstObjectByType<MetaballsToSDF>();
             }
         }
-        bodySourceManager = GetComponent<BodySourceManager>();
+        bodySource = UsesRecordedBodies
+            ? recordedBodySource
+            : GetComponent<BodySourceManager>();
 
         // Initialize runtime settings from inspector values
         if (settingsMenu != null)
@@ -1109,26 +1133,12 @@ public class SceneController : MonoBehaviour
     {
         result = default;
 
-        if (cameraFeedQuad == null || renderCameraTransform == null || bodySourceManager == null)
+        if (cameraFeedQuad == null || renderCameraTransform == null || bodySource == null)
         {
             return false;
         }
 
-        var mapper = bodySourceManager.Mapper;
-        if (mapper == null || joint.Position.Z <= 0.01f)
-        {
-            return false;
-        }
-
-        Windows.Kinect.ColorSpacePoint colorPoint = mapper.MapCameraPointToColorSpace(
-            joint.Position
-        );
-        if (
-            float.IsInfinity(colorPoint.X)
-            || float.IsNaN(colorPoint.X)
-            || float.IsInfinity(colorPoint.Y)
-            || float.IsNaN(colorPoint.Y)
-        )
+        if (!bodySource.TryMapCameraPointToColor(joint.Position, out Vector2 colorPoint))
         {
             return false;
         }
@@ -1136,11 +1146,11 @@ public class SceneController : MonoBehaviour
         // Color pixel -> point on the feed quad. The quad mesh spans ±0.5 in
         // local XY with uv (0,0) at the (-0.5,-0.5) corner, and the color
         // texture's first row (image top) sits at v = 0, matching the
-        // top-left-origin pixel coordinates ColorSpacePoint uses.
+        // top-left-origin pixel coordinates the body source maps to.
         Vector3 quadPoint = cameraFeedQuad.TransformPoint(
             new Vector3(
-                colorPoint.X / bodySourceManager.ColorWidth - 0.5f,
-                colorPoint.Y / bodySourceManager.ColorHeight - 0.5f,
+                colorPoint.x / bodySource.ColorWidth - 0.5f,
+                colorPoint.y / bodySource.ColorHeight - 0.5f,
                 0f
             )
         );
@@ -1260,14 +1270,13 @@ public class SceneController : MonoBehaviour
     /// <paramref name="newBodyFrame"/> is false on a physics step that sees the same Kinect
     /// frame again (frames arrive at 30 Hz, steps run at 50 Hz).
     /// </summary>
-    void UpdateKinectPlayerData(Body body, GameObject player, bool newBodyFrame)
+    void UpdateKinectPlayerData(TrackedBody body, GameObject player, bool newBodyFrame)
     {
         if (body.IsRestricted)
             return;
 
         PlayerConstructor playerConstructor = player.GetComponent<PlayerConstructor>();
         var settings = CurrentSettings;
-        // Body.Joints marshals all 25 joints into a new dictionary on every access: read it once.
         var joints = body.Joints;
 
         foreach (JointType jointType in PositionedJoints)
@@ -1483,7 +1492,7 @@ public class SceneController : MonoBehaviour
     /// found again under a new tracking id: give them their player back (ball, activation, hand
     /// states) instead of starting a new one. Returns null when no lost player is close enough.
     /// </summary>
-    GameObject ReacquireLostPlayer(Body body)
+    GameObject ReacquireLostPlayer(TrackedBody body)
     {
         if (lostPlayers.Count == 0 || !TryGetBodyAnchor(body.Joints, out Vector3 anchor))
             return null;
@@ -1535,13 +1544,13 @@ public class SceneController : MonoBehaviour
     {
         if (!dummyOnlyMode)
         {
-            bodyData = bodySourceManager.GetData();
+            bodyData = bodySource?.GetBodies();
             if (bodyData == null)
             {
                 return;
             }
 
-            int bodyFrameCount = bodySourceManager.BodyFrameCount;
+            int bodyFrameCount = bodySource.BodyFrameCount;
             bool newBodyFrame = bodyFrameCount != lastBodyFrameCount;
             lastBodyFrameCount = bodyFrameCount;
 

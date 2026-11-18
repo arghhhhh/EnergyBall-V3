@@ -2,7 +2,7 @@
 using Windows.Kinect;
 
 [RequireComponent(typeof(SceneController))]
-public class BodySourceManager : MonoBehaviour
+public class BodySourceManager : MonoBehaviour, IBodySource
 {
     SceneController controller;
 
@@ -26,6 +26,7 @@ public class BodySourceManager : MonoBehaviour
     private Texture2D _colorTexture2D;
     private byte[] _colorData;
     private Body[] _bodyData = null;
+    private TrackedBody[] _trackedBodies = null;
 
     private ushort[] _depthData;
     private byte[] _bodyIndexData;
@@ -55,10 +56,38 @@ public class BodySourceManager : MonoBehaviour
 
     public CoordinateMapper Mapper => _sensor != null ? _sensor.CoordinateMapper : null;
 
-    public Body[] GetData()
+    /// <summary>
+    /// The latest body frame as managed snapshots, refreshed once per new frame (reading a
+    /// native Body's properties marshals every time, so gameplay reads these instead).
+    /// </summary>
+    public TrackedBody[] GetBodies()
     {
-        return _bodyData;
+        return _trackedBodies;
     }
+
+    public bool TryMapCameraPointToColor(CameraSpacePoint point, out Vector2 pixel)
+    {
+        pixel = default;
+        var mapper = Mapper;
+        if (mapper == null || point.Z <= 0.01f)
+            return false;
+
+        ColorSpacePoint colorPoint = mapper.MapCameraPointToColorSpace(point);
+        if (
+            float.IsInfinity(colorPoint.X)
+            || float.IsNaN(colorPoint.X)
+            || float.IsInfinity(colorPoint.Y)
+            || float.IsNaN(colorPoint.Y)
+        )
+            return false;
+
+        pixel = new Vector2(colorPoint.X, colorPoint.Y);
+        return true;
+    }
+
+    // The Kinect isn't opened when the scene has no Kinect players (dummy-only) or a recording
+    // replaces it.
+    private bool SensorDisabled => controller.dummyOnlyMode || controller.UsesRecordedBodies;
 
     void Awake()
     {
@@ -67,7 +96,7 @@ public class BodySourceManager : MonoBehaviour
 
     void Start()
     {
-        if (controller.dummyOnlyMode)
+        if (SensorDisabled)
         {
             return;
         }
@@ -170,7 +199,11 @@ public class BodySourceManager : MonoBehaviour
             {
                 if (_bodyData == null)
                 {
-                    _bodyData = new Body[_sensor.BodyFrameSource.BodyCount];
+                    int bodyCount = _sensor.BodyFrameSource.BodyCount;
+                    _bodyData = new Body[bodyCount];
+                    _trackedBodies = new TrackedBody[bodyCount];
+                    for (int i = 0; i < bodyCount; i++)
+                        _trackedBodies[i] = new TrackedBody();
                 }
 
                 if (EnableVerboseLogging)
@@ -197,7 +230,7 @@ public class BodySourceManager : MonoBehaviour
 
     void Update()
     {
-        if (controller.dummyOnlyMode)
+        if (SensorDisabled)
         {
             return;
         }
@@ -214,6 +247,8 @@ public class BodySourceManager : MonoBehaviour
                         Debug.Log($"BodySourceManager: Acquired body frame #{_bodyFrameCount}");
                     }
                     frame.GetAndRefreshBodyData(_bodyData);
+                    for (int i = 0; i < _bodyData.Length; i++)
+                        _trackedBodies[i].CopyFrom(_bodyData[i]);
                 }
             }
         }

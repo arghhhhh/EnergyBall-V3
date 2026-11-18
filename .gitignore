@@ -88,3 +88,6 @@ crashlytics-build.properties
 
 Prompt.txt
 unity_console_logs.txt
+# Recorded footage clips (third-party reels + extracted bodies): local only, not redistributed.
+/Assets/StreamingAssets/RecordedFootage/
+/Assets/StreamingAssets/RecordedFootage.meta

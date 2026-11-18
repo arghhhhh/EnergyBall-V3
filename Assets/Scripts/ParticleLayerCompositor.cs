@@ -33,7 +33,6 @@ public class ParticleLayerCompositor : MonoBehaviour
 
     private Camera particleCamera;
     private RenderTexture target;
-    private BodySourceManager feedSource;
     private int lastFeedFrame = -1;
     private float lastFeedFrameTime = float.NegativeInfinity;
 
@@ -81,7 +80,8 @@ public class ParticleLayerCompositor : MonoBehaviour
         if (!settings.syncParticlesToFeed || !settings.showCameraFeed)
             return true;
 
-        if (feedSource == null && !controller.TryGetComponent(out feedSource))
+        var feedSource = controller.BodySource;
+        if (feedSource == null)
             return true;
 
         if (feedSource.ColorFrameCount != lastFeedFrame)
