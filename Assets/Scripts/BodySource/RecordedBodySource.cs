@@ -74,6 +74,32 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
     )]
     public bool fitFeedQuadToCamera = true;
 
+    [Header("Background (needs the occluder file's person masks)")]
+    [Tooltip(
+        "Draw the feed with EnergyBall/RecordedFeed: people stay at full brightness, the rest is "
+            + "dimmed / desaturated / tinted below."
+    )]
+    public bool dimBackground = true;
+
+    [Tooltip("The EnergyBall/RecordedFeed shader (found by name when empty).")]
+    public Shader recordedFeedShader;
+
+    [Range(0f, 1f)]
+    public float backgroundBrightness = 0.35f;
+
+    [Range(0f, 1f)]
+    public float backgroundSaturation = 0.5f;
+
+    public Color backgroundTint = Color.white;
+
+    [Tooltip("Softens the mask edge, in mask texels (the mask is half the video's resolution).")]
+    [Range(0f, 8f)]
+    public float maskFeather = 3f;
+
+    [Tooltip("Positive spreads the full-brightness area past the mask edge, negative pulls it in.")]
+    [Range(-0.5f, 0.5f)]
+    public float maskGrow = -0.3f;
+
     [Header("Bodies")]
     [Tooltip("Joints below this confidence are marked Inferred (eased by Inferred Joint Smoothing).")]
     [Range(0f, 1f)]
@@ -115,6 +141,9 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 
     private byte[][] occluderFrames; // raw-deflate compressed, one per video frame
     private byte[] occluderBuffer; // one decompressed frame: depth (uint16) then mask (uint8)
+    private Texture2D personMaskTexture; // R8, bilinear: 255 on people, 0 elsewhere
+    private byte[] personMaskBuffer;
+    private Material recordedFeedMaterial;
 
     private SceneController controller;
     private VideoPlayer videoPlayer;
@@ -189,12 +218,33 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             Destroy(BodyIndexTexture);
         if (DepthToColorTexture != null)
             Destroy(DepthToColorTexture);
+        if (personMaskTexture != null)
+            Destroy(personMaskTexture);
+        if (recordedFeedMaterial != null)
+            Destroy(recordedFeedMaterial);
+    }
+
+    private void LateUpdate()
+    {
+        if (feedRenderer == null || feedProperties == null || recordedFeedMaterial == null)
+            return;
+
+        // Live-tunable from the inspector.
+        feedProperties.SetFloat("_BackgroundBrightness", dimBackground ? backgroundBrightness : 1f);
+        feedProperties.SetFloat("_BackgroundSaturation", dimBackground ? backgroundSaturation : 1f);
+        feedProperties.SetColor("_BackgroundTint", dimBackground ? backgroundTint : Color.white);
+        feedProperties.SetFloat("_Feather", maskFeather);
+        feedProperties.SetFloat("_MaskGrow", maskGrow);
+        feedRenderer.SetPropertyBlock(feedProperties);
     }
 
     private void Update()
     {
         if (videoPlayer == null)
             return;
+
+        // Before SceneController's FixedUpdate / LateUpdate consumers see this frame.
+        ApplyPendingFrame();
 
         var keyboard = Keyboard.current;
         if (keyboard == null || (controller.settingsMenu != null && controller.settingsMenu.IsMenuOpen))
@@ -387,6 +437,14 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         }
         DepthToColorTexture.SetPixelData(lookup, 0);
         DepthToColorTexture.Apply(false);
+
+        personMaskBuffer = new byte[DepthWidth * DepthHeight];
+        personMaskTexture = new Texture2D(DepthWidth, DepthHeight, TextureFormat.R8, false, true)
+        {
+            name = "Recorded Person Mask",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+        };
     }
 
     private Texture2D NewPointTexture(TextureFormat format)
@@ -432,6 +490,12 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         BodyIndexTexture.SetPixelData(occluderBuffer, 0, pixels * 2);
         BodyIndexTexture.Apply(false);
         DepthFramesReady = true;
+
+        // Body index (0-5 person, 255 background) -> a filterable 0/1 mask for the feed shader.
+        for (int i = 0; i < pixels; i++)
+            personMaskBuffer[i] = occluderBuffer[pixels * 2 + i] == 255 ? (byte)0 : (byte)255;
+        personMaskTexture.SetPixelData(personMaskBuffer, 0);
+        personMaskTexture.Apply(false);
     }
 
     private void SetUpDisplay()
@@ -478,6 +542,25 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         feedRenderer = quad.GetComponent<Renderer>();
         if (feedRenderer != null)
         {
+            // With person masks, swap in the feed shader that dims the background.
+            Shader shader =
+                recordedFeedShader != null
+                    ? recordedFeedShader
+                    : Shader.Find("EnergyBall/RecordedFeed");
+            if (personMaskTexture != null && shader != null)
+            {
+                recordedFeedMaterial = new Material(shader) { name = "Recorded Feed" };
+                recordedFeedMaterial.SetTexture("_MaskTex", personMaskTexture);
+                feedRenderer.sharedMaterial = recordedFeedMaterial;
+            }
+            else if (personMaskTexture != null)
+            {
+                Debug.LogWarning(
+                    "RecordedBodySource: EnergyBall/RecordedFeed shader not found, so the "
+                        + "background isn't dimmed."
+                );
+            }
+
             feedProperties = new MaterialPropertyBlock();
             feedRenderer.GetPropertyBlock(feedProperties);
             feedProperties.SetTexture("_MainTex", feedTexture);
@@ -531,8 +614,25 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         }
     }
 
+    // The newest decoded frame not yet applied, or -1. When the player decodes several frames in
+    // one update (catching up after a slow frame), frameReady fires for each, but the texture
+    // only holds the last one, so applying each as it arrives puts the masks and bodies of an
+    // older frame over the newest image. Only the newest is applied, once per update.
+    private long pendingFrame = -1;
+
     private void OnFrameReady(VideoPlayer source, long frameIndex)
     {
+        pendingFrame = frameIndex;
+    }
+
+    /// <summary>Applies the newest decoded frame: video, bodies and occluder together.</summary>
+    private void ApplyPendingFrame()
+    {
+        if (pendingFrame < 0)
+            return;
+        long frameIndex = pendingFrame;
+        pendingFrame = -1;
+
         // The Kinect color buffer starts at the image's top row and the feed quad is set up for
         // that, so flip the decoded frame vertically.
         if (feedTexture != null)
