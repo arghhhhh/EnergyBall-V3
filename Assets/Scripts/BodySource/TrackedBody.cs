@@ -95,3 +95,28 @@ public interface IBodySource
     /// </summary>
     bool TryMapCameraPointToColor(CameraSpacePoint point, out Vector2 pixel);
 }
+
+/// <summary>
+/// Per-frame depth for the body occluder (<see cref="BodyDepthOccluder"/>): the Kinect's depth
+/// camera, or depth and person masks extracted from a recorded clip. Textures are created once
+/// and updated in place.
+/// </summary>
+public interface IDepthFrameSource
+{
+    /// <summary>True once the textures hold a frame.</summary>
+    bool DepthFramesReady { get; }
+
+    /// <summary>R16: depth along the camera's Z axis in millimetres / 65535; 0 = no depth.</summary>
+    Texture2D DepthTexture { get; }
+
+    /// <summary>R8: body index 0-5 on a tracked person's pixels, 255 elsewhere.</summary>
+    Texture2D BodyIndexTexture { get; }
+
+    /// <summary>RGFloat: each depth pixel's camera feed pixel (top-left origin); -Infinity = none.</summary>
+    Texture2D DepthToColorTexture { get; }
+
+    int DepthWidth { get; }
+    int DepthHeight { get; }
+    int ColorWidth { get; }
+    int ColorHeight { get; }
+}

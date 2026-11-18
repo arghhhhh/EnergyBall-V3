@@ -1,8 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Renders Kinect-tracked bodies as an invisible depth-only occluder so that
-/// energy-ball particles disappear behind people. Builds one grid vertex per
+/// Renders tracked bodies as an invisible depth-only occluder so that
+/// energy-ball particles disappear behind people. The depth comes from the
+/// active body source when it provides one (a recorded clip's extracted depth
+/// and person masks), otherwise from the Kinect. Builds one grid vertex per
 /// depth pixel; the BodyDepthOccluder shader projects each body pixel onto the
 /// ray through its position on the displayed color-feed quad, at the pixel's
 /// real sensor depth. Must live on the layer the Overlay Camera renders
@@ -12,7 +14,10 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class BodyDepthOccluder : MonoBehaviour
 {
-    [Tooltip("The BodySourceManager providing depth/body-index textures.")]
+    [Tooltip(
+        "The BodySourceManager providing depth/body-index textures. Used unless the active body "
+            + "source (e.g. a recording) provides its own depth."
+    )]
     public BodySourceManager bodySourceManager;
 
     [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
@@ -79,30 +84,35 @@ public class BodyDepthOccluder : MonoBehaviour
         _material.SetFloat("_BodiesOnly", bodiesOnly ? 1f : 0f);
     }
 
+    /// <summary>The active body source's depth when it has some, else the Kinect's.</summary>
+    private IDepthFrameSource DepthSource =>
+        SceneController.Instance != null
+        && SceneController.Instance.BodySource is IDepthFrameSource sourceDepth
+            ? sourceDepth
+            : bodySourceManager;
+
     private void TryInitialize()
     {
+        var source = DepthSource;
         if (
-            bodySourceManager == null
+            source == null
             || cameraFeedQuad == null
             || occluderShader == null
-            || !bodySourceManager.DepthFramesReady
+            || !source.DepthFramesReady
         )
         {
             return;
         }
 
         _material = new Material(occluderShader);
-        _material.SetTexture("_DepthTex", bodySourceManager.DepthTexture);
-        _material.SetTexture("_BodyIndexTex", bodySourceManager.BodyIndexTexture);
-        _material.SetTexture("_DepthToColorTex", bodySourceManager.DepthToColorTexture);
-        _material.SetVector(
-            "_ColorDims",
-            new Vector4(bodySourceManager.ColorWidth, bodySourceManager.ColorHeight, 0, 0)
-        );
+        _material.SetTexture("_DepthTex", source.DepthTexture);
+        _material.SetTexture("_BodyIndexTex", source.BodyIndexTexture);
+        _material.SetTexture("_DepthToColorTex", source.DepthToColorTexture);
+        _material.SetVector("_ColorDims", new Vector4(source.ColorWidth, source.ColorHeight, 0, 0));
 
         GetComponent<MeshFilter>().sharedMesh = BuildGridMesh(
-            bodySourceManager.DepthWidth,
-            bodySourceManager.DepthHeight
+            source.DepthWidth,
+            source.DepthHeight
         );
         _renderer.sharedMaterial = _material;
         _initialized = true;

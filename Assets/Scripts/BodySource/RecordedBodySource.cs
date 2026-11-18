@@ -22,7 +22,7 @@ using Joint = Windows.Kinect.Joint;
 /// Keys (menu closed): Space pauses / resumes, R restarts the clip.
 /// </summary>
 [RequireComponent(typeof(SceneController))]
-public class RecordedBodySource : MonoBehaviour, IBodySource
+public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 {
     public enum HandStateMode
     {
@@ -45,6 +45,12 @@ public class RecordedBodySource : MonoBehaviour, IBodySource
 
     [Tooltip("The bodies file extracted from that video (<n>_bodies3d.json).")]
     public string bodiesFile = "1_bodies3d.json";
+
+    [Tooltip(
+        "Per-frame depth + person masks for Body Occlusion (<n>_occluder.bin). Optional: "
+            + "without it particles aren't hidden behind people."
+    )]
+    public string occluderFile = "1_occluder.bin";
 
     public bool loop = true;
 
@@ -98,6 +104,17 @@ public class RecordedBodySource : MonoBehaviour, IBodySource
     public int ColorFrameCount { get; private set; }
     public int ColorWidth => clip != null ? clip.width : 1;
     public int ColorHeight => clip != null ? clip.height : 1;
+
+    // IDepthFrameSource (from the occluder file)
+    public bool DepthFramesReady { get; private set; }
+    public Texture2D DepthTexture { get; private set; }
+    public Texture2D BodyIndexTexture { get; private set; }
+    public Texture2D DepthToColorTexture { get; private set; }
+    public int DepthWidth { get; private set; }
+    public int DepthHeight { get; private set; }
+
+    private byte[][] occluderFrames; // raw-deflate compressed, one per video frame
+    private byte[] occluderBuffer; // one decompressed frame: depth (uint16) then mask (uint8)
 
     private SceneController controller;
     private VideoPlayer videoPlayer;
@@ -154,6 +171,8 @@ public class RecordedBodySource : MonoBehaviour, IBodySource
             return;
         }
 
+        if (!string.IsNullOrEmpty(occluderFile))
+            LoadOccluder(Path.Combine(folder, occluderFile));
         SetUpDisplay();
         SetUpVideo(videoPath);
     }
@@ -164,6 +183,12 @@ public class RecordedBodySource : MonoBehaviour, IBodySource
             videoPlayer.frameReady -= OnFrameReady;
         ReleaseTexture(ref videoTexture);
         ReleaseTexture(ref feedTexture);
+        if (DepthTexture != null)
+            Destroy(DepthTexture);
+        if (BodyIndexTexture != null)
+            Destroy(BodyIndexTexture);
+        if (DepthToColorTexture != null)
+            Destroy(DepthToColorTexture);
     }
 
     private void Update()
@@ -288,6 +313,127 @@ public class RecordedBodySource : MonoBehaviour, IBodySource
         }
     }
 
+    /// <summary>
+    /// Reads an occluder file: per video frame, depth along camera Z and person masks, each
+    /// frame raw-deflate compressed. Frames stay compressed in memory and are unpacked as the
+    /// video reaches them.
+    /// </summary>
+    private void LoadOccluder(string path)
+    {
+        if (!File.Exists(path))
+        {
+            Debug.Log($"RecordedBodySource: no occluder file ({path}), so no body occlusion.");
+            return;
+        }
+
+        try
+        {
+            using var reader = new BinaryReader(File.OpenRead(path));
+            if (new string(reader.ReadChars(4)) != "EBOC" || reader.ReadInt32() != 1)
+            {
+                Debug.LogError($"RecordedBodySource: {path} isn't a version 1 occluder file.");
+                return;
+            }
+
+            int width = reader.ReadInt32();
+            int height = reader.ReadInt32();
+            int frameCount = reader.ReadInt32();
+            float metresPerUnit = reader.ReadSingle();
+            if (!Mathf.Approximately(metresPerUnit, 0.001f))
+            {
+                // The occluder shader reads R16 depth as millimetres.
+                Debug.LogError(
+                    $"RecordedBodySource: {path} stores depth in units of {metresPerUnit} m; "
+                        + "only millimetres are supported."
+                );
+                return;
+            }
+            if (frameCount != clip.frames.Count)
+            {
+                Debug.LogWarning(
+                    $"RecordedBodySource: {occluderFile} has {frameCount} frames, the bodies file "
+                        + $"{clip.frames.Count}. Occlusion may drift from the video."
+                );
+            }
+
+            occluderFrames = new byte[frameCount][];
+            for (int f = 0; f < frameCount; f++)
+                occluderFrames[f] = reader.ReadBytes(reader.ReadInt32());
+
+            DepthWidth = width;
+            DepthHeight = height;
+        }
+        catch (IOException e)
+        {
+            Debug.LogError($"RecordedBodySource: couldn't read {path}: {e.Message}");
+            occluderFrames = null;
+            return;
+        }
+
+        occluderBuffer = new byte[DepthWidth * DepthHeight * 3];
+        DepthTexture = NewPointTexture(TextureFormat.R16);
+        BodyIndexTexture = NewPointTexture(TextureFormat.R8);
+        DepthToColorTexture = NewPointTexture(TextureFormat.RGFloat);
+
+        // The occluder grid covers the whole video frame, so each grid pixel's feed pixel is
+        // just its centre scaled up to the video's size.
+        var lookup = new Vector2[DepthWidth * DepthHeight];
+        float sx = (float)clip.width / DepthWidth;
+        float sy = (float)clip.height / DepthHeight;
+        for (int y = 0; y < DepthHeight; y++)
+        {
+            for (int x = 0; x < DepthWidth; x++)
+                lookup[y * DepthWidth + x] = new Vector2((x + 0.5f) * sx, (y + 0.5f) * sy);
+        }
+        DepthToColorTexture.SetPixelData(lookup, 0);
+        DepthToColorTexture.Apply(false);
+    }
+
+    private Texture2D NewPointTexture(TextureFormat format)
+    {
+        return new Texture2D(DepthWidth, DepthHeight, format, false, true)
+        {
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp,
+        };
+    }
+
+    private void ApplyOccluderFrame(int index)
+    {
+        if (occluderFrames == null || index >= occluderFrames.Length)
+            return;
+
+        using (var compressed = new MemoryStream(occluderFrames[index]))
+        using (
+            var inflate = new System.IO.Compression.DeflateStream(
+                compressed,
+                System.IO.Compression.CompressionMode.Decompress
+            )
+        )
+        {
+            int read = 0;
+            while (read < occluderBuffer.Length)
+            {
+                int n = inflate.Read(occluderBuffer, read, occluderBuffer.Length - read);
+                if (n == 0)
+                    break;
+                read += n;
+            }
+            if (read < occluderBuffer.Length)
+            {
+                Debug.LogWarning($"RecordedBodySource: occluder frame {index} is truncated.");
+                return;
+            }
+        }
+
+        int pixels = DepthWidth * DepthHeight;
+        DepthTexture.SetPixelData(occluderBuffer, 0, 0);
+        DepthTexture.Apply(false);
+        BodyIndexTexture.SetPixelData(occluderBuffer, 0, pixels * 2);
+        BodyIndexTexture.Apply(false);
+        DepthFramesReady = true;
+    }
+
     private void SetUpDisplay()
     {
         float verticalFov = 2f * Mathf.Atan(clip.height * 0.5f / clip.intrinsics.fy) * Mathf.Rad2Deg;
@@ -401,6 +547,7 @@ public class RecordedBodySource : MonoBehaviour, IBodySource
                 System.Array.Clear(curlStates, 0, curlStates.Length);
             currentFrame = index;
             ApplyFrame(clip.frames[index]);
+            ApplyOccluderFrame(index);
             BodyFrameCount++;
         }
     }

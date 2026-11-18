@@ -2,7 +2,7 @@
 using Windows.Kinect;
 
 [RequireComponent(typeof(SceneController))]
-public class BodySourceManager : MonoBehaviour, IBodySource
+public class BodySourceManager : MonoBehaviour, IBodySource, IDepthFrameSource
 {
     SceneController controller;
 
