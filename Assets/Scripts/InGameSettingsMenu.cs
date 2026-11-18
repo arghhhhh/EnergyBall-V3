@@ -123,7 +123,7 @@ public class InGameSettingsMenu : MonoBehaviour
         Controller?.volumeController?.feedVolume != null
         && SceneSupports(SceneController.SceneFeature.CameraFeed)
         && runtimeSettings != null
-        && runtimeSettings.showCameraFeed;
+        && runtimeSettings.feedBackdrop.IsShown();
 
     /// <summary>The look the Post Processing tab's fields read and write.</summary>
     private PostProcessSettings ActivePP => ActivePPState.get(runtimeSettings);
@@ -757,12 +757,67 @@ public class InGameSettingsMenu : MonoBehaviour
     {
         var group = CreateGroup("Camera Feed", section);
 
-        CreateToggleField(
+        CreateEnumField(
             group,
-            "Show Camera Feed",
-            () => runtimeSettings.showCameraFeed,
-            v => runtimeSettings.showCameraFeed = v,
-            tooltip: "Show the Kinect color feed behind the players. Off leaves a black background."
+            "Backdrop",
+            () => runtimeSettings.feedBackdrop,
+            v => runtimeSettings.feedBackdrop = v,
+            tooltip: SceneController.FeedBackdropTooltip
+        );
+        CreateEnumField(
+            group,
+            "Framing",
+            () => runtimeSettings.feedFraming,
+            v => runtimeSettings.feedFraming = v,
+            tooltip: SceneController.FeedFramingTooltip
+        );
+        CreateSliderField(
+            group,
+            "IR Brightness",
+            () => runtimeSettings.infraredBrightness,
+            v => runtimeSettings.infraredBrightness = v,
+            0.5f,
+            16f,
+            tooltip: SceneController.InfraredBrightnessTooltip
+        );
+        ShowRowIf(group, "IR Brightness", () => runtimeSettings.feedBackdrop.UsesInfrared());
+        CreateSliderField(
+            group,
+            "IR Gamma",
+            () => runtimeSettings.infraredGamma,
+            v => runtimeSettings.infraredGamma = v,
+            0.25f,
+            2f,
+            tooltip: SceneController.InfraredGammaTooltip
+        );
+        ShowRowIf(group, "IR Gamma", () => runtimeSettings.feedBackdrop.UsesInfrared());
+        CreateSliderField(
+            group,
+            "Color Amount",
+            () => runtimeSettings.infraredColorAmount,
+            v => runtimeSettings.infraredColorAmount = v,
+            0f,
+            2f,
+            tooltip: SceneController.InfraredColorAmountTooltip
+        );
+        ShowRowIf(
+            group,
+            "Color Amount",
+            () => runtimeSettings.feedBackdrop == FeedBackdrop.InfraredColor
+        );
+        CreateSliderField(
+            group,
+            "Hole Fade",
+            () => runtimeSettings.infraredHoleFade,
+            v => runtimeSettings.infraredHoleFade = v,
+            0f,
+            20f,
+            tooltip: SceneController.InfraredHoleFadeTooltip
+        );
+        ShowRowIf(
+            group,
+            "Hole Fade",
+            () => runtimeSettings.feedBackdrop == FeedBackdrop.InfraredColor
         );
         CreateToggleField(
             group,
@@ -771,7 +826,7 @@ public class InGameSettingsMenu : MonoBehaviour
             v => runtimeSettings.syncParticlesToFeed = v,
             tooltip: SceneController.SyncParticlesToFeedTooltip
         );
-        ShowRowIf(group, "Sync Particles To Feed", () => runtimeSettings.showCameraFeed);
+        ShowRowIf(group, "Sync Particles To Feed", () => runtimeSettings.feedBackdrop.IsShown());
     }
 
     private void CreateOcclusionGroup(SettingSection section)
@@ -2626,6 +2681,63 @@ public class InGameSettingsMenu : MonoBehaviour
         RegisterRow(parent, label, row);
     }
 
+    /// <summary>
+    /// A dropdown over an enum's values, labelled with their [InspectorName] (the names the
+    /// inspector shows), so the menu and the inspector list the same choices.
+    /// </summary>
+    private void CreateEnumField<TEnum>(
+        VisualElement parent,
+        string label,
+        Func<TEnum> getter,
+        Action<TEnum> setter,
+        string tooltip = null
+    )
+        where TEnum : struct, Enum
+    {
+        var row = new VisualElement();
+        row.AddToClassList("setting-row");
+
+        var labelElement = new Label(label);
+        labelElement.AddToClassList("setting-label");
+        AttachTooltip(labelElement, tooltip);
+
+        var values = (TEnum[])Enum.GetValues(typeof(TEnum));
+        var names = new List<string>(values.Length);
+        foreach (var value in values)
+            names.Add(EnumDisplayName(value));
+
+        var dropdown = new DropdownField(names, Mathf.Max(0, Array.IndexOf(values, getter())));
+        dropdown.name = label;
+        dropdown.AddToClassList("setting-input");
+        dropdown.RegisterValueChangedCallback(evt =>
+        {
+            int index = dropdown.index;
+            if (index < 0 || index >= values.Length)
+                return;
+            setter(values[index]);
+            NotifySettingsChanged();
+        });
+
+        row.Add(labelElement);
+        row.Add(dropdown);
+        parent.Add(row);
+
+        RegisterRow(parent, label, row);
+    }
+
+    private static string EnumDisplayName<TEnum>(TEnum value)
+        where TEnum : struct, Enum
+    {
+        string name = value.ToString();
+        var member = typeof(TEnum).GetField(name);
+        var inspectorName =
+            member != null
+                ? (InspectorNameAttribute)
+                    Attribute.GetCustomAttribute(member, typeof(InspectorNameAttribute))
+                : null;
+        return inspectorName != null ? inspectorName.displayName : name;
+    }
+
     private void CreateCurveField(
         VisualElement parent,
         string label,
@@ -3669,7 +3781,12 @@ public class InGameSettingsMenu : MonoBehaviour
             );
 
         // Camera feed, skeleton and colors
-        runtimeSettings.showCameraFeed = loadedSettings.showCameraFeed;
+        runtimeSettings.feedBackdrop = loadedSettings.feedBackdrop;
+        runtimeSettings.feedFraming = loadedSettings.feedFraming;
+        runtimeSettings.infraredBrightness = loadedSettings.infraredBrightness;
+        runtimeSettings.infraredGamma = loadedSettings.infraredGamma;
+        runtimeSettings.infraredColorAmount = loadedSettings.infraredColorAmount;
+        runtimeSettings.infraredHoleFade = loadedSettings.infraredHoleFade;
         runtimeSettings.syncParticlesToFeed = loadedSettings.syncParticlesToFeed;
         runtimeSettings.individualColors = loadedSettings.individualColors;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
@@ -3777,7 +3894,12 @@ public class InGameSettingsMenu : MonoBehaviour
         );
 
         // Camera feed, skeleton and colors
-        destination.showCameraFeed = source.showCameraFeed;
+        destination.feedBackdrop = source.feedBackdrop;
+        destination.feedFraming = source.feedFraming;
+        destination.infraredBrightness = source.infraredBrightness;
+        destination.infraredGamma = source.infraredGamma;
+        destination.infraredColorAmount = source.infraredColorAmount;
+        destination.infraredHoleFade = source.infraredHoleFade;
         destination.syncParticlesToFeed = source.syncParticlesToFeed;
         destination.individualColors = source.individualColors;
         destination.drawSkeleton = source.drawSkeleton;
