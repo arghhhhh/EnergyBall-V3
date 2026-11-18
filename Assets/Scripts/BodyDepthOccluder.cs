@@ -6,8 +6,9 @@ using UnityEngine;
 /// active body source when it provides one (a recorded clip's extracted depth
 /// and person masks), otherwise from the Kinect. Builds one grid vertex per
 /// depth pixel; the BodyDepthOccluder shader projects each body pixel onto the
-/// ray through its position on the displayed color-feed quad, at the pixel's
-/// real sensor depth. Must live on the layer the Overlay Camera renders
+/// ray through its position on the displayed feed quad (through the
+/// depth-to-color map for the Color backdrop, directly in depth space
+/// otherwise), at the pixel's real sensor depth. Must live on the layer the Overlay Camera renders
 /// (KinectOverlay) — the overlay pass clears depth, so depth written in the
 /// base pass never reaches the particles.
 /// </summary>
@@ -20,7 +21,7 @@ public class BodyDepthOccluder : MonoBehaviour
     )]
     public BodySourceManager bodySourceManager;
 
-    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
+    [Tooltip("The quad displaying the Kinect backdrop (child of Main Camera).")]
     public Transform cameraFeedQuad;
 
     [Tooltip("The EnergyBall/BodyDepthOccluder shader asset.")]
@@ -60,6 +61,7 @@ public class BodyDepthOccluder : MonoBehaviour
         float depthBias = 0f;
         float minDepth = 0.4f;
         bool bodiesOnly = false;
+        bool depthSpace = false;
         if (SceneController.Instance != null)
         {
             // Effective settings (rebuilt on every settings change).
@@ -70,6 +72,11 @@ public class BodyDepthOccluder : MonoBehaviour
             depthBias = settings.occluderDepthBias;
             minDepth = settings.occluderMinDepth;
             bodiesOnly = settings.occluderBodiesOnly;
+            // A recording's depth grid always goes through its lookup into the video (color)
+            // pixels; only the Kinect has a depth-space feed.
+            depthSpace =
+                settings.feedBackdrop.Space() == FeedSpace.Depth
+                && ReferenceEquals(DepthSource, bodySourceManager);
         }
         // The point cloud debug view is this same mesh, so it still draws with occlusion off.
         _renderer.enabled = occlude || showPointCloud;
@@ -82,6 +89,7 @@ public class BodyDepthOccluder : MonoBehaviour
         _material.SetFloat("_DepthBias", depthBias);
         _material.SetFloat("_MinDepth", minDepth);
         _material.SetFloat("_BodiesOnly", bodiesOnly ? 1f : 0f);
+        _material.SetFloat("_FeedSpaceDepth", depthSpace ? 1f : 0f);
     }
 
     /// <summary>The active body source's depth when it has some, else the Kinect's.</summary>
@@ -105,8 +113,11 @@ public class BodyDepthOccluder : MonoBehaviour
         }
 
         _material = new Material(occluderShader);
-        _material.SetTexture("_DepthTex", source.DepthTexture);
-        _material.SetTexture("_BodyIndexTex", source.BodyIndexTexture);
+        // The Kinect's hole-filled copies (BodySourceManager.FillOccluderHoles): a person's face
+        // too close for a depth reading still hides the particles behind it. A recording
+        // provides its own depth and person masks.
+        _material.SetTexture("_DepthTex", source.OccluderDepthTexture);
+        _material.SetTexture("_BodyIndexTex", source.OccluderBodyIndexTexture);
         _material.SetTexture("_DepthToColorTex", source.DepthToColorTexture);
         _material.SetVector("_ColorDims", new Vector4(source.ColorWidth, source.ColorHeight, 0, 0));
 

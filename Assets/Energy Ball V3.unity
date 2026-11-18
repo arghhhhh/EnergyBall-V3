@@ -1237,6 +1237,7 @@ GameObject:
   - component: {fileID: 1766269651}
   - component: {fileID: 1766269650}
   - component: {fileID: 1766269649}
+  - component: {fileID: 1766269652}
   m_Layer: 0
   m_Name: Camera Feed
   m_TagString: Untagged
@@ -1316,6 +1317,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 118562682}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
+--- !u!114 &1766269652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1766269646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba9d3488ce784d17963a47e6af3db138, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KinectFeedDisplay
+  bodySourceManager: {fileID: 1790478705}
+  renderCamera: {fileID: 118562681}
+  feedShader: {fileID: 4800000, guid: 40db3098dc2e40a1a966d83fc4c177ee, type: 3}
+  coverageCompute: {fileID: 7200000, guid: 7388c2f3707f40e3934689a47f76d066, type: 3}
 --- !u!1 &1790478698
 GameObject:
   m_ObjectHideFlags: 0
@@ -1379,8 +1396,13 @@ MonoBehaviour:
   handStateHoldTime: 1
   handStateHighConfidenceOnly: 0
   cameraFeedQuad: {fileID: 1766269651}
-  showCameraFeed: 1
-  syncParticlesToFeed: 0
+  feedBackdrop: 1
+  feedFraming: 0
+  infraredBrightness: 4
+  infraredGamma: 0.75
+  infraredColorAmount: 1
+  infraredHoleFade: 6
+  syncParticlesToFeed: 1
   projectiveAlignment: 1
   renderCameraTransform: {fileID: 118562682}
   bodyOcclusion: 1
@@ -1923,8 +1945,13 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+    carryStrength: 1
+    carryFade: {x: 1, y: 1.6}
     vfxSphereCollisionScaleMult: 0.93
     collisionDetectionScaleMult: 1.25
+    stragglerSpeedRange: {x: 0.75, y: 2.5}
+    stragglerDim: 0.7
+    stragglerFadeBoost: 2
     saAttractionSpeed: 0.95
     saAttractionForce: 10
     saStickDistance: 0.02
@@ -1979,8 +2006,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   EnableVerboseLogging: 1
-  ColorTexture: {fileID: 8400000, guid: 1b27302669beff44aad66d85c1fca5cf, type: 2}
-  ColorMaterial: {fileID: 2100000, guid: 884297b6e8708d9439187d3fd67ea8e1, type: 2}
 --- !u!1 &1841746522
 GameObject:
   m_ObjectHideFlags: 0

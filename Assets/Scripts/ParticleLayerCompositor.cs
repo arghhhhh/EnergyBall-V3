@@ -77,16 +77,18 @@ public class ParticleLayerCompositor : MonoBehaviour
             return true;
 
         var settings = controller.GetRuntimeSettings();
-        if (!settings.syncParticlesToFeed || !settings.showCameraFeed)
+        if (!settings.syncParticlesToFeed || !settings.feedBackdrop.IsShown())
             return true;
 
         var feedSource = controller.BodySource;
         if (feedSource == null)
             return true;
 
-        if (feedSource.ColorFrameCount != lastFeedFrame)
+        // Color frames for the Color backdrop, depth-camera frames (infrared) otherwise.
+        int feedFrame = feedSource.FeedFrameCount(settings.feedBackdrop);
+        if (feedFrame != lastFeedFrame)
         {
-            lastFeedFrame = feedSource.ColorFrameCount;
+            lastFeedFrame = feedFrame;
             lastFeedFrameTime = Time.unscaledTime;
             return true;
         }

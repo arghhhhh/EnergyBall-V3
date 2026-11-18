@@ -6,10 +6,21 @@
 // (ColorMask 0): particles behind a body get z-rejected and the base-pass
 // video (the person) shows through.
 //
-// Vertex placement: depth pixel -> color-image pixel (DepthToColor LUT)
-// -> point on the feed quad surface -> scaled along the camera ray to
-// view-space z = sensorDepthMeters * bodyScale. Silhouette therefore
-// matches the video by construction, independent of camera FOV.
+// Vertex placement: depth pixel -> its pixel in the image the feed quad
+// shows -> point on the feed quad surface -> scaled along the camera ray to
+// view-space z = sensorDepthMeters * bodyScale. With the Color backdrop the
+// image pixel comes from the DepthToColor LUT; with every other backdrop the
+// quad is aligned in depth space and the depth pixel is its own image pixel.
+// Silhouette therefore matches the image by construction, independent of
+// camera FOV.
+//
+// Holes: the depth and body index come hole-filled from
+// BodySourceManager.FillOccluderHoles (holes on a tracked person take the
+// nearest depth on that person's border). What's left without a reading is
+// either away from people (stays open) or a speck: a pixel without a depth
+// reading (up to about 3 pixels across) takes the depth, body index and map
+// entry of the nearest pixel with one, at most 2 pixels away, so it doesn't
+// punch a pinhole in the occluder.
 Shader "EnergyBall/BodyDepthOccluder"
 {
     Properties
@@ -22,6 +33,8 @@ Shader "EnergyBall/BodyDepthOccluder"
         _DepthBias ("Depth Bias (m)", Float) = 0.0
         _MinDepth ("Min Valid Depth (m)", Float) = 0.4
         _BodiesOnly ("Occlude Tracked Bodies Only", Float) = 0
+        // 1 = feed quad aligned in depth space (no LUT), 0 = color space.
+        _FeedSpaceDepth ("Feed Aligned In Depth Space", Float) = 0
         // 0 = invisible (depth-only occluder), 15 = RGBA visible (point cloud debug view)
         [HideInInspector] _ColorMask ("Color Mask", Int) = 0
     }
@@ -55,6 +68,8 @@ Shader "EnergyBall/BodyDepthOccluder"
                 float _DepthBias;
                 float _MinDepth;
                 float _BodiesOnly;
+                float _FeedSpaceDepth;
+                float4 _DepthTex_TexelSize; // set by Unity: (1/w, 1/h, w, h)
             CBUFFER_END
 
             // Feed-quad localToWorld, set per-frame from C#.
@@ -78,23 +93,61 @@ Shader "EnergyBall/BodyDepthOccluder"
             {
                 Varyings output;
 
-                float4 uv4 = float4(input.uv, 0, 0);
+                // Where this pixel's depth, body index and map entry are read. A speck
+                // (no reading) reads them from the nearest pixel that has one, at most 2
+                // pixels away; its own position on the quad is kept in depth space.
+                float2 sampleUV = input.uv;
+                int2 size = int2(_DepthTex_TexelSize.zw);
+                int2 px = min(int2(input.uv * _DepthTex_TexelSize.zw), size - 1);
+                if (LOAD_TEXTURE2D_LOD(_DepthTex, px, 0).r <= 0)
+                {
+                    static const int2 offsets[16] =
+                    {
+                        int2(-1, 0), int2(1, 0), int2(0, -1), int2(0, 1),
+                        int2(-1, -1), int2(1, -1), int2(-1, 1), int2(1, 1),
+                        int2(-2, 0), int2(2, 0), int2(0, -2), int2(0, 2),
+                        int2(-2, -2), int2(2, -2), int2(-2, 2), int2(2, 2),
+                    };
+                    bool found = false;
+                    [unroll]
+                    for (int k = 0; k < 16; k++)
+                    {
+                        int2 q = clamp(px + offsets[k], int2(0, 0), size - 1);
+                        if (!found && LOAD_TEXTURE2D_LOD(_DepthTex, q, 0).r > 0)
+                        {
+                            sampleUV = (q + 0.5) * _DepthTex_TexelSize.xy;
+                            found = true;
+                        }
+                    }
+                }
+
                 float bodyIndex =
-                    SAMPLE_TEXTURE2D_LOD(_BodyIndexTex, sampler_BodyIndexTex, input.uv, 0).r;
+                    SAMPLE_TEXTURE2D_LOD(_BodyIndexTex, sampler_BodyIndexTex, sampleUV, 0).r;
                 // R16 depth is millimeters / 65535; convert to meters.
                 float depthMeters =
-                    SAMPLE_TEXTURE2D_LOD(_DepthTex, sampler_DepthTex, input.uv, 0).r * 65.535;
-                float2 colorPx =
-                    SAMPLE_TEXTURE2D_LOD(_DepthToColorTex, sampler_DepthToColorTex, input.uv, 0).rg;
+                    SAMPLE_TEXTURE2D_LOD(_DepthTex, sampler_DepthTex, sampleUV, 0).r * 65.535;
 
                 // Body index 0-5 = tracked player, 255 = background (samples as 1.0).
                 // With _BodiesOnly off, any valid depth pixel occludes (chairs,
                 // walls, floor — anything the depth camera sees).
                 bool isBody = (_BodiesOnly < 0.5) || (bodyIndex < 0.5);
                 bool validDepth = depthMeters > _MinDepth;
-                bool validMap = all(isfinite(colorPx))
-                    && colorPx.x >= 0 && colorPx.x < _ColorDims.x
-                    && colorPx.y >= 0 && colorPx.y < _ColorDims.y;
+
+                // This pixel's position on the displayed feed quad (quad mesh spans
+                // ±0.5 in local XY with uv (0,0) at the (-0.5,-0.5) corner; every
+                // feed texture's first row — the image top — sits at v = 0).
+                float2 quadUV = input.uv;
+                bool validMap = true;
+                if (_FeedSpaceDepth < 0.5)
+                {
+                    // A speck uses its neighbor's map entry: a couple of color pixels off.
+                    float2 colorPx = SAMPLE_TEXTURE2D_LOD(
+                        _DepthToColorTex, sampler_DepthToColorTex, sampleUV, 0).rg;
+                    validMap = all(isfinite(colorPx))
+                        && colorPx.x >= 0 && colorPx.x < _ColorDims.x
+                        && colorPx.y >= 0 && colorPx.y < _ColorDims.y;
+                    quadUV = colorPx / _ColorDims.xy;
+                }
 
                 if (!(isBody && validDepth && validMap))
                 {
@@ -106,10 +159,6 @@ Shader "EnergyBall/BodyDepthOccluder"
 
                 output.debugData = float2(depthMeters, bodyIndex < 0.5 ? 1.0 : 0.0);
 
-                // Color pixel -> point on the displayed feed quad (quad mesh spans
-                // ±0.5 in local XY with uv (0,0) at the (-0.5,-0.5) corner; the
-                // color texture's first row — the image top — sits at v = 0).
-                float2 quadUV = colorPx / _ColorDims.xy;
                 float3 quadWS = mul(
                     _QuadLocalToWorld,
                     float4(quadUV.x - 0.5, quadUV.y - 0.5, 0, 1)

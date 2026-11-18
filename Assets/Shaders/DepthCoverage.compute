@@ -1,0 +1,60 @@
+// Blurred "has a depth reading" mask for the Infrared + Color backdrop (KinectFeed.shader).
+//
+// 1 well inside measured areas, about 0.5 on a hole's edge, 0 inside a hole, with a Gaussian
+// falloff of radius _Radius depth pixels between them. Run once per depth frame by
+// KinectFeedDisplay, as two separable passes over the 512x424 depth image. The feed shader
+// samples the result with bilinear filtering, so the tint fades smoothly instead of in the
+// steps a few point samples would give.
+
+#pragma kernel Horizontal
+#pragma kernel Vertical
+
+Texture2D<float> _Depth;        // R16 depth, 0 = no reading
+RWTexture2D<float> _Temp;        // Horizontal output
+Texture2D<float> _TempIn;        // Vertical input (same texture as _Temp)
+RWTexture2D<float> _Coverage;    // Vertical output
+
+int2 _Size;
+int _Radius;
+float _Sigma;
+
+float Weight(int i)
+{
+    return exp(-(i * i) / (2.0 * _Sigma * _Sigma));
+}
+
+[numthreads(8, 8, 1)]
+void Horizontal(uint3 id : SV_DispatchThreadID)
+{
+    if (any((int2)id.xy >= _Size))
+        return;
+
+    float sum = 0;
+    float weightSum = 0;
+    for (int i = -_Radius; i <= _Radius; i++)
+    {
+        int x = clamp((int)id.x + i, 0, _Size.x - 1);
+        float w = Weight(i);
+        sum += w * (_Depth[int2(x, id.y)] > 0 ? 1.0 : 0.0);
+        weightSum += w;
+    }
+    _Temp[id.xy] = sum / weightSum;
+}
+
+[numthreads(8, 8, 1)]
+void Vertical(uint3 id : SV_DispatchThreadID)
+{
+    if (any((int2)id.xy >= _Size))
+        return;
+
+    float sum = 0;
+    float weightSum = 0;
+    for (int i = -_Radius; i <= _Radius; i++)
+    {
+        int y = clamp((int)id.y + i, 0, _Size.y - 1);
+        float w = Weight(i);
+        sum += w * _TempIn[int2(id.x, y)];
+        weightSum += w;
+    }
+    _Coverage[id.xy] = sum / weightSum;
+}

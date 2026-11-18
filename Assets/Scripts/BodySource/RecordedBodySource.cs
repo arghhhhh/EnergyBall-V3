@@ -168,8 +168,8 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 
     // IDepthFrameSource (from the occluder file)
     public bool DepthFramesReady { get; private set; }
-    public Texture2D DepthTexture { get; private set; }
-    public Texture2D BodyIndexTexture { get; private set; }
+    public Texture2D OccluderDepthTexture { get; private set; }
+    public Texture2D OccluderBodyIndexTexture { get; private set; }
     public Texture2D DepthToColorTexture { get; private set; }
     public int DepthWidth { get; private set; }
     public int DepthHeight { get; private set; }
@@ -197,7 +197,24 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 
     public TrackedBody[] GetBodies() => bodies;
 
-    public bool TryMapCameraPointToColor(CameraSpacePoint point, out Vector2 pixel)
+    /// <summary>Feed frames come from the clip's one image stream, whatever the backdrop.</summary>
+    public int FeedFrameCount(FeedBackdrop backdrop) => ColorFrameCount;
+
+    /// <summary>
+    /// Maps into the clip's own video through its intrinsics. The Kinect's color / depth feed
+    /// spaces don't apply to a recording, so <paramref name="space"/> is ignored.
+    /// </summary>
+    public bool TryMapCameraPointToFeed(CameraSpacePoint point, FeedSpace space, out Vector2 uv)
+    {
+        uv = default;
+        if (!TryMapCameraPointToPixel(point, out Vector2 pixel))
+            return false;
+        uv = new Vector2(pixel.x / clip.width, pixel.y / clip.height);
+        return true;
+    }
+
+    /// <summary>Camera-space point to a pixel of the clip's video (top-left origin).</summary>
+    private bool TryMapCameraPointToPixel(CameraSpacePoint point, out Vector2 pixel)
     {
         pixel = default;
         if (clip == null || point.Z <= 0.01f)
@@ -213,6 +230,16 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
     private void Awake()
     {
         controller = GetComponent<SceneController>();
+
+        // The Kinect backdrop display would hide the quad (no Kinect image), swap its material
+        // and resize it to the Kinect feed; the recording draws the quad itself. Awake runs
+        // before any Start, so its framing in Start never happens.
+        if (
+            enabled
+            && controller.cameraFeedQuad != null
+            && controller.cameraFeedQuad.TryGetComponent(out KinectFeedDisplay kinectDisplay)
+        )
+            kinectDisplay.enabled = false;
     }
 
     private void Start()
@@ -337,10 +364,10 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             videoPlayer.frameReady -= OnFrameReady;
         ReleaseTexture(ref videoTexture);
         ReleaseTexture(ref feedTexture);
-        if (DepthTexture != null)
-            Destroy(DepthTexture);
-        if (BodyIndexTexture != null)
-            Destroy(BodyIndexTexture);
+        if (OccluderDepthTexture != null)
+            Destroy(OccluderDepthTexture);
+        if (OccluderBodyIndexTexture != null)
+            Destroy(OccluderBodyIndexTexture);
         if (DepthToColorTexture != null)
             Destroy(DepthToColorTexture);
         if (personMaskTexture != null)
@@ -357,6 +384,10 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
     {
         if (feedRenderer == null || feedProperties == null || recordedFeedMaterial == null)
             return;
+
+        // Backdrop None hides the feed, as it does for the Kinect.
+        var settings = controller.GetRuntimeSettings();
+        feedRenderer.enabled = settings == null || settings.feedBackdrop.IsShown();
 
         // Live-tunable from the inspector.
         feedProperties.SetFloat("_BackgroundBrightness", dimBackground ? backgroundBrightness : 1f);
@@ -516,7 +547,7 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
                     if (
                         joint.u == null
                         || joint.v == null
-                        || !TryMapCameraPointToColor(ToCameraPoint(joint), out Vector2 pixel)
+                        || !TryMapCameraPointToPixel(ToCameraPoint(joint), out Vector2 pixel)
                     )
                         continue;
                     errorSum +=
@@ -595,8 +626,8 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         }
 
         occluderBuffer = new byte[DepthWidth * DepthHeight * 3];
-        DepthTexture = NewPointTexture(TextureFormat.R16);
-        BodyIndexTexture = NewPointTexture(TextureFormat.R8);
+        OccluderDepthTexture = NewPointTexture(TextureFormat.R16);
+        OccluderBodyIndexTexture = NewPointTexture(TextureFormat.R8);
         DepthToColorTexture = NewPointTexture(TextureFormat.RGFloat);
 
         // The occluder grid covers the whole video frame, so each grid pixel's feed pixel is
@@ -642,10 +673,10 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         }
 
         int pixels = DepthWidth * DepthHeight;
-        DepthTexture.SetPixelData(occluderBuffer, 0, 0);
-        DepthTexture.Apply(false);
-        BodyIndexTexture.SetPixelData(occluderBuffer, 0, pixels * 2);
-        BodyIndexTexture.Apply(false);
+        OccluderDepthTexture.SetPixelData(occluderBuffer, 0, 0);
+        OccluderDepthTexture.Apply(false);
+        OccluderBodyIndexTexture.SetPixelData(occluderBuffer, 0, pixels * 2);
+        OccluderBodyIndexTexture.Apply(false);
         DepthFramesReady = true;
 
         // Body index (0-5 person, 255 background) -> a filterable 0/1 mask for the feed shader.
@@ -791,18 +822,20 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
                 recordedFeedShader != null
                     ? recordedFeedShader
                     : Shader.Find("EnergyBall/RecordedFeed");
+            // Without person masks the shader's default mask is all white: nothing is dimmed.
             Texture2D mask = matteTexture != null ? matteTexture : personMaskTexture;
-            if (mask != null && shader != null)
+            if (shader != null)
             {
                 recordedFeedMaterial = new Material(shader) { name = "Recorded Feed" };
-                recordedFeedMaterial.SetTexture("_MaskTex", mask);
+                if (mask != null)
+                    recordedFeedMaterial.SetTexture("_MaskTex", mask);
                 feedRenderer.sharedMaterial = recordedFeedMaterial;
             }
-            else if (mask != null)
+            else
             {
-                Debug.LogWarning(
-                    "RecordedBodySource: EnergyBall/RecordedFeed shader not found, so the "
-                        + "background isn't dimmed."
+                Debug.LogError(
+                    "RecordedBodySource: EnergyBall/RecordedFeed shader not found, so the video "
+                        + "can't be shown."
                 );
             }
 

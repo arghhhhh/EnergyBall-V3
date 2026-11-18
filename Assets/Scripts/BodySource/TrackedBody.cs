@@ -82,18 +82,19 @@ public interface IBodySource
     /// <summary>Body frames delivered so far. Tells a new frame from one seen on an earlier step.</summary>
     int BodyFrameCount { get; }
 
-    /// <summary>Camera feed frames delivered so far (drives Sync Particles To Feed).</summary>
-    int ColorFrameCount { get; }
-
-    /// <summary>Camera feed image size in pixels.</summary>
-    int ColorWidth { get; }
-    int ColorHeight { get; }
+    /// <summary>
+    /// Frames delivered so far by the camera the backdrop is drawn from (drives Sync Particles
+    /// To Feed). A recording has one image stream and ignores the backdrop.
+    /// </summary>
+    int FeedFrameCount(FeedBackdrop backdrop);
 
     /// <summary>
-    /// Maps a camera-space point (metres) to its pixel in the camera feed image (top-left origin,
-    /// image rows top to bottom, as the feed quad displays them). False when it can't.
+    /// Maps a camera-space point (metres) to its normalized position in the feed image (0..1,
+    /// top-left origin, the layout the feed quad shows). The Kinect maps into the color or depth
+    /// camera per <paramref name="space"/>; a recording maps into its own video. False when it
+    /// can't.
     /// </summary>
-    bool TryMapCameraPointToColor(CameraSpacePoint point, out Vector2 pixel);
+    bool TryMapCameraPointToFeed(CameraSpacePoint point, FeedSpace space, out Vector2 uv);
 }
 
 /// <summary>
@@ -106,11 +107,14 @@ public interface IDepthFrameSource
     /// <summary>True once the textures hold a frame.</summary>
     bool DepthFramesReady { get; }
 
-    /// <summary>R16: depth along the camera's Z axis in millimetres / 65535; 0 = no depth.</summary>
-    Texture2D DepthTexture { get; }
+    /// <summary>
+    /// R16: depth along the camera's Z axis in millimetres / 65535; 0 = no depth. The Kinect's
+    /// is its hole-filled copy (see BodySourceManager.FillOccluderHoles).
+    /// </summary>
+    Texture2D OccluderDepthTexture { get; }
 
     /// <summary>R8: body index 0-5 on a tracked person's pixels, 255 elsewhere.</summary>
-    Texture2D BodyIndexTexture { get; }
+    Texture2D OccluderBodyIndexTexture { get; }
 
     /// <summary>RGFloat: each depth pixel's camera feed pixel (top-left origin); -Infinity = none.</summary>
     Texture2D DepthToColorTexture { get; }

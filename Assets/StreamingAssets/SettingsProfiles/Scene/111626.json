@@ -416,7 +416,13 @@
         "m_RotationOrder": 4
     },
     "_individualColors": true,
+    "feedBackdrop": 3,
     "showCameraFeed": true,
+    "feedFraming": 0,
+    "infraredBrightness": 4.0,
+    "infraredGamma": 0.75,
+    "infraredColorAmount": 1.0,
+    "infraredHoleFade": 10.0,
     "syncParticlesToFeed": false,
     "drawSkeleton": false,
     "skeletonLineWidth": 0.019999999552965165,
