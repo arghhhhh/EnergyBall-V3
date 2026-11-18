@@ -52,6 +52,12 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
     )]
     public string occluderFile = "1_occluder.bin";
 
+    [Tooltip(
+        "Soft person matte (<n>_matte.bin) for the background dimming. Optional: without it the "
+            + "occluder file's coarser person mask is used."
+    )]
+    public string matteFile = "1_matte.bin";
+
     public bool loop = true;
 
     [Range(0.1f, 2f)]
@@ -92,13 +98,29 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 
     public Color backgroundTint = Color.white;
 
-    [Tooltip("Softens the mask edge, in mask texels (the mask is half the video's resolution).")]
+    [Tooltip(
+        "Without a matte file: softens the occluder mask's edge, in mask texels (the mask is half "
+            + "the video's resolution)."
+    )]
     [Range(0f, 8f)]
     public float maskFeather = 3f;
 
-    [Tooltip("Positive spreads the full-brightness area past the mask edge, negative pulls it in.")]
+    [Tooltip(
+        "Without a matte file: positive spreads the full-brightness area past the mask edge, "
+            + "negative pulls it in."
+    )]
     [Range(-0.5f, 0.5f)]
     public float maskGrow = -0.3f;
+
+    [Tooltip("With a matte file: softens the matte's edge, in matte pixels.")]
+    [Range(0f, 8f)]
+    public float matteFeather = 0.75f;
+
+    [Tooltip(
+        "With a matte file: positive spreads the lit area past the matte edge, negative pulls it in."
+    )]
+    [Range(-0.5f, 0.5f)]
+    public float matteGrow = 0f;
 
     [Header("Bodies")]
     [Tooltip("Joints below this confidence are marked Inferred (eased by Inferred Joint Smoothing).")]
@@ -144,6 +166,9 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
     private Texture2D personMaskTexture; // R8, bilinear: 255 on people, 0 elsewhere
     private byte[] personMaskBuffer;
     private Material recordedFeedMaterial;
+    private byte[][] matteFrames; // raw-deflate compressed, one per video frame
+    private byte[] matteBuffer;
+    private Texture2D matteTexture; // R8, bilinear: soft person alpha
 
     private SceneController controller;
     private VideoPlayer videoPlayer;
@@ -202,6 +227,8 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 
         if (!string.IsNullOrEmpty(occluderFile))
             LoadOccluder(Path.Combine(folder, occluderFile));
+        if (!string.IsNullOrEmpty(matteFile))
+            LoadMatte(Path.Combine(folder, matteFile));
         SetUpDisplay();
         SetUpVideo(videoPath);
     }
@@ -220,6 +247,8 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             Destroy(DepthToColorTexture);
         if (personMaskTexture != null)
             Destroy(personMaskTexture);
+        if (matteTexture != null)
+            Destroy(matteTexture);
         if (recordedFeedMaterial != null)
             Destroy(recordedFeedMaterial);
     }
@@ -233,8 +262,9 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         feedProperties.SetFloat("_BackgroundBrightness", dimBackground ? backgroundBrightness : 1f);
         feedProperties.SetFloat("_BackgroundSaturation", dimBackground ? backgroundSaturation : 1f);
         feedProperties.SetColor("_BackgroundTint", dimBackground ? backgroundTint : Color.white);
-        feedProperties.SetFloat("_Feather", maskFeather);
-        feedProperties.SetFloat("_MaskGrow", maskGrow);
+        bool matte = matteTexture != null;
+        feedProperties.SetFloat("_Feather", matte ? matteFeather : maskFeather);
+        feedProperties.SetFloat("_MaskGrow", matte ? matteGrow : maskGrow);
         feedRenderer.SetPropertyBlock(feedProperties);
     }
 
@@ -461,27 +491,10 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         if (occluderFrames == null || index >= occluderFrames.Length)
             return;
 
-        using (var compressed = new MemoryStream(occluderFrames[index]))
-        using (
-            var inflate = new System.IO.Compression.DeflateStream(
-                compressed,
-                System.IO.Compression.CompressionMode.Decompress
-            )
-        )
+        if (!Inflate(occluderFrames[index], occluderBuffer))
         {
-            int read = 0;
-            while (read < occluderBuffer.Length)
-            {
-                int n = inflate.Read(occluderBuffer, read, occluderBuffer.Length - read);
-                if (n == 0)
-                    break;
-                read += n;
-            }
-            if (read < occluderBuffer.Length)
-            {
-                Debug.LogWarning($"RecordedBodySource: occluder frame {index} is truncated.");
-                return;
-            }
+            Debug.LogWarning($"RecordedBodySource: occluder frame {index} is truncated.");
+            return;
         }
 
         int pixels = DepthWidth * DepthHeight;
@@ -492,10 +505,97 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         DepthFramesReady = true;
 
         // Body index (0-5 person, 255 background) -> a filterable 0/1 mask for the feed shader.
+        // A matte file replaces it.
+        if (matteTexture != null)
+            return;
         for (int i = 0; i < pixels; i++)
             personMaskBuffer[i] = occluderBuffer[pixels * 2 + i] == 255 ? (byte)0 : (byte)255;
         personMaskTexture.SetPixelData(personMaskBuffer, 0);
         personMaskTexture.Apply(false);
+    }
+
+    /// <summary>Unpacks one raw-deflate frame into <paramref name="buffer"/>; false if short.</summary>
+    private static bool Inflate(byte[] compressedFrame, byte[] buffer)
+    {
+        using var compressed = new MemoryStream(compressedFrame);
+        using var inflate = new System.IO.Compression.DeflateStream(
+            compressed,
+            System.IO.Compression.CompressionMode.Decompress
+        );
+        int read = 0;
+        while (read < buffer.Length)
+        {
+            int n = inflate.Read(buffer, read, buffer.Length - read);
+            if (n == 0)
+                break;
+            read += n;
+        }
+        return read == buffer.Length;
+    }
+
+    /// <summary>
+    /// Reads a matte file: per video frame, a soft person alpha (uint8, rows top to bottom),
+    /// raw-deflate compressed. Used for the background dimming instead of the occluder's mask.
+    /// </summary>
+    private void LoadMatte(string path)
+    {
+        if (!File.Exists(path))
+        {
+            Debug.Log($"RecordedBodySource: no matte file ({path}); dimming uses the occluder mask.");
+            return;
+        }
+
+        int width,
+            height;
+        try
+        {
+            using var reader = new BinaryReader(File.OpenRead(path));
+            if (new string(reader.ReadChars(4)) != "EBMT" || reader.ReadInt32() != 1)
+            {
+                Debug.LogError($"RecordedBodySource: {path} isn't a version 1 matte file.");
+                return;
+            }
+            width = reader.ReadInt32();
+            height = reader.ReadInt32();
+            int frameCount = reader.ReadInt32();
+            if (frameCount != clip.frames.Count)
+            {
+                Debug.LogWarning(
+                    $"RecordedBodySource: {matteFile} has {frameCount} frames, the bodies file "
+                        + $"{clip.frames.Count}. The matte may drift from the video."
+                );
+            }
+            matteFrames = new byte[frameCount][];
+            for (int f = 0; f < frameCount; f++)
+                matteFrames[f] = reader.ReadBytes(reader.ReadInt32());
+        }
+        catch (IOException e)
+        {
+            Debug.LogError($"RecordedBodySource: couldn't read {path}: {e.Message}");
+            matteFrames = null;
+            return;
+        }
+
+        matteBuffer = new byte[width * height];
+        matteTexture = new Texture2D(width, height, TextureFormat.R8, false, true)
+        {
+            name = "Recorded Person Matte",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+        };
+    }
+
+    private void ApplyMatteFrame(int index)
+    {
+        if (matteFrames == null || index >= matteFrames.Length)
+            return;
+        if (!Inflate(matteFrames[index], matteBuffer))
+        {
+            Debug.LogWarning($"RecordedBodySource: matte frame {index} is truncated.");
+            return;
+        }
+        matteTexture.SetPixelData(matteBuffer, 0);
+        matteTexture.Apply(false);
     }
 
     private void SetUpDisplay()
@@ -547,13 +647,14 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
                 recordedFeedShader != null
                     ? recordedFeedShader
                     : Shader.Find("EnergyBall/RecordedFeed");
-            if (personMaskTexture != null && shader != null)
+            Texture2D mask = matteTexture != null ? matteTexture : personMaskTexture;
+            if (mask != null && shader != null)
             {
                 recordedFeedMaterial = new Material(shader) { name = "Recorded Feed" };
-                recordedFeedMaterial.SetTexture("_MaskTex", personMaskTexture);
+                recordedFeedMaterial.SetTexture("_MaskTex", mask);
                 feedRenderer.sharedMaterial = recordedFeedMaterial;
             }
-            else if (personMaskTexture != null)
+            else if (mask != null)
             {
                 Debug.LogWarning(
                     "RecordedBodySource: EnergyBall/RecordedFeed shader not found, so the "
@@ -648,6 +749,7 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             currentFrame = index;
             ApplyFrame(clip.frames[index]);
             ApplyOccluderFrame(index);
+            ApplyMatteFrame(index);
             BodyFrameCount++;
         }
     }
