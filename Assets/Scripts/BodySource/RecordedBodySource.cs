@@ -67,6 +67,19 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
     [Min(0f)]
     public float startTime = 0f;
 
+    [Tooltip(
+        "Frame-exact playback for recording: read the clip from an image sequence extracted from "
+            + "the video (frameSequenceFolder, one image per video frame, e.g. ffmpeg "
+            + "-start_number 0 %05d.png) and show frame N when game time reaches N / fps. Unity "
+            + "Recorder steps game time by exactly one frame per capture, so video, bodies and "
+            + "particles stay locked however slowly the editor renders. The VideoPlayer falls "
+            + "behind under capture, so use this for recordings."
+    )]
+    public bool useFrameSequence = false;
+
+    [Tooltip("Folder (in the clip folder) holding the extracted frames, sorted by name.")]
+    public string frameSequenceFolder = "1_frames";
+
     [Header("Display")]
     [Tooltip(
         "Set the render camera (and its child cameras) to the clip's vertical field of view, so "
@@ -219,9 +232,11 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 
         if (!LoadBodies(bodiesPath))
             return;
-        if (!File.Exists(videoPath))
+        string sequencePath = Path.Combine(folder, frameSequenceFolder);
+        if (useFrameSequence ? !LoadFrameSequence(sequencePath) : !File.Exists(videoPath))
         {
-            Fail($"video not found: {videoPath}");
+            if (!useFrameSequence)
+                Fail($"video not found: {videoPath}");
             return;
         }
 
@@ -230,7 +245,90 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         if (!string.IsNullOrEmpty(matteFile))
             LoadMatte(Path.Combine(folder, matteFile));
         SetUpDisplay();
-        SetUpVideo(videoPath);
+        if (useFrameSequence)
+        {
+            videoTexture = new RenderTexture(clip.width, clip.height, 0, RenderTextureFormat.ARGB32)
+            {
+                name = "Recorded Video",
+            };
+            videoTexture.Create();
+            Restart();
+            clipStatus = "Playing (frame sequence)";
+        }
+        else
+        {
+            SetUpVideo(videoPath);
+        }
+    }
+
+    // Frame sequence playback (useFrameSequence).
+    private string[] sequenceFrames;
+    private Texture2D sequenceTexture;
+    private float sequenceStartTime;
+    private float sequencePausedAt = -1f;
+    private int sequenceIndex = -1;
+    private bool sequenceRestartPending;
+
+    private bool LoadFrameSequence(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            Fail($"frame sequence folder not found: {path}");
+            return false;
+        }
+        var files = new List<string>();
+        foreach (var file in Directory.GetFiles(path))
+        {
+            string ext = Path.GetExtension(file).ToLowerInvariant();
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg")
+                files.Add(file);
+        }
+        files.Sort(System.StringComparer.Ordinal);
+        if (files.Count == 0)
+        {
+            Fail($"no frames in {path}");
+            return false;
+        }
+        if (files.Count != clip.frames.Count)
+        {
+            Debug.LogWarning(
+                $"RecordedBodySource: {frameSequenceFolder} has {files.Count} frames, the bodies "
+                    + $"file {clip.frames.Count}."
+            );
+        }
+        sequenceFrames = files.ToArray();
+        sequenceTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = "Sequence Frame" };
+        return true;
+    }
+
+    /// <summary>
+    /// Frame sequence mode: picks the frame for the current game time and loads it when it
+    /// changes. Rounding (not flooring) keeps exact-multiple capture times from landing a frame
+    /// early through float error.
+    /// </summary>
+    private void UpdateFrameSequence()
+    {
+        // A restart takes effect on this frame's time, so the first frame shown is frame 0
+        // (anchoring to the time Restart() was called from would land a frame later).
+        if (sequenceRestartPending)
+        {
+            sequenceStartTime = Time.time;
+            sequenceRestartPending = false;
+        }
+
+        float elapsed =
+            (sequencePausedAt >= 0f ? sequencePausedAt : Time.time) - sequenceStartTime;
+        float fps = clip.fps > 0f ? clip.fps : 30f;
+        int count = sequenceFrames.Length;
+        int index = Mathf.RoundToInt((startTime + elapsed * playbackSpeed) * fps);
+        index = loop ? ((index % count) + count) % count : Mathf.Clamp(index, 0, count - 1);
+        if (index == sequenceIndex)
+            return;
+
+        sequenceIndex = index;
+        sequenceTexture.LoadImage(File.ReadAllBytes(sequenceFrames[index]), false);
+        Graphics.Blit(sequenceTexture, videoTexture);
+        pendingFrame = index;
     }
 
     private void OnDestroy()
@@ -251,6 +349,8 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             Destroy(matteTexture);
         if (recordedFeedMaterial != null)
             Destroy(recordedFeedMaterial);
+        if (sequenceTexture != null)
+            Destroy(sequenceTexture);
     }
 
     private void LateUpdate()
@@ -270,7 +370,9 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
 
     private void Update()
     {
-        if (videoPlayer == null)
+        if (sequenceFrames != null && videoTexture != null)
+            UpdateFrameSequence();
+        else if (videoPlayer == null)
             return;
 
         // Before SceneController's FixedUpdate / LateUpdate consumers see this frame.
@@ -281,17 +383,59 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             return;
 
         if (keyboard.spaceKey.wasPressedThisFrame)
+            SetPaused(IsPlaying);
+        else if (keyboard.rKey.wasPressedThisFrame)
+            Restart();
+    }
+
+    /// <summary>True while the clip is advancing (video or frame sequence).</summary>
+    public bool IsPlaying =>
+        sequenceFrames != null ? sequencePausedAt < 0f : videoPlayer != null && videoPlayer.isPlaying;
+
+    public void SetPaused(bool paused)
+    {
+        if (sequenceFrames != null)
         {
-            if (videoPlayer.isPlaying)
+            if (paused && sequencePausedAt < 0f)
+                sequencePausedAt = Time.time;
+            else if (!paused && sequencePausedAt >= 0f)
+            {
+                sequenceStartTime += Time.time - sequencePausedAt;
+                sequencePausedAt = -1f;
+            }
+        }
+        else if (videoPlayer != null)
+        {
+            if (paused)
                 videoPlayer.Pause();
             else
                 videoPlayer.Play();
         }
-        else if (keyboard.rKey.wasPressedThisFrame)
+    }
+
+    /// <summary>Times the clip has wrapped back to its start since play began.</summary>
+    public int LoopCount { get; private set; }
+
+    /// <summary>Raised when the clip wraps back to its start, with the new <see cref="LoopCount"/>.</summary>
+    public event System.Action<int> Looped;
+
+    /// <summary>The video player (null until the clip is set up). For recording tools.</summary>
+    public VideoPlayer Player => videoPlayer;
+
+    /// <summary>Back to Start Time and playing.</summary>
+    public void Restart()
+    {
+        if (sequenceFrames != null)
         {
-            videoPlayer.time = startTime;
-            videoPlayer.Play();
+            sequenceRestartPending = true;
+            sequencePausedAt = -1f;
+            sequenceIndex = -1;
+            return;
         }
+        if (videoPlayer == null)
+            return;
+        videoPlayer.time = startTime;
+        videoPlayer.Play();
     }
 
     #region Loading
@@ -688,6 +832,9 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         videoPlayer.isLooping = loop;
         videoPlayer.playbackSpeed = playbackSpeed;
         videoPlayer.skipOnDrop = true;
+        // Follow game time (not the audio clock), so fixed-rate capture (Unity Recorder sets
+        // Time.captureFramerate) keeps the video in step with the particles.
+        videoPlayer.timeUpdateMode = VideoTimeUpdateMode.GameTime;
         videoPlayer.sendFrameReadyEvents = true;
         videoPlayer.frameReady += OnFrameReady;
         videoPlayer.errorReceived += (_, message) => Fail($"video error: {message}");
@@ -744,13 +891,19 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
         if (index >= 0 && index < clip.frames.Count && index != currentFrame)
         {
             // Back to the start of a loop: the clip's people start over too.
-            if (index < currentFrame)
+            bool looped = index < currentFrame;
+            if (looped)
                 System.Array.Clear(curlStates, 0, curlStates.Length);
             currentFrame = index;
             ApplyFrame(clip.frames[index]);
             ApplyOccluderFrame(index);
             ApplyMatteFrame(index);
             BodyFrameCount++;
+            if (looped)
+            {
+                LoopCount++;
+                Looped?.Invoke(LoopCount);
+            }
         }
     }
 
