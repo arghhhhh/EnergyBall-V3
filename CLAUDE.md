@@ -74,8 +74,31 @@ reloads the scene. Honors `dummyOnlyMode` to skip Kinect entirely.
 
 ### Kinect input
 - `BodySourceManager.cs` (`[RequireComponent(typeof(SceneController))]`): opens the
-  Kinect sensor, color + body frame readers, exposes `Body[] GetData()`.
-  `BodyFrameCount` tells `FixedUpdate` (50 Hz) a new body frame (30 Hz) from a repeat.
+  Kinect sensor, exposes `Body[] GetData()` and the stream textures. Readers: body (own
+  reader, so bodies never wait on the others), color, and one `MultiSourceFrameReader` for
+  depth + infrared + body index (one capture per frame). Frames are copied straight into
+  their textures' memory (`GetRawTextureData` + `Copy*ToIntPtr`), no managed buffers. Work
+  the current backdrop doesn't need is skipped: the color reader is paused unless the
+  backdrop uses color, infrared is only copied for the infrared backdrops, and the
+  depth-to-color map is only computed when aligned in color space or for Infrared + Color.
+  Color stays raw YUY2 (`ColorTexture`, RGBA32 at half width) and is decoded in the shader.
+  `BodyFrameCount` tells `FixedUpdate` (50 Hz) a new body frame (30 Hz) from a repeat;
+  `ColorFrameCount` / `DepthFrameCount` count the other streams.
+- **Backdrop** (`feedBackdrop`, Kinect > Camera Feed: None / Color / Infrared /
+  Infrared + Color; `FeedBackdrop.cs`). `KinectFeedDisplay.cs` on the `Camera Feed` quad
+  draws it with `Shaders/KinectFeed.shader` (one keyword per mode) and, in play mode, sizes
+  the quad to the image aspect of the camera the backdrop is aligned in, fitted to or
+  covering the Main Camera's view (`feedFraming` Fit / Fill). **Feed space**
+  (`FeedBackdrop.Space()`): Color aligns in the color camera; every other mode, None
+  included, in the depth camera (512x424, the infrared image's own pixels).
+  Everything that must line up with the image goes through the quad in that space: joint
+  projection (`SceneController.TryProjectJointThroughFeedCamera` via
+  `BodySourceManager.TryMapCameraPointToFeed`) and the body occluder (depth-to-color map in
+  color space, the depth pixel itself in depth space, `_FeedSpaceDepth`). Infrared + Color
+  takes brightness from infrared and hue from the color pixel the depth-to-color map
+  points at; pixels without depth stay gray, and the strips the color camera doesn't see
+  (its view is shorter than the infrared one: top and bottom in Fit) take the hue of the
+  nearest color-frame edge pixel.
 - `KinectManager.cs`: a simpler standalone sensor reader (color + body).
 - **Joints** (`SceneController.PlaceJoint`): only both ends of each `boneMap` bone
   (arms + SpineShoulder) and the hand tips (`extraPositionedJoints`, HandForce aims
@@ -156,9 +179,10 @@ following the existing pattern:
     the Main Camera's PP) using the premultiplied `EnergyBall/UIPremultipliedComposite`
     shader.
   - **Sync Particles To Feed** (`syncParticlesToFeed`, Kinect > Camera Feed): the
-    compositor turns the Particles Camera off on frames with no new Kinect color frame
-    (`BodySourceManager.ColorFrameCount`), so the texture holds and the particles change
-    on the same frames as the feed (30 fps, 15 in low light). Only the drawing is held:
+    compositor turns the Particles Camera off on frames with no new frame of the backdrop's
+    camera (`BodySourceManager.FeedFrameCount`: color frames for Color, 30 fps or 15 in low
+    light; depth-camera frames, a steady 30 fps, otherwise), so the texture holds and the
+    particles change on the same frames as the feed. Only the drawing is held:
     both VFX graphs are Always Simulate (a graph that culls its simulation would slow
     down instead). After `feedStallTimeout` without a feed frame it draws every frame
     again.
@@ -235,9 +259,13 @@ following the existing pattern:
   `BodyDepthOccluder`. Kinect + `bodyLossGracePeriod > 0` (`ShowReacquireDistanceField`):
   `bodyReacquireDistance`. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
   material, line width, tracking-state colors, the single skeleton color. CameraFeed:
-  `showCameraFeed` (toggles the feed quad's renderer in play mode),
-  `projectiveAlignment`, `renderCameraTransform`. CameraFeed + `showCameraFeed`
-  (`ShowFeedSyncField`): `syncParticlesToFeed`. Color Per Player: `particleColors` is
+  `feedBackdrop`, `feedFraming`, `projectiveAlignment`, `renderCameraTransform`.
+  CameraFeed + an infrared backdrop (`ShowInfraredFields`): `infraredBrightness`,
+  `infraredGamma`; + Infrared + Color (`ShowInfraredColorField`): `infraredColorAmount`.
+  CameraFeed + backdrop not None (`ShowFeedSyncField`): `syncParticlesToFeed`. Older files
+  only have the `showCameraFeed` toggle: it is still read and written (kept equal to
+  `feedBackdrop != None`), and `RuntimeSceneSettings.OnAfterDeserialize` turns a false
+  into None. Color Per Player: `particleColors` is
   the palette (its length is the slot count). Each player keeps its
   `PlayerConstructor.paletteSlot`, and `skeletonColors[slot]` is optional (wraps,
   falls back to `skeletonColor`), so it shows only when bones use it.
@@ -253,8 +281,8 @@ following the existing pattern:
   (`LastUsedPostProcessingProfile_<scene>` / `LastUsedFeedPostProcessingProfile_<scene>`),
   and any PP profile can be loaded into either. With no last-used feed profile, the feed
   loads the same profile as the particles. The switch only shows while the feed target
-  is available (`IsFeedTargetAvailable`: feed volume + CameraFeed feature + Show Camera
-  Feed on). Otherwise the tab falls back to Particles, and the feed's unsaved changes
+  is available (`IsFeedTargetAvailable`: feed volume + CameraFeed feature + Backdrop not
+  None). Otherwise the tab falls back to Particles, and the feed's unsaved changes
   don't count toward `Post Processing *`; its values and profile are kept.
 - Persistence: JSON profiles in `Assets/StreamingAssets/SettingsProfiles/`,
   gradient preset libraries in `Assets/StreamingAssets/GradientPresets/` (one ordered JSON

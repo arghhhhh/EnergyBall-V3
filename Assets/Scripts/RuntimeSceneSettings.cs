@@ -11,7 +11,7 @@ using UnityEngine;
 /// settings into sections (see <see cref="SettingGroupAttribute"/> on the SceneController twins).
 /// </summary>
 [System.Serializable]
-public class RuntimeSceneSettings
+public class RuntimeSceneSettings : ISerializationCallbackReceiver
 {
     public event Action OnAnyDebuggingSettingChanged;
 
@@ -228,7 +228,19 @@ public class RuntimeSceneSettings
         get => _individualColors;
         set => _individualColors = value;
     }
-    public bool showCameraFeed = true;
+
+    // Camera feed backdrop. Files written before the Backdrop setting only have the old
+    // "showCameraFeed" toggle: its key is still read and written (kept equal to
+    // feedBackdrop != None on save), so on load an old "false" turns into None and an old "true"
+    // keeps the Color default. See OnAfterDeserialize.
+    public FeedBackdrop feedBackdrop = FeedBackdrop.Color;
+
+    [SerializeField]
+    private bool showCameraFeed = true;
+    public FeedFraming feedFraming = FeedFraming.Fit;
+    public float infraredBrightness = 4f;
+    public float infraredGamma = 0.75f;
+    public float infraredColorAmount = 1f;
     public bool syncParticlesToFeed = false;
     public bool drawSkeleton = false;
 
@@ -363,6 +375,19 @@ public class RuntimeSceneSettings
         }
     }
 
+    void ISerializationCallbackReceiver.OnBeforeSerialize()
+    {
+        showCameraFeed = feedBackdrop.IsShown();
+    }
+
+    void ISerializationCallbackReceiver.OnAfterDeserialize()
+    {
+        // A file always carries "showCameraFeed" (equal to feedBackdrop != None in new files), so
+        // false means None in both old and new files.
+        if (!showCameraFeed)
+            feedBackdrop = FeedBackdrop.None;
+    }
+
     public void TriggerDebugSettingsUpdate()
     {
         OnAnyDebuggingSettingChanged?.Invoke();
@@ -439,7 +464,12 @@ public class RuntimeSceneSettings
                 : new PostProcessSettings();
         copy.feedPostProcessing =
             feedPostProcessing != null ? feedPostProcessing.DeepCopy() : new PostProcessSettings();
+        copy.feedBackdrop = feedBackdrop;
         copy.showCameraFeed = showCameraFeed;
+        copy.feedFraming = feedFraming;
+        copy.infraredBrightness = infraredBrightness;
+        copy.infraredGamma = infraredGamma;
+        copy.infraredColorAmount = infraredColorAmount;
         copy.syncParticlesToFeed = syncParticlesToFeed;
         copy.drawSkeleton = drawSkeleton;
         copy._individualColors = _individualColors;

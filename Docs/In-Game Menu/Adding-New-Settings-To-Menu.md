@@ -67,6 +67,7 @@ public float boundaryOutwardDrag = 50f;
 - `int` - Use `CreateIntField()`
 - `Vector2` / `Vector3` - Use `CreateVector2Field()` / `CreateVector3Field()`
 - `bool` - Use `CreateToggleField()`
+- `enum` - Use `CreateEnumField()` (a dropdown; choices are labelled with the values' `[InspectorName]`, like the inspector)
 - `float[]` - Use `CreateFloatArrayField()`
 - `AnimationCurve` - Use `CreateCurveField()` (opens the runtime curve editor popup)
 - `Color` / `Color[]` - Use `CreateColorField()` / `CreateColorArrayField()` (opens the runtime color picker)
@@ -400,7 +401,7 @@ The settings menu and the SceneController inspector share this structure (sectio
 **Scene Tab:**
 
 - **Space** — World (Body Scale, Base Z Depth, Grid Scale) · Play Boundary (margin, outward drag, out-of-bounds reset)
-- **Kinect** (only with a Kinect) — Tracking (max player distance, body loss grace, reacquire distance, inferred joint smoothing) · Hand State (debounce frames, hold time, high confidence only) · Camera Feed (only with a feed; show feed, sync particles to feed) · Occlusion (body occlusion on/off, depth bias, min depth, bodies only) · Skeleton
+- **Kinect** (only with a Kinect) — Tracking (max player distance, body loss grace, reacquire distance, inferred joint smoothing) · Hand State (debounce frames, hold time, high confidence only) · Camera Feed (only with a feed; backdrop, framing, IR brightness / gamma, color amount, sync particles to feed) · Occlusion (body occlusion on/off, depth bias, min depth, bodies only) · Skeleton
 - **Ball** — Size · Breathing (intrinsic pulsation) · Spawn (grow-in, spawn flash) · Gravity
 - **Hands** — Activation · Push · Aim · One Hand · Grow & Shrink (movement-based scaling)
 - **Particles** (the hand VFX; mostly `HandVfxSettings`) — Color · Glow · Emission · Lifetime · Stretch · Hand Grip · Ball Attraction · Secondary Attractor · Trail Distorters · Noise & Turbulence · Hi-Hat Bursts · Snare Bursts

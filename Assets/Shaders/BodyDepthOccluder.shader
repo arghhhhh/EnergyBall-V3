@@ -6,10 +6,13 @@
 // (ColorMask 0): particles behind a body get z-rejected and the base-pass
 // video (the person) shows through.
 //
-// Vertex placement: depth pixel -> color-image pixel (DepthToColor LUT)
-// -> point on the feed quad surface -> scaled along the camera ray to
-// view-space z = sensorDepthMeters * bodyScale. Silhouette therefore
-// matches the video by construction, independent of camera FOV.
+// Vertex placement: depth pixel -> its pixel in the image the feed quad
+// shows -> point on the feed quad surface -> scaled along the camera ray to
+// view-space z = sensorDepthMeters * bodyScale. With the Color backdrop the
+// image pixel comes from the DepthToColor LUT; with every other backdrop the
+// quad is aligned in depth space and the depth pixel is its own image pixel.
+// Silhouette therefore matches the image by construction, independent of
+// camera FOV.
 Shader "EnergyBall/BodyDepthOccluder"
 {
     Properties
@@ -22,6 +25,8 @@ Shader "EnergyBall/BodyDepthOccluder"
         _DepthBias ("Depth Bias (m)", Float) = 0.0
         _MinDepth ("Min Valid Depth (m)", Float) = 0.4
         _BodiesOnly ("Occlude Tracked Bodies Only", Float) = 0
+        // 1 = feed quad aligned in depth space (no LUT), 0 = color space.
+        _FeedSpaceDepth ("Feed Aligned In Depth Space", Float) = 0
         // 0 = invisible (depth-only occluder), 15 = RGBA visible (point cloud debug view)
         [HideInInspector] _ColorMask ("Color Mask", Int) = 0
     }
@@ -55,6 +60,7 @@ Shader "EnergyBall/BodyDepthOccluder"
                 float _DepthBias;
                 float _MinDepth;
                 float _BodiesOnly;
+                float _FeedSpaceDepth;
             CBUFFER_END
 
             // Feed-quad localToWorld, set per-frame from C#.
@@ -84,17 +90,27 @@ Shader "EnergyBall/BodyDepthOccluder"
                 // R16 depth is millimeters / 65535; convert to meters.
                 float depthMeters =
                     SAMPLE_TEXTURE2D_LOD(_DepthTex, sampler_DepthTex, input.uv, 0).r * 65.535;
-                float2 colorPx =
-                    SAMPLE_TEXTURE2D_LOD(_DepthToColorTex, sampler_DepthToColorTex, input.uv, 0).rg;
 
                 // Body index 0-5 = tracked player, 255 = background (samples as 1.0).
                 // With _BodiesOnly off, any valid depth pixel occludes (chairs,
                 // walls, floor — anything the depth camera sees).
                 bool isBody = (_BodiesOnly < 0.5) || (bodyIndex < 0.5);
                 bool validDepth = depthMeters > _MinDepth;
-                bool validMap = all(isfinite(colorPx))
-                    && colorPx.x >= 0 && colorPx.x < _ColorDims.x
-                    && colorPx.y >= 0 && colorPx.y < _ColorDims.y;
+
+                // This pixel's position on the displayed feed quad (quad mesh spans
+                // ±0.5 in local XY with uv (0,0) at the (-0.5,-0.5) corner; every
+                // feed texture's first row — the image top — sits at v = 0).
+                float2 quadUV = input.uv;
+                bool validMap = true;
+                if (_FeedSpaceDepth < 0.5)
+                {
+                    float2 colorPx = SAMPLE_TEXTURE2D_LOD(
+                        _DepthToColorTex, sampler_DepthToColorTex, input.uv, 0).rg;
+                    validMap = all(isfinite(colorPx))
+                        && colorPx.x >= 0 && colorPx.x < _ColorDims.x
+                        && colorPx.y >= 0 && colorPx.y < _ColorDims.y;
+                    quadUV = colorPx / _ColorDims.xy;
+                }
 
                 if (!(isBody && validDepth && validMap))
                 {
@@ -106,10 +122,6 @@ Shader "EnergyBall/BodyDepthOccluder"
 
                 output.debugData = float2(depthMeters, bodyIndex < 0.5 ? 1.0 : 0.0);
 
-                // Color pixel -> point on the displayed feed quad (quad mesh spans
-                // ±0.5 in local XY with uv (0,0) at the (-0.5,-0.5) corner; the
-                // color texture's first row — the image top — sits at v = 0).
-                float2 quadUV = colorPx / _ColorDims.xy;
                 float3 quadWS = mul(
                     _QuadLocalToWorld,
                     float4(quadUV.x - 0.5, quadUV.y - 0.5, 0, 1)

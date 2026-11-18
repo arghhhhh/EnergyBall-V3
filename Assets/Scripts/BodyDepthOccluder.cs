@@ -4,8 +4,9 @@ using UnityEngine;
 /// Renders Kinect-tracked bodies as an invisible depth-only occluder so that
 /// energy-ball particles disappear behind people. Builds one grid vertex per
 /// depth pixel; the BodyDepthOccluder shader projects each body pixel onto the
-/// ray through its position on the displayed color-feed quad, at the pixel's
-/// real sensor depth. Must live on the layer the Overlay Camera renders
+/// ray through its position on the displayed feed quad (through the
+/// depth-to-color map for the Color backdrop, directly in depth space
+/// otherwise), at the pixel's real sensor depth. Must live on the layer the Overlay Camera renders
 /// (KinectOverlay) — the overlay pass clears depth, so depth written in the
 /// base pass never reaches the particles.
 /// </summary>
@@ -15,7 +16,7 @@ public class BodyDepthOccluder : MonoBehaviour
     [Tooltip("The BodySourceManager providing depth/body-index textures.")]
     public BodySourceManager bodySourceManager;
 
-    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
+    [Tooltip("The quad displaying the Kinect backdrop (child of Main Camera).")]
     public Transform cameraFeedQuad;
 
     [Tooltip("The EnergyBall/BodyDepthOccluder shader asset.")]
@@ -55,6 +56,7 @@ public class BodyDepthOccluder : MonoBehaviour
         float depthBias = 0f;
         float minDepth = 0.4f;
         bool bodiesOnly = false;
+        bool depthSpace = false;
         if (SceneController.Instance != null)
         {
             // Effective settings (rebuilt on every settings change).
@@ -65,6 +67,7 @@ public class BodyDepthOccluder : MonoBehaviour
             depthBias = settings.occluderDepthBias;
             minDepth = settings.occluderMinDepth;
             bodiesOnly = settings.occluderBodiesOnly;
+            depthSpace = settings.feedBackdrop.Space() == FeedSpace.Depth;
         }
         // The point cloud debug view is this same mesh, so it still draws with occlusion off.
         _renderer.enabled = occlude || showPointCloud;
@@ -77,6 +80,7 @@ public class BodyDepthOccluder : MonoBehaviour
         _material.SetFloat("_DepthBias", depthBias);
         _material.SetFloat("_MinDepth", minDepth);
         _material.SetFloat("_BodiesOnly", bodiesOnly ? 1f : 0f);
+        _material.SetFloat("_FeedSpaceDepth", depthSpace ? 1f : 0f);
     }
 
     private void TryInitialize()

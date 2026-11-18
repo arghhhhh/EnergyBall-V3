@@ -63,8 +63,11 @@ public class SceneController : MonoBehaviour
     // Reacquiring only happens while a lost player is still held.
     private bool ShowReacquireDistanceField => HasKinect && bodyLossGracePeriod > 0f;
 
-    // Syncing the particles to the feed only applies while the feed is shown.
-    private bool ShowFeedSyncField => HasCameraFeed && showCameraFeed;
+    // Syncing the particles to the feed only applies while a backdrop is shown.
+    private bool ShowFeedSyncField => HasCameraFeed && feedBackdrop.IsShown();
+    private bool ShowInfraredFields => HasCameraFeed && feedBackdrop.UsesInfrared();
+    private bool ShowInfraredColorField =>
+        HasCameraFeed && feedBackdrop == FeedBackdrop.InfraredColor;
 
     // The single skeleton color is only used when bones aren't tracking-state colored and players
     // don't get individual palette colors.
@@ -221,13 +224,68 @@ public class SceneController : MonoBehaviour
     // Gated on Kinect, not CameraFeed: assigning this is what turns the CameraFeed feature on.
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("HasKinect")]
-    [Tooltip("The quad displaying the Kinect color feed (child of Main Camera).")]
+    [Tooltip(
+        "The quad showing the Kinect backdrop (child of Main Camera, with a KinectFeedDisplay). "
+            + "Joints and the body occluder are placed through it, so it also lines players up "
+            + "when the backdrop is None."
+    )]
     public Transform cameraFeedQuad;
 
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("HasCameraFeed")]
-    [Tooltip("Show the Kinect color feed behind the players. Off leaves a black background.")]
-    public bool showCameraFeed = true;
+    [Label("Backdrop")]
+    [Tooltip(FeedBackdropTooltip)]
+    public FeedBackdrop feedBackdrop = FeedBackdrop.Color;
+
+    public const string FeedBackdropTooltip =
+        "What shows behind the particles. Color: the color camera (can lag, and drops to 15 fps "
+        + "in low light). Infrared: the depth camera's infrared image, lit by the sensor, in step "
+        + "with body tracking at a steady 30 fps. Infrared + Color: infrared brightness with the "
+        + "color camera's hue. None: black. Every mode except Color lines players up with the "
+        + "depth camera, which has a narrower, taller view than the color camera.";
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("HasCameraFeed")]
+    [Label("Framing")]
+    [Tooltip(FeedFramingTooltip)]
+    public FeedFraming feedFraming = FeedFraming.Fit;
+
+    public const string FeedFramingTooltip =
+        "How the camera image is sized when its shape differs from the screen's (the infrared "
+        + "image is nearly square). Fit shows the whole image with black bars at the sides; Fill "
+        + "covers the screen and crops the top and bottom. Players stay lined up with the image "
+        + "either way.";
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("ShowInfraredFields")]
+    [Label("IR Brightness")]
+    [Tooltip(InfraredBrightnessTooltip)]
+    public float infraredBrightness = 4f;
+
+    public const string InfraredBrightnessTooltip =
+        "Gain on the infrared image. The raw image is dark, and the sensor's light falls off "
+        + "with distance, so people far away need more.";
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("ShowInfraredFields")]
+    [Label("IR Gamma")]
+    [Tooltip(InfraredGammaTooltip)]
+    public float infraredGamma = 0.75f;
+
+    public const string InfraredGammaTooltip =
+        "Below 1 lifts the dark parts of the infrared image (the background, people further "
+        + "away); above 1 deepens them.";
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("ShowInfraredColorField")]
+    [Label("Color Amount")]
+    [Tooltip(InfraredColorAmountTooltip)]
+    public float infraredColorAmount = 1f;
+
+    public const string InfraredColorAmountTooltip =
+        "How much of the color camera's hue tints the infrared image. 0 is plain infrared, 1 the "
+        + "camera's own saturation, above 1 stronger. Spots the depth camera can't measure (dark "
+        + "hair, far background) stay gray.";
 
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("ShowFeedSyncField")]
@@ -242,9 +300,10 @@ public class SceneController : MonoBehaviour
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("HasCameraFeed")]
     [Tooltip(
-        "Project joints through the Kinect color-camera intrinsics onto the camera feed quad "
-            + "so skeletons/hands align with the video at every depth. Falls back to the legacy "
-            + "linear mapping when off or when the mapper is unavailable."
+        "Project joints through the Kinect camera the backdrop is aligned in (color for the "
+            + "Color backdrop, depth otherwise) onto the camera feed quad, so skeletons/hands "
+            + "align with the image at every depth. Falls back to the legacy linear mapping when "
+            + "off or when the mapper is unavailable."
     )]
     public bool projectiveAlignment = true;
 
@@ -1086,7 +1145,7 @@ public class SceneController : MonoBehaviour
 
     private Vector3 GetVector3FromJoint(Joint joint)
     {
-        if (projectiveAlignment && TryProjectJointThroughColorCamera(joint, out Vector3 projected))
+        if (projectiveAlignment && TryProjectJointThroughFeedCamera(joint, out Vector3 projected))
         {
             return projected;
         }
@@ -1100,12 +1159,13 @@ public class SceneController : MonoBehaviour
 
     /// <summary>
     /// Maps a Kinect camera-space joint to the world point that sits on the ray
-    /// from the render camera through the joint's pixel on the color-feed quad,
-    /// at view depth Z * bodyScale. This makes skeletons/hands line up with the
-    /// displayed video at every depth, since both go through the color camera's
-    /// real projection instead of a linear scale.
+    /// from the render camera through the joint's pixel on the feed quad, at
+    /// view depth Z * bodyScale. The pixel comes from the camera the backdrop is
+    /// aligned in (color for the Color backdrop, depth otherwise; see
+    /// <see cref="FeedBackdropExtensions.Space"/>), so skeletons/hands line up
+    /// with the displayed image at every depth.
     /// </summary>
-    private bool TryProjectJointThroughColorCamera(Joint joint, out Vector3 result)
+    private bool TryProjectJointThroughFeedCamera(Joint joint, out Vector3 result)
     {
         result = default;
 
@@ -1114,35 +1174,28 @@ public class SceneController : MonoBehaviour
             return false;
         }
 
-        var mapper = bodySourceManager.Mapper;
-        if (mapper == null || joint.Position.Z <= 0.01f)
+        if (joint.Position.Z <= 0.01f)
         {
             return false;
         }
 
-        Windows.Kinect.ColorSpacePoint colorPoint = mapper.MapCameraPointToColorSpace(
-            joint.Position
-        );
         if (
-            float.IsInfinity(colorPoint.X)
-            || float.IsNaN(colorPoint.X)
-            || float.IsInfinity(colorPoint.Y)
-            || float.IsNaN(colorPoint.Y)
+            !bodySourceManager.TryMapCameraPointToFeed(
+                joint.Position,
+                CurrentSettings.feedBackdrop.Space(),
+                out Vector2 feedUV
+            )
         )
         {
             return false;
         }
 
-        // Color pixel -> point on the feed quad. The quad mesh spans ±0.5 in
-        // local XY with uv (0,0) at the (-0.5,-0.5) corner, and the color
-        // texture's first row (image top) sits at v = 0, matching the
-        // top-left-origin pixel coordinates ColorSpacePoint uses.
+        // Feed pixel -> point on the feed quad. The quad mesh spans ±0.5 in
+        // local XY with uv (0,0) at the (-0.5,-0.5) corner, and the feed
+        // textures' first row (image top) sits at v = 0, matching the
+        // top-left-origin pixel coordinates the coordinate mapper uses.
         Vector3 quadPoint = cameraFeedQuad.TransformPoint(
-            new Vector3(
-                colorPoint.X / bodySourceManager.ColorWidth - 0.5f,
-                colorPoint.Y / bodySourceManager.ColorHeight - 0.5f,
-                0f
-            )
+            new Vector3(feedUV.x - 0.5f, feedUV.y - 0.5f, 0f)
         );
 
         Vector3 camLocal = renderCameraTransform.InverseTransformPoint(quadPoint);
@@ -1647,7 +1700,6 @@ public class SceneController : MonoBehaviour
             cachedCurrentSettings != null ? cachedCurrentSettings.bodyScale : 0f;
         var previousSettings = cachedCurrentSettings;
         cachedCurrentSettings = BodyScaling.CreateEffective(runtimeSettings);
-        ApplyCameraFeedVisibility();
 
         // Only a real change of the live setting re-picks player colors (palette vs default).
         // An edited color only re-applies, so players keep their palette slots.
@@ -1677,18 +1729,6 @@ public class SceneController : MonoBehaviour
             );
         }
         playerScaleApplier.ApplyToAll(players.Values, cachedCurrentSettings);
-    }
-
-    /// <summary>
-    /// Shows or hides the camera feed quad. Play mode only: renderer.enabled is serialized, so
-    /// toggling it in edit mode would dirty the scene; play-mode changes revert on exit.
-    /// </summary>
-    private void ApplyCameraFeedVisibility()
-    {
-        if (!Application.isPlaying || cameraFeedQuad == null)
-            return;
-        if (cameraFeedQuad.TryGetComponent(out Renderer feedRenderer))
-            feedRenderer.enabled = cachedCurrentSettings.showCameraFeed;
     }
 
     private RuntimeSceneSettings CreateFallbackSettings()
@@ -1785,7 +1825,11 @@ public class SceneController : MonoBehaviour
         target.metaballRadiusAnimationCurve = new AnimationCurve(metaballRadiusAnimationCurve.keys);
 
         // Kinect, colors, debug visualizers
-        target.showCameraFeed = showCameraFeed;
+        target.feedBackdrop = feedBackdrop;
+        target.feedFraming = feedFraming;
+        target.infraredBrightness = infraredBrightness;
+        target.infraredGamma = infraredGamma;
+        target.infraredColorAmount = infraredColorAmount;
         target.syncParticlesToFeed = syncParticlesToFeed;
         target.drawSkeleton = drawSkeleton;
         target.skeletonLineWidth = skeletonLineWidth;
@@ -1890,7 +1934,11 @@ public class SceneController : MonoBehaviour
         metaballRadiusAnimationCurve = new AnimationCurve(source.metaballRadiusAnimationCurve.keys);
 
         // Kinect, colors, debug visualizers
-        showCameraFeed = source.showCameraFeed;
+        feedBackdrop = source.feedBackdrop;
+        feedFraming = source.feedFraming;
+        infraredBrightness = source.infraredBrightness;
+        infraredGamma = source.infraredGamma;
+        infraredColorAmount = source.infraredColorAmount;
         syncParticlesToFeed = source.syncParticlesToFeed;
         drawSkeleton = source.drawSkeleton;
         skeletonLineWidth = source.skeletonLineWidth;
