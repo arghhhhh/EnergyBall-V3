@@ -48,9 +48,20 @@ public class BodySourceManager : MonoBehaviour
     // Body index value for "no tracked person" (0-5 are players).
     private const byte NoBody = 255;
 
-    private static readonly ProfilerMarker FillOccluderHolesMarker = new(
-        "BodySourceManager.FillOccluderHoles"
+    // The fill runs on a worker thread: scheduled in Update as soon as the depth frame is in,
+    // completed in LateUpdate (before rendering). These mark the main thread's share.
+    private static readonly ProfilerMarker ScheduleFillMarker = new(
+        "BodySourceManager.FillOccluderHoles.Schedule"
     );
+    private static readonly ProfilerMarker CompleteFillMarker = new(
+        "BodySourceManager.FillOccluderHoles.Complete"
+    );
+    private JobHandle _fillHandle;
+    private bool _fillPending;
+
+    // Aligned in color space, the depth-to-color map places the occluder, so it's built from
+    // the filled depth once the fill completes.
+    private bool _mapFromFilledPending;
 
     /// <summary>
     /// The color camera image, still YUY2: each RGBA32 texel is two pixels (Y0, U, Y1, V), so
@@ -343,6 +354,8 @@ public class BodySourceManager : MonoBehaviour
             return;
         }
 
+        CompleteOccluderFill();
+
         var multiFrame = _depthReader.AcquireLatestFrame();
         if (multiFrame == null)
         {
@@ -391,17 +404,17 @@ public class BodySourceManager : MonoBehaviour
             }
 
             bool occluderFilled = OccluderDraws;
-            var occluderDepth = OccluderDepthTexture.GetRawTextureData<ushort>();
             if (occluderFilled)
             {
-                using (FillOccluderHolesMarker.Auto())
+                using (ScheduleFillMarker.Auto())
                 {
-                    // Fill in place, in the occluder textures' own memory.
+                    // Fill in place, in the occluder textures' own memory, on a worker thread.
+                    var occluderDepth = OccluderDepthTexture.GetRawTextureData<ushort>();
                     var occluderBodyIndex = OccluderBodyIndexTexture.GetRawTextureData<byte>();
                     occluderDepth.CopyFrom(depthData);
                     occluderBodyIndex.CopyFrom(bodyIndexData);
                     EnsureHoleScratch(depthData.Length);
-                    new FillOccluderHolesJob
+                    _fillHandle = new FillOccluderHolesJob
                     {
                         depth = occluderDepth,
                         bodyIndex = occluderBodyIndex,
@@ -409,37 +422,26 @@ public class BodySourceManager : MonoBehaviour
                         pixels = _holePixels,
                         seen = _holeSeen,
                         width = DepthWidth,
-                    }.Run();
-                    OccluderDepthTexture.Apply(false);
-                    OccluderBodyIndexTexture.Apply(false);
+                    }.Schedule();
+                    JobHandle.ScheduleBatchedJobs();
+                    _fillPending = true;
                 }
             }
 
             if (NeedsDepthToColor(backdrop))
             {
-                // One ColorSpacePoint (two floats) per RGFloat texel. Aligned in color space,
-                // the map only places the occluder, so it's built from the filled depth; the
-                // Infrared + Color tint needs the real depth (its holes stay untinted).
-                var mapData = DepthToColorTexture.GetRawTextureData<Vector2>();
+                // Aligned in color space, the map only places the occluder, so it's built from
+                // the filled depth, after the fill (CompleteOccluderFill). Otherwise from the
+                // real depth: the Infrared + Color tint needs its holes (they stay untinted).
                 if (occluderFilled && backdrop.Space() == FeedSpace.Color)
                 {
-                    _sensor.CoordinateMapper.MapDepthFrameToColorSpaceUsingIntPtr(
-                        BufferPointer(occluderDepth),
-                        (int)depthBytes,
-                        BufferPointer(mapData),
-                        (uint)mapData.Length
-                    );
+                    _mapFromFilledPending = true;
                 }
                 else
                 {
-                    _sensor.CoordinateMapper.MapDepthFrameToColorSpaceUsingIntPtr(
-                        depthPtr,
-                        (int)depthBytes,
-                        BufferPointer(mapData),
-                        (uint)mapData.Length
-                    );
+                    var mapData = DepthToColorTexture.GetRawTextureData<Vector2>();
+                    MapDepthToColor(depthPtr, (int)depthBytes, mapData);
                 }
-                DepthToColorTexture.Apply(false);
             }
 
             DepthTexture.Apply(false);
@@ -448,6 +450,71 @@ public class BodySourceManager : MonoBehaviour
 
         _depthFrameCount++;
         DepthFramesReady = true;
+    }
+
+    void LateUpdate()
+    {
+        // A fill still running is left for the next rendered frame instead of waited for:
+        // depth arrives at 30 fps, so the occluder is at most one rendered frame late and the
+        // main thread never waits. Except with Sync Particles To Feed on: the particle layer
+        // only redraws on this frame (a new depth frame), so it waits to use this frame's fill.
+        if (_fillPending && !_fillHandle.IsCompleted && !ParticlesSyncedToDepth)
+            return;
+        CompleteOccluderFill();
+    }
+
+    /// <summary>The particle layer only redraws on new depth-camera frames.</summary>
+    private bool ParticlesSyncedToDepth
+    {
+        get
+        {
+            var settings = controller.GetRuntimeSettings();
+            return settings.syncParticlesToFeed
+                && settings.feedBackdrop.IsShown()
+                && settings.feedBackdrop.Space() == FeedSpace.Depth;
+        }
+    }
+
+    /// <summary>
+    /// Completes the occluder fill scheduled in Update and uploads its textures. Called from
+    /// LateUpdate (before rendering) once the job is done, and at the start of the next depth
+    /// frame, which must not overwrite the textures while the job still writes them.
+    /// </summary>
+    private void CompleteOccluderFill()
+    {
+        if (!_fillPending)
+            return;
+
+        using (CompleteFillMarker.Auto())
+        {
+            _fillHandle.Complete();
+            _fillPending = false;
+            OccluderDepthTexture.Apply(false);
+            OccluderBodyIndexTexture.Apply(false);
+
+            if (_mapFromFilledPending)
+            {
+                _mapFromFilledPending = false;
+                var occluderDepth = OccluderDepthTexture.GetRawTextureData<ushort>();
+                MapDepthToColor(
+                    BufferPointer(occluderDepth),
+                    occluderDepth.Length * sizeof(ushort),
+                    DepthToColorTexture.GetRawTextureData<Vector2>()
+                );
+            }
+        }
+    }
+
+    private void MapDepthToColor(IntPtr depth, int depthBytes, NativeArray<Vector2> map)
+    {
+        // One ColorSpacePoint (two floats) per RGFloat texel.
+        _sensor.CoordinateMapper.MapDepthFrameToColorSpaceUsingIntPtr(
+            depth,
+            depthBytes,
+            BufferPointer(map),
+            (uint)map.Length
+        );
+        DepthToColorTexture.Apply(false);
     }
 
     /// <summary>The body occluder draws: Body Occlusion on, or the point cloud debug view.</summary>
@@ -490,7 +557,8 @@ public class BodySourceManager : MonoBehaviour
     /// occluder slightly in front hides less wrongly than one behind) and that border pixel's
     /// body index, so Bodies Only still counts it.
     ///
-    /// Burst-compiled, in place on the occluder textures. Only holes touching a tracked person
+    /// Burst-compiled, on a worker thread (see CompleteOccluderFill), in place on the occluder
+    /// textures. Only holes touching a tracked person
     /// are traced (others can't pass the guard), and a frame without one does nothing, so big
     /// out-of-range backgrounds cost nothing unless someone stands in front of them.
     /// </summary>
@@ -504,7 +572,17 @@ public class BodySourceManager : MonoBehaviour
         public NativeArray<byte> seen;
         public int width;
 
+        private static readonly ProfilerMarker JobMarker = new(
+            "BodySourceManager.FillOccluderHolesJob"
+        );
+
         public void Execute()
+        {
+            using (JobMarker.Auto())
+                Fill();
+        }
+
+        private void Fill()
         {
             int n = depth.Length;
 
@@ -711,6 +789,9 @@ public class BodySourceManager : MonoBehaviour
 
     void OnDestroy()
     {
+        // A fill still running would write into textures and scratch freed below.
+        _fillHandle.Complete();
+        _fillPending = false;
         DestroyTexture(ColorTexture);
         DestroyTexture(InfraredTexture);
         DestroyTexture(DepthTexture);

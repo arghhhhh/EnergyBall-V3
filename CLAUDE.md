@@ -264,7 +264,11 @@ following the existing pattern:
   it can't be gated on it. Kinect + `bodyOcclusion` (`ShowOcclusionSettings`):
   `occluderDepthBias`, `occluderMinDepth`, `occluderBodiesOnly`, read by
   `BodyDepthOccluder`. Holes in depth: `BodySourceManager.FillOccluderHolesJob` (Burst,
-  per depth frame, while the occluder draws, in place on `OccluderDepthTexture` /
+  on a worker thread: scheduled in `Update` when a depth frame arrives, uploaded in
+  `LateUpdate` if it's done, else on the next rendered frame (never waited for, except with
+  Sync Particles To Feed in depth space, where the particle layer only redraws on that
+  frame); while the occluder draws; in place on
+  `OccluderDepthTexture` /
   `OccluderBodyIndexTexture`) fills each hole whose border is mostly a tracked person (a
   face too close or saturated) with the nearest depth on that person's border; other holes
   stay open so they don't become invisible walls. Only holes touching a tracked person are
