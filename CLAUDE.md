@@ -263,7 +263,8 @@ following the existing pattern:
   still draws it), `drawSkeleton` and the `cameraFeedQuad` slot. That slot is what enables CameraFeed, so
   it can't be gated on it. Kinect + `bodyOcclusion` (`ShowOcclusionSettings`):
   `occluderDepthBias`, `occluderMinDepth`, `occluderBodiesOnly`, read by
-  `BodyDepthOccluder`. Kinect + `bodyLossGracePeriod > 0` (`ShowReacquireDistanceField`):
+  `BodyDepthOccluder` (its shader fills specks up to ~3 px from the nearest reading up to 2
+  px away; bigger depth holes, e.g. a face too close, don't occlude). Kinect + `bodyLossGracePeriod > 0` (`ShowReacquireDistanceField`):
   `bodyReacquireDistance`. Kinect + `drawSkeleton` (`ShowSkeletonSettings`): line
   material, line width, tracking-state colors, the single skeleton color. CameraFeed:
   `feedBackdrop`, `feedFraming`, `projectiveAlignment`, `renderCameraTransform`.
