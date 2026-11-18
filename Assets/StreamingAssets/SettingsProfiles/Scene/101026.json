@@ -325,6 +325,12 @@
         },
         "vfxSphereCollisionScaleMult": 0.9300000071525574,
         "collisionDetectionScaleMult": 1.25,
+        "stragglerSpeedRange": {
+            "x": 0.75,
+            "y": 2.5
+        },
+        "stragglerDim": 0.699999988079071,
+        "stragglerFadeBoost": 2.0,
         "saAttractionSpeed": 0.949999988079071,
         "saAttractionForce": 10.0,
         "saStickDistance": 0.019999999552965165,
@@ -410,10 +416,16 @@
         "m_RotationOrder": 4
     },
     "_individualColors": true,
+    "feedBackdrop": 1,
     "showCameraFeed": true,
-    "syncParticlesToFeed": false,
-    "drawSkeleton": false,
-    "skeletonLineWidth": 0.019999999552965165,
+    "feedFraming": 0,
+    "infraredBrightness": 4.0,
+    "infraredGamma": 0.75,
+    "infraredColorAmount": 1.0,
+    "infraredHoleFade": 6.0,
+    "syncParticlesToFeed": true,
+    "drawSkeleton": true,
+    "skeletonLineWidth": 0.004999999888241291,
     "useTrackingStateColors": true,
     "hasStyleColors": true,
     "skeletonColor": {

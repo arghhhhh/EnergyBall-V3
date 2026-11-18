@@ -805,6 +805,20 @@ public class InGameSettingsMenu : MonoBehaviour
             "Color Amount",
             () => runtimeSettings.feedBackdrop == FeedBackdrop.InfraredColor
         );
+        CreateSliderField(
+            group,
+            "Hole Fade",
+            () => runtimeSettings.infraredHoleFade,
+            v => runtimeSettings.infraredHoleFade = v,
+            0f,
+            20f,
+            tooltip: SceneController.InfraredHoleFadeTooltip
+        );
+        ShowRowIf(
+            group,
+            "Hole Fade",
+            () => runtimeSettings.feedBackdrop == FeedBackdrop.InfraredColor
+        );
         CreateToggleField(
             group,
             "Sync Particles To Feed",
@@ -3772,6 +3786,7 @@ public class InGameSettingsMenu : MonoBehaviour
         runtimeSettings.infraredBrightness = loadedSettings.infraredBrightness;
         runtimeSettings.infraredGamma = loadedSettings.infraredGamma;
         runtimeSettings.infraredColorAmount = loadedSettings.infraredColorAmount;
+        runtimeSettings.infraredHoleFade = loadedSettings.infraredHoleFade;
         runtimeSettings.syncParticlesToFeed = loadedSettings.syncParticlesToFeed;
         runtimeSettings.individualColors = loadedSettings.individualColors;
         runtimeSettings.drawSkeleton = loadedSettings.drawSkeleton;
@@ -3884,6 +3899,7 @@ public class InGameSettingsMenu : MonoBehaviour
         destination.infraredBrightness = source.infraredBrightness;
         destination.infraredGamma = source.infraredGamma;
         destination.infraredColorAmount = source.infraredColorAmount;
+        destination.infraredHoleFade = source.infraredHoleFade;
         destination.syncParticlesToFeed = source.syncParticlesToFeed;
         destination.individualColors = source.individualColors;
         destination.drawSkeleton = source.drawSkeleton;

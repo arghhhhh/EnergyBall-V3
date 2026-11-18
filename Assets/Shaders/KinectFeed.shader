@@ -6,8 +6,13 @@
 // _FEED_INFRARED        the depth camera's infrared image, brightness = (ir * gain) ^ gamma.
 // _FEED_INFRARED_COLOR  infrared brightness with the color camera's hue: each infrared pixel
 //                       looks up its color pixel through the depth-to-color map (computed per
-//                       depth frame) and takes that pixel's chroma. Pixels without depth (no
-//                       map entry) stay gray; pixels outside the color camera's view take the
+//                       depth frame) and takes that pixel's chroma. Where the depth camera has
+//                       no reading (too close, saturated skin, out of range) there is no right
+//                       color pixel, so holes stay plain infrared and the tint fades out toward
+//                       them by _CoverageTex (DepthCoverage.compute: the has-a-reading mask,
+//                       blurred over the Hole Fade radius). The fade happens on the measured
+//                       side, so tinted pixels use real depth: their own, or for a small
+//                       dropped speck, that of a pixel at most 2 away. Pixels outside the color camera's view take the
 //                       hue of the nearest color pixel on the frame's edge.
 //
 // Quad UVs: (0,0) at the (-0.5,-0.5) corner, and every feed texture's first row (the image top)
@@ -20,6 +25,7 @@ Shader "EnergyBall/KinectFeed"
         _ColorDims ("Color Frame Size (pixels)", Vector) = (1920, 1080, 0, 0)
         [NoScaleOffset] _InfraredTex ("Infrared (R16)", 2D) = "black" {}
         [NoScaleOffset] _DepthToColorTex ("Depth To Color Map (RGFloat)", 2D) = "black" {}
+        [NoScaleOffset] _CoverageTex ("Depth Coverage (blurred has-a-reading mask)", 2D) = "white" {}
         _DepthDims ("Depth Frame Size (pixels)", Vector) = (512, 424, 0, 0)
         _InfraredBrightness ("Infrared Brightness", Float) = 4
         _InfraredGamma ("Infrared Gamma", Float) = 0.75
@@ -48,6 +54,8 @@ Shader "EnergyBall/KinectFeed"
             TEXTURE2D(_InfraredTex);
             SAMPLER(sampler_InfraredTex);
             TEXTURE2D(_DepthToColorTex);
+            TEXTURE2D(_CoverageTex);
+            SAMPLER(sampler_CoverageTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _ColorDims;
@@ -116,6 +124,12 @@ Shader "EnergyBall/KinectFeed"
                 return pow(saturate(ir * _InfraredBrightness), _InfraredGamma);
             }
 
+            float2 LoadColorPx(int2 px)
+            {
+                px = clamp(px, int2(0, 0), int2(_DepthDims.xy) - 1);
+                return LOAD_TEXTURE2D(_DepthToColorTex, px).rg;
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
                 float3 display;
@@ -129,12 +143,41 @@ Shader "EnergyBall/KinectFeed"
                 #if defined(_FEED_INFRARED_COLOR)
                 // The map has one entry per depth pixel: look up this pixel's own entry.
                 int2 depthPx = clamp(int2(input.uv * _DepthDims.xy), int2(0, 0), int2(_DepthDims.xy) - 1);
-                float2 colorPx = LOAD_TEXTURE2D(_DepthToColorTex, depthPx).rg;
-                // Pixels without depth have no map entry (-Infinity) and stay gray. Pixels past
+                float2 colorPx = LoadColorPx(depthPx);
+                // A speck the depth camera dropped (up to about 3 pixels across) borrows the
+                // entry of the nearest pixel with a reading, at most 2 pixels away: that close
+                // it's practically the same depth, so the color stays put. Real holes are
+                // bigger, and the coverage fade has already taken the tint out at their edges.
+                if (!all(isfinite(colorPx)))
+                {
+                    static const int2 offsets[16] =
+                    {
+                        int2(-1, 0), int2(1, 0), int2(0, -1), int2(0, 1),
+                        int2(-1, -1), int2(1, -1), int2(-1, 1), int2(1, 1),
+                        int2(-2, 0), int2(2, 0), int2(0, -2), int2(0, 2),
+                        int2(-2, -2), int2(2, -2), int2(-2, 2), int2(2, 2),
+                    };
+                    bool found = false;
+                    [unroll]
+                    for (int k = 0; k < 16; k++)
+                    {
+                        float2 candidate = LoadColorPx(depthPx + offsets[k]);
+                        if (!found && all(isfinite(candidate)))
+                        {
+                            colorPx = candidate;
+                            found = true;
+                        }
+                    }
+                }
+                // Coverage is about 0.5 on a hole's edge, so the tint is gone by the edge.
+                // Sampled bilinearly, so the fade is smooth across screen pixels too.
+                float coverage = smoothstep(0.5, 1.0,
+                    SAMPLE_TEXTURE2D(_CoverageTex, sampler_CoverageTex, input.uv).r);
+                // A pixel without a map entry (-Infinity) stays gray. Pixels past
                 // the color frame's edge (the infrared view is taller than the color one: strips
                 // at the top and bottom in Fit) take the hue of the nearest edge pixel, so the
                 // tint carries on instead of stopping at a hard line.
-                if (all(isfinite(colorPx)))
+                if (coverage > 0 && all(isfinite(colorPx)))
                 {
                     colorPx = clamp(colorPx, 0, _ColorDims.xy - 1);
                     float3 rgb = YuvToRgb(SampleYuv(colorPx / _ColorDims.xy));
@@ -142,7 +185,7 @@ Shader "EnergyBall/KinectFeed"
                     // Chroma relative to the pixel's own brightness, so dim color pixels still
                     // give their hue; the floor keeps near-black sensor noise from exploding.
                     float3 chroma = (rgb - luma) / max(luma, 0.08);
-                    display = saturate(value * (1.0 + chroma * _ColorAmount));
+                    display = saturate(value * (1.0 + chroma * (_ColorAmount * coverage)));
                 }
                 #endif
             #endif

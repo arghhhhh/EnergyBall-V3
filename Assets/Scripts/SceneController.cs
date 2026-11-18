@@ -284,8 +284,20 @@ public class SceneController : MonoBehaviour
 
     public const string InfraredColorAmountTooltip =
         "How much of the color camera's hue tints the infrared image. 0 is plain infrared, 1 the "
-        + "camera's own saturation, above 1 stronger. Spots the depth camera can't measure (dark "
-        + "hair, far background) stay gray.";
+        + "camera's own saturation, above 1 stronger. Where the depth camera has no reading (a "
+        + "face too close or too bright, dark hair, far background) there's no reliable color "
+        + "pixel, so those spots stay plain infrared (see Hole Fade).";
+
+    [SettingGroup(SettingSections.Kinect, "Camera Feed")]
+    [ShowIf("ShowInfraredColorField")]
+    [Label("Hole Fade")]
+    [Tooltip(InfraredHoleFadeTooltip)]
+    public float infraredHoleFade = 6f;
+
+    public const string InfraredHoleFadeTooltip =
+        "Width of the fade from color to plain infrared around spots the depth camera can't "
+        + "measure, in depth-camera pixels (the image is 512 wide). 0 is a hard edge. Wider "
+        + "hides a ragged hole outline but takes the color further back from it.";
 
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("ShowFeedSyncField")]
@@ -293,9 +305,11 @@ public class SceneController : MonoBehaviour
     public bool syncParticlesToFeed = false;
 
     public const string SyncParticlesToFeedTooltip =
-        "Redraw the particle layer only when a new camera feed frame arrives (30 fps, 15 in low "
-        + "light), so particles and video change on the same frames. Off draws particles every "
-        + "frame.";
+        "Redraw the particle layer only when the backdrop gets a new frame, so particles and "
+        + "image change on the same frames instead of particles moving smoothly over a choppier "
+        + "image. Color follows the color camera (30 fps, 15 in low light); the infrared "
+        + "backdrops, Infrared + Color included, follow the depth camera (a steady 30 fps). "
+        + "Off draws particles every frame. It matches the frame rate, not the delay.";
 
     [SettingGroup(SettingSections.Kinect, "Camera Feed")]
     [ShowIf("HasCameraFeed")]
@@ -1830,6 +1844,7 @@ public class SceneController : MonoBehaviour
         target.infraredBrightness = infraredBrightness;
         target.infraredGamma = infraredGamma;
         target.infraredColorAmount = infraredColorAmount;
+        target.infraredHoleFade = infraredHoleFade;
         target.syncParticlesToFeed = syncParticlesToFeed;
         target.drawSkeleton = drawSkeleton;
         target.skeletonLineWidth = skeletonLineWidth;
@@ -1939,6 +1954,7 @@ public class SceneController : MonoBehaviour
         infraredBrightness = source.infraredBrightness;
         infraredGamma = source.infraredGamma;
         infraredColorAmount = source.infraredColorAmount;
+        infraredHoleFade = source.infraredHoleFade;
         syncParticlesToFeed = source.syncParticlesToFeed;
         drawSkeleton = source.drawSkeleton;
         skeletonLineWidth = source.skeletonLineWidth;

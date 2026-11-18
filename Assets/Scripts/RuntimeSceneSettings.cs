@@ -241,6 +241,7 @@ public class RuntimeSceneSettings : ISerializationCallbackReceiver
     public float infraredBrightness = 4f;
     public float infraredGamma = 0.75f;
     public float infraredColorAmount = 1f;
+    public float infraredHoleFade = 6f;
     public bool syncParticlesToFeed = false;
     public bool drawSkeleton = false;
 
@@ -470,6 +471,7 @@ public class RuntimeSceneSettings : ISerializationCallbackReceiver
         copy.infraredBrightness = infraredBrightness;
         copy.infraredGamma = infraredGamma;
         copy.infraredColorAmount = infraredColorAmount;
+        copy.infraredHoleFade = infraredHoleFade;
         copy.syncParticlesToFeed = syncParticlesToFeed;
         copy.drawSkeleton = drawSkeleton;
         copy._individualColors = _individualColors;

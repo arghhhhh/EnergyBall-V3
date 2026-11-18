@@ -23,6 +23,12 @@ public class KinectFeedDisplay : MonoBehaviour
     [Tooltip("The EnergyBall/KinectFeed shader asset.")]
     public Shader feedShader;
 
+    [Tooltip(
+        "Shaders/DepthCoverage.compute: blurs the depth camera's has-a-reading mask for the "
+            + "Infrared + Color hole fade."
+    )]
+    public ComputeShader coverageCompute;
+
     private const string ColorKeyword = "_FEED_COLOR";
     private const string InfraredKeyword = "_FEED_INFRARED";
     private const string InfraredColorKeyword = "_FEED_INFRARED_COLOR";
@@ -32,6 +38,7 @@ public class KinectFeedDisplay : MonoBehaviour
     private static readonly int InfraredTexId = Shader.PropertyToID("_InfraredTex");
     private static readonly int DepthToColorTexId = Shader.PropertyToID("_DepthToColorTex");
     private static readonly int DepthDimsId = Shader.PropertyToID("_DepthDims");
+    private static readonly int CoverageTexId = Shader.PropertyToID("_CoverageTex");
     private static readonly int BrightnessId = Shader.PropertyToID("_InfraredBrightness");
     private static readonly int GammaId = Shader.PropertyToID("_InfraredGamma");
     private static readonly int ColorAmountId = Shader.PropertyToID("_ColorAmount");
@@ -40,6 +47,20 @@ public class KinectFeedDisplay : MonoBehaviour
     private Material _material;
     private Vector2 _scaleSign;
     private string _activeKeyword;
+
+    // Hole fade mask (DepthCoverage.compute), rebuilt once per depth frame in Infrared + Color.
+    private static readonly int CsDepthId = Shader.PropertyToID("_Depth");
+    private static readonly int CsTempId = Shader.PropertyToID("_Temp");
+    private static readonly int CsTempInId = Shader.PropertyToID("_TempIn");
+    private static readonly int CsCoverageId = Shader.PropertyToID("_Coverage");
+    private static readonly int CsSizeId = Shader.PropertyToID("_Size");
+    private static readonly int CsRadiusId = Shader.PropertyToID("_Radius");
+    private static readonly int CsSigmaId = Shader.PropertyToID("_Sigma");
+    private RenderTexture _coverageTemp;
+    private RenderTexture _coverage;
+    private int _coverageFrame = -1;
+    private float _coverageRadius = -1f;
+    private bool _warnedNoCoverageCompute;
 
     private void Awake()
     {
@@ -75,6 +96,17 @@ public class KinectFeedDisplay : MonoBehaviour
     {
         if (_material != null)
             Destroy(_material);
+        ReleaseCoverage(ref _coverageTemp);
+        ReleaseCoverage(ref _coverage);
+    }
+
+    private static void ReleaseCoverage(ref RenderTexture texture)
+    {
+        if (texture == null)
+            return;
+        texture.Release();
+        Destroy(texture);
+        texture = null;
     }
 
     private static RuntimeSceneSettings Settings =>
@@ -107,6 +139,9 @@ public class KinectFeedDisplay : MonoBehaviour
         _material.SetTexture(ColorTexId, bodySourceManager.ColorTexture);
         _material.SetTexture(InfraredTexId, bodySourceManager.InfraredTexture);
         _material.SetTexture(DepthToColorTexId, bodySourceManager.DepthToColorTexture);
+        if (backdrop == FeedBackdrop.InfraredColor)
+            UpdateCoverage(settings.infraredHoleFade);
+        _material.SetTexture(CoverageTexId, _coverage);
         _material.SetVector(
             ColorDimsId,
             new Vector4(bodySourceManager.ColorWidth, bodySourceManager.ColorHeight, 0, 0)
@@ -134,6 +169,85 @@ public class KinectFeedDisplay : MonoBehaviour
                 && bodySourceManager.InfraredTexture != null,
             _ => false,
         };
+
+    /// <summary>
+    /// Rebuilds the blurred has-a-reading mask (see DepthCoverage.compute) when a new depth
+    /// frame arrived or the fade radius changed.
+    /// </summary>
+    private void UpdateCoverage(float radius)
+    {
+        var depth = bodySourceManager.DepthTexture;
+        if (coverageCompute == null)
+        {
+            // The shader then reads full coverage: holes keep a hard edge, nothing breaks.
+            if (!_warnedNoCoverageCompute)
+            {
+                _warnedNoCoverageCompute = true;
+                Debug.LogWarning(
+                    "KinectFeedDisplay: no Coverage Compute assigned "
+                        + "(Shaders/DepthCoverage.compute), so Hole Fade has no effect.",
+                    this
+                );
+            }
+            return;
+        }
+        if (depth == null)
+            return;
+
+        int frame = bodySourceManager.DepthFrameCount;
+        if (
+            frame == _coverageFrame
+            && Mathf.Approximately(radius, _coverageRadius)
+            && _coverage != null
+        )
+            return;
+        _coverageFrame = frame;
+        _coverageRadius = radius;
+
+        int width = depth.width;
+        int height = depth.height;
+        EnsureCoverageTexture(ref _coverageTemp, width, height, "Depth Coverage (temp)");
+        EnsureCoverageTexture(ref _coverage, width, height, "Depth Coverage");
+
+        int taps = Mathf.Max(0, Mathf.RoundToInt(radius));
+        coverageCompute.SetInts(CsSizeId, width, height);
+        coverageCompute.SetInt(CsRadiusId, taps);
+        // The radius spans about two standard deviations, so the falloff ends softly.
+        coverageCompute.SetFloat(CsSigmaId, Mathf.Max(0.5f, radius * 0.5f));
+
+        int groupsX = Mathf.CeilToInt(width / 8f);
+        int groupsY = Mathf.CeilToInt(height / 8f);
+
+        int horizontal = coverageCompute.FindKernel("Horizontal");
+        coverageCompute.SetTexture(horizontal, CsDepthId, depth);
+        coverageCompute.SetTexture(horizontal, CsTempId, _coverageTemp);
+        coverageCompute.Dispatch(horizontal, groupsX, groupsY, 1);
+
+        int vertical = coverageCompute.FindKernel("Vertical");
+        coverageCompute.SetTexture(vertical, CsTempInId, _coverageTemp);
+        coverageCompute.SetTexture(vertical, CsCoverageId, _coverage);
+        coverageCompute.Dispatch(vertical, groupsX, groupsY, 1);
+    }
+
+    private static void EnsureCoverageTexture(
+        ref RenderTexture texture,
+        int width,
+        int height,
+        string name
+    )
+    {
+        if (texture != null && texture.width == width && texture.height == height)
+            return;
+        ReleaseCoverage(ref texture);
+        texture = new RenderTexture(width, height, 0, RenderTextureFormat.RHalf)
+        {
+            name = name,
+            enableRandomWrite = true,
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+        };
+        texture.Create();
+    }
 
     private void SetKeyword(string keyword)
     {

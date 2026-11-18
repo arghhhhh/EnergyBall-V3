@@ -96,7 +96,14 @@ reloads the scene. Honors `dummyOnlyMode` to skip Kinect entirely.
   `BodySourceManager.TryMapCameraPointToFeed`) and the body occluder (depth-to-color map in
   color space, the depth pixel itself in depth space, `_FeedSpaceDepth`). Infrared + Color
   takes brightness from infrared and hue from the color pixel the depth-to-color map
-  points at; pixels without depth stay gray, and the strips the color camera doesn't see
+  points at. Where depth has no reading (too close, saturated skin, out of range) there's no
+  reliable color pixel (the lookup depends on depth), so holes stay plain infrared and the
+  tint fades out toward them over `infraredHoleFade` depth pixels (Hole Fade):
+  `Shaders/DepthCoverage.compute` blurs the has-a-reading mask (separable Gaussian, once per
+  depth frame, dispatched by `KinectFeedDisplay`) and the shader samples it bilinearly. The
+  fade finishes on the measured side, so tinted pixels use real depth (a lone dropped pixel
+  borrows the entry of the nearest pixel with a reading, up to 2 away) and no hole filling
+  is needed. The strips the color camera doesn't see
   (its view is shorter than the infrared one: top and bottom in Fit) take the hue of the
   nearest color-frame edge pixel.
 - `KinectManager.cs`: a simpler standalone sensor reader (color + body).
@@ -261,7 +268,8 @@ following the existing pattern:
   material, line width, tracking-state colors, the single skeleton color. CameraFeed:
   `feedBackdrop`, `feedFraming`, `projectiveAlignment`, `renderCameraTransform`.
   CameraFeed + an infrared backdrop (`ShowInfraredFields`): `infraredBrightness`,
-  `infraredGamma`; + Infrared + Color (`ShowInfraredColorField`): `infraredColorAmount`.
+  `infraredGamma`; + Infrared + Color (`ShowInfraredColorField`): `infraredColorAmount`,
+  `infraredHoleFade`.
   CameraFeed + backdrop not None (`ShowFeedSyncField`): `syncParticlesToFeed`. Older files
   only have the `showCameraFeed` toggle: it is still read and written (kept equal to
   `feedBackdrop != None`), and `RuntimeSceneSettings.OnAfterDeserialize` turns a false
