@@ -200,6 +200,14 @@ following the existing pattern:
     screen must clear with alpha 1 (Main Camera, Dummy Scene camera). Under it, bloom
     glow still spreads into alpha-0 areas, but color grading / vignette don't touch
     those pixels.
+  - **Particle Alpha Grading** (`Rendering/ParticleAlphaGradingFeature.cs`, a URP renderer
+    feature on `Universal Render Pipeline Asset_Renderer`, active only on cameras with a
+    `ParticleLayerCompositor`). The additive particles write almost no alpha, so under Alpha
+    Processing the particle look's grading never reached them. The feature saves the
+    particle layer before post-processing, makes it opaque so the grade applies everywhere
+    (particles and their glow), and restores the saved alpha afterwards, so it still
+    composites additively. Bloom sees the particles at full strength because of it. ~2
+    full-screen copies per particle frame.
   - Anything that must depth-interact with the body occluder stays on layer 6.
 - `VolumeController.cs` (on `Particles Volume`): pushes
   `RuntimeSceneSettings.particlePostProcessing` into `particleVolume` and
@@ -334,6 +342,18 @@ following the existing pattern:
 `dummyOnlyMode` let you spawn and puppet players without a sensor. Use these to test
 metaballs, gravity, scaling, and VFX from the editor. Test scenes live in
 `Assets/Testing/` (e.g. `Dummy Scene.unity`, VFX experiments, Kinect webcam output).
+
+### Recorded footage (a video instead of the Kinect)
+`RecordedBodySource` (on the Scene Controller GameObject; enabling it switches the scene to
+recorded mode) replays a clip: the video is the backdrop and a bodies file extracted from it
+drives the players, with optional depth occluder and soft person matte. Players reach
+`SceneController` through `IBodySource` / `IDepthFrameSource` (`BodySource/TrackedBody.cs`),
+which `BodySourceManager` also implements for the Kinect. Scene:
+`Assets/Testing/Recorded Footage.unity` (portrait, metaball grid 64x64x64). Clip files live in
+`Assets/StreamingAssets/RecordedFootage/` (gitignored: third-party footage, never commit it).
+Finals: **EnergyBall > Recorded Footage Recorder** (frame-exact PNG capture + ffmpeg). Full
+guide, including the extraction pipeline's RUNBOOK in the ComfyUI project and why the
+recorder works the way it does: `Docs/Recorded-Footage.md`.
 
 ## Working in this repo
 

@@ -77,8 +77,32 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
     )]
     public bool useFrameSequence = false;
 
-    [Tooltip("Folder (in the clip folder) holding the extracted frames, sorted by name.")]
-    public string frameSequenceFolder = "1_frames";
+    [Tooltip(
+        "Folder (in the clip folder) holding the extracted frames, sorted by name. Empty = "
+            + "<video file name>_frames (e.g. 1_frames for 1.mp4)."
+    )]
+    public string frameSequenceFolder = "";
+
+    /// <summary>The frame sequence folder name: the explicit one, else "<video>_frames".</summary>
+    public string FrameSequenceFolderName =>
+        string.IsNullOrEmpty(frameSequenceFolder)
+            ? Path.GetFileNameWithoutExtension(videoFile) + "_frames"
+            : frameSequenceFolder;
+
+    /// <summary>The clip folder as an absolute path.</summary>
+    public string ClipFolderPath =>
+        Path.IsPathRooted(clipFolder)
+            ? clipFolder
+            : Path.Combine(Application.streamingAssetsPath, clipFolder);
+
+    /// <summary>Frames in the clip (from the bodies file), or 0 before it loads.</summary>
+    public int ClipFrameCount => clip != null ? clip.frames.Count : 0;
+
+    /// <summary>The clip's video size in pixels, or zero before it loads.</summary>
+    public Vector2Int ClipSize => clip != null ? new Vector2Int(clip.width, clip.height) : default;
+
+    /// <summary>True while playing from the frame sequence (frame-exact) instead of the video.</summary>
+    public bool UsingFrameSequence => sequenceFrames != null;
 
     [Header("Display")]
     [Tooltip(
@@ -251,15 +275,13 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             );
         }
 
-        string folder = Path.IsPathRooted(clipFolder)
-            ? clipFolder
-            : Path.Combine(Application.streamingAssetsPath, clipFolder);
+        string folder = ClipFolderPath;
         string bodiesPath = Path.Combine(folder, bodiesFile);
         string videoPath = Path.Combine(folder, videoFile);
 
         if (!LoadBodies(bodiesPath))
             return;
-        string sequencePath = Path.Combine(folder, frameSequenceFolder);
+        string sequencePath = Path.Combine(folder, FrameSequenceFolderName);
         if (useFrameSequence ? !LoadFrameSequence(sequencePath) : !File.Exists(videoPath))
         {
             if (!useFrameSequence)
@@ -273,19 +295,52 @@ public class RecordedBodySource : MonoBehaviour, IBodySource, IDepthFrameSource
             LoadMatte(Path.Combine(folder, matteFile));
         SetUpDisplay();
         if (useFrameSequence)
+            StartFrameSequence();
+        else
+            SetUpVideo(videoPath);
+    }
+
+    private void StartFrameSequence()
+    {
+        if (videoTexture == null)
         {
             videoTexture = new RenderTexture(clip.width, clip.height, 0, RenderTextureFormat.ARGB32)
             {
                 name = "Recorded Video",
             };
             videoTexture.Create();
-            Restart();
-            clipStatus = "Playing (frame sequence)";
         }
-        else
+        Restart();
+        clipStatus = "Playing (frame sequence)";
+    }
+
+    /// <summary>
+    /// Switches a playing clip from the video to its frame sequence (frame-exact, for
+    /// recording) and restarts it. The players and their balls carry on. False, with the error
+    /// logged, when the clip isn't loaded or the sequence folder is missing.
+    /// </summary>
+    public bool SwitchToFrameSequence()
+    {
+        if (sequenceFrames != null)
+            return true;
+        if (clip == null)
         {
-            SetUpVideo(videoPath);
+            Debug.LogError("RecordedBodySource: no clip is loaded.");
+            return false;
         }
+        if (!LoadFrameSequence(Path.Combine(ClipFolderPath, FrameSequenceFolderName)))
+            return false;
+
+        if (videoPlayer != null)
+        {
+            videoPlayer.frameReady -= OnFrameReady;
+            videoPlayer.Stop();
+            videoPlayer.enabled = false;
+            videoPlayer = null;
+        }
+        pendingFrame = -1;
+        StartFrameSequence();
+        return true;
     }
 
     // Frame sequence playback (useFrameSequence).
