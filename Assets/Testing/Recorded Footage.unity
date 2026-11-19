@@ -1837,7 +1837,7 @@ MonoBehaviour:
   playbackSpeed: 1
   startTime: 0
   useFrameSequence: 0
-  frameSequenceFolder: 1_frames
+  frameSequenceFolder: 
   matchCameraFov: 1
   fitFeedQuadToCamera: 1
   dimBackground: 1
